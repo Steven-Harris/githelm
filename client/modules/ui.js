@@ -14,14 +14,19 @@ export async function init() {
 }
 
 export async function loggedInCheck() {
-  if (sessionStorage.getItem('GITHUB_TOKEN') === "") {
+  if (sessionStorage.getItem('GITHUB_TOKEN') === null) {
     return;
   }
+  await showLogin();
+}
+
+export async function showLogin() {
   document.getElementById('authorized').classList.remove('hidden');
   document.getElementById('login-container').classList.add('hidden');
   handleTabs();
   await init();
 }
+
 
 async function fetchDataAndUpdateUI() {
   const prs = document.getElementById("pull-requests");

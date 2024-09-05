@@ -1,3 +1,5 @@
+import { showLogin } from "./modules/ui";
+
 const CACHE_NAME = 'github-monitor-cache-v1';
 const urlsToCache = [
   '/index.html',
@@ -22,7 +24,13 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        return response || fetch(event.request);
+        return response || fetch(event.request).then(res => {
+          if (res.status === 401) {
+            showLogin();
+            return null;
+          }
+          return res;
+        });
       })
   );
 });
