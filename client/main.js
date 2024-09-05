@@ -1,5 +1,4 @@
-import { handleTabs } from './modules/tabs.js';
-import { init } from './modules/ui.js';
+import { init, loggedInCheck } from './modules/ui.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js';
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-analytics.js";
 import { getAuth, signInWithPopup, GithubAuthProvider } from 'https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js';
@@ -9,6 +8,7 @@ window.addEventListener('load', () => {
 });
 
 document.addEventListener("DOMContentLoaded", async function () {
+    await loggedInCheck();
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const auth = getAuth(app);
@@ -16,15 +16,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     const provider = new GithubAuthProvider();
     document.getElementById('github-login').addEventListener('click', () =>
         signInWithPopup(auth, provider).then(async (result) => {
-            document.getElementById('authorized').classList.remove('hidden');
-            document.getElementById('login-container').classList.add('hidden');
+
             const user = result.user;
             const credential = GithubAuthProvider.credentialFromResult(result);
             console.log('GitHub authentication successful:', user, credential);
             sessionStorage.setItem('FIREBASE_TOKEN', user.accessToken);
             sessionStorage.setItem('GITHUB_TOKEN', credential.accessToken);
-            handleTabs();
-            await init();
+            await loggedInCheck();
+
         }).catch((error) => console.error('Error during GitHub authentication:', error))
     );
 });

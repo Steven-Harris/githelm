@@ -1,5 +1,6 @@
 
 import { load } from './github.js';
+import { handleTabs } from './tabs.js';
 import { pullRequestTemplate, actionsTemplate } from './templates.js';
 import { config } from './config.js';
 let previousData = {};
@@ -12,6 +13,16 @@ export async function init() {
   //setInterval(fetchDataAndUpdateUI, 60 * 1000);
 }
 
+export async function loggedInCheck() {
+  if (sessionStorage.getItem('GITHUB_TOKEN') === "") {
+    return;
+  }
+  document.getElementById('authorized').classList.remove('hidden');
+  document.getElementById('login-container').classList.add('hidden');
+  handleTabs();
+  await init();
+}
+
 async function fetchDataAndUpdateUI() {
   const prs = document.getElementById("pull-requests");
   const actionsDiv = document.getElementById("actions");
@@ -19,6 +30,7 @@ async function fetchDataAndUpdateUI() {
 
   document.getElementById("loading-pulls").remove();
   document.getElementById("loading-actions").remove();
+  console.log(results)
 
   results.forEach(result => result.type === 'pull-requests'
     ? updateContent(prs, result.repo, result.data, pullRequestTemplate)

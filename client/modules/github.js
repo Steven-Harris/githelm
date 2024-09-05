@@ -25,13 +25,12 @@ async function getPullRequests(org, repo, filter) {
   try {
     const results = await fetchData(url);
 
-    console.log(results);
     for (let item of results.items) {
       const reviews = await getReviews(org, repo, item.number);
       item.reviews = reviews;
     }
 
-    return results;
+    return { type: 'pull-requests', repo, data: results };
   } catch (error) {
     console.error('Error fetching pull requests:', error);
   }
@@ -48,7 +47,7 @@ async function getActions(org, repo, filter) {
       run.jobs = jobs.jobs;
     }
 
-    return repoRun;
+    return { type: 'actions', repo, data: repoRun };
   } catch (error) {
     console.error('Error fetching actions:', error);
   }
