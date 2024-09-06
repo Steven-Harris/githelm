@@ -3,12 +3,12 @@ import { load } from './github.js';
 import { handleTabs } from './tabs.js';
 import { pullRequestTemplate, actionsTemplate } from './templates.js';
 import { config } from './config.js';
-let previousData = {};
+let previousData: { [key: string]: { [key: string]: any } } = {};
 
 export async function init() {
   await fetchDataAndUpdateUI();
-  document.getElementById("loading-pulls").remove()
-  document.getElementById("loading-actions").remove()
+  document.getElementById("loading-pulls")?.remove()
+  document.getElementById("loading-actions")?.remove()
   // TODO: Uncomment to enable auto-refresh
   //setInterval(fetchDataAndUpdateUI, 60 * 1000);
 }
@@ -24,8 +24,8 @@ export async function loggedInCheck() {
 
 export async function showUI() {
   // document.getElementById('authorized').classList.remove('hidden');
-  document.getElementById('github-login').classList.add('hidden');
-  document.getElementById('github-logout').classList.remove('hidden');
+  document.getElementById('github-login')?.classList.add('hidden');
+  document.getElementById('github-logout')?.classList.remove('hidden');
   handleTabs();
   await init();
 }
@@ -40,8 +40,8 @@ async function fetchDataAndUpdateUI() {
   const actionsDiv = document.getElementById("actions");
   const results = await Promise.all(load(JSON.parse(config)));
 
-  document.getElementById("loading-pulls").remove();
-  document.getElementById("loading-actions").remove();
+  document.getElementById("loading-pulls")?.remove();
+  document.getElementById("loading-actions")?.remove();
   console.log(results)
 
   results.forEach(result => result.type === 'pull-requests'
@@ -55,17 +55,17 @@ async function fetchDataAndUpdateUI() {
   }, {});
 }
 
-function updateContent(container, repo, newData, templateFunction) {
+function updateContent(container: HTMLElement | null, repo: string, newData: { type: string | number; }, templateFunction: { (repo: any, pullRequests: any): string; (repo: any, actions: any): string; (arg0: any, arg1: any): string; }) {
   const previousRepoData = previousData[repo] && previousData[repo][newData.type];
   if (JSON.stringify(previousRepoData) !== JSON.stringify(newData)) {
-    const existingDiv = container.querySelector(`[data-repo="${repo}"]`);
+    const existingDiv = container?.querySelector(`[data-repo="${repo}"]`);
     if (existingDiv) {
       existingDiv.innerHTML = templateFunction(repo, newData);
     } else {
       const div = document.createElement("div");
       div.setAttribute("data-repo", repo);
       div.innerHTML = templateFunction(repo, newData);
-      container.appendChild(div);
+      container?.appendChild(div);
     }
   }
 }

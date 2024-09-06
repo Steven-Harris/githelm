@@ -1,4 +1,4 @@
-export function pullRequestTemplate(repo, pullRequests) {
+export function pullRequestTemplate(repo: any, pullRequests: { items: any[]; }) {
   return `
         <h3 class="text-lg font-semibold">${repo}</h3>
         <ul>${pullRequests.items.map(pr => `
@@ -7,11 +7,11 @@ export function pullRequestTemplate(repo, pullRequests) {
                     <a href="${pr.html_url}" target="_blank" class="link flex-grow max-w-70">${pr.title}</a>
                     <span class="reviews-container flex items-center">
                       ${pr.reviews.length < 3
-      ? pr.reviews.map(review => `
+      ? pr.reviews.map((review: any) => `
                               <img src="${review.user.avatar_url}" class="avatar" alt="${review.user.login}" />
                               <label class="review-state ${review.state === "APPROVED" ? "approved" : "not-approved"}">${review.state.toLowerCase()}</label>
                             `).join("")
-      : pr.reviews.slice(0, 3).map(review => `
+      : pr.reviews.slice(0, 3).map((review: any) => `
                               <img src="${review.user.avatar_url}" class="avatar" alt="${review.state.toLowerCase()}" title="${review.state.toLowerCase()}" />
                             `).join("")
     }
@@ -23,10 +23,10 @@ export function pullRequestTemplate(repo, pullRequests) {
     `;
 }
 
-export function actionsTemplate(repo, actions) {
+export function actionsTemplate(repo: any, actions: { workflow_runs: any[]; }) {
   return `
         <h3 class="text-lg font-semibold">${repo}</h3>
-        <ul class="flex flex-wrap">${actions.workflow_runs.map(workflow => `
+        <ul class="flex flex-wrap">${actions.workflow_runs.map((workflow: { html_url: any; name: any; }) => `
             <li class="mb-2 flex-grow items-center">
                 <div class="p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
                     <a href="${workflow.html_url}" target="_blank" class="link">${workflow.name}</a>
@@ -36,15 +36,15 @@ export function actionsTemplate(repo, actions) {
         </ul>`;
 }
 
-export function workflowTemplate(workflow) {
+export function workflowTemplate(workflow: any) {
   return `
     <ul id="${workflow.id}" class="flex flex-wrap -m-1">
-        ${workflow.jobs.map(job => jobTemplate(job)).join("")}
+        ${workflow.jobs.map((job: any) => jobTemplate(job)).join("")}
     </ul>
   `;
 }
 
-export function jobTemplate(job) {
+export function jobTemplate(job: { status: string; conclusion: string; name: any; }) {
   return `
         <li class="p-1">
             <span class="${job.status === "completed" && job.conclusion === "success" ? "bg-green-200 border-green-600"

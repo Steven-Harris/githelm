@@ -4,18 +4,18 @@ export function handleTabs() {
   const pullRequestsSection = document.getElementById('pull-requests-section');
   const actionsSection = document.getElementById('actions-section');
 
-  tabPullRequests.addEventListener('click', function () {
+  tabPullRequests?.addEventListener('click', function () {
     switchTab(tabPullRequests, tabActions, pullRequestsSection, actionsSection);
   });
 
-  tabActions.addEventListener('click', function () {
+  tabActions?.addEventListener('click', function () {
     switchTab(tabActions, tabPullRequests, actionsSection, pullRequestsSection);
   });
 }
 
-function switchTab(activeTab, inactiveTab, showSection, hideSection) {
+function switchTab(activeTab: HTMLElement, inactiveTab: HTMLElement | null, showSection: HTMLElement | null, hideSection: HTMLElement | null) {
   activeTab.classList.add('active');
-  inactiveTab.classList.remove('active');
-  showSection.classList.remove('hidden');
-  hideSection.classList.add('hidden');
+  inactiveTab?.classList.remove('active');
+  showSection?.classList.remove('hidden');
+  hideSection?.classList.add('hidden');
 }

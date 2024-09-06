@@ -1,0 +1,39 @@
+{
+  "name": "githelm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build && pwa-assets-generator",
+    "preview": "vite preview",
+    "serve": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Steven-Harris/githelm.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Steven-Harris/githelm/issues"
+  },
+  "homepage": "https://githelm.com",
+  "resolutions": {
+    "sharp": "0.32.6",
+    "sharp-ico": "0.1.5"
+  },
+  "dependencies": {
+    "firebase": "^10.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "@vite-pwa/assets-generator": "^0.2.6",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.3",
+    "vite-plugin-pwa": "^0.20.0",
+    "workbox-window": "^7.1.0"
+  }
+}

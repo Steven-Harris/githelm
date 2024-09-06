@@ -3,18 +3,20 @@
 
 <head>
   <title>GitHelm</title>
-  <meta charset="UTF-8" />
+  <meta name="theme-color" content="#51cbee">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/favicon.svg" sizes="any" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="src/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
     integrity="sha384-HtMZLkYo+pR5/u7zCzXxMJP6QoNnQJt1qkHM0EaOPvGDIzaVZbmYr/TlvUZ/sKAg" crossorigin="anonymous">
-  <link rel="manifest" href="assets/manifest.json">
-  <script defer type="module" src="main.js"></script>
+  <script defer type="module" src="src/main.ts"></script>
 </head>
 
-<body class="h-full text-white flex flex-col bg-gray-900">
-  <main class="flex-1 p-5">
+<body  class="h-full text-white flex flex-col bg-gray-900">
+  <main id="app" class="flex-1 p-5">
     <h1 class="text-4xl font-bold text-center mb-5">GitHelm</h1>
     <div id="login-container" class="flex justify-center mb-5">
       <button id="github-login"
@@ -26,7 +28,7 @@
         Logout
       </button>
     </div>
-   
+
     <div id="authorized">
       <div id="tabs" class="flex justify-center mb-4 md:hidden">
         <button id="tab-pull-requests" class="tab-button active">Pull Requests</button>
@@ -50,11 +52,27 @@
         </section>
       </div>
     </div>
-  </main>
- <footer class="p-4 bg-gray-800 flex justify-between items-center">
-   <p class="text-sm hover:underline" target="_blank">Made with ❤️ by <a href="https://github.com/steven-harris">Steven Harris</a></p>
-   <a href="https://www.flaticon.com/free-icons/rudder" title="rudder icons" class="hover:underline" target="_blank"></a>Rudder icons created by Flat Icons </a>
+  <footer class="p-4 bg-gray-800 flex justify-between items-center">
+    <p class="text-sm hover:underline" target="_blank">Made with ❤️ by <a href="https://github.com/steven-harris">Steven
+        Harris</a></p>
+    <a href="https://www.flaticon.com/free-icons/rudder" title="rudder icons" class="hover:underline"
+      target="_blank"></a>Rudder icons created by Flat Icons </a>
   </footer>
+  <div id="pwa-toast" role="alert" aria-labelledby="toast-message">
+    <div class="message">
+      <span id="toast-message"></span>
+    </div>
+    <div class="buttons">
+      <button id="pwa-refresh" type="button">
+        Reload
+      </button>
+      <button id="pwa-close" type="button">
+        Close
+      </button>
+    </div>
+  </div>
+  </main>
+
 </body>
 
 </html>
