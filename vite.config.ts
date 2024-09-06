@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
-  plugins: [VitePWA({
+  plugins: [
+    VitePWA({
     registerType: 'autoUpdate',
     injectRegister: false,
 
@@ -9,7 +10,7 @@ export default defineConfig({
       name: 'githelm',
       short_name: 'githelm',
       description: 'A repository monitoring application to manage pull requests and actions',
-      theme_color: '#51cbee',
+      theme_color: '#111827',
 
       icons: [{
         src: 'pwa-64x64.png',

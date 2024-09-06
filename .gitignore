@@ -20,6 +20,9 @@ public/*.webmanifest
 public/index.html
 !public/*.svg
 
+# Firebase 
+.firebase/
+
 # Local environment files
 .env
 .env.local
