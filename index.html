@@ -15,7 +15,7 @@
   <script defer type="module" src="src/main.ts"></script>
 </head>
 
-<body  class="h-full text-white flex flex-col bg-gray-900">
+<body class="h-full text-white flex flex-col bg-gray-900">
   <main id="app" class="flex-1 p-5">
     <h1 class="text-4xl font-bold text-center mb-5">GitHelm</h1>
     <div id="login-container" class="flex justify-center mb-5">
@@ -52,26 +52,26 @@
         </section>
       </div>
     </div>
+    <div id="pwa-toast" role="alert" aria-labelledby="toast-message">
+      <div class="message">
+        <span id="toast-message"></span>
+      </div>
+      <div class="buttons">
+        <button id="pwa-refresh" type="button">
+          Reload
+        </button>
+        <button id="pwa-close" type="button">
+          Close
+        </button>
+      </div>
+    </div>
+  </main>
   <footer class="p-4 bg-gray-800 flex justify-between items-center">
     <p class="text-sm hover:underline" target="_blank">Made with ❤️ by <a href="https://github.com/steven-harris">Steven
         Harris</a></p>
     <a href="https://www.flaticon.com/free-icons/rudder" title="rudder icons" class="hover:underline"
       target="_blank"></a>Rudder icons created by Flat Icons </a>
   </footer>
-  <div id="pwa-toast" role="alert" aria-labelledby="toast-message">
-    <div class="message">
-      <span id="toast-message"></span>
-    </div>
-    <div class="buttons">
-      <button id="pwa-refresh" type="button">
-        Reload
-      </button>
-      <button id="pwa-close" type="button">
-        Close
-      </button>
-    </div>
-  </div>
-  </main>
 
 </body>
 

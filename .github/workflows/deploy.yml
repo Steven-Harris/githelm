@@ -23,9 +23,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install firebase tools
-        run: pnpm add -g firebase-tools 
-
       - name: Build project
         run: pnpm run build
 

@@ -39,5 +39,6 @@ const firebaseConfig = {
     measurementId: "G-7HWYDWLL6P"
 };
 
-const app = document.querySelector<HTMLDivElement>('#app')!
+const app = document.getElementById('app')!
+console.log(app)
 initPWA(app);
