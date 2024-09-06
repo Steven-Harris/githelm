@@ -31,6 +31,7 @@
     "@types/node": "^22.5.4",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-react": "^4.3.1",
+    "firebase-tools": "^13.16.0",
     "typescript": "^5.5.4",
     "vite": "^5.4.3",
     "vite-plugin-pwa": "^0.20.5",
