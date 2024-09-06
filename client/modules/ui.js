@@ -14,19 +14,26 @@ export async function init() {
 }
 
 export async function loggedInCheck() {
+  console.log('Checking if user is logged in');
   if (sessionStorage.getItem('GITHUB_TOKEN') === null) {
+    console.log('User is logged in');
     return;
   }
-  await showLogin();
+  await showUI();
 }
 
-export async function showLogin() {
-  document.getElementById('authorized').classList.remove('hidden');
-  document.getElementById('login-container').classList.add('hidden');
+export async function showUI() {
+  // document.getElementById('authorized').classList.remove('hidden');
+  document.getElementById('github-login').classList.add('hidden');
+  document.getElementById('github-logout').classList.remove('hidden');
   handleTabs();
   await init();
 }
 
+export function logout() {
+  sessionStorage.removeItem('GITHUB_TOKEN');
+  window.location.reload();
+}
 
 async function fetchDataAndUpdateUI() {
   const prs = document.getElementById("pull-requests");

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-900">
+<html lang="en">
 
 <head>
   <title>GitHelm</title>
@@ -13,16 +13,21 @@
   <script defer type="module" src="main.js"></script>
 </head>
 
-<body class="h-full text-white flex flex-col">
-  <main class="flex-1 p-10">
-    <h1 class="text-4xl font-bold text-center mb-10">GitHelm</h1>
-    <div id="login-container" class="flex justify-center h-full">
+<body class="h-full text-white flex flex-col bg-gray-900">
+  <main class="flex-1 p-5">
+    <h1 class="text-4xl font-bold text-center mb-5">GitHelm</h1>
+    <div id="login-container" class="flex justify-center mb-5">
       <button id="github-login"
         class="bg-gray-700 hover:bg-blue-400 hover:text-gray-900 rounded-lg transition-colors duration-300 text-sm w-48 h-12 glow">
         Login with GitHub
       </button>
+      <button id="github-logout"
+        class="hidden bg-gray-700 hover:bg-blue-400 hover:text-gray-900 rounded-lg transition-colors duration-300 text-sm w-48 h-12 glow">
+        Logout
+      </button>
     </div>
-    <div id="authorized" class="hidden">
+   
+    <div id="authorized">
       <div id="tabs" class="flex justify-center mb-4 md:hidden">
         <button id="tab-pull-requests" class="tab-button active">Pull Requests</button>
         <button id="tab-actions" class="tab-button">Actions</button>
