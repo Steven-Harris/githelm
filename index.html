@@ -15,13 +15,13 @@
 <body class="h-full text-white flex flex-col bg-gray-900">
   <header class="flex justify-between items-center p-5 -pb-5">
     <h1 class="text-4xl font-bold">GitHelm</h1>
-    <div id="login-container" class="flex space-x-4">
-      <button id="github-login"
-        class="bg-gray-700 hover:bg-sky-400 hover:text-gray-900 rounded-lg transition-colors duration-300 text-sm w-48 h-12">
+    <div id="buttons" class="flex space-x-4">
+      <button id="login-button"
+        class="nav-button">
         Login with GitHub
       </button>
-      <button id="github-logout"
-        class="hidden bg-gray-700 hover:bg-blue-400 hover:text-gray-900 rounded-lg transition-colors duration-300 text-sm w-48 h-12 ">
+      <button id="logout-button"
+        class="hidden nav-button">
         Logout
       </button>
     </div>
@@ -32,7 +32,7 @@
         <button id="tab-pull-requests" class="tab-button active">Pull Requests</button>
         <button id="tab-actions" class="tab-button">Actions</button>
       </div>
-      <div id="content" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="content grid grid-cols-1 md:grid-cols-2 gap-4">
         <section id="pull-requests-section" class="glow bg-gray-800 p-5 rounded-lg">
           <h2 class="text-xl font-bold mb-4">Pull Requests</h2>
           <div id="pull-requests"></div>
@@ -65,7 +65,9 @@
     </div>
   </main>
   <footer class="p-4 bg-gray-800 flex justify-between items-center">
-    <p>&copy; 2023 GitHelm. All rights reserved.</p>
+    <p>&copy; <span id="copyright">
+      <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
+    </span> GitHelm. All rights reserved.</p>
     <a href="https://www.flaticon.com/free-icons/rudder" title="rudder icons" class="hover:underline"
       target="_blank"></a>Rudder icons created by Flat Icons </a>
   </footer>

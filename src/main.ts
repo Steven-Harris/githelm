@@ -6,11 +6,13 @@ import './style.css'
 const firebase = new Firebase();
 document.addEventListener("DOMContentLoaded", async function () {
     await loadContent(Firebase.signedIn());
-    document.getElementById('github-login')?.addEventListener('click', async () => {
+    document.getElementById('login-button')?.addEventListener('click', async () => {
         await loadContent(await firebase.signIn());
     });
+
     initPWA(document.getElementById('app')!);
 });
+
 
 const originalFetch = window.fetch;
 window.fetch = async (...args) => {

@@ -1,117 +1,123 @@
+/* Import Statements */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Global Styles */
 html, body {
   height: 100%;
   margin: 0;
 }
 
-
-.glow {
-    box-shadow: 0 0 8px rgba(81, 203, 238, 1);
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
+/* Component Styles */
+.nav-button {
+  background-color: #374151;
+  border-radius: 0.5rem;
+  transition: background-color 300ms, color 300ms;
+  font-size: 0.875rem;
+  width: 12rem;
+  height: 3rem;
+  box-shadow: 0 0 8px rgba(81, 203, 238, 1); /* glow */
+}
 
-    to {
-        transform: rotate(360deg);
-    }
+.nav-button:hover {
+  background-color: #38bdf8; /* hover:bg-sky-400 */
+  color: #1f2937; /* hover:text-gray-900 */
+}
+
+.glow {
+  box-shadow: 0 0 8px rgba(81, 203, 238, 1);
 }
 
 .spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top-color: rgba(81, 203, 238, 1);
-    border-radius: 50%;
-    width: 2rem;
-    height: 2rem;
-    animation: spin 1s linear infinite;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: rgba(81, 203, 238, 1);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  animation: spin 1s linear infinite;
 }
 
-#content {
-    height: calc(100vh - 10rem);
+.content {
+  height: calc(100vh - 10rem);
 }
 
 .link {
-    text-decoration: none;
-    color: inherit;
+  text-decoration: none;
+  color: inherit;
 }
 
 .link:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
 
 .tab-button {
-    background-color: transparent;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    cursor: pointer;
-    margin: 0 5px;
-    border-bottom: 2px solid transparent;
-    transition: border-color 0.3s;
+  background-color: transparent;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  cursor: pointer;
+  margin: 0 5px;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s;
 }
 
 .tab-button.active {
-    border-bottom: 2px solid #2d3748;
-}
-
-@media (max-width: 768px) {
-    #tabs {
-        display: flex;
-    }
-
-    #content {
-        display: block;
-    }
+  border-bottom: 2px solid #2d3748;
 }
 
 #pr-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 #pr-item .link {
-    flex-grow: 1;
-    max-width: 70%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  flex-grow: 1;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .reviews-container {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
+  display: flex;
+  align-items: center;
+  margin-left: auto;
 }
 
 .avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin-right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 8px;
 }
 
 .review-state {
-    margin-right: 8px;
+  margin-right: 8px;
 }
 
 .review-state.approved {
-    color: #1E90FF;
+  color: #1E90FF;
 }
 
 .review-state.not-approved {
-    color: #FFA500;
+  color: #FFA500;
 }
 
 .more-approvers {
-    color: white;
-    margin-left: 8px;
-    font-size: 0.875rem;
+  color: white;
+  margin-left: 8px;
+  font-size: 0.875rem;
 }
 
 #pwa-toast {
@@ -128,12 +134,15 @@ html, body {
   box-shadow: 3px 4px 5px 0 #8885;
   display: grid;
 }
+
 #pwa-toast .message {
   margin-bottom: 8px;
 }
+
 #pwa-toast .buttons {
   display: flex;
 }
+
 #pwa-toast button {
   border: 1px solid #8885;
   outline: none;
@@ -141,12 +150,51 @@ html, body {
   border-radius: 2px;
   padding: 3px 10px;
 }
+
 #pwa-toast.show {
   visibility: visible;
 }
+
 button#pwa-refresh {
   display: none;
 }
+
 #pwa-toast.show.refresh button#pwa-refresh {
   display: block;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  #tabs {
+    display: flex;
+  }
+  #content {
+    display: block;
+  }
+  .nav-button {
+    box-shadow: none;
+    background-color: transparent;
+    transition: none;
+    width: 5rem;
+    height: 3rem;
+    margin-left: 1rem;;
+    margin-right: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-button::before {
+    content: '';
+    width: 1.5rem;
+    height: 1.5rem;
+    background-size: cover;
+  }
+  #login-button::before {
+    background-image: url('/path/to/login-icon.svg');
+  }
+  #logout-button::before {
+    background-image: url('/path/to/logout-icon.svg');
+  }
+  #settings-button::before {
+    background-image: url('/path/to/settings-icon.svg');
+  }
 }

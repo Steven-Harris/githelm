@@ -1,6 +1,6 @@
 
 import { load } from '../services';
-import { handleTabs, toggleLogin } from './elements';
+import { handleTabs, toggleLogin, removeLoadingIndicators, PULL_REQUESTS, ACTIONS_DIV, } from './elements';
 import { pullRequestTemplate, actionsTemplate } from './templates';
 let previousData: { [key: string]: { [key: string]: any } } = {};
 
@@ -16,12 +16,10 @@ export async function loadContent(isAuthorized: boolean) {
 }
 
 async function fetchDataAndUpdateUI() {
-  const prs = document.getElementById("pull-requests");
-  const actionsDiv = document.getElementById("actions");
   const results = await Promise.all(load());
 
   results.forEach(result => {
-    const container = result.type === 'pull-requests' ? prs : actionsDiv;
+    const container = result.type === 'pull-requests' ? PULL_REQUESTS : ACTIONS_DIV;
     const template = result.type === 'pull-requests' ? pullRequestTemplate : actionsTemplate;
     updateContent(container, result.repo, result.data, template);
   });
@@ -49,9 +47,3 @@ function updateContent(container: HTMLElement | null, repo: string, newData: { t
     }
   }
 }
-
-function removeLoadingIndicators() {
-  document.getElementById("loading-pulls")?.remove();
-  document.getElementById("loading-actions")?.remove();
-}
-
