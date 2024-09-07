@@ -3,7 +3,6 @@ import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth, signInWithPopup, GithubAuthProvider } from 'firebase/auth';
 import { initPWA } from './pwa.ts'
-import './styles.scss';
 
 document.addEventListener("DOMContentLoaded", async function () {
     await loggedInCheck();

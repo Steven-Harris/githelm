@@ -32,9 +32,10 @@
 .link {
     text-decoration: none;
     color: inherit;
-    :hover {
-        text-decoration: underline;
-    }
+}
+
+.link:hover {
+    text-decoration: underline;
 }
 
 .tab-button {
@@ -66,13 +67,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    .link {
-        flex-grow: 1;
-        max-width: 70%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+}
+
+#pr-item .link {
+    flex-grow: 1;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .reviews-container {
@@ -90,13 +92,14 @@
 
 .review-state {
     margin-right: 8px;
-    .approved {
-        color: #1E90FF;
-    }
+}
 
-    .not-approved {
-        color: #FFA500;
-    }
+.review-state.approved {
+    color: #1E90FF;
+}
+
+.review-state.not-approved {
+    color: #FFA500;
 }
 
 .more-approvers {
@@ -106,44 +109,38 @@
 }
 
 #pwa-toast {
-    visibility: hidden;
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    margin: 16px;
-    padding: 12px;
-    border: 1px solid #8885;
-    border-radius: 4px;
-    z-index: 1;
-    text-align: left;
-    box-shadow: 3px 4px 5px 0 #8885;
-    display: grid;
-
-    .message {
-        margin-bottom: 8px;
-    }
-
-    .buttons {
-        display: flex;
-    }
-
-    button {
-        border: 1px solid #8885;
-        outline: none;
-        margin-right: 5px;
-        border-radius: 2px;
-        padding: 3px 10px;
-    }
-    .show {
-        visibility: visible;
-    }
-    .show.refresh button#pwa-refresh {
-        display: block;
-    }
-
-    button#pwa-refresh {
-        display: none;
-    }
-
+  visibility: hidden;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  margin: 16px;
+  padding: 12px;
+  border: 1px solid #8885;
+  border-radius: 4px;
+  z-index: 1;
+  text-align: left;
+  box-shadow: 3px 4px 5px 0 #8885;
+  display: grid;
 }
-
+#pwa-toast .message {
+  margin-bottom: 8px;
+}
+#pwa-toast .buttons {
+  display: flex;
+}
+#pwa-toast button {
+  border: 1px solid #8885;
+  outline: none;
+  margin-right: 5px;
+  border-radius: 2px;
+  padding: 3px 10px;
+}
+#pwa-toast.show {
+  visibility: visible;
+}
+button#pwa-refresh {
+  display: none;
+}
+#pwa-toast.show.refresh button#pwa-refresh {
+  display: block;
+}
