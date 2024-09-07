@@ -2,7 +2,10 @@
 import { load } from '../services';
 import { handleTabs, toggleLogin, removeLoadingIndicators, PULL_REQUESTS, ACTIONS_DIV, } from './elements';
 import { pullRequestTemplate, actionsTemplate } from './templates';
-let previousData: { [key: string]: { [key: string]: any } } = {};
+let previousData: {
+  pullRequests: { [org: string]: { [repo: string]: any } },
+  actions: { [org: string]: { [repo: string]: any } }
+} = { pullRequests: {}, actions: {} };
 
 export async function loadContent(isAuthorized: boolean) {
   toggleLogin(isAuthorized);
@@ -18,31 +21,41 @@ export async function loadContent(isAuthorized: boolean) {
 async function fetchDataAndUpdateUI() {
   const results = await Promise.all(load());
 
-  results.forEach(result => {
-    const container = result.type === 'pull-requests' ? PULL_REQUESTS : ACTIONS_DIV;
-    const template = result.type === 'pull-requests' ? pullRequestTemplate : actionsTemplate;
-    updateContent(container, result.repo, result.data, template);
-  });
-
+  results.forEach(updateContent);
   removeLoadingIndicators();
-
-  previousData = results.reduce((acc, result) => {
-    acc[result.repo] = acc[result.repo] || {};
-    acc[result.repo][result.type] = result.data;
-    return acc;
-  }, {});
+  saveState(results);
 }
 
-function updateContent(container: HTMLElement | null, repo: string, newData: { type: string }, templateFunction: any) {
-  const previousRepoData = previousData[repo] && previousData[repo][newData.type];
-  if (JSON.stringify(previousRepoData) !== JSON.stringify(newData)) {
-    const existingDiv = container?.querySelector(`[data-repo="${repo}"]`);
+function saveState(results: any[]) {
+  previousData = results.reduce((acc, result) => {
+    if (result.type === 'pull-requests') {
+      if (!acc.pullRequests[result.org]) {
+        acc.pullRequests[result.org] = {};
+      }
+      acc.pullRequests[result.org][result.repo] = result.data;
+      return acc;
+    }
+    if (!acc.actions[result.org]) {
+      acc.actions[result.org] = {};
+    }
+    acc.actions[result.org][result.repo] = result.data;
+    return acc;
+  }, { pullRequests: {}, actions: {} });
+}
+
+function updateContent({ type, org, repo, data }: any) {
+  const container = type === 'pull-requests' ? PULL_REQUESTS : ACTIONS_DIV;
+  const template = type === 'pull-requests' ? pullRequestTemplate : actionsTemplate;
+  const previousRepoData = type === 'pull-requests' ? previousData.pullRequests[org]?.[repo] : previousData.actions[org]?.[repo];
+  if (JSON.stringify(previousRepoData) !== JSON.stringify(data)) {
+    const existingDiv = container?.querySelector(`[data-org="${org}"][data-repo="${repo}"]`);
     if (existingDiv) {
-      existingDiv.innerHTML = templateFunction(repo, newData);
+      existingDiv.innerHTML = template(repo, data);
     } else {
       const div = document.createElement("div");
+      div.setAttribute("data-org", org);
       div.setAttribute("data-repo", repo);
-      div.innerHTML = templateFunction(repo, newData);
+      div.innerHTML = template(repo, data);
       container?.appendChild(div);
     }
   }

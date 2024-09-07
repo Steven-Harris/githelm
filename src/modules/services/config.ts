@@ -1,92 +1,78 @@
 export const config = `
 {
-  "JHADigitalCore": {
-    "general-ledger-service": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": ""
-      },
-      "actionConfig": {
-        "enabled": true,
-        "filter": "deploy"
-      }
+  "pullRequests": [
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-service",
+      "filter": ""
     },
-    "general-ledger-translation-service": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": ""
-      },
-      "actionConfig": {
-        "enabled": true,
-        "filter": "deploy"
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-translation-service",
+      "filter": ""
     },
-    "general-ledger-transfers-processor": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": ""
-      },
-      "actionConfig": {
-        "enabled": true,
-        "filter": "deploy"
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-transfers-processor",
+      "filter": ""
     },
-    "general-ledger-manual-journal-processor": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": ""
-      },
-      "actionConfig": {
-        "enabled": true,
-        "filter": "deploy"
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-manual-journal-processor",
+      "filter": ""
     },
-    "general-ledger-import-service": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": ""
-      },
-      "actionConfig": {
-        "enabled": true,
-        "filter": "deploy"
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-import-service",
+      "filter": ""
     },
-    "environments": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": "label:general-ledger"
-      },
-      "actionConfig": {
-        "enabled": false
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "environments",
+      "filter": "label:general-ledger"
     },
-    "k8s-apps": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": "label:general-ledger"
-      },
-      "actionConfig": {
-        "enabled": false
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "k8s-apps",
+      "filter": "label:general-ledger"
     },
-    "digitalcore-contracts": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": "label:general-ledger"
-      },
-      "actionConfig": {
-        "enabled": false
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "digitalcore-contracts",
+      "filter": "label:general-ledger"
     },
-    "digitalcore-messages-doc": {
-      "pullRequestConfig": {
-        "enabled": true,
-        "filter": "label:general-ledger"
-      },
-      "actionConfig": {
-        "enabled": false
-      }
+    {
+      "org": "JHADigitalCore",
+      "repo": "digitalcore-messages-doc",
+      "filter": "label:general-ledger"
     }
-  }
+  ],
+  "actions": [
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-service",
+      "filter": "deploy"
+    },
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-translation-service",
+      "filter": "deploy"
+    },
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-transfers-processor",
+      "filter": "deploy"
+    },
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-manual-journal-processor",
+      "filter": "deploy"
+    },
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-import-service",
+      "filter": "deploy"
+    }
+  ]
 }
 `

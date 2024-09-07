@@ -1,24 +1,19 @@
-import { PullRequestConfig, ActionConfig } from './models';
+import { RepoConfig, Config } from './models';
 import { config } from './config';
+
+
 export function load(): Promise<any>[] {
-  const configObj = JSON.parse(config);
-  const promises: Promise<any>[] = [];
+  const configObj: Config = JSON.parse(config);
+  const { pullRequests, actions } = configObj;
 
-  for (const org in configObj) {
-    for (const repo in configObj[org]) {
-      const prConfig: PullRequestConfig = configObj[org][repo].pullRequestConfig;
-      const actionsConfig: ActionConfig = configObj[org][repo].actionConfig;
-
-      if (prConfig.enabled) {
-        promises.push(getPullRequests(org, repo, prConfig.filter));
-      }
-
-      if (actionsConfig.enabled) {
-        promises.push(getActions(org, repo, actionsConfig.filter));
-      }
-    }
-  }
-  return promises;
+  return [
+    ...pullRequests.map((prConfig: RepoConfig) =>
+      getPullRequests(prConfig.org, prConfig.repo, prConfig.filter)
+    ),
+    ...actions.map((actionConfig: RepoConfig) =>
+      getActions(actionConfig.org, actionConfig.repo, actionConfig.filter)
+    )
+  ];
 }
 
 async function getPullRequests(org: string, repo: string, filter: string) {
@@ -32,7 +27,7 @@ async function getPullRequests(org: string, repo: string, filter: string) {
       item.reviews = reviews;
     }
 
-    return { type: 'pull-requests', repo, data: results };
+    return { type: 'pull-requests', repo, org, data: results };
   } catch (error) {
     console.error('Error fetching pull requests:', error);
   }
@@ -49,7 +44,7 @@ async function getActions(org: string, repo: string, filter: string) {
       run.jobs = jobs.jobs;
     }
 
-    return { type: 'actions', repo, data: repoRun };
+    return { type: 'actions', repo, org, data: repoRun };
   } catch (error) {
     console.error('Error fetching actions:', error);
   }
