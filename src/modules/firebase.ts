@@ -38,8 +38,16 @@ export class Firebase {
       }
       return true;
     } catch (error) {
-      return console.error('Error during GitHub authentication:', error);
+      return false;
     }
   }
 
+  public static signedIn() {
+    return sessionStorage.getItem('GITHUB_TOKEN') !== null;
+  }
+
+  public static signOut() {
+    sessionStorage.removeItem('GITHUB_TOKEN');
+    sessionStorage.removeItem('FIREBASE_TOKEN');
+  }
 }

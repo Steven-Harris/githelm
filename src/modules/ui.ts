@@ -1,45 +1,19 @@
 
-import { load } from './github.js';
-import { handleTabs } from './tabs.js';
-import { pullRequestTemplate, actionsTemplate } from './templates.js';
-import { config } from './config.js';
-import { Firebase } from './firebase.js';
+import { load } from './github';
+import { handleTabs, toggleLogin } from './elements';
+import { pullRequestTemplate, actionsTemplate } from './templates';
+import { config } from './config';
 let previousData: { [key: string]: { [key: string]: any } } = {};
 
-export async function loadContent() {
-  await fetchDataAndUpdateUI();
-  document.getElementById("loading-pulls")?.remove()
-  document.getElementById("loading-actions")?.remove()
-  // TODO: Uncomment to enable auto-refresh
-  //setInterval(fetchDataAndUpdateUI, 60 * 1000);
-}
-
-export async function initSite(firebase: Firebase) {
-  document.getElementById('github-login')?.addEventListener('click', async () => {
-    const loggedIn = await firebase.signIn();
-    if (loggedIn) {
-      await showUI();
-    }
-  });
-  console.log('Checking if user is logged in');
-  if (sessionStorage.getItem('GITHUB_TOKEN') === null) {
-    console.log('User is logged in');
+export async function loadContent(isAuthorized: boolean) {
+  toggleLogin(isAuthorized);
+  if (!isAuthorized) {
     return;
   }
-  await showUI();
-}
-
-export async function showUI() {
-  document.getElementById('authorized')?.classList.remove('hidden');
-  document.getElementById('github-login')?.classList.add('hidden');
-  document.getElementById('github-logout')?.classList.remove('hidden');
   handleTabs();
-  await loadContent();
-}
-
-export function logout() {
-  sessionStorage.removeItem('GITHUB_TOKEN');
-  window.location.reload();
+  await fetchDataAndUpdateUI();
+  // TODO: Uncomment to enable auto-refresh
+  //setInterval(fetchDataAndUpdateUI, 60 * 1000);
 }
 
 async function fetchDataAndUpdateUI() {
@@ -47,13 +21,13 @@ async function fetchDataAndUpdateUI() {
   const actionsDiv = document.getElementById("actions");
   const results = await Promise.all(load(JSON.parse(config)));
 
-  document.getElementById("loading-pulls")?.remove();
-  document.getElementById("loading-actions")?.remove();
-  console.log(results)
+  results.forEach(result => {
+    const container = result.type === 'pull-requests' ? prs : actionsDiv;
+    const template = result.type === 'pull-requests' ? pullRequestTemplate : actionsTemplate;
+    updateContent(container, result.repo, result.data, template);
+  });
 
-  results.forEach(result => result.type === 'pull-requests'
-    ? updateContent(prs, result.repo, result.data, pullRequestTemplate)
-    : updateContent(actionsDiv, result.repo, result.data, actionsTemplate));
+  removeLoadingIndicators();
 
   previousData = results.reduce((acc, result) => {
     acc[result.repo] = acc[result.repo] || {};
@@ -62,7 +36,7 @@ async function fetchDataAndUpdateUI() {
   }, {});
 }
 
-function updateContent(container: HTMLElement | null, repo: string, newData: { type: string | number; }, templateFunction: { (repo: any, pullRequests: any): string; (repo: any, actions: any): string; (arg0: any, arg1: any): string; }) {
+function updateContent(container: HTMLElement | null, repo: string, newData: { type: string }, templateFunction: any) {
   const previousRepoData = previousData[repo] && previousData[repo][newData.type];
   if (JSON.stringify(previousRepoData) !== JSON.stringify(newData)) {
     const existingDiv = container?.querySelector(`[data-repo="${repo}"]`);
@@ -76,3 +50,9 @@ function updateContent(container: HTMLElement | null, repo: string, newData: { t
     }
   }
 }
+
+function removeLoadingIndicators() {
+  document.getElementById("loading-pulls")?.remove();
+  document.getElementById("loading-actions")?.remove();
+}
+

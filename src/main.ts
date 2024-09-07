@@ -1,10 +1,23 @@
-import { Firebase } from './modules/firebase.ts';
-import { initSite } from './modules/ui.js';
-import { initPWA } from './pwa.ts'
+import { Firebase } from './modules/firebase';
+import { loadContent } from './modules/ui';
+import { initPWA } from './pwa'
 import './style.css'
 
 const firebase = new Firebase();
 document.addEventListener("DOMContentLoaded", async function () {
-    await initSite(firebase);
+    await loadContent(Firebase.signedIn());
+    document.getElementById('github-login')?.addEventListener('click', async () => {
+        await loadContent(await firebase.signIn());
+    });
     initPWA(document.getElementById('app')!);
 });
+
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+    const response = await originalFetch(...args);
+    if (response.status === 401 || response.status === 403) {
+        Firebase.signOut();
+        await loadContent(false);
+    }
+    return response;
+};

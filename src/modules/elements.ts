@@ -1,3 +1,9 @@
+export function toggleLogin(isAuthorized: boolean) {
+  document.getElementById('authorized')?.classList.toggle('hidden', !isAuthorized);
+  document.getElementById('github-login')?.classList.toggle('hidden', isAuthorized);
+  document.getElementById('github-logout')?.classList.toggle('hidden', !isAuthorized);
+}
+
 export function handleTabs() {
   const tabPullRequests = document.getElementById('tab-pull-requests');
   const tabActions = document.getElementById('tab-actions');
