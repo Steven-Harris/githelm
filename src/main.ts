@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
 import { getAuth, signInWithPopup, GithubAuthProvider } from 'firebase/auth';
 import { initPWA } from './pwa.ts'
-
+import './style.css'
 document.addEventListener("DOMContentLoaded", async function () {
     await loggedInCheck();
     const app = initializeApp(firebaseConfig);
@@ -40,5 +40,4 @@ const firebaseConfig = {
 };
 
 const app = document.getElementById('app')!
-console.log(app)
 initPWA(app);

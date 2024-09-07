@@ -18,6 +18,7 @@ public/*.png
 public/*.ico
 public/*.webmanifest
 public/index.html
+public/*.br
 !public/*.svg
 
 # Firebase 
