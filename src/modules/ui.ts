@@ -3,9 +3,10 @@ import { load } from './github.js';
 import { handleTabs } from './tabs.js';
 import { pullRequestTemplate, actionsTemplate } from './templates.js';
 import { config } from './config.js';
+import { Firebase } from './firebase.js';
 let previousData: { [key: string]: { [key: string]: any } } = {};
 
-export async function init() {
+export async function loadContent() {
   await fetchDataAndUpdateUI();
   document.getElementById("loading-pulls")?.remove()
   document.getElementById("loading-actions")?.remove()
@@ -13,7 +14,13 @@ export async function init() {
   //setInterval(fetchDataAndUpdateUI, 60 * 1000);
 }
 
-export async function loggedInCheck() {
+export async function initSite(firebase: Firebase) {
+  document.getElementById('github-login')?.addEventListener('click', async () => {
+    const loggedIn = await firebase.signIn();
+    if (loggedIn) {
+      await showUI();
+    }
+  });
   console.log('Checking if user is logged in');
   if (sessionStorage.getItem('GITHUB_TOKEN') === null) {
     console.log('User is logged in');
@@ -23,11 +30,11 @@ export async function loggedInCheck() {
 }
 
 export async function showUI() {
-  // document.getElementById('authorized').classList.remove('hidden');
+  document.getElementById('authorized')?.classList.remove('hidden');
   document.getElementById('github-login')?.classList.add('hidden');
   document.getElementById('github-logout')?.classList.remove('hidden');
   handleTabs();
-  await init();
+  await loadContent();
 }
 
 export function logout() {
