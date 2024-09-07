@@ -1,9 +1,11 @@
 export function pullRequestTemplate(repo: any, pullRequests: { items: any[]; }) {
+  console.log(pullRequests);
   return `
         <h3 class="text-lg font-semibold">${repo}</h3>
         <ul>${pullRequests.items.map(pr => `
             <li class="mb-2 flex flex-col">
                 <div id="pr-item" class="p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center">
+                    <img src="${pr.user.avatar_url}" class="avatar" alt="${pr.user.login}" />
                     <a href="${pr.html_url}" target="_blank" class="link flex-grow max-w-70">${pr.title}</a>
                     <span class="reviews-container flex items-center">
                       ${pr.reviews.length < 3
