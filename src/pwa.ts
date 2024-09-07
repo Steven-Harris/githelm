@@ -10,24 +10,25 @@ export function initPWA(app: Element) {
 
     const refreshCallback = () => refreshSW?.(true)
 
-    function hidePwaToast (raf: boolean) {
+    function hidePwaToast(raf: boolean) {
         if (raf) {
             requestAnimationFrame(() => hidePwaToast(false))
             return
         }
-        if (pwaToast.classList.contains('refresh'))
+        if (pwaToast.classList.contains('refresh')) {
             pwaRefreshBtn.removeEventListener('click', refreshCallback)
-
+        }
         pwaToast.classList.remove('show', 'refresh')
     }
     function showPwaToast(offline: boolean) {
-        if (!offline)
-            pwaRefreshBtn.addEventListener('click', refreshCallback)
+        if (offline) return;
+        pwaRefreshBtn.addEventListener('click', refreshCallback)
         requestAnimationFrame(() => {
             hidePwaToast(false)
-            if (!offline)
-                pwaToast.classList.add('refresh')
-            pwaToast.classList.add('show')
+            if (!offline) {
+                pwaToast.classList.add('refresh');
+            }
+            pwaToast.classList.add('show');
         })
     }
 
@@ -66,9 +67,6 @@ export function initPWA(app: Element) {
     })
 }
 
-/**
- * This function will register a periodic sync check every hour, you can modify the interval as needed.
- */
 function registerPeriodicSync(period: number, swUrl: string, r: ServiceWorkerRegistration) {
     if (period <= 0) return
 
