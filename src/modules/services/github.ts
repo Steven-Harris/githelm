@@ -1,6 +1,7 @@
-import { Config, PullRequestConfig, ActionConfig } from './models';
-
-export function load(configObj: Config): Promise<any>[] {
+import { PullRequestConfig, ActionConfig } from './models';
+import { config } from './config';
+export function load(): Promise<any>[] {
+  const configObj = JSON.parse(config);
   const promises: Promise<any>[] = [];
 
   for (const org in configObj) {

@@ -1,4 +1,4 @@
-import { Firebase } from './modules/firebase';
+import { Firebase } from './modules/services';
 import { loadContent } from './modules/ui';
 import { initPWA } from './pwa'
 import './style.css'

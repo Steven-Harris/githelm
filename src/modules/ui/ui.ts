@@ -1,8 +1,7 @@
 
-import { load } from './github';
+import { load } from '../services';
 import { handleTabs, toggleLogin } from './elements';
 import { pullRequestTemplate, actionsTemplate } from './templates';
-import { config } from './config';
 let previousData: { [key: string]: { [key: string]: any } } = {};
 
 export async function loadContent(isAuthorized: boolean) {
@@ -19,7 +18,7 @@ export async function loadContent(isAuthorized: boolean) {
 async function fetchDataAndUpdateUI() {
   const prs = document.getElementById("pull-requests");
   const actionsDiv = document.getElementById("actions");
-  const results = await Promise.all(load(JSON.parse(config)));
+  const results = await Promise.all(load());
 
   results.forEach(result => {
     const container = result.type === 'pull-requests' ? prs : actionsDiv;
