@@ -7,6 +7,26 @@
 html, body {
   height: 100%;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+  overflow: auto;
+  padding-top: 1rem; 
+}
+
+header, #tabs, #pull-request-header, #actions-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #1a202c; /* Tailwind bg-gray-900 */
 }
 
 @keyframes spin {
@@ -106,6 +126,7 @@ html, body {
   margin-right: 8px;
 }
 
+
 .review-state.approved {
   color: #1E90FF;
 }
@@ -166,11 +187,25 @@ button#pwa-refresh {
 /* Media Queries */
 @media (max-width: 768px) {
   #tabs {
-    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #1a202c; /* Tailwind bg-gray-900 */
+    width: 100vw; /* Full viewport width */
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: -50vw; /* Negative margin to break out of the parent container */
+    margin-right: -55vw; /* Negative margin to break out of the parent container */
   }
   #content {
     display: block;
   }
+  .reviews-container {
+    overflow-x: auto; 
+    word-wrap: break-word;
+    overflow-x: hidden;
+  }
+
   .nav-button {
     box-shadow: none;
     background-color: transparent;
