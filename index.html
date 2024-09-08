@@ -26,13 +26,13 @@
       </button>
     </div>
   </header>
-  <main id="app" class="flex-1 px-5 overflow-auto">
+  <main id="app" class="flex-1 px-5">
     <div id="authorized" class="hidden">
       <div id="tabs" class="flex justify-center mb-4 md:hidden sticky top-0 z-10 bg-gray-900 lg:w-full">
         <button id="tab-pull-requests" class="tab-button active">Pull Requests</button>
         <button id="tab-actions" class="tab-button">Actions</button>
       </div>
-      <div class="content grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="content" class="content grid grid-cols-1 md:grid-cols-2 gap-4">
         <section id="pull-requests-section" class="glow bg-gray-800 p-5 rounded-lg">
           <h2 class="text-xl font-bold mb-4 lg:sticky top-0 z-10 bg-gray-800">Pull Requests</h2>
           <div id="pull-requests"></div>
@@ -64,7 +64,7 @@
       </div>
     </div>
   </main>
-  <footer class="p-4 bg-gray-800 flex justify-between items-center">
+  <footer class="p-1 bg-gray-800 flex justify-between items-center">
     <p>&copy; <span id="copyright">
       <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
     </span> GitHelm. All rights reserved.</p>

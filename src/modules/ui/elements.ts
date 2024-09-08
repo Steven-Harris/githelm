@@ -44,6 +44,6 @@ function switchTab(activeTab: HTMLElement | null) {
   } else {
     ACTIONS_SECTION?.classList.remove('hidden');
     PULL_REQUESTS_SECTION?.classList.add('hidden');
-    PULL_REQUESTS_SECTION?.classList.remove('active');
+    TAB_PULL_REQUESTS?.classList.remove('active');
   }
 }

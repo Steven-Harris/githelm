@@ -9,16 +9,14 @@ const firebase = new Firebase();
 async function updateLocalStorageAndLoadContent() {
     await fetchDataAndSaveToLocalStorage();
     const updatedData = localStorage.getItem('SITE_DATA');
-    if (updatedData) {
-        await loadContent(JSON.parse(updatedData));
-    }
+    if (!updatedData) { return; }
+    await loadContent(JSON.parse(updatedData));
 }
 
 async function handleLogin() {
     const signedIn = await firebase.signIn();
-    if (signedIn) {
-        await updateLocalStorageAndLoadContent();
-    }
+    if (!signedIn) { return; }
+    await updateLocalStorageAndLoadContent();
 }
 
 async function handleLogout() {
@@ -41,17 +39,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     const localStorageData = localStorage.getItem('SITE_DATA');
 
     setInterval(async () => {
-        if (isSignedIn) {
-            await updateLocalStorageAndLoadContent();
-        }
+        if (!isSignedIn) { return; }
+        await updateLocalStorageAndLoadContent();
     }, 60 * 1000);
 
-    if (isSignedIn) {
-        if (localStorageData) {
-            await loadContent(JSON.parse(localStorageData));
-        } else {
-            await updateLocalStorageAndLoadContent();
-        }
+    if (!isSignedIn) { return; }
+    if (localStorageData) {
+        await loadContent(JSON.parse(localStorageData));
+    } else {
+        await updateLocalStorageAndLoadContent();
     }
 });
 

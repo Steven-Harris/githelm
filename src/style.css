@@ -19,13 +19,11 @@ body {
 main {
   flex: 1;
   overflow: auto;
-  padding-top: 1rem; 
 }
 
 header, #tabs, #pull-request-header, #actions-header {
   position: sticky;
   top: 0;
-  z-index: 10;
   background-color: #1a202c; /* Tailwind bg-gray-900 */
 }
 
@@ -39,12 +37,15 @@ header, #tabs, #pull-request-header, #actions-header {
 }
 
 /* Component Styles */
+#content {
+    margin-top: 1rem;
+}
 .nav-button {
   background-color: #374151;
   border-radius: 0.5rem;
   transition: background-color 300ms, color 300ms;
   font-size: 0.875rem;
-  width: 12rem;
+  width: 10rem;
   height: 3rem;
   box-shadow: 0 0 8px rgba(81, 203, 238, 1); /* glow */
 }
@@ -210,7 +211,7 @@ button#pwa-refresh {
     box-shadow: none;
     background-color: transparent;
     transition: none;
-    width: 5rem;
+    width: 7rem;
     height: 3rem;
     margin-left: 1rem;;
     margin-right: 1rem;
