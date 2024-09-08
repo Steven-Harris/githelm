@@ -15,7 +15,7 @@ export class Firebase {
   private app: FirebaseApp;
 
   public get githubToken(): string | null {
-    return sessionStorage.getItem('GITHUB_TOKEN');
+    return localStorage.getItem('GITHUB_TOKEN');
   }
 
   constructor() {
@@ -32,9 +32,9 @@ export class Firebase {
       const token = await user?.getIdToken()
       const credential = GithubAuthProvider.credentialFromResult(result);
       console.log('GitHub authentication successful:', user, credential);
-      sessionStorage.setItem('FIREBASE_TOKEN', token);
+      localStorage.setItem('FIREBASE_TOKEN', token);
       if (credential?.accessToken) {
-        sessionStorage.setItem('GITHUB_TOKEN', credential?.accessToken);
+        localStorage.setItem('GITHUB_TOKEN', credential?.accessToken);
       }
       return true;
     } catch (error) {
@@ -43,11 +43,12 @@ export class Firebase {
   }
 
   public static signedIn() {
-    return sessionStorage.getItem('GITHUB_TOKEN') !== null;
+    return localStorage.getItem('GITHUB_TOKEN') !== null;
   }
 
   public static signOut() {
-    sessionStorage.removeItem('GITHUB_TOKEN');
-    sessionStorage.removeItem('FIREBASE_TOKEN');
+    localStorage.removeItem('GITHUB_TOKEN');
+    localStorage.removeItem('FIREBASE_TOKEN');
+    localStorage.removeItem('SITE_DATA');
   }
 }

@@ -1,5 +1,4 @@
 
-import { load } from '../services';
 import { handleTabs, toggleLogin, removeLoadingIndicators, PULL_REQUESTS, ACTIONS_DIV, } from './elements';
 import { pullRequestTemplate, actionsTemplate } from './templates';
 let previousData: {
@@ -7,24 +6,13 @@ let previousData: {
   actions: { [org: string]: { [repo: string]: any } }
 } = { pullRequests: {}, actions: {} };
 
-export async function loadContent(isAuthorized: boolean) {
-  toggleLogin(isAuthorized);
-  if (!isAuthorized) {
-    return;
-  }
+export async function loadContent(data: any) {
+  toggleLogin(true);
   handleTabs();
-  await fetchDataAndUpdateUI();
-  setInterval(fetchDataAndUpdateUI, 60 * 1000);
-}
-
-async function fetchDataAndUpdateUI() {
-  const results = await Promise.all(load());
-
-  results.forEach(updateContent);
+  data.forEach(updateContent);
   removeLoadingIndicators();
-  saveState(results);
+  saveState(data);
 }
-
 function saveState(results: any[]) {
   previousData = results.reduce((acc, result) => {
     if (result.type === 'pull-requests') {

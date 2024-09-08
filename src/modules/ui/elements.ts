@@ -11,7 +11,6 @@ export const ACTIONS_DIV = document.getElementById('actions');
 export const LOADING_PULLS = document.getElementById('loading-pulls');
 export const LOADING_ACTIONS = document.getElementById('loading-actions');
 
-
 export function toggleLogin(isAuthorized: boolean) {
   if (isAuthorized) {
     AUTHORIZED?.classList.remove('hidden');
