@@ -14,8 +14,7 @@ export async function loadContent(isAuthorized: boolean) {
   }
   handleTabs();
   await fetchDataAndUpdateUI();
-  // TODO: Uncomment to enable auto-refresh
-  //setInterval(fetchDataAndUpdateUI, 60 * 1000);
+  setInterval(fetchDataAndUpdateUI, 60 * 1000);
 }
 
 async function fetchDataAndUpdateUI() {
