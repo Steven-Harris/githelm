@@ -9,6 +9,9 @@ export async function fetchDataAndSaveToLocalStorage() {
 
 export function load(): Promise<any>[] {
   const configObj: Config = JSON.parse(config);
+  if (!configObj) {
+    return [];
+  }
   const { pullRequests, actions } = configObj;
 
   return [

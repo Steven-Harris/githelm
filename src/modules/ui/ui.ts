@@ -1,5 +1,5 @@
 
-import { handleTabs, toggleLogin, removeLoadingIndicators, PULL_REQUESTS, ACTIONS_DIV, } from './elements';
+import { handleTabs, toggleLogin, removeLoadingIndicators, PULL_REQUESTS_DIV, ACTIONS_DIV, } from './elements';
 import { pullRequestTemplate, actionsTemplate } from './templates';
 let previousData: {
   pullRequests: { [org: string]: { [repo: string]: any } },
@@ -12,6 +12,12 @@ export async function loadContent(data: any) {
   data.forEach(updateContent);
   removeLoadingIndicators();
   saveState(data);
+}
+
+export function setNoContent() {
+  [PULL_REQUESTS_DIV, ACTIONS_DIV].forEach((element: any) => element.innerHTML = '<p>No pull requests found. Configure repositories by clicking the pencil icon above.</p>');
+  removeLoadingIndicators();
+
 }
 
 function saveState(results: any[]) {
@@ -31,7 +37,7 @@ function saveState(results: any[]) {
 }
 
 function updateContent({ type, org, repo, data }: any) {
-  const container = type === 'pull-requests' ? PULL_REQUESTS : ACTIONS_DIV;
+  const container = type === 'pull-requests' ? PULL_REQUESTS_DIV : ACTIONS_DIV;
   const template = type === 'pull-requests' ? pullRequestTemplate : actionsTemplate;
   const previousRepoData = type === 'pull-requests' ? previousData.pullRequests[org]?.[repo] : previousData.actions[org]?.[repo];
   if (JSON.stringify(previousRepoData) !== JSON.stringify(data)) {

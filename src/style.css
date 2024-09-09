@@ -157,24 +157,23 @@ header, #tabs, #pull-request-header, #actions-header {
   margin-left: auto;
 }
 
+.avatar-container {
+  position: relative;
+  display: inline-block;
+}
+
 .avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  margin-right: 8px;
 }
 
-.review-state {
-  margin-right: 8px;
-}
-
-
-.review-state.approved {
-  color: #1E90FF;
-}
-
-.review-state.not-approved {
-  color: #FFA500;
+.review-state-icon {
+  position: absolute;
+  bottom: -5px;
+  right: -3px;
+  width: 15px;
+  height: 15px;
 }
 
 .more-approvers {

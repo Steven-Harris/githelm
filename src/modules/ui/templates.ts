@@ -4,7 +4,7 @@ export function pullRequestTemplate(repo: any, pullRequests: { items: any[]; }) 
     <ul>${pullRequests.items.map(pr => `
         <li class="mb-2 flex flex-col">
             <div id="pr-item" class="p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center">
-                <img src="${pr.user.avatar_url}" class="avatar" alt="${pr.user.login}" />
+                <img src="${pr.user.avatar_url}" class="avatar mr-1" alt="${pr.user.login}" />
                 <a href="${pr.html_url}" target="_blank" class="link flex-grow max-w-70">${pr.title}</a>
                 ${reviewsTemplate(pr.reviews)}
             </div>
@@ -14,17 +14,26 @@ export function pullRequestTemplate(repo: any, pullRequests: { items: any[]; }) 
 }
 
 function reviewsTemplate(reviews: any) {
-  const reviewsWithLabel = () => reviews.map((review: any) => `
-    <img src="${review.user.avatar_url}" class="avatar" alt="${review.user.login}" />
-    <label class="review-state ${review.state === "APPROVED" ? "approved" : "not-approved"}">${review.state.toLowerCase()}</label>
+  // Reduce reviews to get the last review of each user
+  const reducedReviews = Array.from(
+    reviews.reduce((map: Map<string, any>, review: any) => {
+      map.set(review.user.login, review);
+      return map;
+    }, new Map()).values()
+  ).slice(0, 3);
+
+  const reviewsWithIcon = () => reducedReviews.map((review: any) => `
+    <div class="avatar-container">
+      <img src="${review.user.avatar_url}" class="avatar" alt="${review.user.login}" />
+      ${review.state === "APPROVED"
+      ? "<img class='review-state-icon approved' title='approved' src='src/assets/check.svg' width='15' height='15'/>"
+      : "<img class='review-state-icon not-approved' title='not approved' src='src/assets/comment.svg' width='15' height='15'/>"}
+    </div>
   `).join("");
-  const reviewsIconOnly = () => reviews.slice(0, 3).map((review: any) => `
-    <img src="${review.user.avatar_url}" class="avatar" alt="${review.state.toLowerCase()}" title="${review.state.toLowerCase()}" />
-  `).join("")
 
   return `
    <span class="reviews-container flex items-center">
-     ${reviews.length < 3 ? reviewsWithLabel() : reviewsIconOnly()}
+     ${reviewsWithIcon()}
      ${reviews.length > 3 ? `<span class="more-approvers">+${reviews.length - 3}</span>` : ""}
    </span>
   `;

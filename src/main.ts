@@ -1,17 +1,23 @@
 import { Firebase } from './modules/services';
-import { loadContent, LOGOUT_BUTTON, LOGIN_BUTTON } from './modules/ui';
+import { loadContent, setNoContent } from './modules/ui';
 import { initPWA } from './pwa';
 import { fetchDataAndSaveToLocalStorage } from './modules/services';
 import { getSiteData, clearSiteData } from './modules/services';
 import './style.css';
 
+declare global {
+    interface Window {
+        handleLogin: () => Promise<void>;
+        handleLogout: () => void;
+        editPullRequests: () => void;
+        editActions: () => void;
+    }
+}
+
 const firebase = new Firebase();
 
 document.addEventListener("DOMContentLoaded", async function () {
     initPWA(document.getElementById('app')!);
-
-    LOGIN_BUTTON?.addEventListener('click', handleLogin);
-    LOGOUT_BUTTON?.addEventListener('click', handleLogout);
 
     const isSignedIn = Firebase.signedIn();
     const localStorageData = getSiteData();
@@ -29,6 +35,25 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 });
 
+window.handleLogin = async () => {
+    const signedIn = await firebase.signIn();
+    if (!signedIn) { return; }
+    await updateLocalStorageAndLoadContent();
+}
+
+window.handleLogout = () => {
+    clearSiteData();
+    window.location.reload();
+}
+
+window.editPullRequests = () => {
+    console.log('Edit pull requests');
+}
+
+window.editActions = () => {
+    console.log('Edit actions');
+}
+
 const originalFetch = window.fetch;
 window.fetch = async (...args) => {
     const response = await originalFetch(...args);
@@ -42,17 +67,10 @@ window.fetch = async (...args) => {
 async function updateLocalStorageAndLoadContent() {
     await fetchDataAndSaveToLocalStorage();
     const updatedData = getSiteData();
-    if (!updatedData) { return; }
+    if (!updatedData) {
+        setNoContent();
+    }
     await loadContent(updatedData);
 }
 
-async function handleLogin() {
-    const signedIn = await firebase.signIn();
-    if (!signedIn) { return; }
-    await updateLocalStorageAndLoadContent();
-}
 
-async function handleLogout() {
-    clearSiteData();
-    window.location.reload();
-}
