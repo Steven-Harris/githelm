@@ -28,6 +28,11 @@ export const config = `
     },
     {
       "org": "JHADigitalCore",
+      "repo": "general-ledger-load-tester",
+      "filter": ""
+    },
+    {
+      "org": "JHADigitalCore",
       "repo": "environments",
       "filter": "label:general-ledger"
     },
