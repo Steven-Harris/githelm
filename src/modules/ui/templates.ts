@@ -1,3 +1,6 @@
+import checkSVG from '../../assets/check.svg';
+import commentSVG from '../../assets/comment.svg';
+
 export function pullRequestTemplate(repo: any, pullRequests: { items: any[]; }) {
   return `
     <h3 class="text-lg font-semibold">${repo}</h3>
@@ -26,8 +29,8 @@ function reviewsTemplate(reviews: any) {
     <div class="avatar-container">
       <img src="${review.user.avatar_url}" class="avatar" alt="${review.user.login}" />
       ${review.state === "APPROVED"
-      ? "<img class='review-state-icon approved' title='approved' src='src/assets/check.svg' width='15' height='15'/>"
-      : "<img class='review-state-icon not-approved' title='not approved' src='src/assets/comment.svg' width='15' height='15'/>"}
+      ? `<img class="review-state-icon approved" title="approved" src="${checkSVG}" width="15" height="15"/>`
+      : `<img class="review-state-icon not-approved" title="not approved" src="${commentSVG}" width="15" height="15"/>`}
     </div>
   `).join("");
 
