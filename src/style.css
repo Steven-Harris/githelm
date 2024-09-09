@@ -36,6 +36,47 @@ header, #tabs, #pull-request-header, #actions-header {
   }
 }
 
+/* Media Queries */
+@media (max-width: 768px) {
+  #tabs {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #1a202c; /* Tailwind bg-gray-900 */
+    width: 100vw; /* Full viewport width */
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: -50vw; /* Negative margin to break out of the parent container */
+    margin-right: -55vw; /* Negative margin to break out of the parent container */
+  }
+  #content {
+    display: block;
+  }
+  .reviews-container {
+    overflow-x: auto; 
+    word-wrap: break-word;
+    overflow-x: hidden;
+  }
+
+  .nav-button {
+    box-shadow: none;
+    background-color: transparent;
+    transition: none;
+    width: 7rem;
+    height: 3rem;
+    margin-left: 1rem;;
+    margin-right: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-button::before {
+    content: '';
+    width: 1.5rem;
+    height: 1.5rem;
+    background-size: cover;
+  }
+}
+
 /* Component Styles */
 #content {
     margin-top: 1rem;
@@ -183,54 +224,4 @@ button#pwa-refresh {
 
 #pwa-toast.show.refresh button#pwa-refresh {
   display: block;
-}
-
-/* Media Queries */
-@media (max-width: 768px) {
-  #tabs {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: #1a202c; /* Tailwind bg-gray-900 */
-    width: 100vw; /* Full viewport width */
-    left: 50%;
-    transform: translateX(-50%);
-    margin-left: -50vw; /* Negative margin to break out of the parent container */
-    margin-right: -55vw; /* Negative margin to break out of the parent container */
-  }
-  #content {
-    display: block;
-  }
-  .reviews-container {
-    overflow-x: auto; 
-    word-wrap: break-word;
-    overflow-x: hidden;
-  }
-
-  .nav-button {
-    box-shadow: none;
-    background-color: transparent;
-    transition: none;
-    width: 7rem;
-    height: 3rem;
-    margin-left: 1rem;;
-    margin-right: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-button::before {
-    content: '';
-    width: 1.5rem;
-    height: 1.5rem;
-    background-size: cover;
-  }
-  #login-button::before {
-    background-image: url('/path/to/login-icon.svg');
-  }
-  #logout-button::before {
-    background-image: url('/path/to/logout-icon.svg');
-  }
-  #settings-button::before {
-    background-image: url('/path/to/settings-icon.svg');
-  }
 }

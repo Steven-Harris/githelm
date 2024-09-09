@@ -1,6 +1,7 @@
 import { FirebaseApp, initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth, signInWithPopup, GithubAuthProvider } from 'firebase/auth'
+import { getAuth, signInWithPopup, GithubAuthProvider } from 'firebase/auth';
+import { getGithubToken, setGithubToken, setFirebaseToken, clearSiteData } from './storage';
 
 export class Firebase {
   private firebaseConfig = {
@@ -14,10 +15,6 @@ export class Firebase {
   };
   private app: FirebaseApp;
 
-  public get githubToken(): string | null {
-    return localStorage.getItem('GITHUB_TOKEN');
-  }
-
   constructor() {
     this.app = initializeApp(this.firebaseConfig);
     getAnalytics(this.app);
@@ -29,12 +26,12 @@ export class Firebase {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      const token = await user?.getIdToken()
+      const token = await user?.getIdToken();
       const credential = GithubAuthProvider.credentialFromResult(result);
       console.log('GitHub authentication successful:', user, credential);
-      localStorage.setItem('FIREBASE_TOKEN', token);
+      setFirebaseToken(token);
       if (credential?.accessToken) {
-        localStorage.setItem('GITHUB_TOKEN', credential?.accessToken);
+        setGithubToken(credential?.accessToken);
       }
       return true;
     } catch (error) {
@@ -43,12 +40,10 @@ export class Firebase {
   }
 
   public static signedIn() {
-    return localStorage.getItem('GITHUB_TOKEN') !== null;
+    return getGithubToken() !== null;
   }
 
   public static signOut() {
-    localStorage.removeItem('GITHUB_TOKEN');
-    localStorage.removeItem('FIREBASE_TOKEN');
-    localStorage.removeItem('SITE_DATA');
+    clearSiteData();
   }
 }

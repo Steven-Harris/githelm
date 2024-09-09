@@ -13,19 +13,19 @@ export async function loadContent(data: any) {
   removeLoadingIndicators();
   saveState(data);
 }
+
 function saveState(results: any[]) {
+  const checkDefaultState = (node: { [x: string]: {} }, org: string | number) => {
+    if (!node[org]) {
+      node[org] = {};
+    }
+  };
+
   previousData = results.reduce((acc, result) => {
-    if (result.type === 'pull-requests') {
-      if (!acc.pullRequests[result.org]) {
-        acc.pullRequests[result.org] = {};
-      }
-      acc.pullRequests[result.org][result.repo] = result.data;
-      return acc;
-    }
-    if (!acc.actions[result.org]) {
-      acc.actions[result.org] = {};
-    }
-    acc.actions[result.org][result.repo] = result.data;
+    const { type, org, repo, data } = result;
+    const targetNode = type === 'pull-requests' ? acc.pullRequests : acc.actions;
+    checkDefaultState(targetNode, org);
+    targetNode[org][repo] = data;
     return acc;
   }, { pullRequests: {}, actions: {} });
 }

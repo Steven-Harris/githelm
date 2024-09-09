@@ -1,9 +1,10 @@
 import { RepoConfig, Config } from './models';
 import { config } from './config';
+import { getGithubToken, setSiteData } from './storage';
 
 export async function fetchDataAndSaveToLocalStorage() {
   const results = await Promise.all(load());
-  localStorage.setItem('SITE_DATA', JSON.stringify(results));
+  setSiteData(results);
 }
 
 export function load(): Promise<any>[] {
@@ -57,7 +58,7 @@ async function getActions(org: string, repo: string, filter: string) {
 }
 
 async function fetchData(url: string) {
-  const token = localStorage.getItem('GITHUB_TOKEN')
+  const token = getGithubToken();
   try {
     const response = await fetch(url, {
       headers: {
