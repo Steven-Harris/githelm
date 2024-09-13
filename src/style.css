@@ -81,6 +81,7 @@ header, #tabs, #pull-request-header, #actions-header {
 #content {
     margin-top: 1rem;
 }
+
 .nav-button {
   background-color: #374151;
   border-radius: 0.5rem;
@@ -88,7 +89,6 @@ header, #tabs, #pull-request-header, #actions-header {
   font-size: 0.875rem;
   width: 10rem;
   height: 3rem;
-  box-shadow: 0 0 8px rgba(81, 203, 238, 1); /* glow */
 }
 
 .nav-button:hover {
@@ -223,4 +223,21 @@ button#pwa-refresh {
 
 #pwa-toast.show.refresh button#pwa-refresh {
   display: block;
+}
+
+.config-group {
+  background-color: #2d3748; /* Different background color */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  cursor: grab;
+}
+
+.config-group select {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #2d3748;
+  color: white;
+  border: 1px solid #444;
+  border-radius: 0.25rem;
+  margin-top: 0.5rem;
 }

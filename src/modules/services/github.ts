@@ -1,6 +1,6 @@
 import { RepoConfig, Config } from './models';
 import { config } from './config';
-import { getGithubToken, setSiteData } from './storage';
+import { clearSiteData, getGithubToken, setSiteData } from './storage';
 
 export async function fetchDataAndSaveToLocalStorage() {
   const results = await Promise.all(load());
@@ -60,6 +60,18 @@ async function getActions(org: string, repo: string, filter: string) {
   }
 }
 
+export async function getUserRepos(): Promise<string[]> {
+  const url = 'https://api.github.com/user/repos';
+  try {
+    const response = await fetchData(url);
+    console.log(response);
+    return response.map((repo: any) => repo.full_name);
+  } catch (error) {
+    console.error('Error fetching repositories:', error);
+    return [];
+  }
+}
+
 async function fetchData(url: string) {
   const token = getGithubToken();
   try {
@@ -69,6 +81,10 @@ async function fetchData(url: string) {
         'Accept': 'application/vnd.github.v3+json'
       }
     });
+    if (response.status === 401 || response.status === 403) {
+      clearSiteData();
+      window.location.reload();
+    }
     return await response.json();
   } catch (error) {
     console.error('Error fetching data:', error);

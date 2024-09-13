@@ -16,10 +16,10 @@
   <header class="flex justify-between items-center p-5 -pb-5 sticky top-0 z-10">
     <h1 class="text-4xl font-bold">GitHelm</h1>
     <div id="buttons" class="flex space-x-4">
-      <button id="login-button" class="nav-button" onclick="handleLogin()">
+      <button id="login-button" class="nav-button">
         Login with GitHub
       </button>
-      <button id="logout-button" class="hidden nav-button" onclick="handleLogout()">
+      <button id="logout-button" class="hidden nav-button">
         Logout
       </button>
     </div>
@@ -34,7 +34,7 @@
         <section id="pull-requests-section" class="glow bg-gray-800 p-5 rounded-lg">
           <h2 class="text-xl font-bold mb-4 lg:sticky top-0 z-10 bg-gray-800">
             Pull Requests
-            <!-- <button id="edit-pulls" class="hover:underline" onclick="editPullRequests()" title="edit pull requests configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button> -->
+            <button id="edit-pull-requests" class="hover:underline" title="edit pull requests configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button>
           </h2>
           <div id="pull-requests"></div>
           <div id="loading-pulls" class="h-full flex items-center justify-center">
@@ -45,13 +45,27 @@
         <section id="actions-section" class="glow bg-gray-800 p-5 rounded-lg hidden md:block">
           <h2 class="text-xl font-bold mb-4 lg:sticky top-0 z-10 bg-gray-800">
             Actions
-            <!-- <button id="edit-pulls" class="hover:underline" onclick="editActions()" title="edit actions configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button> -->
+            <button id="edit-actions" class="hover:underline" title="edit actions configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button>
           </h2>
           <div id="actions"></div>
           <div id="loading-actions" class="h-full flex items-center justify-center">
             <div class="spinner"></div>
           </div>
         </section>
+      </div>
+    </div>
+    <div id="config-modal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
+      <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
+        <h2 class="text-2xl font-bold mb-4">Pull Requests Config</h2>
+        <form id="pull-requests-config-form">
+          <div id="config-entries">
+          </div>
+          <div>
+            <button type="button" id="add-entry" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Entry</button>
+          </div>
+          <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">Save</button>
+          <button type="button" id="close-modal" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">Close</button>
+        </form>
       </div>
     </div>
     <div id="pwa-toast" role="alert" aria-labelledby="toast-message">

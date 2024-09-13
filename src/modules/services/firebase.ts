@@ -1,7 +1,16 @@
 import { FirebaseApp, initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth, signInWithPopup, GithubAuthProvider } from 'firebase/auth';
-import { getGithubToken, setGithubToken, setFirebaseToken, clearSiteData } from './storage';
+import { getAuth, signInWithPopup, GithubAuthProvider, User } from 'firebase/auth';
+import {
+  Firestore,
+  collection,
+  doc,
+  setDoc,
+  getFirestore,
+  getDoc
+} from 'firebase/firestore';
+import { getGithubToken, setGithubToken, clearSiteData } from './storage';
+import { Config, RepoConfig } from './models';
 
 export class Firebase {
   private firebaseConfig = {
@@ -14,22 +23,31 @@ export class Firebase {
     measurementId: "G-7HWYDWLL6P"
   };
   private app: FirebaseApp;
+  private db: Firestore;
+  private user: User | null;
 
   constructor() {
     this.app = initializeApp(this.firebaseConfig);
+    this.db = getFirestore(this.app);
+    this.user = getAuth(this.app).currentUser;
     getAnalytics(this.app);
   }
 
+  public static signedIn() {
+    return getGithubToken() !== null;
+  }
+
+  public signOut() {
+    clearSiteData();
+  }
   public async signIn() {
     const auth = getAuth(this.app);
     const provider = new GithubAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      const token = await user?.getIdToken();
+      this.user = result.user;
       const credential = GithubAuthProvider.credentialFromResult(result);
-      console.log('GitHub authentication successful:', user, credential);
-      setFirebaseToken(token);
+      console.log('GitHub authentication successful:', this.user, credential);
       if (credential?.accessToken) {
         setGithubToken(credential?.accessToken);
       }
@@ -39,11 +57,42 @@ export class Firebase {
     }
   }
 
-  public static signedIn() {
-    return getGithubToken() !== null;
+  public async getConfig(): Promise<Config> {
+    if (!this.user) {
+      this.user = getAuth(this.app).currentUser;
+      console.log(this.user);
+      if (!this.user) {
+        throw new Error(`Can't get firebase user`);
+      }
+    }
+
+    const idTokenResult = await this.user?.getIdTokenResult();
+    const userId = idTokenResult?.claims.sub;
+
+    const docRef = doc(collection(this.db, "configs"), userId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data) {
+        return data as Config;
+      }
+    }
+    return { pullRequests: [], actions: [] };
   }
 
-  public static signOut() {
-    clearSiteData();
+  public async saveConfig(prConfig: RepoConfig[], actionConfig: RepoConfig[]) {
+    if (!this.user) {
+      this.user = getAuth(this.app).currentUser;
+      console.log(this.user);
+    }
+
+    const idTokenResult = await this.user?.getIdTokenResult();
+    const userId = idTokenResult?.claims.sub;
+
+    const docRef = doc(collection(this.db, "configs"), userId);
+    console.log(docRef);
+
+    await setDoc(docRef, { pullRequests: prConfig, actions: actionConfig });
   }
 }

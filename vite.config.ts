@@ -67,12 +67,13 @@ export default defineConfig({
   root: '.',
   build: {
     outDir: 'public',
-    emptyOutDir: false, 
+    emptyOutDir: false,
     rollupOptions: {
       input: 'index.html',
       output: {
         manualChunks: {
-          firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth'],
+          firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'],
+          sortable: ['sortablejs'],
         }
       }
     }
