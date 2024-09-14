@@ -36,46 +36,6 @@ header, #tabs, #pull-request-header, #actions-header {
   }
 }
 
-/* Media Queries */
-@media (max-width: 768px) {
-  #tabs {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: #1a202c; /* Tailwind bg-gray-900 */
-    width: 100vw; /* Full viewport width */
-    left: 50%;
-    transform: translateX(-50%);
-    margin-left: -50vw; /* Negative margin to break out of the parent container */
-    margin-right: -55vw; /* Negative margin to break out of the parent container */
-  }
-  #content {
-    display: block;
-  }
-  .reviews-container {
-    overflow-x: auto; 
-    word-wrap: break-word;
-    overflow-x: hidden;
-  }
-
-  .nav-button {
-    box-shadow: none;
-    background-color: transparent;
-    transition: none;
-    width: 7rem;
-    height: 3rem;
-    margin-left: 1rem;;
-    margin-right: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-button::before {
-    content: '';
-    width: 1.5rem;
-    height: 1.5rem;
-    background-size: cover;
-  }
-}
 
 /* Component Styles */
 #content {
@@ -207,19 +167,43 @@ button#pwa-refresh {
   display: block;
 }
 
-.config-group {
-  background-color: #2d3748; /* Different background color */
-  padding: 1rem;
-  border-radius: 0.5rem;
-  cursor: grab;
-}
+/* Media Queries */
+@media (max-width: 768px) {
+  #tabs {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #1a202c; /* Tailwind bg-gray-900 */
+    width: 100vw; /* Full viewport width */
+    left: 50%;
+    transform: translateX(-50%);
+    margin-left: -50vw; /* Negative margin to break out of the parent container */
+    margin-right: -55vw; /* Negative margin to break out of the parent container */
+  }
+  #content {
+    display: block;
+  }
+  .reviews-container {
+    overflow-x: auto; 
+    word-wrap: break-word;
+    overflow-x: hidden;
+  }
 
-.config-group select {
-  width: 100%;
-  padding: 0.5rem;
-  background-color: #2d3748;
-  color: white;
-  border: 1px solid #444;
-  border-radius: 0.25rem;
-  margin-top: 0.5rem;
+  .nav-button {
+    box-shadow: none;
+    background-color: transparent;
+    transition: none;
+    width: 7rem;
+    height: 3rem;
+    margin-left: 1rem;;
+    margin-right: 1rem;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-button::before {
+    content: '';
+    width: 1.5rem;
+    height: 1.5rem;
+    background-size: cover;
+  }
 }

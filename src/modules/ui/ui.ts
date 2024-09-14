@@ -4,7 +4,7 @@ import { pullRequestTemplate, actionsTemplate } from './templates';
 let previousData: {
   pullRequests: { [org: string]: { [repo: string]: any } },
   actions: { [org: string]: { [repo: string]: any } }
-} = { pullRequests: {}, actions: {} };
+} = { pullRequests: {}, actions: {} }
 
 export async function loadContent(data: any) {
   data.forEach(updateContent);
@@ -22,6 +22,7 @@ export function setNoContent() {
   [PULL_REQUESTS_DIV, ACTIONS_DIV].forEach((element: any) => element.innerHTML = '<p>No pull requests found. Configure repositories by clicking the pencil icon above.</p>');
   hideLoading();
   saveState([]);
+  previousData = { pullRequests: {}, actions: {} };
 }
 
 function saveState(results: any[]) {
