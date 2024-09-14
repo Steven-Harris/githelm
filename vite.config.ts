@@ -71,6 +71,12 @@ export default defineConfig({
     rollupOptions: {
       input: 'index.html',
       output: {
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.svg')) {
+            return 'assets/[name][extname]';
+          }
+          return 'assets/[name]-[hash][extname]';
+        },
         manualChunks: {
           firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'],
           sortable: ['sortablejs'],

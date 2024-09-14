@@ -11,15 +11,7 @@ pnpm-debug.log*
 
 # Vite build output
 dist/
-public/assets/
-public/*.js
-public/*.css
-public/*.png
-public/*.ico
-public/*.webmanifest
-public/index.html
-public/*.br
-!public/*.svg
+public/
 
 # Firebase 
 .firebase/

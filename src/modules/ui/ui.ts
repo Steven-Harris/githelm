@@ -1,5 +1,5 @@
 
-import { handleTabs, toggleLogin, removeLoadingIndicators, PULL_REQUESTS_DIV, ACTIONS_DIV, } from './elements';
+import { handleTabs, toggleLogin, hideLoading, PULL_REQUESTS_DIV, ACTIONS_DIV, showLoading, } from './elements';
 import { pullRequestTemplate, actionsTemplate } from './templates';
 let previousData: {
   pullRequests: { [org: string]: { [repo: string]: any } },
@@ -7,17 +7,21 @@ let previousData: {
 } = { pullRequests: {}, actions: {} };
 
 export async function loadContent(data: any) {
+  data.forEach(updateContent);
+  hideLoading()
+  saveState(data);
+}
+
+export function showContent() {
   toggleLogin(true);
   handleTabs();
-  data.forEach(updateContent);
-  removeLoadingIndicators();
-  saveState(data);
+  showLoading();
 }
 
 export function setNoContent() {
   [PULL_REQUESTS_DIV, ACTIONS_DIV].forEach((element: any) => element.innerHTML = '<p>No pull requests found. Configure repositories by clicking the pencil icon above.</p>');
-  removeLoadingIndicators();
-
+  hideLoading();
+  saveState([]);
 }
 
 function saveState(results: any[]) {
@@ -43,12 +47,12 @@ function updateContent({ type, org, repo, data }: any) {
   if (JSON.stringify(previousRepoData) !== JSON.stringify(data)) {
     const existingDiv = container?.querySelector(`[data-org="${org}"][data-repo="${repo}"]`);
     if (existingDiv) {
-      existingDiv.innerHTML = template(repo, data);
+      existingDiv.innerHTML = template(org, repo, data);
     } else {
       const div = document.createElement("div");
       div.setAttribute("data-org", org);
       div.setAttribute("data-repo", repo);
-      div.innerHTML = template(repo, data);
+      div.innerHTML = template(org, repo, data);
       container?.appendChild(div);
     }
   }

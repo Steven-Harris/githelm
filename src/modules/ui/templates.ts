@@ -1,16 +1,18 @@
 import checkSVG from '../../assets/check.svg';
 import commentSVG from '../../assets/comment.svg';
 
-export function pullRequestTemplate(repo: any, pullRequests: { items: any[]; }) {
+export function pullRequestTemplate(org: string, repo: string, pullRequests: { items: any[]; }) {
   return `
-    <h3 class="text-lg font-semibold">${repo}</h3>
+    <h3 class="text-lg font-semibold hover:underline"><a href="https://github.com/${org}/${repo}/pulls" target="_blank">${repo}</a></h3>
     <ul>${pullRequests.items.map(pr => `
         <li class="mb-2 flex flex-col">
-            <div id="pr-item" class="p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center">
-                <img src="${pr.user.avatar_url}" class="avatar mr-1" alt="${pr.user.login}" />
-                <a href="${pr.html_url}" target="_blank" class="link flex-grow max-w-70">${pr.title}</a>
-                ${reviewsTemplate(pr.reviews)}
-            </div>
+            <a href="${pr.html_url}" target="_blank">
+              <div id="pr-item" class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center">
+                  <img src="${pr.user.avatar_url}" class="avatar mr-1" alt="${pr.user.login}" />
+                  <label class="cursor-pointer flex-grow max-w-[70%] hover:underline">${pr.title}</label>
+                  ${reviewsTemplate(pr.reviews)}
+              </div>
+            </a>
         </li>`).join("")}
     </ul>
   `;
@@ -26,7 +28,7 @@ function reviewsTemplate(reviews: any) {
   ).slice(0, 3);
 
   const reviewsWithIcon = () => reducedReviews.map((review: any) => `
-    <div class="avatar-container">
+    <div class="avatar-container mr-1">
       <img src="${review.user.avatar_url}" class="avatar" alt="${review.user.login}" />
       ${review.state === "APPROVED"
       ? `<img class="review-state-icon approved" title="approved" src="${checkSVG}" width="15" height="15"/>`
@@ -35,22 +37,24 @@ function reviewsTemplate(reviews: any) {
   `).join("");
 
   return `
-   <span class="reviews-container flex items-center">
+   <span class="reviews-container h-7 flex items-center overflow-hidden">
      ${reviewsWithIcon()}
      ${reviews.length > 3 ? `<span class="more-approvers">+${reviews.length - 3}</span>` : ""}
    </span>
   `;
 }
 
-export function actionsTemplate(repo: any, actions: { workflow_runs: any[]; }) {
+export function actionsTemplate(org: string, repo: string, actions: { workflow_runs: any[]; }) {
   return `
-    <h3 class="text-lg font-semibold">${repo}</h3>
+    <h3 class="text-lg font-semibold hover:underline"><a href="https://github.com/${org}/${repo}/actions" target="_blank">${repo}</a></h3>
     <ul class="flex flex-wrap">${actions.workflow_runs.map((workflow: any) => `
         <li class="mb-2 flex-grow items-center">
-            <div class="p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
-                <a href="${workflow.html_url}" target="_blank" class="link">${workflow.name}</a>
-                ${workflowTemplate(workflow)} 
+          <a href="${workflow.html_url}" target="_blank">
+            <div class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
+              <label class="hover:underline">${workflow.name}</label>
+              ${workflowTemplate(workflow)} 
             </div>
+          </a>
         </li>`).join("")}
     </ul>
   `;

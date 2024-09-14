@@ -3,6 +3,11 @@ export const config = `
   "pullRequests": [
     {
       "org": "JHADigitalCore",
+      "repo": "general-ledger",
+      "filter": ""
+    },
+    {
+      "org": "JHADigitalCore",
       "repo": "general-ledger-service",
       "filter": ""
     },
