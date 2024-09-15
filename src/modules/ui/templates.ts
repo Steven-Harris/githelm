@@ -68,7 +68,6 @@ function workflowTemplate(org: string, repo: string, workflow: any) {
 }
 
 function jobTemplate(org: string, repo: string, job: any) {
-  console.log(job);
   const jobColor = () => {
     if (job.status === "completed" && job.conclusion === "success") {
       return "bg-sky-600 border-sky-800 text-white";
@@ -113,7 +112,7 @@ export function pendingEnvironmentsTemplate(environments: PendingDeployments[]) 
   return environments.map(env => {
     const checkboxAttributes = [
       `type="checkbox"`,
-      `data-id="${env.environment.id}"`,
+      `data-id=${env.environment.id}`,
       `class="mr-2"`,
       !env.current_user_can_approve ? 'disabled' : '',
       environments.length === 1 ? 'checked' : ''

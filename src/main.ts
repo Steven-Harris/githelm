@@ -46,7 +46,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
 
     window.reviewDeployment = async (event: any) => {
-        console.log(event);
         const target = event.target as HTMLElement;
         if (!target) {
             console.error('Event target is undefined');
@@ -112,5 +111,5 @@ async function updateLocalStorageAndLoadContent(lastUpdated: LastUpdated) {
 
 function getSelectedEnvironments() {
     const checkboxes = document.querySelectorAll('#pending-environments input[type="checkbox"]:checked');
-    return Array.from(checkboxes).map((checkbox: any) => checkbox.dataset.id);
+    return Array.from(checkboxes).map((checkbox: any) => Number(checkbox.dataset.id) as number);
 };

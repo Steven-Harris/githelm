@@ -1,5 +1,5 @@
-import { RepoConfig, Config, PendingDeployments } from './models';
 import { config } from './config';
+import { Config, PendingDeployments, RepoConfig } from './models';
 import { clearSiteData, getGithubToken, setSiteData } from './storage';
 
 export async function fetchDataAndSaveToLocalStorage() {
@@ -64,7 +64,6 @@ export async function getUserRepos(): Promise<string[]> {
   const url = 'https://api.github.com/user/repos';
   try {
     const response = await fetchData(url);
-    console.log(response);
     return response.map((repo: any) => repo.full_name);
   } catch (error) {
     console.error('Error fetching repositories:', error);
@@ -83,16 +82,18 @@ export async function getPendingEnvironments(org: string, repo: string, runId: s
   }
 }
 
-export async function reviewDeployment(org: string, repo: string, runId: string, envIds: string[], state: string, comment: string) {
+export async function reviewDeployment(org: string, repo: string, runId: string, envIds: number[], state: string, comment: string) {
   const url = `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`;
+  const body = JSON.stringify({
+    state: state,
+    environment_ids: envIds,
+    comment: comment
+  });
+  console.log(body)
   return await fetch(url, {
     method: 'POST',
     headers: getHeaders(),
-    body: JSON.stringify({
-      state: state,
-      environment_ids: envIds,
-      comment: comment
-    })
+    body
   });
 
 }

@@ -1,16 +1,16 @@
-import { FirebaseApp, initializeApp } from 'firebase/app';
 import { getAnalytics } from 'firebase/analytics';
-import { getAuth, signInWithPopup, GithubAuthProvider, User } from 'firebase/auth';
+import { FirebaseApp, initializeApp } from 'firebase/app';
+import { GithubAuthProvider, User, getAuth, signInWithPopup } from 'firebase/auth';
 import {
   Firestore,
   collection,
   doc,
-  setDoc,
+  getDoc,
   getFirestore,
-  getDoc
+  setDoc
 } from 'firebase/firestore';
-import { getGithubToken, setGithubToken, clearSiteData } from './storage';
 import { Config, RepoConfig } from './models';
+import { clearSiteData, getGithubToken, setGithubToken } from './storage';
 
 export class Firebase {
   private firebaseConfig = {
@@ -47,7 +47,6 @@ export class Firebase {
       const result = await signInWithPopup(auth, provider);
       this.user = result.user;
       const credential = GithubAuthProvider.credentialFromResult(result);
-      console.log('GitHub authentication successful:', this.user, credential);
       if (credential?.accessToken) {
         setGithubToken(credential?.accessToken);
       }
@@ -60,7 +59,6 @@ export class Firebase {
   public async getConfig(): Promise<Config> {
     if (!this.user) {
       this.user = getAuth(this.app).currentUser;
-      console.log(this.user);
       if (!this.user) {
         throw new Error(`Can't get firebase user`);
       }
@@ -84,14 +82,12 @@ export class Firebase {
   public async saveConfig(prConfig: RepoConfig[], actionConfig: RepoConfig[]) {
     if (!this.user) {
       this.user = getAuth(this.app).currentUser;
-      console.log(this.user);
     }
 
     const idTokenResult = await this.user?.getIdTokenResult();
     const userId = idTokenResult?.claims.sub;
 
     const docRef = doc(collection(this.db, "configs"), userId);
-    console.log(docRef);
 
     await setDoc(docRef, { pullRequests: prConfig, actions: actionConfig });
   }
