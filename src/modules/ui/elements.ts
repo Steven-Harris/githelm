@@ -11,6 +11,13 @@ export const LOADING = document.getElementById('loading')!;
 export const EDIT_PULL_REQUESTS_BUTTON = document.getElementById('edit-pull-requests')!;
 export const EDIT_ACTIONS_BUTTON = document.getElementById('edit-actions')!;
 export const LAST_UPDATED = document.getElementById('last-updated')!;
+export const REVIEW_MODAL = document.getElementById('review-modal')!;
+export const CLOSE_REVIEW_MODAL = document.getElementById('close-review-modal')!;
+export const APPROVE_ACTION_BUTTON = document.getElementById('approve-action')!;
+export const REJECT_ACTION_BUTTON = document.getElementById('reject-action')!;
+export const REVIEW_COMMENT = document.getElementById('review-comment')! as HTMLTextAreaElement;
+export const REVIEW_REPO = REVIEW_MODAL.querySelector('#repo') as HTMLElement
+export const PENDING_ENVIRONMENTS = document.getElementById('pending-environments')!;
 
 export function toggleLogin(isAuthorized: boolean) {
   if (isAuthorized) {
@@ -24,7 +31,13 @@ export function toggleLogin(isAuthorized: boolean) {
   }
 }
 
+export function showReviewModal() {
+  REVIEW_MODAL.classList.remove('hidden');
+}
 
+export function hideReviewModal() {
+  REVIEW_MODAL.classList.add('hidden');
+}
 
 export function hideLoading() {
   LOADING.classList.add('hidden');

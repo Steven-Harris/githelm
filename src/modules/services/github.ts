@@ -1,4 +1,4 @@
-import { RepoConfig, Config } from './models';
+import { RepoConfig, Config, PendingDeployments } from './models';
 import { config } from './config';
 import { clearSiteData, getGithubToken, setSiteData } from './storage';
 
@@ -72,15 +72,34 @@ export async function getUserRepos(): Promise<string[]> {
   }
 }
 
-async function fetchData(url: string) {
-  const token = getGithubToken();
+export async function getPendingEnvironments(org: string, repo: string, runId: string) {
+  const url = `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`;
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `token ${token}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    });
+    const response = await fetchData(url) as PendingDeployments[];
+    return response;
+  } catch (error) {
+    console.error('Error fetching pending environments:', error);
+    return [];
+  }
+}
+
+export async function reviewDeployment(org: string, repo: string, runId: string, envIds: string[], state: string, comment: string) {
+  const url = `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`;
+  return await fetch(url, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      state: state,
+      environment_ids: envIds,
+      comment: comment
+    })
+  });
+
+}
+
+async function fetchData(url: string) {
+  try {
+    const response = await fetch(url, { headers: getHeaders() });
     if (response.status === 401 || response.status === 403) {
       clearSiteData();
       window.location.reload();
@@ -90,4 +109,13 @@ async function fetchData(url: string) {
     console.error('Error fetching data:', error);
     throw error;
   }
+}
+
+function getHeaders() {
+  const token = getGithubToken();
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'X-GitHub-Api-Version': '2022-11-28 '
+  };
 }

@@ -52,6 +52,28 @@
             <!-- <button id="edit-actions" class="hover:underline" title="edit actions configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button> -->
           </h2>
           <div id="actions"></div>
+          <!-- Actions Modal -->
+          <div id="review-modal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg relative">
+             
+              <div class="text-2xl font-bold flex justify-between">
+                <h2>Review Deployment</h2>
+                <button id="close-review-modal" title="Close" class="text-gray-400 hover:text-gray-200">
+                  &times;
+                </button>
+              </div>
+              <h4 id="repo" class="text-1xl italic mb-4"></h4>
+              <ul id="pending-environments">
+              </ul>
+              <div class="mb-4">
+                <textarea id="review-comment" class="w-full p-2 rounded bg-gray-700 text-white"
+                  placeholder="Leave a comment..."></textarea>
+              </div>
+              <div class="flex justify-end space-x-2">
+                <button type="button" id="reject-action" title="approve" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reject</button>
+                <button type="button" id="approve-action" title="reject" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Approve</button>
+              </div>
+            </div>
         </section>
       </div>
     </div>

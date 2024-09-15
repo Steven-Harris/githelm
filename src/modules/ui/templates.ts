@@ -1,5 +1,6 @@
-import checkSVG from '../../assets/check.svg';
-import commentSVG from '../../assets/comment.svg';
+import checkSVG from '@assets/check.svg';
+import commentSVG from '@assets/comment.svg';
+import { PendingDeployments } from '../services/models';
 
 export function pullRequestTemplate(org: string, repo: string, pullRequests: { items: any[]; }) {
   return `
@@ -49,44 +50,85 @@ export function actionsTemplate(org: string, repo: string, actions: { workflow_r
     <h3 class="text-lg font-semibold hover:underline"><a href="https://github.com/${org}/${repo}/actions" target="_blank">${repo}</a></h3>
     <ul class="flex flex-wrap">${actions.workflow_runs.map((workflow: any) => `
         <li class="mb-2 flex-grow items-center">
-          <a href="${workflow.html_url}" target="_blank">
             <div class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
               <label class="hover:underline">${workflow.name}</label>
-              ${workflowTemplate(workflow)} 
+              ${workflowTemplate(org, repo, workflow)} 
             </div>
-          </a>
         </li>`).join("")}
     </ul>
   `;
 }
 
-function workflowTemplate(workflow: any) {
+function workflowTemplate(org: string, repo: string, workflow: any) {
   return `
     <ul id="${workflow.id}" class="flex flex-wrap -m-1">
-        ${workflow.jobs.map((job: any) => jobTemplate(job)).join("")}
+        ${workflow.jobs.map((job: any) => jobTemplate(org, repo, job)).join("")}
     </ul>
   `;
 }
 
-function jobTemplate(job: { status: string; conclusion: string; name: any; }) {
+function jobTemplate(org: string, repo: string, job: any) {
+  console.log(job);
   const jobColor = () => {
     if (job.status === "completed" && job.conclusion === "success") {
-      return "bg-green-200 border-green-600";
+      return "bg-sky-600 border-sky-800 text-white";
     } else if (job.conclusion === "failure") {
       return "bg-red-200 border-red-600";
     } else if (job.status === "waiting") {
-      return "bg-yellow-200 border-yellow-600";
+      return "bg-yellow-500 border-yellow-800";
     } else if (job.status === "in_progress") {
-      return "bg-blue-200 border-blue-600";
+      return "bg-sky-300 border-sky-800";
     } else {
       return "bg-gray-300 border-gray-300";
     }
   }
+  const showSpan = (job: any) => {
+    return `
+      <span class="${jobColor()} flex justify-between items-center">
+        <label class="text-sm">${job.name}</label>
+      </span>
+    `
+  }
+
+  const showButton = (job: any) => {
+    return `
+      <button onclick="reviewDeployment(event)" 
+        data-org="${org}"
+        data-repo="${repo}"
+        data-run-id="${job.run_id}"
+        class="${jobColor()} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-gray-600">
+        ${job.name}
+      </button>`
+  }
+
   return `
     <li class="p-1">
-        <span class="${jobColor()} border rounded-lg p-3 shadow-sm flex justify-between items-center text-gray-600">
-            <label class="text-sm">${job.name}</label>
-        </span>
+      ${job.status == "pending" ? showSpan(job) : showButton(job)}
     </li>
   `;
+}
+
+
+export function pendingEnvironmentsTemplate(environments: PendingDeployments[]) {
+  return environments.map(env => {
+    const checkboxAttributes = [
+      `type="checkbox"`,
+      `data-id="${env.environment.id}"`,
+      `class="mr-2"`,
+      !env.current_user_can_approve ? 'disabled' : '',
+      environments.length === 1 ? 'checked' : ''
+    ].join(' ');
+
+    const listItemClasses = [
+      'border border-gray-600 p-2 rounded flex items-center mb-2',
+      !env.current_user_can_approve ? 'opacity-50 cursor-not-allowed' : ''
+    ].join(' ');
+
+    return `
+      <li class="${listItemClasses}">
+        <input ${checkboxAttributes}>
+        <span>${env.environment.name}</span>
+      </li>
+    `;
+  }).join('');
 }

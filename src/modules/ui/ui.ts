@@ -1,6 +1,18 @@
 
-import { handleTabs, toggleLogin, hideLoading, PULL_REQUESTS_DIV, ACTIONS_DIV, showLoading, } from './elements';
-import { pullRequestTemplate, actionsTemplate } from './templates';
+import { PendingDeployments } from '../services/models';
+import {
+  ACTIONS_DIV,
+  APPROVE_ACTION_BUTTON,
+  handleTabs,
+  hideLoading,
+  PENDING_ENVIRONMENTS,
+  PULL_REQUESTS_DIV,
+  REJECT_ACTION_BUTTON,
+  REVIEW_REPO,
+  showLoading, showReviewModal,
+  toggleLogin,
+} from './elements';
+import { actionsTemplate, pendingEnvironmentsTemplate, pullRequestTemplate } from './templates';
 let previousData: {
   pullRequests: { [org: string]: { [repo: string]: any } },
   actions: { [org: string]: { [repo: string]: any } }
@@ -23,6 +35,18 @@ export function setNoContent() {
   hideLoading();
   saveState([]);
   previousData = { pullRequests: {}, actions: {} };
+}
+
+export function loadReviewModal(org: string, repo: string, runId: string, environments: PendingDeployments[]) {
+  APPROVE_ACTION_BUTTON.dataset.org = org;
+  APPROVE_ACTION_BUTTON.dataset.repo = repo;
+  APPROVE_ACTION_BUTTON.dataset.runId = runId;
+  REJECT_ACTION_BUTTON.dataset.org = org;
+  REJECT_ACTION_BUTTON.dataset.repo = repo;
+  REJECT_ACTION_BUTTON.dataset.runId = runId;
+  REVIEW_REPO.innerHTML = repo;
+  PENDING_ENVIRONMENTS.innerHTML = pendingEnvironmentsTemplate(environments);
+  showReviewModal();
 }
 
 function saveState(results: any[]) {

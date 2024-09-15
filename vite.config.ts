@@ -1,11 +1,13 @@
-import { defineConfig } from 'vite';
-import { VitePWA } from 'vite-plugin-pwa'
-import viteCompression from 'vite-plugin-compression';
 import cssnano from 'cssnano';
-import tailwindcss from 'tailwindcss'
+import tailwindcss from 'tailwindcss';
+import { defineConfig } from 'vite';
+import viteCompression from 'vite-plugin-compression';
+import { VitePWA } from 'vite-plugin-pwa';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
   plugins: [
+    tsconfigPaths(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
