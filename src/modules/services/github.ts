@@ -84,16 +84,14 @@ export async function getPendingEnvironments(org: string, repo: string, runId: s
 
 export async function reviewDeployment(org: string, repo: string, runId: string, envIds: number[], state: string, comment: string) {
   const url = `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`;
-  const body = JSON.stringify({
-    state: state,
-    environment_ids: envIds,
-    comment: comment
-  });
-  console.log(body)
   return await fetch(url, {
     method: 'POST',
     headers: getHeaders(),
-    body
+    body: JSON.stringify({
+      state: state,
+      environment_ids: envIds,
+      comment: comment
+    })
   });
 
 }

@@ -82,11 +82,6 @@ export const config = `
       "org": "JHADigitalCore",
       "repo": "general-ledger-import-service",
       "filter": "deploy"
-    },
-    {
-      "org": "steven-harris",
-      "repo": "githelm",
-      "filter": "deploy"
     }
   ]
 }
