@@ -7,6 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Firebase Hosting 🚀
+    environment: prd
     steps:
       - uses: actions/checkout@v4
 
