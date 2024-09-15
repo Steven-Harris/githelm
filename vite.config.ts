@@ -12,11 +12,17 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: false,
 
+      pwaAssets: {
+        disabled: false,
+        config: true,
+      },
+
       manifest: {
         name: 'githelm',
         short_name: 'githelm',
         description: 'A repository monitoring application to manage pull requests and actions',
         theme_color: '#111827',
+        background_color: '#111827',
 
         icons: [{
           src: 'pwa-64x64.png',
@@ -68,17 +74,11 @@ export default defineConfig({
   },
   root: '.',
   build: {
-    outDir: 'public',
-    emptyOutDir: false,
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: 'index.html',
       output: {
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name && assetInfo.name.endsWith('.svg')) {
-            return 'assets/[name][extname]';
-          }
-          return 'assets/[name]-[hash][extname]';
-        },
         manualChunks: {
           firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'],
           sortable: ['sortablejs'],

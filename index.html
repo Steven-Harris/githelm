@@ -4,19 +4,19 @@
 <head>
   <title>GitHelm</title>
   <meta name="theme-color" content="#111827">
-  <link rel="icon" href="/assets/favicon.ico" sizes="48x48">
+  <link rel="icon" href="/favicon.ico" sizes="48x48">
   <link rel="icon" href="src/assets/helm.svg" sizes="any" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/assets/apple-touch-icon-180x180.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png">
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="src/style.css" rel="stylesheet" /> 
+  <link href="src/style.css" rel="stylesheet" />
   <script defer type="module" src="src/main.ts"></script>
 </head>
 
 <body class="h-full text-white flex flex-col bg-gray-900">
   <header class="flex justify-between items-center p-5 -pb-5 sticky top-0 z-10">
     <div id="header" class="flex ">
-      <img src="src/assets/helm.svg" width="50" height="50" class="mr-2" /> 
+      <img src="src/assets/helm.svg" width="50" height="50" class="mr-2" />
       <h1 class="text-4xl font-bold">GitHelm</h1>
     </div>
     <div id="buttons" class="flex space-x-4">
@@ -35,8 +35,9 @@
         <button id="tab-actions" class="tab-button">Actions</button>
       </div>
       <div id="content" class="content grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div id="loading" class="fixed mt-20 inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50 hidden">
-          <img class="spinner" src="src/assets/helm.svg" width="10" height="10"/>
+        <div id="loading"
+          class="fixed mt-20 inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50 hidden">
+          <img class="spinner" src="src/assets/helm.svg" width="10" height="10" />
         </div>
         <section id="pull-requests-section" class="glow bg-gray-800 p-5 rounded-lg">
           <h2 class="text-xl font-bold mb-4 lg:sticky top-0 z-10 bg-gray-800">
@@ -53,9 +54,10 @@
           </h2>
           <div id="actions"></div>
           <!-- Actions Modal -->
-          <div id="review-modal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
+          <div id="review-modal"
+            class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg relative">
-             
+
               <div class="text-2xl font-bold flex justify-between">
                 <h2>Review Deployment</h2>
                 <button id="close-review-modal" title="Close" class="text-gray-400 hover:text-gray-200">
@@ -70,24 +72,30 @@
                   placeholder="Leave a comment..."></textarea>
               </div>
               <div class="flex justify-end space-x-2">
-                <button type="button" id="reject-action" title="approve" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reject</button>
-                <button type="button" id="approve-action" title="reject" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Approve</button>
+                <button type="button" id="reject-action" title="approve"
+                  class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Reject</button>
+                <button type="button" id="approve-action" title="reject"
+                  class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Approve</button>
               </div>
             </div>
         </section>
       </div>
     </div>
-    <div id="config-modal" class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
+    <div id="config-modal"
+      class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
       <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
         <h2 class="text-2xl font-bold mb-4">Pull Requests Config</h2>
         <form id="pull-requests-config-form">
           <div id="config-entries">
           </div>
           <div>
-            <button type="button" id="add-entry" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Entry</button>
+            <button type="button" id="add-entry"
+              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Entry</button>
           </div>
-          <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">Save</button>
-          <button type="button" id="close-modal" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">Close</button>
+          <button type="submit"
+            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">Save</button>
+          <button type="button" id="close-modal"
+            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">Close</button>
         </form>
       </div>
     </div>
@@ -106,12 +114,13 @@
     </div>
   </main>
   <footer class="p-1 bg-gray-800 flex justify-between items-center">
-    <a href="https://github.com/steven-harris/githelm" target="_blank" class="hover:underline">&copy; <span id="copyright">
-      <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
-    </span> GitHelm. All rights reserved.</a>
+    <a href="https://github.com/steven-harris/githelm" target="_blank" class="hover:underline">&copy; <span
+        id="copyright">
+        <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
+      </span> GitHelm. All rights reserved.</a>
     <label id="last-updated" class="text-gray-400">Last updated 0s ago</label>
-    <a href="https://www.flaticon.com" title="rudder edit icons" class="hover:underline"
-      target="_blank">Icons created by Flat Icons </a>
+    <a href="https://www.flaticon.com" title="rudder edit icons" class="hover:underline" target="_blank">Icons created
+      by Flat Icons </a>
   </footer>
 
 </body>

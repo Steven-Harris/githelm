@@ -7,8 +7,9 @@
   "packageManager": "pnpm@9.9.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && pwa-assets-generator",
-    "serve": "vite preview"
+    "build": "tsc && vite build",
+    "serve": "vite preview",
+    "generate-pwa-icons": "pwa-assets-generator"
   },
   "repository": {
     "type": "git",

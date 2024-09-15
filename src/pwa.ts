@@ -15,20 +15,19 @@ export function initPWA(app: Element) {
             requestAnimationFrame(() => hidePwaToast(false))
             return
         }
-        if (pwaToast.classList.contains('refresh')) {
+        if (pwaToast.classList.contains('refresh'))
             pwaRefreshBtn.removeEventListener('click', refreshCallback)
-        }
+
         pwaToast.classList.remove('show', 'refresh')
     }
     function showPwaToast(offline: boolean) {
-        if (offline) return;
-        pwaRefreshBtn.addEventListener('click', refreshCallback)
+        if (!offline)
+            pwaRefreshBtn.addEventListener('click', refreshCallback)
         requestAnimationFrame(() => {
             hidePwaToast(false)
-            if (!offline) {
-                pwaToast.classList.add('refresh');
-            }
-            pwaToast.classList.add('show');
+            if (!offline)
+                pwaToast.classList.add('refresh')
+            pwaToast.classList.add('show')
         })
     }
 
