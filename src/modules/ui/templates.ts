@@ -51,7 +51,7 @@ export function actionsTemplate(org: string, repo: string, actions: { workflow_r
     <ul class="flex flex-wrap">${actions.workflow_runs.map((workflow: any) => `
         <li class="mb-2 flex-grow items-center">
             <div class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
-              <label class="hover:underline">${workflow.name}</label>
+              <a href="${workflow.html_url}" target="_blank" class="hover:underline">${workflow.display_title}</a>
               ${workflowTemplate(org, repo, workflow)} 
             </div>
         </li>`).join("")}
