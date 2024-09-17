@@ -18,6 +18,11 @@ export const config = `
     },
     {
       "org": "JHADigitalCore",
+      "repo": "general-ledger-query-service",
+      "filter": ""
+    },
+    {
+      "org": "JHADigitalCore",
       "repo": "general-ledger-transfers-processor",
       "filter": ""
     },
@@ -66,6 +71,11 @@ export const config = `
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-translation-service",
+      "filter": "deploy"
+    },
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-query-service",
       "filter": "deploy"
     },
     {
