@@ -23,6 +23,11 @@ export const config = `
     },
     {
       "org": "JHADigitalCore",
+      "repo": "general-ledger-deposit-interest-processor",
+      "filter": ""
+    },
+    {
+      "org": "JHADigitalCore",
       "repo": "general-ledger-transfers-processor",
       "filter": ""
     },
@@ -81,6 +86,11 @@ export const config = `
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-transfers-processor",
+      "filter": "deploy"
+    },
+    {
+      "org": "JHADigitalCore",
+      "repo": "general-ledger-deposit-interest-processor",
       "filter": "deploy"
     },
     {
