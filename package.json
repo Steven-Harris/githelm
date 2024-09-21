@@ -38,7 +38,7 @@
     "cssnano": "^7.0.6",
     "postcss": "^8.4.45",
     "tailwindcss": "^3.4.10",
-    "typescript": "^5.5.4",
+    "typescript": "^5.6.2",
     "vite": "^5.4.3",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-pwa": "^0.20.5",
