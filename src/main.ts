@@ -8,17 +8,27 @@ import {
 } from '@services';
 import {
     APPROVE_ACTION_BUTTON,
+    CANCEL_ACTIONS_CONFIG_BUTTON,
+    CANCEL_PULL_REQUESTS_CONFIG_BUTTON,
     CLOSE_REVIEW_MODAL,
+    EDIT_ACTIONS_BUTTON,
+    EDIT_PULL_REQUESTS_BUTTON,
     LOGIN_BUTTON,
     LOGOUT_BUTTON,
     LastUpdated,
     REJECT_ACTION_BUTTON,
     REVIEW_COMMENT,
+    SAVE_ACTIONS_CONFIG_BUTTON,
+    SAVE_PULL_REQUESTS_CONFIG_BUTTON,
+    hideEditActions,
+    hideEditPullRequests,
     hideReviewModal,
     loadContent,
     loadReviewModal,
     setNoContent,
-    showContent
+    showContent,
+    showEditActions,
+    showEditPullRequests
 } from '@ui';
 import { initPWA } from './pwa';
 
@@ -32,6 +42,28 @@ document.addEventListener("DOMContentLoaded", async function () {
     const firebase = new Firebase();
     const lastUpdated = new LastUpdated();
     initPWA(document.getElementById('app')!);
+    loginButtons(firebase, lastUpdated);
+    approvalButtons();
+    editingButtons();
+
+    const localStorageData = getSiteData();
+
+    setInterval(async () => {
+        if (!Firebase.signedIn()) { return; }
+        await updateLocalStorageAndLoadContent(lastUpdated);
+    }, 60 * 1000);
+
+    if (!Firebase.signedIn()) { return; }
+    showContent();
+    if (localStorageData) {
+        await loadContent(localStorageData);
+        lastUpdated.startTimer();
+    } else {
+        await updateLocalStorageAndLoadContent(lastUpdated);
+    }
+});
+
+function loginButtons(firebase: Firebase, lastUpdated: LastUpdated) {
     LOGIN_BUTTON.addEventListener('click', async () => {
         const signedIn = await firebase.signIn();
         if (!signedIn) { return; }
@@ -44,7 +76,35 @@ document.addEventListener("DOMContentLoaded", async function () {
         clearSiteData();
         window.location.reload();
     });
+}
 
+function editingButtons() {
+    EDIT_PULL_REQUESTS_BUTTON.addEventListener('click', async () => {
+        showEditPullRequests();
+    });
+
+    SAVE_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', () => {
+        hideEditPullRequests();
+    });
+
+    CANCEL_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', () => {
+        hideEditPullRequests();
+    });
+
+    EDIT_ACTIONS_BUTTON.addEventListener('click', () => {
+        showEditActions();
+    });
+
+    SAVE_ACTIONS_CONFIG_BUTTON.addEventListener('click', () => {
+        showEditActions();
+    });
+
+    CANCEL_ACTIONS_CONFIG_BUTTON.addEventListener('click', () => {
+        hideEditActions();
+    });
+}
+
+function approvalButtons() {
     window.reviewDeployment = async (event: any) => {
         const target = event.target as HTMLElement;
         if (!target) {
@@ -54,7 +114,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         const { org, repo, runId } = event.target.dataset;
         const environments = await getPendingEnvironments(org, repo, runId);
         loadReviewModal(org, repo, runId, environments);
-    }
+    };
 
     CLOSE_REVIEW_MODAL.addEventListener('click', () => {
         hideReviewModal();
@@ -73,31 +133,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         await reviewDeployment(org, repo, runId, selectedEnvironments, 'rejected', REVIEW_COMMENT.value);
         hideReviewModal();
     });
-
-    // EDIT_PULL_REQUESTS_BUTTON.addEventListener('click', () => {
-    //     console.log('Edit pull requests');
-    // });
-
-    // EDIT_ACTIONS_BUTTON.addEventListener('click', () => {
-    //     console.log('Edit actions');
-    // });
-
-    const localStorageData = getSiteData();
-
-    setInterval(async () => {
-        if (!Firebase.signedIn()) { return; }
-        await updateLocalStorageAndLoadContent(lastUpdated);
-    }, 60 * 1000);
-
-    if (!Firebase.signedIn()) { return; }
-    showContent();
-    if (localStorageData) {
-        await loadContent(localStorageData);
-        lastUpdated.startTimer();
-    } else {
-        await updateLocalStorageAndLoadContent(lastUpdated);
-    }
-});
+}
 
 async function updateLocalStorageAndLoadContent(lastUpdated: LastUpdated) {
     await fetchDataAndSaveToLocalStorage();

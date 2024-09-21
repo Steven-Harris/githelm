@@ -1,16 +1,16 @@
 
 import { PendingDeployments } from '../services/models';
 import {
-  ACTIONS_DIV,
+  ACTIONS,
   APPROVE_ACTION_BUTTON,
   handleTabs,
   hideLoading,
   PENDING_ENVIRONMENTS,
-  PULL_REQUESTS_DIV,
+  PULL_REQUESTS,
   REJECT_ACTION_BUTTON,
   REVIEW_REPO,
   showLoading, showReviewModal,
-  toggleLogin,
+  toggleLogin
 } from './elements';
 import { actionsTemplate, pendingEnvironmentsTemplate, pullRequestTemplate } from './templates';
 let previousData: {
@@ -31,7 +31,7 @@ export function showContent() {
 }
 
 export function setNoContent() {
-  [PULL_REQUESTS_DIV, ACTIONS_DIV].forEach((element: any) => element.innerHTML = '<p>No pull requests found. Configure repositories by clicking the pencil icon above.</p>');
+  [PULL_REQUESTS, ACTIONS].forEach((element: any) => element.innerHTML = '<p>No pull requests found. Configure repositories by clicking the pencil icon above.</p>');
   hideLoading();
   saveState([]);
   previousData = { pullRequests: {}, actions: {} };
@@ -66,7 +66,7 @@ function saveState(results: any[]) {
 }
 
 function updateContent({ type, org, repo, data }: any) {
-  const container = type === 'pull-requests' ? PULL_REQUESTS_DIV : ACTIONS_DIV;
+  const container = type === 'pull-requests' ? PULL_REQUESTS : ACTIONS;
   const template = type === 'pull-requests' ? pullRequestTemplate : actionsTemplate;
   const previousRepoData = type === 'pull-requests' ? previousData.pullRequests[org]?.[repo] : previousData.actions[org]?.[repo];
   if (JSON.stringify(previousRepoData) !== JSON.stringify(data)) {

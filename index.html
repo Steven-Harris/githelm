@@ -39,20 +39,34 @@
           class="fixed mt-20 inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-50 hidden">
           <img class="spinner" src="src/assets/helm.svg" width="10" height="10" />
         </div>
-        <section id="pull-requests-section" class="glow bg-gray-800 p-5 rounded-lg">
-          <h2 class="text-xl font-bold mb-4 lg:sticky top-0 z-10 bg-gray-800">
-            Pull Requests
-            <!-- <button id="edit-pull-requests" class="hover:underline" title="edit pull requests configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button> -->
-          </h2>
+        <section id="pull-requests-section" class="glow bg-gray-800 p-5 mb-50 rounded-lg">
+          <div class="flex justify-between mb-4 lg:sticky top-0 z-10 bg-gray-800">
+            <h2 class="text-xl font-bold">Pull Requests</h2>
+            <div>
+              <button id="edit-pull-requests-button" class="hover:underline" title="edit pull requests configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button>
+              <button id="save-pull-requests-config-button" class="hidden px-2 py-1 bg-green-500 hover:bg-green-700 text-white font-bold rounded">Save</button>
+              <button id="cancel-pull-requests-config-button" class="hidden px-2 py-1 bg-red-500 hover:bg-red-700 text-white font-bold rounded">Cancel</button>
+            </div>
+          </div>
           <div id="pull-requests"></div>
+          <div id="edit-pull-requests" class="hidden">
+            <div id="pull-request-config"></div>
+          </div>
         </section>
 
-        <section id="actions-section" class="glow bg-gray-800 p-5 rounded-lg hidden md:block">
-          <h2 class="text-xl font-bold mb-4 lg:sticky top-0 z-10 bg-gray-800">
-            Actions
-            <!-- <button id="edit-actions" class="hover:underline" title="edit actions configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button> -->
-          </h2>
+        <section id="actions-section" class="glow bg-gray-800 p-5 mb-25 rounded-lg hidden md:block">
+          <div class="flex justify-between mb-4 lg:sticky top-0 z-10 bg-gray-800">
+            <h2 class="text-xl font-bold">Actions</h2>
+            <div>
+              <button id="edit-actions-button" class="hover:underline" title="edit actions configuration"><img src="src/assets/edit.svg" width="20" height="20" class="-mb-1"/> </button>
+              <button id="save-actions-config-button" class="hidden px-2 py-1 bg-green-500 hover:bg-green-700 text-white font-bold rounded">Save</button>
+              <button id="cancel-actions-config-button" class="hidden px-2 py-1 bg-red-500 hover:bg-red-700 text-white font-bold rounded">Cancel</button>
+            </div>
+          </div>
           <div id="actions"></div>
+          <div id="edit-actions" class="hidden">
+            <div id="actions-config"></div>
+          </div>
           <!-- Actions Modal -->
           <div id="review-modal"
             class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
@@ -79,24 +93,6 @@
               </div>
             </div>
         </section>
-      </div>
-    </div>
-    <div id="config-modal"
-      class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
-      <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
-        <h2 class="text-2xl font-bold mb-4">Pull Requests Config</h2>
-        <form id="pull-requests-config-form">
-          <div id="config-entries">
-          </div>
-          <div>
-            <button type="button" id="add-entry"
-              class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2">Add Entry</button>
-          </div>
-          <button type="submit"
-            class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mt-4">Save</button>
-          <button type="button" id="close-modal"
-            class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mt-4">Close</button>
-        </form>
       </div>
     </div>
     <div id="pwa-toast" role="alert" aria-labelledby="toast-message">

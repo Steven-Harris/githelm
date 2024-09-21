@@ -5,11 +5,19 @@ export const TAB_PULL_REQUESTS = document.getElementById('tab-pull-requests')!;
 export const TAB_ACTIONS = document.getElementById('tab-actions')!;
 export const PULL_REQUESTS_SECTION = document.getElementById('pull-requests-section')!;
 export const ACTIONS_SECTION = document.getElementById('actions-section')!;
-export const PULL_REQUESTS_DIV = document.getElementById('pull-requests')!;
-export const ACTIONS_DIV = document.getElementById('actions')!;
+export const PULL_REQUESTS = document.getElementById('pull-requests')!;
+export const ACTIONS = document.getElementById('actions')!;
 export const LOADING = document.getElementById('loading')!;
-export const EDIT_PULL_REQUESTS_BUTTON = document.getElementById('edit-pull-requests')!;
-export const EDIT_ACTIONS_BUTTON = document.getElementById('edit-actions')!;
+export const EDIT_PULL_REQUESTS = document.getElementById('edit-pull-requests')!;
+export const PULL_REQUESTS_CONFIG = document.getElementById('pull-request-config')!;
+export const EDIT_PULL_REQUESTS_BUTTON = document.getElementById('edit-pull-requests-button')!;
+export const SAVE_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('save-pull-requests-config-button')!;
+export const CANCEL_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('cancel-pull-requests-config-button')!;
+export const EDIT_ACTIONS = document.getElementById('edit-actions')!;
+export const EDIT_ACTIONS_BUTTON = document.getElementById('edit-actions-button')!;
+export const ACTIONS_CONFIG = document.getElementById('actions-config')!;
+export const SAVE_ACTIONS_CONFIG_BUTTON = document.getElementById('save-actions-config-button')!;
+export const CANCEL_ACTIONS_CONFIG_BUTTON = document.getElementById('cancel-actions-config-button')!;
 export const LAST_UPDATED = document.getElementById('last-updated')!;
 export const REVIEW_MODAL = document.getElementById('review-modal')!;
 export const CLOSE_REVIEW_MODAL = document.getElementById('close-review-modal')!;
@@ -29,6 +37,39 @@ export function toggleLogin(isAuthorized: boolean) {
     LOGIN_BUTTON.classList.remove('hidden');
     LOGOUT_BUTTON.classList.add('hidden');
   }
+}
+
+export function showEditPullRequests() {
+  EDIT_PULL_REQUESTS_BUTTON.classList.add('hidden');
+  EDIT_PULL_REQUESTS.classList.remove('hidden');
+  SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
+  CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
+  PULL_REQUESTS.classList.add('hidden');
+
+}
+
+export function hideEditPullRequests() {
+  EDIT_PULL_REQUESTS_BUTTON.classList.remove('hidden');
+  EDIT_PULL_REQUESTS.classList.add('hidden');
+  SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.add('hidden');
+  CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.add('hidden');
+  PULL_REQUESTS.classList.remove('hidden');
+}
+
+export function showEditActions() {
+  EDIT_ACTIONS_BUTTON.classList.add('hidden');
+  EDIT_ACTIONS.classList.remove('hidden');
+  SAVE_ACTIONS_CONFIG_BUTTON.classList.remove('hidden');
+  CANCEL_ACTIONS_CONFIG_BUTTON.classList.remove('hidden');
+  ACTIONS.classList.add('hidden');
+}
+
+export function hideEditActions() {
+  EDIT_ACTIONS_BUTTON.classList.remove('hidden');
+  EDIT_ACTIONS.classList.add('hidden');
+  SAVE_ACTIONS_CONFIG_BUTTON.classList.add('hidden');
+  CANCEL_ACTIONS_CONFIG_BUTTON.classList.add('hidden');
+  ACTIONS.classList.remove('hidden');
 }
 
 export function showReviewModal() {

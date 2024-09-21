@@ -27,10 +27,8 @@ export function load(): Promise<any>[] {
 }
 
 async function getPullRequests(org: string, repo: string, filter: string) {
-  const url = `https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+${filter}`;
-
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+${filter}`);
 
     for (let item of data.items) {
       const reviews = await fetchData(`https://api.github.com/repos/${org}/${repo}/pulls/${item.number}/reviews`);
@@ -44,10 +42,8 @@ async function getPullRequests(org: string, repo: string, filter: string) {
 }
 
 async function getActions(org: string, repo: string, filter: string) {
-  const url = `https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}.yml/runs?per_page=1`;
-
   try {
-    const data = await fetchData(url);
+    const data = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}.yml/runs?per_page=1`);
 
     for (let run of data.workflow_runs) {
       const jobs = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${run.id}/jobs`);
@@ -60,21 +56,9 @@ async function getActions(org: string, repo: string, filter: string) {
   }
 }
 
-export async function getUserRepos(): Promise<string[]> {
-  const url = 'https://api.github.com/user/repos';
-  try {
-    const response = await fetchData(url);
-    return response.map((repo: any) => repo.full_name);
-  } catch (error) {
-    console.error('Error fetching repositories:', error);
-    return [];
-  }
-}
-
 export async function getPendingEnvironments(org: string, repo: string, runId: string) {
-  const url = `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`;
   try {
-    const response = await fetchData(url) as PendingDeployments[];
+    const response = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`) as PendingDeployments[];
     return response;
   } catch (error) {
     console.error('Error fetching pending environments:', error);
@@ -83,8 +67,7 @@ export async function getPendingEnvironments(org: string, repo: string, runId: s
 }
 
 export async function reviewDeployment(org: string, repo: string, runId: string, envIds: number[], state: string, comment: string) {
-  const url = `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`;
-  return await fetch(url, {
+  return await fetch(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({
