@@ -1,12 +1,16 @@
 
-import { PendingDeployments } from '../services/models';
+import { PendingDeployments, RepoConfig } from '../services/models';
 import {
   ACTIONS,
   APPROVE_ACTION_BUTTON,
   handleTabs,
   hideLoading,
   PENDING_ENVIRONMENTS,
+  PR_LABELS_CHIPS,
+  PR_ORG_INPUT,
+  PR_REPO_INPUT,
   PULL_REQUESTS,
+  PULL_REQUESTS_CONFIG,
   REJECT_ACTION_BUTTON,
   REVIEW_REPO,
   showLoading, showReviewModal,
@@ -35,6 +39,79 @@ export function setNoContent() {
   hideLoading();
   saveState([]);
   previousData = { pullRequests: {}, actions: {} };
+}
+
+export let LABELS: string[] = [];
+
+export function addFilterChip(filter: string) {
+  if (!LABELS.includes(filter)) {
+    LABELS.push(filter);
+    const chip = document.createElement('div');
+    chip.classList.add('bg-blue-500', 'text-white', 'px-2', 'py-1', 'rounded', 'mr-2', 'mb-2', 'flex', 'items-center');
+    chip.innerHTML = `
+            <span>${filter}</span>
+            <button class="ml-2 text-white bg-transparent border-0 cursor-pointer">x</button>
+        `;
+    PR_LABELS_CHIPS.appendChild(chip);
+
+    // Add event listener to remove button
+    chip.querySelector('button')!.addEventListener('click', () => {
+      LABELS = LABELS.filter(f => f !== filter);
+      PR_LABELS_CHIPS.removeChild(chip);
+    });
+  }
+}
+
+export function clearPRConfig() {
+  PULL_REQUESTS_CONFIG.innerHTML = '';
+}
+
+export function createRepoCard(org: string, repo: string, labels: string[]) {
+  const repoCard = document.createElement('div');
+  repoCard.classList.add('p-2', 'bg-gray-700', 'rounded-md', 'hover:bg-gray-600', 'mb-2', 'sortable-handle', 'cursor-move');
+  repoCard.innerHTML = `
+      <div class="flex justify-between">
+          <span>
+            <span class="mr-2">☰</span>
+            <strong> 
+            ${org}/${repo}
+            </strong>
+          </span>
+          <button class="remove-repo-button text-white">
+            <span class="hover:font-bold"> &times;</span>
+          </button>
+      </div>
+      ${labels.map(label => `<span class="chip">${label.replace('label:', '')}</span>`).join('')}
+    `;
+  PULL_REQUESTS_CONFIG.appendChild(repoCard);
+  PR_ORG_INPUT.focus();
+
+  repoCard.querySelector('.remove-repo-button')!.addEventListener('click', () => {
+    PULL_REQUESTS_CONFIG.removeChild(repoCard);
+  });
+
+  // Clear inputs and filters
+  PR_ORG_INPUT.value = '';
+  PR_REPO_INPUT.value = '';
+  labels = [];
+  PR_LABELS_CHIPS.innerHTML = '';
+}
+
+export function getPullRequestConfigs(): RepoConfig[] {
+  const configs: RepoConfig[] = [];
+  const repoCards = PULL_REQUESTS_CONFIG.querySelectorAll('.sortable-handle');
+  repoCards.forEach((card) => {
+    const orgRepo = card.querySelector('strong')?.textContent?.split('/');
+    const filters = card.querySelectorAll('.chip');
+    if (orgRepo && orgRepo.length === 2) {
+      const [org, repo] = orgRepo;
+      configs.push({
+        org: org.trim(), repo: repo.trim(),
+        filters: filters ? Array.from(filters).map((f: any) => `label:${f.textContent.trim()}`) : []
+      });
+    }
+  });
+  return configs;
 }
 
 export function loadReviewModal(org: string, repo: string, runId: string, environments: PendingDeployments[]) {

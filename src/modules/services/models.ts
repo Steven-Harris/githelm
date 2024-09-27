@@ -1,7 +1,7 @@
 export interface RepoConfig {
   org: string;
   repo: string;
-  filter: string;
+  filters: string[];
 }
 
 export interface Config {

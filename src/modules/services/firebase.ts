@@ -1,6 +1,6 @@
 import { getAnalytics } from 'firebase/analytics';
 import { FirebaseApp, initializeApp } from 'firebase/app';
-import { GithubAuthProvider, User, getAuth, signInWithPopup } from 'firebase/auth';
+import { GithubAuthProvider, browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithPopup } from 'firebase/auth';
 import {
   Firestore,
   collection,
@@ -24,13 +24,24 @@ export class Firebase {
   };
   private app: FirebaseApp;
   private db: Firestore;
-  private user: User | null;
+  private user: any = null;
 
   constructor() {
     this.app = initializeApp(this.firebaseConfig);
     this.db = getFirestore(this.app);
-    this.user = getAuth(this.app).currentUser;
     getAnalytics(this.app);
+  }
+
+  private initAuthStateListener(): Promise<void> {
+    return new Promise((resolve) => {
+      const auth = getAuth(this.app);
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          this.user = user;
+        }
+        resolve();
+      });
+    });
   }
 
   public static signedIn() {
@@ -40,34 +51,31 @@ export class Firebase {
   public signOut() {
     clearSiteData();
   }
+
   public async signIn() {
     const auth = getAuth(this.app);
+    await setPersistence(auth, browserLocalPersistence)
     const provider = new GithubAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      this.user = result.user;
       const credential = GithubAuthProvider.credentialFromResult(result);
       if (credential?.accessToken) {
         setGithubToken(credential?.accessToken);
       }
       return true;
     } catch (error) {
-      return false;
+      throw new Error(`Can't get firebase user`);
     }
   }
 
   public async getConfig(): Promise<Config> {
+    await this.initAuthStateListener();
+
     if (!this.user) {
-      this.user = getAuth(this.app).currentUser;
-      if (!this.user) {
-        throw new Error(`Can't get firebase user`);
-      }
+      return { pullRequests: [], actions: [] };
     }
 
-    const idTokenResult = await this.user?.getIdTokenResult();
-    const userId = idTokenResult?.claims.sub;
-
-    const docRef = doc(collection(this.db, "configs"), userId);
+    const docRef = doc(collection(this.db, "configs"), this.user.uid);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -79,16 +87,12 @@ export class Firebase {
     return { pullRequests: [], actions: [] };
   }
 
-  public async saveConfig(prConfig: RepoConfig[], actionConfig: RepoConfig[]) {
-    if (!this.user) {
-      this.user = getAuth(this.app).currentUser;
-    }
+  public async savePRConfig(prConfig: RepoConfig[]) {
+    console.log(prConfig);
+    await this.initAuthStateListener();
 
-    const idTokenResult = await this.user?.getIdTokenResult();
-    const userId = idTokenResult?.claims.sub;
+    const docRef = doc(collection(this.db, "configs"), this.user.uid);
 
-    const docRef = doc(collection(this.db, "configs"), userId);
-
-    await setDoc(docRef, { pullRequests: prConfig, actions: actionConfig });
+    await setDoc(docRef, { pullRequests: prConfig });
   }
 }

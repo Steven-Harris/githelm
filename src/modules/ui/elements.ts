@@ -10,6 +10,11 @@ export const ACTIONS = document.getElementById('actions')!;
 export const LOADING = document.getElementById('loading')!;
 export const EDIT_PULL_REQUESTS = document.getElementById('edit-pull-requests')!;
 export const PULL_REQUESTS_CONFIG = document.getElementById('pull-request-config')!;
+export const PR_ORG_INPUT = document.getElementById('pr-org-input')! as HTMLInputElement;
+export const PR_REPO_INPUT = document.getElementById('pr-repo-input')! as HTMLInputElement;
+export const PR_LABELS_INPUT = document.getElementById('pr-labels-input')! as HTMLInputElement;
+export const PR_LABELS_CHIPS = document.getElementById('pr-labels-chips')!;
+export const ADD_PR_REPO_FORM = document.getElementById('add-pr-repo-form')!;
 export const EDIT_PULL_REQUESTS_BUTTON = document.getElementById('edit-pull-requests-button')!;
 export const SAVE_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('save-pull-requests-config-button')!;
 export const CANCEL_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('cancel-pull-requests-config-button')!;
@@ -45,7 +50,7 @@ export function showEditPullRequests() {
   SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   PULL_REQUESTS.classList.add('hidden');
-
+  PR_ORG_INPUT.focus();
 }
 
 export function hideEditPullRequests() {

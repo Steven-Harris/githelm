@@ -7,19 +7,29 @@ import {
     reviewDeployment
 } from '@services';
 import {
+    ADD_PR_REPO_FORM,
     APPROVE_ACTION_BUTTON,
     CANCEL_ACTIONS_CONFIG_BUTTON,
     CANCEL_PULL_REQUESTS_CONFIG_BUTTON,
     CLOSE_REVIEW_MODAL,
     EDIT_ACTIONS_BUTTON,
     EDIT_PULL_REQUESTS_BUTTON,
+    LABELS,
     LOGIN_BUTTON,
     LOGOUT_BUTTON,
     LastUpdated,
+    PR_LABELS_INPUT,
+    PR_ORG_INPUT,
+    PR_REPO_INPUT,
+    PULL_REQUESTS_CONFIG,
     REJECT_ACTION_BUTTON,
     REVIEW_COMMENT,
     SAVE_ACTIONS_CONFIG_BUTTON,
     SAVE_PULL_REQUESTS_CONFIG_BUTTON,
+    addFilterChip,
+    clearPRConfig,
+    createRepoCard,
+    getPullRequestConfigs,
     hideEditActions,
     hideEditPullRequests,
     hideReviewModal,
@@ -30,6 +40,7 @@ import {
     showEditActions,
     showEditPullRequests
 } from '@ui';
+import Sortable from 'sortablejs';
 import { initPWA } from './pwa';
 
 declare global {
@@ -41,20 +52,24 @@ declare global {
 document.addEventListener("DOMContentLoaded", async function () {
     const firebase = new Firebase();
     const lastUpdated = new LastUpdated();
+    Sortable.create(PULL_REQUESTS_CONFIG, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        handle: '.sortable-handle',
+    });
     initPWA(document.getElementById('app')!);
     loginButtons(firebase, lastUpdated);
     approvalButtons();
-    editingButtons();
+    editingButtons(firebase);
 
     const localStorageData = getSiteData();
 
-    setInterval(async () => {
-        if (!Firebase.signedIn()) { return; }
-        await updateLocalStorageAndLoadContent(lastUpdated);
-    }, 60 * 1000);
+    setInterval(async () => await updateLocalStorageAndLoadContent(lastUpdated), 60 * 1000);
 
     if (!Firebase.signedIn()) { return; }
     showContent();
+    await loadPullRequestConfigs(new Firebase());
+
     if (localStorageData) {
         await loadContent(localStorageData);
         lastUpdated.startTimer();
@@ -78,16 +93,40 @@ function loginButtons(firebase: Firebase, lastUpdated: LastUpdated) {
     });
 }
 
-function editingButtons() {
+function editingButtons(firebase: Firebase) {
+
+    PR_LABELS_INPUT.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            const filter = PR_LABELS_INPUT.value.trim();
+            if (filter) {
+                addFilterChip(filter);
+                PR_LABELS_INPUT.value = '';
+            }
+            event.preventDefault();
+        }
+    });
+
+    ADD_PR_REPO_FORM.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const org = PR_ORG_INPUT.value.trim();
+        const repo = PR_REPO_INPUT.value.trim();
+        if (org && repo) {
+            createRepoCard(org, repo, LABELS);
+        }
+    });
     EDIT_PULL_REQUESTS_BUTTON.addEventListener('click', async () => {
         showEditPullRequests();
     });
 
-    SAVE_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', () => {
+    SAVE_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', async () => {
+        const prConfigs = getPullRequestConfigs();
+        await firebase.savePRConfig(prConfigs);
         hideEditPullRequests();
     });
 
     CANCEL_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', () => {
+        loadPullRequestConfigs(new Firebase())
         hideEditPullRequests();
     });
 
@@ -136,6 +175,7 @@ function approvalButtons() {
 }
 
 async function updateLocalStorageAndLoadContent(lastUpdated: LastUpdated) {
+    if (!Firebase.signedIn()) { return; }
     await fetchDataAndSaveToLocalStorage();
     const updatedData = getSiteData();
     if (!updatedData) {
@@ -143,6 +183,18 @@ async function updateLocalStorageAndLoadContent(lastUpdated: LastUpdated) {
     }
     await loadContent(updatedData);
     lastUpdated.startTimer();
+}
+
+async function loadPullRequestConfigs(firebase: Firebase) {
+    try {
+        clearPRConfig()
+        const config = await firebase.getConfig();
+        config.pullRequests.forEach(prConfig => {
+            createRepoCard(prConfig.org, prConfig.repo, prConfig.filters);
+        });
+    } catch (error) {
+        console.error("Failed to load pull request configs:", error);
+    }
 }
 
 function getSelectedEnvironments() {

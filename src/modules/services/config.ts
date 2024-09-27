@@ -4,104 +4,104 @@ export const config = `
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-service",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-translation-service",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-query-service",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-deposit-interest-processor",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-transfers-processor",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-manual-journal-processor",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-import-service",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-load-tester",
-      "filter": ""
+      "filters": [""]
     },
     {
       "org": "JHADigitalCore",
       "repo": "environments",
-      "filter": "label:general-ledger"
+      "filters": ["label:general-ledger"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "k8s-apps",
-      "filter": "label:general-ledger"
+      "filters": ["label:general-ledger"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "digitalcore-contracts",
-      "filter": "label:general-ledger"
+      "filters": ["label:general-ledger"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "digitalcore-messages-doc",
-      "filter": "label:general-ledger"
+      "filters": ["label:general-ledger"]
     }
   ],
   "actions": [
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-service",
-      "filter": "deploy"
+      "filters": ["deploy"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-translation-service",
-      "filter": "deploy"
+      "filters": ["deploy"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-query-service",
-      "filter": "deploy"
+      "filters": ["deploy"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-transfers-processor",
-      "filter": "deploy"
+      "filters": ["deploy"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-deposit-interest-processor",
-      "filter": "deploy"
+      "filters": ["deploy"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-manual-journal-processor",
-      "filter": "deploy"
+      "filters": ["deploy"]
     },
     {
       "org": "JHADigitalCore",
       "repo": "general-ledger-import-service",
-      "filter": "deploy"
+      "filters": ["deploy"]
     }
   ]
 }

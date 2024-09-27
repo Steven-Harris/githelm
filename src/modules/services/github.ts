@@ -13,14 +13,15 @@ export function load(): Promise<any>[] {
     return [];
   }
   const { pullRequests, actions } = configObj;
-
+  // TODO: support multiple filters
   return [
     ...pullRequests.map(async (prConfig: RepoConfig) => {
-      const result = await getPullRequests(prConfig.org, prConfig.repo, prConfig.filter);
+      console.log(prConfig.filters)
+      const result = await getPullRequests(prConfig.org, prConfig.repo, prConfig.filters[0]);
       return { type: 'pull-requests', ...result };
     }),
     ...actions.map(async (actionConfig: RepoConfig) => {
-      const result = await getActions(actionConfig.org, actionConfig.repo, actionConfig.filter);
+      const result = await getActions(actionConfig.org, actionConfig.repo, actionConfig.filters[0]);
       return { type: 'actions', ...result };
     })
   ];

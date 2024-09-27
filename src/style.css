@@ -4,7 +4,8 @@
 @tailwind utilities;
 
 /* Global Styles */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   display: flex;
@@ -21,16 +22,21 @@ main {
   overflow: auto;
 }
 
-header, #tabs, #pull-request-header, #actions-header {
+header,
+#tabs,
+#pull-request-header,
+#actions-header {
   position: sticky;
   top: 0;
-  background-color: #1a202c; /* Tailwind bg-gray-900 */
+  background-color: #1a202c;
+  /* Tailwind bg-gray-900 */
 }
 
 @keyframes spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -39,7 +45,7 @@ header, #tabs, #pull-request-header, #actions-header {
 
 /* Component Styles */
 #content {
-    margin-top: 1rem;
+  margin-top: 1rem;
 }
 
 .nav-button {
@@ -52,8 +58,10 @@ header, #tabs, #pull-request-header, #actions-header {
 }
 
 .nav-button:hover {
-  background-color: #38bdf8; /* hover:bg-sky-400 */
-  color: #1f2937; /* hover:text-gray-900 */
+  background-color: #38bdf8;
+  /* hover:bg-sky-400 */
+  color: #1f2937;
+  /* hover:text-gray-900 */
 }
 
 .glow {
@@ -173,18 +181,24 @@ button#pwa-refresh {
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: #1a202c; /* Tailwind bg-gray-900 */
-    width: 100vw; /* Full viewport width */
+    background-color: #1a202c;
+    /* Tailwind bg-gray-900 */
+    width: 100vw;
+    /* Full viewport width */
     left: 50%;
     transform: translateX(-50%);
-    margin-left: -50vw; /* Negative margin to break out of the parent container */
-    margin-right: -55vw; /* Negative margin to break out of the parent container */
+    margin-left: -50vw;
+    /* Negative margin to break out of the parent container */
+    margin-right: -55vw;
+    /* Negative margin to break out of the parent container */
   }
+
   #content {
     display: block;
   }
+
   .reviews-container {
-    overflow-x: auto; 
+    overflow-x: auto;
     word-wrap: break-word;
     overflow-x: hidden;
   }
@@ -195,15 +209,35 @@ button#pwa-refresh {
     transition: none;
     width: 7rem;
     height: 3rem;
-    margin-left: 1rem;;
+    margin-left: 1rem;
+    ;
     margin-right: 1rem;
     align-items: center;
     justify-content: center;
   }
+
   .nav-button::before {
     content: '';
     width: 1.5rem;
     height: 1.5rem;
     background-size: cover;
   }
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  margin-right: 0.25rem;
+  background-color: #3b82f6;
+  /* Tailwind blue-500 */
+  color: white;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.chip:hover {
+  background-color: #2563eb;
+  /* Tailwind blue-700 */
 }
