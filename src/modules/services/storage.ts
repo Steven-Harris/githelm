@@ -9,18 +9,12 @@ export function getSiteData(): any {
 }
 
 export function setSiteData(data: any): void {
-  console.log('getting site data');
   setItem(SITE_DATA_KEY, JSON.stringify(data));
   setItem(LAST_UPDATED_KEY, Date.now().toString());
 }
 
-export function getLastUpdated(): number {
-  const lastUpdate = getItem(LAST_UPDATED_KEY);
-  if (!lastUpdate) {
-    return Date.now();
-  }
-
-  return Number(lastUpdate);
+export function getLastUpdated(): string | null {
+  return getItem(LAST_UPDATED_KEY);
 }
 
 export function clearSiteData(): void {

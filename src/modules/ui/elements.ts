@@ -1,3 +1,4 @@
+export const APP = document.getElementById('app')!;
 export const AUTHORIZED = document.getElementById('authorized')!;
 export const LOGIN_BUTTON = document.getElementById('login-button')!;
 export const LOGOUT_BUTTON = document.getElementById('logout-button')!;
@@ -51,7 +52,8 @@ export function showEditPullRequests() {
   SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   PULL_REQUESTS.classList.add('hidden');
-  ORG_INPUT.focus();
+  ORG_INPUT.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  ORG_INPUT.focus({ preventScroll: true });
 }
 
 export function hideEditPullRequests() {
@@ -60,6 +62,7 @@ export function hideEditPullRequests() {
   SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.add('hidden');
   CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.add('hidden');
   PULL_REQUESTS.classList.remove('hidden');
+  APP.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 export function showEditActions() {
@@ -68,6 +71,8 @@ export function showEditActions() {
   SAVE_ACTIONS_CONFIG_BUTTON.classList.remove('hidden');
   CANCEL_ACTIONS_CONFIG_BUTTON.classList.remove('hidden');
   ACTIONS.classList.add('hidden');
+  ORG_INPUT.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  ORG_INPUT.focus({ preventScroll: true });
 }
 
 export function hideEditActions() {

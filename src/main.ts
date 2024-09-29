@@ -80,6 +80,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     } else {
         await updateLocalStorageAndLoadContent(lastUpdated);
     }
+
 });
 
 function loginButtons(firebase: Firebase, lastUpdated: LastUpdated) {

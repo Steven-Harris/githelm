@@ -16,7 +16,6 @@ export function load(): Promise<any>[] {
   // TODO: support multiple filters
   return [
     ...pullRequests.map(async (prConfig: RepoConfig) => {
-      console.log(prConfig.filters)
       const result = await getPullRequests(prConfig.org, prConfig.repo, prConfig.filters[0]);
       return { type: 'pull-requests', ...result };
     }),

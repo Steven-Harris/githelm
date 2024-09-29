@@ -88,7 +88,6 @@ export class Firebase {
   }
 
   public async savePRConfig(prConfig: RepoConfig[]) {
-    console.log(prConfig);
     await this.initAuthStateListener();
 
     const docRef = doc(collection(this.db, "configs"), this.user.uid);
