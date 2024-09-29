@@ -51,12 +51,12 @@
           <div id="pull-requests"></div>
           <div id="edit-pull-requests" class="hidden">
             <div id="pull-request-config"></div>
-              <form id="add-pr-repo-form" class="p-2 bg-gray-700 rounded-md">
-                <input id="pr-org-input" type="text" class="w-full p-2 rounded bg-gray-600 text-white mb-2" placeholder="Organization" required />
-                <input id="pr-repo-input" type="text" class="w-full p-2 rounded bg-gray-600 text-white mb-2" placeholder="Repository" required />
+              <form id="add-repo-form" class="p-2 bg-gray-700 rounded-md">
+                <input id="org-input" type="text" class="w-full p-2 rounded bg-gray-600 text-white mb-2" placeholder="Organization" required />
+                <input id="repo-input" type="text" class="w-full p-2 rounded bg-gray-600 text-white mb-2" placeholder="Repository" required />
                 <div class="w-full p-2 rounded bg-gray-600 text-white mb-2 flex flex-wrap items-center border border-gray-600 focus-within:border-white">
-                  <div id="pr-labels-chips" class="flex flex-wrap"></div>
-                  <input id="pr-labels-input" type="text" class="flex-grow rounded bg-gray-600 text-white mb-2 border-none focus:outline-none" placeholder="Label" />
+                  <div id="labels-chips" class="flex flex-wrap"></div>
+                  <input id="labels-input" type="text" class="flex-grow rounded bg-gray-600 text-white mb-2 border-none focus:outline-none" placeholder="Label" />
                 </div>
                 <button id="add-repo-button" type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Repository</button>
               </form>
@@ -77,7 +77,7 @@
             <div id="actions-config"></div>
           </div>
           <!-- Actions Modal -->
-          <div id="review-modal"
+          <div id="review-modal"  
             class="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden overflow-auto">
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg relative">
 
@@ -119,13 +119,18 @@
     </div>
   </main>
   <footer class="p-1 bg-gray-800 flex justify-between items-center">
-    <div>
-      <a href="https://github.com/steven-harris/githelm" title="githelm repository" target="_blank" rel="noopener" class="hover:underline">&copy; <span id="copyright">
-        <script>document.getElementById('copyright').appendChild(document.createTextNode(new Date().getFullYear()))</script>
-      </span> GitHelm. All rights reserved.</a>
+    <div class="flex-1">
+      <a href="https://github.com/steven-harris/githelm" title="githelm repository" target="_blank" rel="noopener" class="hover:underline">
+      &copy; 
+      <span id="copyright"></span> GitHelm. All rights reserved.</a>
     </div>
-    <label id="last-updated" class="text-gray-400">Last updated 0s ago</label>
-    <a href="https://www.flaticon.com" title="rudder edit icons"  class="hover:underline" target="_blank" rel="noopener">Icons created
+    <div class="flex-1 text-center align-center">
+      <label id="last-updated" class="text-gray-400">Last updated 0s ago</label>
+      <button type="button" title="refresh content" id="refresh-button">
+        <img src="src/assets/refresh.svg" title="refresh" width="20" height="20" class="pt-2 size-5 text-gray-400" />
+      </button>
+    </div>
+    <a href="https://www.flaticon.com" title="rudder edit icons"  class="flex-1 hover:underline text-right" target="_blank" rel="noopener">Icons created
       by Flat Icons </a>
   </footer>
 

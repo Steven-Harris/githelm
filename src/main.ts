@@ -7,22 +7,24 @@ import {
     reviewDeployment
 } from '@services';
 import {
-    ADD_PR_REPO_FORM,
+    ADD_REPO_FORM,
     APPROVE_ACTION_BUTTON,
     CANCEL_ACTIONS_CONFIG_BUTTON,
     CANCEL_PULL_REQUESTS_CONFIG_BUTTON,
     CLOSE_REVIEW_MODAL,
+    COPYRIGHT,
     EDIT_ACTIONS_BUTTON,
     EDIT_PULL_REQUESTS_BUTTON,
     LABELS,
+    LABELS_INPUT,
     LOGIN_BUTTON,
     LOGOUT_BUTTON,
     LastUpdated,
-    PR_LABELS_INPUT,
-    PR_ORG_INPUT,
-    PR_REPO_INPUT,
+    ORG_INPUT,
     PULL_REQUESTS_CONFIG,
+    REFRESH_BUTTON,
     REJECT_ACTION_BUTTON,
+    REPO_INPUT,
     REVIEW_COMMENT,
     SAVE_ACTIONS_CONFIG_BUTTON,
     SAVE_PULL_REQUESTS_CONFIG_BUTTON,
@@ -57,6 +59,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         ghostClass: 'sortable-ghost',
         handle: '.sortable-handle',
     });
+    setCopyrightYear();
     initPWA(document.getElementById('app')!);
     loginButtons(firebase, lastUpdated);
     approvalButtons();
@@ -64,6 +67,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     const localStorageData = getSiteData();
 
+    REFRESH_BUTTON.addEventListener('click', async () => await updateLocalStorageAndLoadContent(lastUpdated));
     setInterval(async () => await updateLocalStorageAndLoadContent(lastUpdated), 60 * 1000);
 
     if (!Firebase.signedIn()) { return; }
@@ -95,22 +99,22 @@ function loginButtons(firebase: Firebase, lastUpdated: LastUpdated) {
 
 function editingButtons(firebase: Firebase) {
 
-    PR_LABELS_INPUT.addEventListener('keydown', (event) => {
+    LABELS_INPUT.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
-            const filter = PR_LABELS_INPUT.value.trim();
+            const filter = LABELS_INPUT.value.trim();
             if (filter) {
                 addFilterChip(filter);
-                PR_LABELS_INPUT.value = '';
+                LABELS_INPUT.value = '';
             }
             event.preventDefault();
         }
     });
 
-    ADD_PR_REPO_FORM.addEventListener('submit', (event) => {
+    ADD_REPO_FORM.addEventListener('submit', (event) => {
         event.preventDefault();
 
-        const org = PR_ORG_INPUT.value.trim();
-        const repo = PR_REPO_INPUT.value.trim();
+        const org = ORG_INPUT.value.trim();
+        const repo = REPO_INPUT.value.trim();
         if (org && repo) {
             createRepoCard(org, repo, LABELS);
         }
@@ -201,3 +205,7 @@ function getSelectedEnvironments() {
     const checkboxes = document.querySelectorAll('#pending-environments input[type="checkbox"]:checked');
     return Array.from(checkboxes).map((checkbox: any) => Number(checkbox.dataset.id) as number);
 };
+
+function setCopyrightYear() {
+    COPYRIGHT.innerHTML = `${new Date().getFullYear().toString()}`;
+}

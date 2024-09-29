@@ -5,13 +5,13 @@ import {
   APPROVE_ACTION_BUTTON,
   handleTabs,
   hideLoading,
+  LABELS_CHIPS,
+  ORG_INPUT,
   PENDING_ENVIRONMENTS,
-  PR_LABELS_CHIPS,
-  PR_ORG_INPUT,
-  PR_REPO_INPUT,
   PULL_REQUESTS,
   PULL_REQUESTS_CONFIG,
   REJECT_ACTION_BUTTON,
+  REPO_INPUT,
   REVIEW_REPO,
   showLoading, showReviewModal,
   toggleLogin
@@ -52,12 +52,12 @@ export function addFilterChip(filter: string) {
             <span>${filter}</span>
             <button class="ml-2 text-white bg-transparent border-0 cursor-pointer">x</button>
         `;
-    PR_LABELS_CHIPS.appendChild(chip);
+    LABELS_CHIPS.appendChild(chip);
 
     // Add event listener to remove button
     chip.querySelector('button')!.addEventListener('click', () => {
       LABELS = LABELS.filter(f => f !== filter);
-      PR_LABELS_CHIPS.removeChild(chip);
+      LABELS_CHIPS.removeChild(chip);
     });
   }
 }
@@ -84,17 +84,17 @@ export function createRepoCard(org: string, repo: string, labels: string[]) {
       ${labels.map(label => `<span class="chip">${label.replace('label:', '')}</span>`).join('')}
     `;
   PULL_REQUESTS_CONFIG.appendChild(repoCard);
-  PR_ORG_INPUT.focus();
+  ORG_INPUT.focus();
 
   repoCard.querySelector('.remove-repo-button')!.addEventListener('click', () => {
     PULL_REQUESTS_CONFIG.removeChild(repoCard);
   });
 
   // Clear inputs and filters
-  PR_ORG_INPUT.value = '';
-  PR_REPO_INPUT.value = '';
+  ORG_INPUT.value = '';
+  REPO_INPUT.value = '';
   labels = [];
-  PR_LABELS_CHIPS.innerHTML = '';
+  LABELS_CHIPS.innerHTML = '';
 }
 
 export function getPullRequestConfigs(): RepoConfig[] {

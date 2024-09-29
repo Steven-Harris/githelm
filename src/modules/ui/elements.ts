@@ -10,11 +10,11 @@ export const ACTIONS = document.getElementById('actions')!;
 export const LOADING = document.getElementById('loading')!;
 export const EDIT_PULL_REQUESTS = document.getElementById('edit-pull-requests')!;
 export const PULL_REQUESTS_CONFIG = document.getElementById('pull-request-config')!;
-export const PR_ORG_INPUT = document.getElementById('pr-org-input')! as HTMLInputElement;
-export const PR_REPO_INPUT = document.getElementById('pr-repo-input')! as HTMLInputElement;
-export const PR_LABELS_INPUT = document.getElementById('pr-labels-input')! as HTMLInputElement;
-export const PR_LABELS_CHIPS = document.getElementById('pr-labels-chips')!;
-export const ADD_PR_REPO_FORM = document.getElementById('add-pr-repo-form')!;
+export const ORG_INPUT = document.getElementById('org-input')! as HTMLInputElement;
+export const REPO_INPUT = document.getElementById('repo-input')! as HTMLInputElement;
+export const LABELS_INPUT = document.getElementById('labels-input')! as HTMLInputElement;
+export const LABELS_CHIPS = document.getElementById('labels-chips')!;
+export const ADD_REPO_FORM = document.getElementById('add-repo-form')!;
 export const EDIT_PULL_REQUESTS_BUTTON = document.getElementById('edit-pull-requests-button')!;
 export const SAVE_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('save-pull-requests-config-button')!;
 export const CANCEL_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('cancel-pull-requests-config-button')!;
@@ -24,6 +24,7 @@ export const ACTIONS_CONFIG = document.getElementById('actions-config')!;
 export const SAVE_ACTIONS_CONFIG_BUTTON = document.getElementById('save-actions-config-button')!;
 export const CANCEL_ACTIONS_CONFIG_BUTTON = document.getElementById('cancel-actions-config-button')!;
 export const LAST_UPDATED = document.getElementById('last-updated')!;
+export const REFRESH_BUTTON = document.getElementById('refresh-button')!;
 export const REVIEW_MODAL = document.getElementById('review-modal')!;
 export const CLOSE_REVIEW_MODAL = document.getElementById('close-review-modal')!;
 export const APPROVE_ACTION_BUTTON = document.getElementById('approve-action')!;
@@ -31,7 +32,7 @@ export const REJECT_ACTION_BUTTON = document.getElementById('reject-action')!;
 export const REVIEW_COMMENT = document.getElementById('review-comment')! as HTMLTextAreaElement;
 export const REVIEW_REPO = REVIEW_MODAL.querySelector('#repo') as HTMLElement
 export const PENDING_ENVIRONMENTS = document.getElementById('pending-environments')!;
-
+export const COPYRIGHT = document.getElementById('copyright')!
 export function toggleLogin(isAuthorized: boolean) {
   if (isAuthorized) {
     AUTHORIZED.classList.remove('hidden');
@@ -50,7 +51,7 @@ export function showEditPullRequests() {
   SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   PULL_REQUESTS.classList.add('hidden');
-  PR_ORG_INPUT.focus();
+  ORG_INPUT.focus();
 }
 
 export function hideEditPullRequests() {

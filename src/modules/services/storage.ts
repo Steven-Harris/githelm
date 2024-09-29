@@ -1,6 +1,7 @@
 
 const SITE_DATA_KEY = 'SITE_DATA';
 const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
+const LAST_UPDATED_KEY = 'LAST_UPDATED';
 
 export function getSiteData(): any {
   const data = getItem(SITE_DATA_KEY);
@@ -8,7 +9,18 @@ export function getSiteData(): any {
 }
 
 export function setSiteData(data: any): void {
+  console.log('getting site data');
   setItem(SITE_DATA_KEY, JSON.stringify(data));
+  setItem(LAST_UPDATED_KEY, Date.now().toString());
+}
+
+export function getLastUpdated(): number {
+  const lastUpdate = getItem(LAST_UPDATED_KEY);
+  if (!lastUpdate) {
+    return Date.now();
+  }
+
+  return Number(lastUpdate);
 }
 
 export function clearSiteData(): void {
