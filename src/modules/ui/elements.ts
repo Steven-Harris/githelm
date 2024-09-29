@@ -11,17 +11,25 @@ export const ACTIONS = document.getElementById('actions')!;
 export const LOADING = document.getElementById('loading')!;
 export const EDIT_PULL_REQUESTS = document.getElementById('edit-pull-requests')!;
 export const PULL_REQUESTS_CONFIG = document.getElementById('pull-request-config')!;
-export const ORG_INPUT = document.getElementById('org-input')! as HTMLInputElement;
-export const REPO_INPUT = document.getElementById('repo-input')! as HTMLInputElement;
-export const LABELS_INPUT = document.getElementById('labels-input')! as HTMLInputElement;
-export const LABELS_CHIPS = document.getElementById('labels-chips')!;
-export const ADD_REPO_FORM = document.getElementById('add-repo-form')!;
+export const PRS_NOT_FOUND = document.getElementById('prs-not-found')!;
+export const PR_ORG_INPUT = document.getElementById('pr-org-input')! as HTMLInputElement;
+export const PR_REPO_INPUT = document.getElementById('pr-repo-input')! as HTMLInputElement;
+export const PR_LABELS_INPUT = document.getElementById('pr-repo-labels-input')! as HTMLInputElement;
+export const PR_LABELS_CHIPS = document.getElementById('pr-repo-labels-chips')!;
+export const PR_ADD_REPO_FORM = document.getElementById('pr-add-repo-form')!;
 export const EDIT_PULL_REQUESTS_BUTTON = document.getElementById('edit-pull-requests-button')!;
 export const SAVE_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('save-pull-requests-config-button')!;
 export const CANCEL_PULL_REQUESTS_CONFIG_BUTTON = document.getElementById('cancel-pull-requests-config-button')!;
 export const EDIT_ACTIONS = document.getElementById('edit-actions')!;
 export const EDIT_ACTIONS_BUTTON = document.getElementById('edit-actions-button')!;
+export const ACTIONS_REQUESTS_CONFIG = document.getElementById('actions-config')!;
 export const ACTIONS_CONFIG = document.getElementById('actions-config')!;
+export const ACTIONS_NOT_FOUND = document.getElementById('actions-not-found')!;
+export const ACTIONS_ORG_INPUT = document.getElementById('actions-org-input')! as HTMLInputElement;
+export const ACTIONS_REPO_INPUT = document.getElementById('actions-repo-input')! as HTMLInputElement;
+export const ACTIONS_LABELS_INPUT = document.getElementById('actions-repo-labels-input')! as HTMLInputElement;
+export const ACTIONS_LABELS_CHIPS = document.getElementById('actions-repo-labels-chips')!;
+export const ACTIONS_ADD_REPO_FORM = document.getElementById('actions-add-repo-form')!
 export const SAVE_ACTIONS_CONFIG_BUTTON = document.getElementById('save-actions-config-button')!;
 export const CANCEL_ACTIONS_CONFIG_BUTTON = document.getElementById('cancel-actions-config-button')!;
 export const LAST_UPDATED = document.getElementById('last-updated')!;
@@ -34,6 +42,7 @@ export const REVIEW_COMMENT = document.getElementById('review-comment')! as HTML
 export const REVIEW_REPO = REVIEW_MODAL.querySelector('#repo') as HTMLElement
 export const PENDING_ENVIRONMENTS = document.getElementById('pending-environments')!;
 export const COPYRIGHT = document.getElementById('copyright')!
+
 export function toggleLogin(isAuthorized: boolean) {
   if (isAuthorized) {
     AUTHORIZED.classList.remove('hidden');
@@ -46,14 +55,28 @@ export function toggleLogin(isAuthorized: boolean) {
   }
 }
 
+export function toggleNotFound(found: boolean) {
+  if (found) {
+    PRS_NOT_FOUND.classList.add('hidden');
+    ACTIONS_NOT_FOUND.classList.add('hidden');
+  } else {
+    PRS_NOT_FOUND.classList.remove('hidden');
+    ACTIONS_NOT_FOUND.classList.remove('hidden');
+  }
+}
+
 export function showEditPullRequests() {
   EDIT_PULL_REQUESTS_BUTTON.classList.add('hidden');
   EDIT_PULL_REQUESTS.classList.remove('hidden');
   SAVE_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   CANCEL_PULL_REQUESTS_CONFIG_BUTTON.classList.remove('hidden');
   PULL_REQUESTS.classList.add('hidden');
-  ORG_INPUT.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  ORG_INPUT.focus({ preventScroll: true });
+  focusPRInput();
+}
+
+export function focusPRInput() {
+  PR_ORG_INPUT.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  PR_ORG_INPUT.focus({ preventScroll: true });
 }
 
 export function hideEditPullRequests() {
@@ -71,8 +94,12 @@ export function showEditActions() {
   SAVE_ACTIONS_CONFIG_BUTTON.classList.remove('hidden');
   CANCEL_ACTIONS_CONFIG_BUTTON.classList.remove('hidden');
   ACTIONS.classList.add('hidden');
-  ORG_INPUT.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  ORG_INPUT.focus({ preventScroll: true });
+  focusActionsInput();
+}
+
+export function focusActionsInput() {
+  ACTIONS_ORG_INPUT.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  ACTIONS_ORG_INPUT.focus({ preventScroll: true });
 }
 
 export function hideEditActions() {

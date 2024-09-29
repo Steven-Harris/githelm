@@ -1,7 +1,15 @@
-/* Import Statements */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --primary-accent-color: #3b82f6;
+  --secondary-accent-color: #38bdf8;
+  --primary-color: #1f2937;
+  --secondary-color: #374151;
+  --active-highlight-color: #2d3748;
+  --primary-text-color: white
+}
 
 /* Global Styles */
 html,
@@ -28,7 +36,7 @@ header,
 #actions-header {
   position: sticky;
   top: 0;
-  background-color: #1a202c;
+  background-color: var(--primary-color);
   /* Tailwind bg-gray-900 */
 }
 
@@ -49,7 +57,7 @@ header,
 }
 
 .nav-button {
-  background-color: #374151;
+  background-color: var(--secondary-color);
   border-radius: 0.5rem;
   transition: background-color 300ms, color 300ms;
   font-size: 0.875rem;
@@ -58,14 +66,12 @@ header,
 }
 
 .nav-button:hover {
-  background-color: #38bdf8;
-  /* hover:bg-sky-400 */
-  color: #1f2937;
-  /* hover:text-gray-900 */
+  background-color: var(--secondary-accent-color);
+  color: var(--primary-color);
 }
 
 .glow {
-  box-shadow: 0 0 8px rgba(81, 203, 238, 1);
+  box-shadow: 0 0 8px var(--secondary-accent-color);
 }
 
 .spinner {
@@ -80,7 +86,7 @@ header,
 
 .tab-button {
   background-color: transparent;
-  color: white;
+  color: var(--primary-text-color);
   padding: 10px 20px;
   border: none;
   cursor: pointer;
@@ -90,7 +96,7 @@ header,
 }
 
 .tab-button.active {
-  border-bottom: 2px solid #2d3748;
+  border-bottom: 2px solid var(--active-highlight-color);
 }
 
 .link {
@@ -127,7 +133,7 @@ header,
 }
 
 .more-approvers {
-  color: white;
+  color: var(--primary-text-color);
   margin-left: 8px;
   font-size: 0.875rem;
 }
@@ -181,16 +187,11 @@ button#pwa-refresh {
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: #1a202c;
-    /* Tailwind bg-gray-900 */
     width: 100vw;
-    /* Full viewport width */
     left: 50%;
     transform: translateX(-50%);
     margin-left: -50vw;
-    /* Negative margin to break out of the parent container */
     margin-right: -55vw;
-    /* Negative margin to break out of the parent container */
   }
 
   #content {
@@ -230,14 +231,13 @@ button#pwa-refresh {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
   margin-right: 0.25rem;
-  background-color: #3b82f6;
-  /* Tailwind blue-500 */
-  color: white;
+  background-color: var(--primary-accent-color);
+  color: var(--primary-text-color);
   border-radius: 0.25rem;
   cursor: pointer;
 }
 
 .chip:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-accent-color);
   /* Tailwind blue-700 */
 }

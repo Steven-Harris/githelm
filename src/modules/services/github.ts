@@ -1,18 +1,16 @@
-import { config } from './config';
 import { Config, PendingDeployments, RepoConfig } from './models';
 import { clearSiteData, getGithubToken, setSiteData } from './storage';
 
-export async function fetchDataAndSaveToLocalStorage() {
-  const results = await Promise.all(load());
+export async function fetchDataAndSaveToLocalStorage(config: Config) {
+  const results = await Promise.all(load(config));
   setSiteData(results);
 }
 
-export function load(): Promise<any>[] {
-  const configObj: Config = JSON.parse(config);
-  if (!configObj) {
+export function load(config: Config): Promise<any>[] {
+  if (!config) {
     return [];
   }
-  const { pullRequests, actions } = configObj;
+  const { pullRequests, actions } = config;
   // TODO: support multiple filters
   return [
     ...pullRequests.map(async (prConfig: RepoConfig) => {
@@ -28,7 +26,8 @@ export function load(): Promise<any>[] {
 
 async function getPullRequests(org: string, repo: string, filter: string) {
   try {
-    const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+${filter}`);
+    const labels = filter ? `+label:${filter}` : '';
+    const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open${labels}`);
 
     for (let item of data.items) {
       const reviews = await fetchData(`https://api.github.com/repos/${org}/${repo}/pulls/${item.number}/reviews`);

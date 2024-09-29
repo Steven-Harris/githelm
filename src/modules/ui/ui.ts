@@ -2,19 +2,25 @@
 import { PendingDeployments, RepoConfig } from '../services/models';
 import {
   ACTIONS,
+  ACTIONS_LABELS_CHIPS,
+  ACTIONS_ORG_INPUT,
+  ACTIONS_REPO_INPUT,
   APPROVE_ACTION_BUTTON,
+  focusActionsInput,
+  focusPRInput,
   handleTabs,
   hideLoading,
-  LABELS_CHIPS,
-  ORG_INPUT,
   PENDING_ENVIRONMENTS,
+  PR_LABELS_CHIPS,
+  PR_ORG_INPUT,
+  PR_REPO_INPUT,
   PULL_REQUESTS,
   PULL_REQUESTS_CONFIG,
   REJECT_ACTION_BUTTON,
-  REPO_INPUT,
   REVIEW_REPO,
   showLoading, showReviewModal,
-  toggleLogin
+  toggleLogin,
+  toggleNotFound
 } from './elements';
 import { actionsTemplate, pendingEnvironmentsTemplate, pullRequestTemplate } from './templates';
 let previousData: {
@@ -23,41 +29,66 @@ let previousData: {
 } = { pullRequests: {}, actions: {} }
 
 export async function loadContent(data: any) {
-  data.forEach(updateContent);
-  hideLoading()
-  saveState(data);
+  if (!data) {
+    setNoContent();
+  } else {
+    data.forEach(updateContent);
+    saveState(data);
+  }
+  hideLoading();
 }
 
 export function showContent() {
   toggleLogin(true);
+  toggleNotFound(true);
   handleTabs();
   showLoading();
 }
 
 export function setNoContent() {
-  [PULL_REQUESTS, ACTIONS].forEach((element: any) => element.innerHTML = '<p>No pull requests found. Configure repositories by clicking the pencil icon above.</p>');
+  toggleNotFound(false);
   hideLoading();
   saveState([]);
   previousData = { pullRequests: {}, actions: {} };
 }
 
-export let LABELS: string[] = [];
+export let PR_LABELS: string[] = [];
+export let ACTIONS_LABELS: string[] = [];
 
-export function addFilterChip(filter: string) {
-  if (!LABELS.includes(filter)) {
-    LABELS.push(filter);
+export function addPRFilterChip(filter: string) {
+  if (!PR_LABELS.includes(filter)) {
+    PR_LABELS.push(filter);
     const chip = document.createElement('div');
     chip.classList.add('bg-blue-500', 'text-white', 'px-2', 'py-1', 'rounded', 'mr-2', 'mb-2', 'flex', 'items-center');
     chip.innerHTML = `
             <span>${filter}</span>
             <button class="ml-2 text-white bg-transparent border-0 cursor-pointer">x</button>
         `;
-    LABELS_CHIPS.appendChild(chip);
+    PR_LABELS_CHIPS.appendChild(chip);
 
     // Add event listener to remove button
     chip.querySelector('button')!.addEventListener('click', () => {
-      LABELS = LABELS.filter(f => f !== filter);
-      LABELS_CHIPS.removeChild(chip);
+      PR_LABELS = PR_LABELS.filter(f => f !== filter);
+      PR_LABELS_CHIPS.removeChild(chip);
+    });
+  }
+}
+
+export function addActionsFilterChip(filter: string) {
+  if (!ACTIONS_LABELS.includes(filter)) {
+    ACTIONS_LABELS.push(filter);
+    const chip = document.createElement('div');
+    chip.classList.add('bg-blue-500', 'text-white', 'px-2', 'py-1', 'rounded', 'mr-2', 'mb-2', 'flex', 'items-center');
+    chip.innerHTML = `
+            <span>${filter}</span>
+            <button class="ml-2 text-white bg-transparent border-0 cursor-pointer">x</button>
+        `;
+    ACTIONS_LABELS_CHIPS.appendChild(chip);
+
+    // Add event listener to remove button
+    chip.querySelector('button')!.addEventListener('click', () => {
+      ACTIONS_LABELS = ACTIONS_LABELS.filter(f => f !== filter);
+      ACTIONS_LABELS_CHIPS.removeChild(chip);
     });
   }
 }
@@ -83,23 +114,39 @@ export function createRepoCard(org: string, repo: string, labels: string[]) {
       </div>
       ${labels.map(label => `<span class="chip">${label.replace('label:', '')}</span>`).join('')}
     `;
-  PULL_REQUESTS_CONFIG.appendChild(repoCard);
-  ORG_INPUT.focus();
-
-  repoCard.querySelector('.remove-repo-button')!.addEventListener('click', () => {
-    PULL_REQUESTS_CONFIG.removeChild(repoCard);
-  });
-
-  // Clear inputs and filters
-  ORG_INPUT.value = '';
-  REPO_INPUT.value = '';
-  labels = [];
-  LABELS_CHIPS.innerHTML = '';
+  return repoCard;
 }
 
-export function getPullRequestConfigs(): RepoConfig[] {
+export function createRepoCards(configs: any[], container: HTMLElement) {
+  configs?.forEach(config => {
+    const repoCard = createRepoCard(config.org, config.repo, config.filters);
+    container.appendChild(repoCard);
+
+    repoCard.querySelector('.remove-repo-button')!.addEventListener('click', () => {
+      container.removeChild(repoCard);
+    });
+  });
+}
+
+export function clearPRInputs() {
+  PR_ORG_INPUT.value = '';
+  PR_REPO_INPUT.value = '';
+  PR_LABELS = [];
+  PR_LABELS_CHIPS.innerHTML = '';
+  focusPRInput();
+}
+
+export function clearActionInputs() {
+  ACTIONS_ORG_INPUT.value = '';
+  ACTIONS_REPO_INPUT.value = '';
+  ACTIONS_LABELS = [];
+  ACTIONS_LABELS_CHIPS.innerHTML = '';
+  focusActionsInput();
+}
+
+export function getConfigs(element: HTMLElement): RepoConfig[] {
   const configs: RepoConfig[] = [];
-  const repoCards = PULL_REQUESTS_CONFIG.querySelectorAll('.sortable-handle');
+  const repoCards = element.querySelectorAll('.sortable-handle');
   repoCards.forEach((card) => {
     const orgRepo = card.querySelector('strong')?.textContent?.split('/');
     const filters = card.querySelectorAll('.chip');
@@ -107,7 +154,7 @@ export function getPullRequestConfigs(): RepoConfig[] {
       const [org, repo] = orgRepo;
       configs.push({
         org: org.trim(), repo: repo.trim(),
-        filters: filters ? Array.from(filters).map((f: any) => `label:${f.textContent.trim()}`) : []
+        filters: filters ? Array.from(filters).map((f: any) => `${f.textContent.trim()}`) : []
       });
     }
   });

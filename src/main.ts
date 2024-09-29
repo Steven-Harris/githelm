@@ -7,7 +7,14 @@ import {
     reviewDeployment
 } from '@services';
 import {
-    ADD_REPO_FORM,
+    ACTIONS_ADD_REPO_FORM,
+    ACTIONS_CONFIG,
+    ACTIONS_LABELS,
+    ACTIONS_LABELS_INPUT,
+    ACTIONS_ORG_INPUT,
+    ACTIONS_REPO_INPUT,
+    ACTIONS_REQUESTS_CONFIG,
+    APP,
     APPROVE_ACTION_BUTTON,
     CANCEL_ACTIONS_CONFIG_BUTTON,
     CANCEL_PULL_REQUESTS_CONFIG_BUTTON,
@@ -15,32 +22,37 @@ import {
     COPYRIGHT,
     EDIT_ACTIONS_BUTTON,
     EDIT_PULL_REQUESTS_BUTTON,
-    LABELS,
-    LABELS_INPUT,
     LOGIN_BUTTON,
     LOGOUT_BUTTON,
     LastUpdated,
-    ORG_INPUT,
+    PR_ADD_REPO_FORM,
+    PR_LABELS,
+    PR_LABELS_INPUT,
+    PR_ORG_INPUT,
+    PR_REPO_INPUT,
     PULL_REQUESTS_CONFIG,
     REFRESH_BUTTON,
     REJECT_ACTION_BUTTON,
-    REPO_INPUT,
     REVIEW_COMMENT,
     SAVE_ACTIONS_CONFIG_BUTTON,
     SAVE_PULL_REQUESTS_CONFIG_BUTTON,
-    addFilterChip,
+    addActionsFilterChip,
+    addPRFilterChip,
+    clearActionInputs,
     clearPRConfig,
+    clearPRInputs,
     createRepoCard,
-    getPullRequestConfigs,
+    createRepoCards,
+    getConfigs,
     hideEditActions,
     hideEditPullRequests,
     hideReviewModal,
     loadContent,
     loadReviewModal,
-    setNoContent,
     showContent,
     showEditActions,
-    showEditPullRequests
+    showEditPullRequests,
+    showLoading
 } from '@ui';
 import Sortable from 'sortablejs';
 import { initPWA } from './pwa';
@@ -59,36 +71,23 @@ document.addEventListener("DOMContentLoaded", async function () {
         ghostClass: 'sortable-ghost',
         handle: '.sortable-handle',
     });
+
+    Sortable.create(ACTIONS_CONFIG, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        handle: '.sortable-handle',
+    });
     setCopyrightYear();
-    initPWA(document.getElementById('app')!);
-    loginButtons(firebase, lastUpdated);
+    initPWA(APP);
     approvalButtons();
     editingButtons(firebase);
 
-    const localStorageData = getSiteData();
+    await handleState(firebase, lastUpdated);
 
-    REFRESH_BUTTON.addEventListener('click', async () => await updateLocalStorageAndLoadContent(lastUpdated));
-    setInterval(async () => await updateLocalStorageAndLoadContent(lastUpdated), 60 * 1000);
-
-    if (!Firebase.signedIn()) { return; }
-    showContent();
-    await loadPullRequestConfigs(new Firebase());
-
-    if (localStorageData) {
-        await loadContent(localStorageData);
-        lastUpdated.startTimer();
-    } else {
-        await updateLocalStorageAndLoadContent(lastUpdated);
-    }
-
-});
-
-function loginButtons(firebase: Firebase, lastUpdated: LastUpdated) {
     LOGIN_BUTTON.addEventListener('click', async () => {
         const signedIn = await firebase.signIn();
         if (!signedIn) { return; }
-        showContent();
-        await updateLocalStorageAndLoadContent(lastUpdated);
+        await handleState(firebase, lastUpdated);
     });
 
     LOGOUT_BUTTON.addEventListener('click', () => {
@@ -96,51 +95,88 @@ function loginButtons(firebase: Firebase, lastUpdated: LastUpdated) {
         clearSiteData();
         window.location.reload();
     });
-}
+
+});
 
 function editingButtons(firebase: Firebase) {
 
-    LABELS_INPUT.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-            const filter = LABELS_INPUT.value.trim();
+    PR_LABELS_INPUT.addEventListener('keydown', (event) => {
+        if (event.key === ' ') {
+            const filter = PR_LABELS_INPUT.value.trim();
             if (filter) {
-                addFilterChip(filter);
-                LABELS_INPUT.value = '';
+                addPRFilterChip(filter);
+                PR_LABELS_INPUT.value = '';
             }
             event.preventDefault();
         }
     });
 
-    ADD_REPO_FORM.addEventListener('submit', (event) => {
+    PR_ADD_REPO_FORM.addEventListener('submit', (event) => {
         event.preventDefault();
 
-        const org = ORG_INPUT.value.trim();
-        const repo = REPO_INPUT.value.trim();
+        const org = PR_ORG_INPUT.value.trim();
+        const repo = PR_REPO_INPUT.value.trim();
         if (org && repo) {
-            createRepoCard(org, repo, LABELS);
+            const repoCard = createRepoCard(org, repo, PR_LABELS);
+            PULL_REQUESTS_CONFIG.appendChild(repoCard);
+
+            repoCard.querySelector('.remove-repo-button')!.addEventListener('click', () => {
+                PULL_REQUESTS_CONFIG.removeChild(repoCard);
+            });
+            clearPRInputs();
         }
     });
+
     EDIT_PULL_REQUESTS_BUTTON.addEventListener('click', async () => {
         showEditPullRequests();
     });
 
     SAVE_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', async () => {
-        const prConfigs = getPullRequestConfigs();
+        const prConfigs = getConfigs(PULL_REQUESTS_CONFIG);
         await firebase.savePRConfig(prConfigs);
         hideEditPullRequests();
     });
 
     CANCEL_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', () => {
-        loadPullRequestConfigs(new Firebase())
+        loadConfig(firebase)
         hideEditPullRequests();
+    });
+
+    ACTIONS_LABELS_INPUT.addEventListener('keydown', (event) => {
+        if (event.key === ' ') {
+            const filter = ACTIONS_LABELS_INPUT.value.trim();
+            if (filter) {
+                addActionsFilterChip(filter);
+                ACTIONS_LABELS_INPUT.value = '';
+            }
+            event.preventDefault();
+        }
+    });
+
+    ACTIONS_ADD_REPO_FORM.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const org = ACTIONS_ORG_INPUT.value.trim();
+        const repo = ACTIONS_REPO_INPUT.value.trim();
+        if (org && repo) {
+            const repoCard = createRepoCard(org, repo, ACTIONS_LABELS);
+            ACTIONS_CONFIG.appendChild(repoCard);
+
+            repoCard.querySelector('.remove-repo-button')!.addEventListener('click', () => {
+                ACTIONS_CONFIG.removeChild(repoCard);
+            });
+            clearActionInputs();
+        }
     });
 
     EDIT_ACTIONS_BUTTON.addEventListener('click', () => {
         showEditActions();
     });
 
-    SAVE_ACTIONS_CONFIG_BUTTON.addEventListener('click', () => {
-        showEditActions();
+    SAVE_ACTIONS_CONFIG_BUTTON.addEventListener('click', async () => {
+        const configs = getConfigs(ACTIONS_REQUESTS_CONFIG);
+        await firebase.saveActionsConfig(configs);
+        hideEditActions();
     });
 
     CANCEL_ACTIONS_CONFIG_BUTTON.addEventListener('click', () => {
@@ -150,11 +186,6 @@ function editingButtons(firebase: Firebase) {
 
 function approvalButtons() {
     window.reviewDeployment = async (event: any) => {
-        const target = event.target as HTMLElement;
-        if (!target) {
-            console.error('Event target is undefined');
-            return;
-        }
         const { org, repo, runId } = event.target.dataset;
         const environments = await getPendingEnvironments(org, repo, runId);
         loadReviewModal(org, repo, runId, environments);
@@ -179,24 +210,38 @@ function approvalButtons() {
     });
 }
 
-async function updateLocalStorageAndLoadContent(lastUpdated: LastUpdated) {
+async function handleState(firebase: Firebase, lastUpdated: LastUpdated) {
     if (!Firebase.signedIn()) { return; }
-    await fetchDataAndSaveToLocalStorage();
+
+    showContent();
     const updatedData = getSiteData();
-    if (!updatedData) {
-        setNoContent();
-    }
+    await loadContent(updatedData);
+    lastUpdated.startTimer();
+
+    loadConfig(firebase);
+    await fetchDataAndUpdateContent(firebase, lastUpdated),
+        setInterval(async () => await fetchDataAndUpdateContent(firebase, lastUpdated), 60 * 1000);
+
+    REFRESH_BUTTON.addEventListener('click', async (event) => {
+        event.preventDefault();
+        showLoading();
+        await fetchDataAndUpdateContent(firebase, lastUpdated)
+    });
+}
+
+async function fetchDataAndUpdateContent(firebase: Firebase, lastUpdated: LastUpdated) {
+    await fetchDataAndSaveToLocalStorage(firebase.Config);
+    const updatedData = getSiteData();
     await loadContent(updatedData);
     lastUpdated.startTimer();
 }
 
-async function loadPullRequestConfigs(firebase: Firebase) {
+async function loadConfig(firebase: Firebase) {
     try {
         clearPRConfig()
-        const config = await firebase.getConfig();
-        config.pullRequests.forEach(prConfig => {
-            createRepoCard(prConfig.org, prConfig.repo, prConfig.filters);
-        });
+        await firebase.getConfig();
+        createRepoCards(firebase.Config.pullRequests, PULL_REQUESTS_CONFIG);
+        createRepoCards(firebase.Config.actions, ACTIONS_REQUESTS_CONFIG);
     } catch (error) {
         console.error("Failed to load pull request configs:", error);
     }

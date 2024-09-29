@@ -13,6 +13,7 @@ import { Config, RepoConfig } from './models';
 import { clearSiteData, getGithubToken, setGithubToken } from './storage';
 
 export class Firebase {
+  public Config: Config = { pullRequests: [], actions: [] };
   private firebaseConfig = {
     apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
     authDomain: "githelm.firebaseapp.com",
@@ -68,30 +69,41 @@ export class Firebase {
     }
   }
 
-  public async getConfig(): Promise<Config> {
+  public async getConfig(): Promise<void> {
     await this.initAuthStateListener();
 
     if (!this.user) {
-      return { pullRequests: [], actions: [] };
+      return
     }
 
     const docRef = doc(collection(this.db, "configs"), this.user.uid);
     const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data) {
-        return data as Config;
-      }
+    if (!docSnap.exists()) {
+      return;
     }
-    return { pullRequests: [], actions: [] };
+    const data = docSnap.data();
+    if (!data) {
+      return;
+    }
+    this.Config = data as Config;
   }
 
-  public async savePRConfig(prConfig: RepoConfig[]) {
+  public async savePRConfig(pullRequests: RepoConfig[]) {
     await this.initAuthStateListener();
 
     const docRef = doc(collection(this.db, "configs"), this.user.uid);
 
-    await setDoc(docRef, { pullRequests: prConfig });
+    this.Config = { pullRequests, actions: this.Config.actions };
+    await setDoc(docRef, this.Config);
+  }
+
+  public async saveActionsConfig(actions: RepoConfig[]) {
+    await this.initAuthStateListener();
+
+    const docRef = doc(collection(this.db, "configs"), this.user.uid);
+
+    this.Config = { actions, pullRequests: this.Config.pullRequests };
+    await setDoc(docRef, this.Config);
   }
 }
