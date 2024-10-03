@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 function editingButtons(firebase: Firebase, lastUpdated: LastUpdated) {
 
     PR_LABELS_INPUT.addEventListener('keydown', (event) => {
-        if (event.key === ' ') {
+        if (event.key === ' ' || event.key === 'Enter') {
             const filter = PR_LABELS_INPUT.value.trim();
             if (filter) {
                 addPRFilterChip(filter);
@@ -144,7 +144,7 @@ function editingButtons(firebase: Firebase, lastUpdated: LastUpdated) {
     });
 
     ACTIONS_LABELS_INPUT.addEventListener('keydown', (event) => {
-        if (event.key === ' ') {
+        if (event.key === ' ' || event.key === 'Enter') {
             const filter = ACTIONS_LABELS_INPUT.value.trim();
             if (filter) {
                 addActionsFilterChip(filter);

@@ -95,7 +95,7 @@ function jobTemplate(org: string, repo: string, job: any) {
         data-org="${org}"
         data-repo="${repo}"
         data-run-id="${job.run_id}"
-        class="${jobColor()} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-gray-600">
+        class="${jobColor()} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white">
         ${job.name}
       </button>`
   }

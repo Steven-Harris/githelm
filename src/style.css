@@ -5,10 +5,13 @@
 :root {
   --primary-accent-color: #3b82f6;
   --secondary-accent-color: #38bdf8;
+  --tertiary-accent-color: #EAB308;
+  --tertiary-accent-hover-color: #A16207;
   --primary-color: #1f2937;
   --secondary-color: #374151;
   --active-highlight-color: #2d3748;
-  --primary-text-color: white
+  --primary-text-color: white;
+  --secondary-text-color: black;
 }
 
 /* Global Styles */
@@ -231,13 +234,8 @@ button#pwa-refresh {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
   margin-right: 0.25rem;
-  background-color: var(--primary-accent-color);
-  color: var(--primary-text-color);
+  background-color: var(--tertiary-accent-color);
+  color: var(--secondary-text-color);
   border-radius: 0.25rem;
   cursor: pointer;
-}
-
-.chip:hover {
-  background-color: var(--primary-accent-color);
-  /* Tailwind blue-700 */
 }
