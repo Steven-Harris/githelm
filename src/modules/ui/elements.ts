@@ -55,15 +55,22 @@ export function toggleLogin(isAuthorized: boolean) {
   }
 }
 
-export function toggleNotFound(found: boolean) {
+export function togglePRFound(found: boolean) {
   if (found) {
     PRS_NOT_FOUND.classList.add('hidden');
-    ACTIONS_NOT_FOUND.classList.add('hidden');
   } else {
     PRS_NOT_FOUND.classList.remove('hidden');
+  }
+}
+
+export function toggleActionsFound(found: boolean) {
+  if (found) {
+    ACTIONS_NOT_FOUND.classList.add('hidden');
+  } else {
     ACTIONS_NOT_FOUND.classList.remove('hidden');
   }
 }
+
 
 export function showEditPullRequests() {
   EDIT_PULL_REQUESTS_BUTTON.classList.add('hidden');

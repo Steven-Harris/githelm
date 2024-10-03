@@ -73,7 +73,7 @@ export class Firebase {
     await this.initAuthStateListener();
 
     if (!this.user) {
-      return
+      return;
     }
 
     const docRef = doc(collection(this.db, "configs"), this.user.uid);

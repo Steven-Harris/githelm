@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     setCopyrightYear();
     initPWA(APP);
     approvalButtons();
-    editingButtons(firebase);
+    editingButtons(firebase, lastUpdated);
 
     await handleState(firebase, lastUpdated);
 
@@ -98,7 +98,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 });
 
-function editingButtons(firebase: Firebase) {
+function editingButtons(firebase: Firebase, lastUpdated: LastUpdated) {
 
     PR_LABELS_INPUT.addEventListener('keydown', (event) => {
         if (event.key === ' ') {
@@ -135,6 +135,7 @@ function editingButtons(firebase: Firebase) {
         const prConfigs = getConfigs(PULL_REQUESTS_CONFIG);
         await firebase.savePRConfig(prConfigs);
         hideEditPullRequests();
+        fetchDataAndUpdateContent(firebase, lastUpdated);
     });
 
     CANCEL_PULL_REQUESTS_CONFIG_BUTTON.addEventListener('click', () => {
@@ -177,6 +178,7 @@ function editingButtons(firebase: Firebase) {
         const configs = getConfigs(ACTIONS_REQUESTS_CONFIG);
         await firebase.saveActionsConfig(configs);
         hideEditActions();
+        fetchDataAndUpdateContent(firebase, lastUpdated);
     });
 
     CANCEL_ACTIONS_CONFIG_BUTTON.addEventListener('click', () => {
@@ -213,14 +215,14 @@ function approvalButtons() {
 async function handleState(firebase: Firebase, lastUpdated: LastUpdated) {
     if (!Firebase.signedIn()) { return; }
 
-    showContent();
     const updatedData = getSiteData();
+    await loadConfig(firebase);
     await loadContent(updatedData);
     lastUpdated.startTimer();
+    showContent();
 
-    loadConfig(firebase);
-    await fetchDataAndUpdateContent(firebase, lastUpdated),
-        setInterval(async () => await fetchDataAndUpdateContent(firebase, lastUpdated), 60 * 1000);
+    await fetchDataAndUpdateContent(firebase, lastUpdated);
+    setInterval(async () => await fetchDataAndUpdateContent(firebase, lastUpdated), 60 * 1000);
 
     REFRESH_BUTTON.addEventListener('click', async (event) => {
         event.preventDefault();

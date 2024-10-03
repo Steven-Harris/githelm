@@ -19,8 +19,9 @@ import {
   REJECT_ACTION_BUTTON,
   REVIEW_REPO,
   showLoading, showReviewModal,
+  toggleActionsFound,
   toggleLogin,
-  toggleNotFound
+  togglePRFound
 } from './elements';
 import { actionsTemplate, pendingEnvironmentsTemplate, pullRequestTemplate } from './templates';
 let previousData: {
@@ -29,24 +30,26 @@ let previousData: {
 } = { pullRequests: {}, actions: {} }
 
 export async function loadContent(data: any) {
-  if (!data) {
-    setNoContent();
-  } else {
+  const hasData = data && data.length > 0;
+  if (hasData) {
     data.forEach(updateContent);
     saveState(data);
+  } else {
+    setNoContent();
   }
+
+  togglePRFound(Object.keys(previousData.pullRequests).length > 0);
+  toggleActionsFound(Object.keys(previousData.actions).length > 0);
   hideLoading();
 }
 
 export function showContent() {
   toggleLogin(true);
-  toggleNotFound(true);
   handleTabs();
   showLoading();
 }
 
 export function setNoContent() {
-  toggleNotFound(false);
   hideLoading();
   saveState([]);
   previousData = { pullRequests: {}, actions: {} };
@@ -66,7 +69,6 @@ export function addPRFilterChip(filter: string) {
         `;
     PR_LABELS_CHIPS.appendChild(chip);
 
-    // Add event listener to remove button
     chip.querySelector('button')!.addEventListener('click', () => {
       PR_LABELS = PR_LABELS.filter(f => f !== filter);
       PR_LABELS_CHIPS.removeChild(chip);

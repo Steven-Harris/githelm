@@ -50,9 +50,10 @@
               <button id="cancel-pull-requests-config-button" type="button" class="hidden px-2 py-1 bg-red-500 hover:bg-red-700 text-white font-bold rounded">Cancel</button>
             </div>
           </div>
-          <div id="pull-requests"></div>
-          <div id="edit-pull-requests" class="hidden">
+          <div id="pull-requests">
             <p id="prs-not-found" class="hidden">No pull requests found. Configure repositories by clicking the pencil icon above.</p>
+          </div>
+          <div id="edit-pull-requests" class="hidden">
             <div id="pull-request-config"></div>
             <form id="pr-add-repo-form" class="p-2 bg-gray-700 rounded-md">
               <input id="pr-org-input" type="text" class="w-full p-2 rounded bg-gray-600 text-white mb-2" placeholder="Organization" required />
@@ -77,9 +78,10 @@
               <button id="cancel-actions-config-button" type="button" class="hidden px-2 py-1 bg-red-500 hover:bg-red-700 text-white font-bold rounded">Cancel</button>
             </div>
           </div>
-          <div id="actions"></div>
-          <div id="edit-actions" class="hidden">
+          <div id="actions">
             <p id="actions-not-found" class="hidden">No actions found. Configure repositories by clicking the pencil icon above.</p>
+          </div>
+          <div id="edit-actions" class="hidden">
             <div id="actions-config"></div>
             <form id="actions-add-repo-form" class="p-2 bg-gray-700 rounded-md">
               <input id="actions-org-input" type="text" class="w-full p-2 rounded bg-gray-600 text-white mb-2" placeholder="Organization"
@@ -89,7 +91,7 @@
               <div class="w-full p-2 rounded bg-gray-600 text-white mb-2 flex flex-wrap items-center border border-gray-600 focus-within:border-white">
                 <div id="actions-repo-labels-chips" class="flex flex-wrap"></div>
                 <input id="actions-repo-labels-input" type="text"
-                  class="flex-grow rounded bg-gray-600 text-white mb-2 border-none focus:outline-none" placeholder="Label" />
+                  class="flex-grow rounded bg-gray-600 text-white mb-2 border-none focus:outline-none" placeholder="Name of action to monitor e.g. release.yml" />
               </div>
               <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Add Repository</button>
             </form>

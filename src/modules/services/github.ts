@@ -42,7 +42,7 @@ async function getPullRequests(org: string, repo: string, filter: string) {
 
 async function getActions(org: string, repo: string, filter: string) {
   try {
-    const data = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}.yml/runs?per_page=1`);
+    const data = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
 
     for (let run of data.workflow_runs) {
       const jobs = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${run.id}/jobs`);
