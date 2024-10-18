@@ -81,8 +81,8 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 async function fetchData(url: string) {
   try {
     const response = await fetch(url, { headers: getHeaders() });
-    if (response.status === 401 || response.status === 403) {
-      clearSiteData();
+    if (response.status === 401) {
+      clearSiteData);
       window.location.reload();
     }
     return await response.json();
