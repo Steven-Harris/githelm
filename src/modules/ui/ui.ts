@@ -114,7 +114,7 @@ export function createRepoCard(org: string, repo: string, labels: string[]) {
             <span class="hover:font-bold"> &times;</span>
           </button>
       </div>
-      ${labels.map(label => `<span class="chip">${document.createTextNode(label.replace('label:', '')))}</span>`).join('')}
+      ${labels.map(label => `<span class="chip">${document.createTextNode(label.replace('label:', ''))}</span>`).join('')}
     `;
   return repoCard;
 }
