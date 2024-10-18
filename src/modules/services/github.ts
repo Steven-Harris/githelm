@@ -82,7 +82,7 @@ async function fetchData(url: string) {
   try {
     const response = await fetch(url, { headers: getHeaders() });
     if (response.status === 401) {
-      clearSiteData();
+      clearSiteData);
       window.location.reload();
     }
     return await response.json();
