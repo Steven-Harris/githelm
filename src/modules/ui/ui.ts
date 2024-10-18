@@ -64,7 +64,7 @@ export function addPRFilterChip(filter: string) {
     const chip = document.createElement('div');
     chip.classList.add('bg-blue-500', 'text-white', 'px-2', 'py-1', 'rounded', 'mr-2', 'mb-2', 'flex', 'items-center');
     chip.innerHTML = `
-            <span>${filter}</span>
+            <span>${document.createTextNode(filter)}</span>
             <button class="ml-2 text-white bg-transparent border-0 cursor-pointer">x</button>
         `;
     PR_LABELS_CHIPS.appendChild(chip);
@@ -82,7 +82,7 @@ export function addActionsFilterChip(filter: string) {
     const chip = document.createElement('div');
     chip.classList.add('bg-blue-500', 'text-white', 'px-2', 'py-1', 'rounded', 'mr-2', 'mb-2', 'flex', 'items-center');
     chip.innerHTML = `
-            <span>${filter}</span>
+            <span>${document.createTextNode(filter)}</span>
             <button class="ml-2 text-white bg-transparent border-0 cursor-pointer">x</button>
         `;
     ACTIONS_LABELS_CHIPS.appendChild(chip);
@@ -107,14 +107,14 @@ export function createRepoCard(org: string, repo: string, labels: string[]) {
           <span>
             <span class="mr-2">☰</span>
             <strong> 
-            ${org}/${repo}
+            ${document.createTextNode(org)}/${document.createTextNode(repo)}
             </strong>
           </span>
           <button class="remove-repo-button text-white">
             <span class="hover:font-bold"> &times;</span>
           </button>
       </div>
-      ${labels.map(label => `<span class="chip">${label.replace('label:', '')}</span>`).join('')}
+      ${labels.map(label => `<span class="chip">${document.createTextNode(label.replace('label:', '')))}</span>`).join('')}
     `;
   return repoCard;
 }
