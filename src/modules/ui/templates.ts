@@ -1,6 +1,6 @@
 import checkSVG from '@assets/check.svg';
 import commentSVG from '@assets/comment.svg';
-import { PendingDeployments } from '../services/models';
+import type { PendingDeployments } from '../services/models';
 
 export function pullRequestTemplate(org: string, repo: string, pullRequests: { items: any[]; }) {
   return `

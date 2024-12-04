@@ -3,7 +3,7 @@ import { LAST_UPDATED, REFRESH_BUTTON } from "./elements";
 
 export class LastUpdated {
 
-  private timer: NodeJS.Timeout | undefined;
+  private timer: any | undefined;
   private lastUpdated: number = 0;
   public startTimer() {
     if (this.timer) {
@@ -32,7 +32,7 @@ export class LastUpdated {
     LAST_UPDATED.innerHTML = `Last updated ${this.elapsedSeconds()}s ago`;
   }
 
-  private resetTimer(timerInterval: NodeJS.Timeout) {
+  private resetTimer(timerInterval: any) {
     if (timerInterval) {
       clearInterval(timerInterval);
     }

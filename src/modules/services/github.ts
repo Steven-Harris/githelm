@@ -1,4 +1,4 @@
-import { Config, PendingDeployments, RepoConfig } from './models';
+import type { Config, PendingDeployments, RepoConfig } from './models';
 import { clearSiteData, getGithubToken, setSiteData } from './storage';
 
 export async function fetchDataAndSaveToLocalStorage(config: Config) {

@@ -1,5 +1,6 @@
 import { getAnalytics } from 'firebase/analytics';
-import { FirebaseApp, initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
+import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithPopup } from 'firebase/auth';
 import {
   Firestore,
@@ -9,7 +10,7 @@ import {
   getFirestore,
   setDoc
 } from 'firebase/firestore';
-import { Config, RepoConfig } from './models';
+import type { Config, RepoConfig } from './models';
 import { clearSiteData, getGithubToken, setGithubToken } from './storage';
 
 export class Firebase {
@@ -65,7 +66,7 @@ export class Firebase {
       }
       return true;
     } catch (error) {
-      throw new Error(`Can't get firebase user`);
+      console.error(`Can't get firebase user`);
     }
   }
 
@@ -107,3 +108,6 @@ export class Firebase {
     await setDoc(docRef, this.Config);
   }
 }
+
+export { GithubAuthProvider, signInWithPopup };
+

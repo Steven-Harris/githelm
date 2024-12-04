@@ -1,12 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
 
 :root {
   --primary-accent-color: #3b82f6;
   --secondary-accent-color: #38bdf8;
-  --tertiary-accent-color: #EAB308;
-  --tertiary-accent-hover-color: #A16207;
+  --tertiary-accent-color: #eab308;
+  --tertiary-accent-hover-color: #a16207;
   --primary-color: #1f2937;
   --secondary-color: #374151;
   --active-highlight-color: #2d3748;
@@ -26,11 +26,6 @@ body {
 body {
   display: flex;
   flex-direction: column;
-}
-
-main {
-  flex: 1;
-  overflow: auto;
 }
 
 header,
@@ -53,24 +48,9 @@ header,
   }
 }
 
-
 /* Component Styles */
 #content {
   margin-top: 1rem;
-}
-
-.nav-button {
-  background-color: var(--secondary-color);
-  border-radius: 0.5rem;
-  transition: background-color 300ms, color 300ms;
-  font-size: 0.875rem;
-  width: 10rem;
-  height: 3rem;
-}
-
-.nav-button:hover {
-  background-color: var(--secondary-accent-color);
-  color: var(--primary-color);
 }
 
 .glow {
@@ -205,26 +185,6 @@ button#pwa-refresh {
     overflow-x: auto;
     word-wrap: break-word;
     overflow-x: hidden;
-  }
-
-  .nav-button {
-    box-shadow: none;
-    background-color: transparent;
-    transition: none;
-    width: 7rem;
-    height: 3rem;
-    margin-left: 1rem;
-    ;
-    margin-right: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .nav-button::before {
-    content: '';
-    width: 1.5rem;
-    height: 1.5rem;
-    background-size: cover;
   }
 }
 
