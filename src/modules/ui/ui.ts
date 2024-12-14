@@ -1,5 +1,5 @@
 
-import { PendingDeployments, RepoConfig } from '../services/models';
+import { PendingDeployments, RepoConfig } from '../../services/models';
 import {
   ACTIONS,
   ACTIONS_LABELS_CHIPS,

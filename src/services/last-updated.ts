@@ -1,5 +1,5 @@
-import { getLastUpdated } from "@services";
-import { LAST_UPDATED, REFRESH_BUTTON } from "./elements";
+import { LAST_UPDATED, REFRESH_BUTTON } from "../modules/ui/elements";
+import { getLastUpdated } from "./storage.svelte";
 
 export class LastUpdated {
 

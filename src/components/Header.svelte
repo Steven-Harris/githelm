@@ -1,13 +1,5 @@
 <script lang="ts">
-  import type { Firebase } from "@services";
-  let { firebase }: { firebase: Firebase } = $props();
-
-  async function login() {
-    await firebase.signIn();
-  }
-  function logout() {
-    firebase.signOut();
-  }
+  let { login, logout, signedIn } = $props();
 </script>
 
 <header
@@ -24,17 +16,20 @@
     <h1 class="text-4xl font-bold">GitHelm</h1>
   </div>
   <div id="buttons" class="flex space-x-4">
-    <button onclick={login} type="button" class="nav-button">
-      Login with GitHub
-    </button>
-    <button
-      onclick={logout}
-      id="logout-button"
-      type="button"
-      class="hidden nav-button"
-    >
-      Logout
-    </button>
+    {#if signedIn}
+      <button
+        onclick={logout}
+        id="logout-button"
+        type="button"
+        class="nav-button"
+      >
+        Logout
+      </button>
+    {:else}
+      <button onclick={login} type="button" class="nav-button">
+        Login with GitHub
+      </button>
+    {/if}
   </div>
 </header>
 

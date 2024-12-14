@@ -1,7 +1,8 @@
 import type { Config, PendingDeployments, RepoConfig } from './models';
-import { clearSiteData, getGithubToken, setSiteData } from './storage';
+import { clearSiteData, getGithubToken, setSiteData } from './storage.svelte';
 
 export async function fetchDataAndSaveToLocalStorage(config: Config) {
+  console.log('Fetching data...');
   const results = await Promise.all(load(config));
   setSiteData(results);
 }
@@ -12,16 +13,15 @@ export function load(config: Config): Promise<any>[] {
   }
   const { pullRequests, actions } = config;
   // TODO: support multiple filters
-  return [
-    ...pullRequests.map(async (prConfig: RepoConfig) => {
-      const result = await getPullRequests(prConfig.org, prConfig.repo, prConfig.filters[0]);
-      return { type: 'pull-requests', ...result };
-    }),
-    ...actions.map(async (actionConfig: RepoConfig) => {
-      const result = await getActions(actionConfig.org, actionConfig.repo, actionConfig.filters[0]);
-      return { type: 'actions', ...result };
-    })
-  ];
+  const prsResponse = pullRequests.map(async (prConfig: RepoConfig) => {
+    const result = await getPullRequests(prConfig.org, prConfig.repo, prConfig.filters[0]);
+    return { type: 'pull-requests', ...result };
+  });
+  const actionsResponse = actions.map(async (actionConfig: RepoConfig) => {
+    const result = await getActions(actionConfig.org, actionConfig.repo, actionConfig.filters[0]);
+    return { type: 'actions', ...result };
+  });
+  return [...prsResponse, ...actionsResponse];
 }
 
 async function getPullRequests(org: string, repo: string, filter: string) {
@@ -75,7 +75,6 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
       comment: comment
     })
   });
-
 }
 
 async function fetchData(url: string) {

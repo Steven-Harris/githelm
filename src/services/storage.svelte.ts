@@ -3,13 +3,22 @@ const SITE_DATA_KEY = 'SITE_DATA';
 const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
 const LAST_UPDATED_KEY = 'LAST_UPDATED';
 
-export function getSiteData(): any {
-  const data = getItem(SITE_DATA_KEY);
-  return data ? JSON.parse(data) : null;
+export const storage = $state({
+  data: { pullRequests: [], actions: [] },
+  loading: false,
+});
+export function loadData(): any {
+  storage.loading = true;
+  const temp = getItem(SITE_DATA_KEY);
+  if (temp) {
+    storage.data = JSON.parse(temp);
+  }
+  storage.loading = false;
 }
 
-export function setSiteData(data: any): void {
-  setItem(SITE_DATA_KEY, JSON.stringify(data));
+export function setSiteData(obj: any): void {
+  storage.data = obj;
+  setItem(SITE_DATA_KEY, JSON.stringify(obj));
   setItem(LAST_UPDATED_KEY, Date.now().toString());
 }
 

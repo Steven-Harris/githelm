@@ -3,16 +3,12 @@
   "compilerOptions": {
     "target": "ESNext",
     "useDefineForClassFields": true,
+    "experimentalDecorators": true,
     "resolveJsonModule": true,
     "allowJs": true,
     "checkJs": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "paths": {
-      "@assets/*": ["./src/assets/*"],
-      "@services": ["./src/modules/services/index.ts"],
-      "@ui": ["./src/modules/ui/index.ts"]
-    },
     "types": ["vite-plugin-pwa/client", "vite-plugin-pwa/svelte"]
   },
   "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte", "src/*.svelte"],

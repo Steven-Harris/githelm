@@ -1,46 +1,45 @@
 <script lang="ts">
-  import { fetchDataAndSaveToLocalStorage, Firebase } from "@services";
   import { onMount } from "svelte";
+  import { derived as watch } from "svelte/store";
   import Actions from "./components/Actions.svelte";
   import Footer from "./components/Footer.svelte";
   import Header from "./components/Header.svelte";
+  import Loading from "./components/Loading.svelte";
   import PullRequests from "./components/PullRequests.svelte";
-  import { initPWA } from "./pwa";
+  import { firebase } from "./services/firebase.svelte";
+  import { fetchDataAndSaveToLocalStorage } from "./services/github";
+  import { initPWA } from "./services/pwa";
+  import { storage } from "./services/storage.svelte";
 
-  const firebase = new Firebase();
-  let pullRequests: { title: string }[] = [];
-  let actions: { name: string }[] = [];
+  let { pullRequests, actions } = storage.data;
+  let signedIn = $derived(firebase.user !== null);
+  let isLoading = $derived(signedIn && !firebase.loading && !storage.loading);
+  watch(firebase.config, async (config) => {
+    await fetchDataAndSaveToLocalStorage(config);
+  });
 
   onMount(async () => {
     initPWA();
-    await fetchDataAndSaveToLocalStorage();
-    const data = JSON.parse(localStorage.getItem("siteData"));
-    pullRequests = data.pullRequests || [];
-    actions = data.actions || [];
   });
 </script>
 
-<Header {firebase} />
+<Header
+  {signedIn}
+  login={async () => await firebase.signIn()}
+  logout={() => firebase.signOut()}
+/>
 
 <main class="flex-1 px-5 bg-gray-900">
-  <PullRequests {pullRequests} />
-  <Actions {actions} />
+  <div id="content" class="content grid grid-cols-1 md:grid-cols-2 gap-4">
+    {#if !signedIn}
+      <h1>Login to view your GitHub data</h1>
+    {/if}
+    {#if signedIn}
+      <Loading {isLoading} />
+      <PullRequests {isLoading} {pullRequests} />
+      <Actions {isLoading} {actions} />
+    {/if}
+  </div>
 </main>
 
 <Footer />
-
-<style>
-  main {
-    text-align: center;
-    padding: 1em;
-    max-width: 240px;
-    margin: 0 auto;
-    flex: 1;
-    overflow: auto;
-  }
-
-  h1 {
-    color: #ff3e00;
-    font-size: 2em;
-  }
-</style>
