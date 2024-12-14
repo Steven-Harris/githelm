@@ -16,6 +16,7 @@
         title="edit actions configuration"
       >
         <img
+          alt="edit button"
           title="edit-actions-config"
           src="src/assets/edit.svg"
           width="20"
@@ -36,17 +37,16 @@
         >Cancel</button
       >
     </div>
+    {#if !isLoading}
+      No actions found. Configure repositories by clicking the pencil icon
+      above.
+    {/if}
     {#if actions.length > 0}
       <ul>
         {#each actions as action}
           <li>{action.name}</li>
         {/each}
       </ul>
-    {:else if !isLoading}
-      <p id="actions-not-found">
-        No actions found. Configure repositories by clicking the pencil icon
-        above.
-      </p>
     {/if}
   </div>
 </section>

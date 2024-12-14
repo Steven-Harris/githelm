@@ -4,12 +4,45 @@ import tailwindcss from 'tailwindcss';
 import { defineConfig } from 'vite';
 import viteCompression from 'vite-plugin-compression';
 import { VitePWA } from 'vite-plugin-pwa';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
+  root: '.',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: 'index.html',
+      output: {
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'],
+          sortable: ['sortablejs'],
+        }
+      }
+    }
+  },
+  server: {
+    hmr: true
+  },
+  test: {
+    css: true,
+    globals: true,
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{js,ts}'],
+    setupFiles: "./vitest.setup.ts"
+  },
+  resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss(),
+        cssnano({
+          preset: 'default',
+        }),
+      ],
+    },
+  },
   plugins: [
     svelte(),
-    tsconfigPaths(),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
@@ -63,32 +96,5 @@ export default defineConfig({
       algorithm: 'brotliCompress',
       ext: '.br',
     }),
-  ],
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss(),
-        cssnano({
-          preset: 'default',
-        }),
-      ],
-    },
-  },
-  root: '.',
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: 'index.html',
-      output: {
-        manualChunks: {
-          firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'],
-          sortable: ['sortablejs'],
-        }
-      }
-    }
-  },
-  server: {
-    hmr: true
-  }
+  ]
 });
