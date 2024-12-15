@@ -16,7 +16,7 @@
         title="edit pull requests configuration"
       >
         <img
-          title="edit pull request config"
+          alt="edit pull request config"
           src="src/assets/edit.svg"
           width="20"
           height="20"

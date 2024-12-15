@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { derived as watch } from "svelte/store";
-  import Actions from "./components/Actions.svelte";
+  import ActionsContainer from "./components/actions/ActionsContainer.svelte";
   import Footer from "./components/Footer.svelte";
   import Header from "./components/Header.svelte";
   import Loading from "./components/Loading.svelte";
-  import PullRequests from "./components/PullRequests.svelte";
+  import PullRequestsContainer from "./components/PullRequestsContainer.svelte";
   import { firebase } from "./services/firebase.svelte";
   import { fetchDataAndSaveToLocalStorage } from "./services/github";
   import { initPWA } from "./services/pwa";
@@ -36,8 +36,8 @@
     {/if}
     {#if signedIn}
       <Loading {isLoading} />
-      <PullRequests {isLoading} {pullRequests} />
-      <Actions {isLoading} {actions} />
+      <PullRequestsContainer {isLoading} {pullRequests} />
+      <ActionsContainer {isLoading} {actions} />
     {/if}
   </div>
 </main>

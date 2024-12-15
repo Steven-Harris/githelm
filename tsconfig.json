@@ -9,9 +9,24 @@
     "checkJs": true,
     "isolatedModules": true,
     "moduleDetection": "force",
-    "types": ["vite-plugin-pwa/client", "vite-plugin-pwa/svelte"]
+    "types": [
+      "vite-plugin-pwa/client",
+      "vite-plugin-pwa/svelte"
+    ]
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte", "src/*.svelte"],
-  "exclude": ["node_modules/*", "public/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.svelte",
+    "src/*.svelte"
+  ],
+  "exclude": [
+    "node_modules/*",
+    "public/*"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }

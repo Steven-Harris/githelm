@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
-import Actions from './Actions.svelte';
+import Actions from './ActionsContainer.svelte';
 
 describe('Actions Component', () => {
   it('should display the Actions section', () => {
