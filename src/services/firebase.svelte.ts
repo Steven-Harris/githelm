@@ -1,7 +1,7 @@
 import { getAnalytics } from 'firebase/analytics';
 import type { FirebaseApp } from 'firebase/app';
 import { initializeApp } from 'firebase/app';
-import { GithubAuthProvider, browserLocalPersistence, getAuth, onAuthStateChanged, setPersistence, signInWithPopup, signOut } from 'firebase/auth';
+import { GithubAuthProvider, browserLocalPersistence, connectAuthEmulator, getAuth, getRedirectResult, onAuthStateChanged, setPersistence, signInWithRedirect, signOut } from 'firebase/auth';
 import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
 import { get, writable } from 'svelte/store';
 import { handleLoading } from './decorator';
@@ -21,7 +21,7 @@ const firebaseConfig = {
 class Firebase {
   public config = writable<Config>({ pullRequests: [], actions: [] });
   public loading = $state(false);
-  public user = writable<any>(null);
+  public user = $state();
   public ghToken = writable<string | null>(getGithubToken());
   private app: FirebaseApp;
   private db: Firestore;
@@ -35,12 +35,16 @@ class Firebase {
 
   private initAuthStateListener() {
     const auth = getAuth(this.app);
+    if (window.location.hostname === 'localhost') {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+    }
     onAuthStateChanged(auth, (user) => {
+      console.log("User state changed:", user);
       if (user) {
-        this.user.set(user);
+        this.user = user;
         this.ghToken.set(getGithubToken());
       } else {
-        this.user.set(null);
+        this.user = null;
         this.ghToken.set(null);
       }
     });
@@ -50,14 +54,22 @@ class Firebase {
     const auth = getAuth(this.app);
     await setPersistence(auth, browserLocalPersistence);
     const provider = new GithubAuthProvider();
+    provider.addScope("repo");
+
     try {
-      const result = await signInWithPopup(auth, provider);
+      const result = await signInWithRedirect(auth, provider);
+      console.log("Signed in:", result);
+      const userCred = await getRedirectResult(auth);
+      console.log("User cred:", userCred);
       const credential = GithubAuthProvider.credentialFromResult(result);
+      console.log("Credential:", credential);
+
       if (credential?.accessToken) {
         setGithubToken(credential.accessToken);
         this.ghToken.set(credential.accessToken);
       }
-      this.user.set(result.user);
+      console.log("Signed in:", userCred);
+      this.user = userCred;
       return true;
     } catch (error) {
       console.error("Error signing in:", error);

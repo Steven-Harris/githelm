@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { derived as watch } from "svelte/store";
-  import ActionsContainer from "./components/actions/ActionsContainer.svelte";
+  import ActionsContainer from "./components/ActionsContainer.svelte";
   import Footer from "./components/Footer.svelte";
   import Header from "./components/Header.svelte";
   import Loading from "./components/Loading.svelte";
@@ -26,7 +26,7 @@
 <Header
   {signedIn}
   login={async () => await firebase.signIn()}
-  logout={() => firebase.signOut()}
+  logout={async () => await firebase.signOut()}
 />
 
 <main class="flex-1 px-5 bg-gray-900">
