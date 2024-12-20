@@ -1,5 +1,7 @@
 <script lang="ts">
-  let { actions, isLoading } = $props();
+  import { firebase } from "../services/firebase.svelte";
+  let actions: any[] = $state([]);
+  let isLoading = $derived(firebase.loading);
 </script>
 
 <section
@@ -37,16 +39,18 @@
         >Cancel</button
       >
     </div>
-    {#if !isLoading}
+  </div>
+  {#if !isLoading}
+    <p id="actions-not-found">
       No actions found. Configure repositories by clicking the pencil icon
       above.
-    {/if}
-    {#if actions.length > 0}
-      <ul>
-        {#each actions as action}
-          <li>{action.name}</li>
-        {/each}
-      </ul>
-    {/if}
-  </div>
+    </p>
+  {/if}
+  {#if actions.length > 0}
+    <ul>
+      {#each actions as action}
+        <li>{action.name}</li>
+      {/each}
+    </ul>
+  {/if}
 </section>

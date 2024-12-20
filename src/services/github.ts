@@ -1,30 +1,7 @@
-import type { Config, PendingDeployments, RepoConfig } from './models';
-import { clearSiteData, getGithubToken, setSiteData } from './storage.svelte';
+import type { PendingDeployments } from './models';
+import { getGithubToken } from './storage.svelte';
 
-export async function fetchDataAndSaveToLocalStorage(config: Config) {
-  console.log('Fetching data...');
-  const results = await Promise.all(load(config));
-  setSiteData(results);
-}
-
-export function load(config: Config): Promise<any>[] {
-  if (!config) {
-    return [];
-  }
-  const { pullRequests, actions } = config;
-  // TODO: support multiple filters
-  const prsResponse = pullRequests.map(async (prConfig: RepoConfig) => {
-    const result = await getPullRequests(prConfig.org, prConfig.repo, prConfig.filters[0]);
-    return { type: 'pull-requests', ...result };
-  });
-  const actionsResponse = actions.map(async (actionConfig: RepoConfig) => {
-    const result = await getActions(actionConfig.org, actionConfig.repo, actionConfig.filters[0]);
-    return { type: 'actions', ...result };
-  });
-  return [...prsResponse, ...actionsResponse];
-}
-
-async function getPullRequests(org: string, repo: string, filter: string) {
+export async function fetchPullRequests(org: string, repo: string, filter: string) {
   try {
     const labels = filter ? `+label:${filter}` : '';
     const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open${labels}`);
@@ -34,13 +11,14 @@ async function getPullRequests(org: string, repo: string, filter: string) {
       item.reviews = reviews;
     }
 
-    return { repo, org, data };
+    return data.items;
   } catch (error) {
     console.error('Error fetching pull requests:', error);
+    return [];
   }
 }
 
-async function getActions(org: string, repo: string, filter: string) {
+export async function fetchActions(org: string, repo: string, filter: string) {
   try {
     const data = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
 
@@ -49,9 +27,10 @@ async function getActions(org: string, repo: string, filter: string) {
       run.jobs = jobs.jobs;
     }
 
-    return { repo, org, data };
+    return data.workflow_runs;
   } catch (error) {
     console.error('Error fetching actions:', error);
+    return [];
   }
 }
 
@@ -81,7 +60,6 @@ async function fetchData(url: string) {
   try {
     const response = await fetch(url, { headers: getHeaders() });
     if (response.status === 401) {
-      clearSiteData();
       window.location.reload();
     }
     return await response.json();

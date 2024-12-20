@@ -1,12 +1,9 @@
 import { getAnalytics } from 'firebase/analytics';
-import type { FirebaseApp } from 'firebase/app';
 import { initializeApp } from 'firebase/app';
-import { GithubAuthProvider, browserLocalPersistence, connectAuthEmulator, getAuth, getRedirectResult, onAuthStateChanged, setPersistence, signInWithRedirect, signOut } from 'firebase/auth';
+import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
 import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
-import { get, writable } from 'svelte/store';
-import { handleLoading } from './decorator';
-import type { Config } from './models';
-import { clearSiteData, getGithubToken, setGithubToken } from './storage.svelte';
+import type { RepoConfig } from './models';
+import { clearSiteData, setGithubToken } from './storage.svelte';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -19,94 +16,138 @@ const firebaseConfig = {
 };
 
 class Firebase {
-  public config = writable<Config>({ pullRequests: [], actions: [] });
-  public loading = $state(false);
-  public user = $state();
-  public ghToken = writable<string | null>(getGithubToken());
-  private app: FirebaseApp;
+  public loading: boolean = $state(false);
+  public user: User | null = $state({} as User);
   private db: Firestore;
+  private provider: GithubAuthProvider;
+  private auth: Auth;
+  private refreshInterval: number = 60 * 60 * 1000;
 
   constructor() {
-    this.app = initializeApp(firebaseConfig);
-    this.db = getFirestore(this.app);
-    getAnalytics(this.app);
-    this.initAuthStateListener();
+    const app = initializeApp(firebaseConfig);
+    this.db = getFirestore(app);
+    getAnalytics(app);
+    this.auth = getAuth(app);
+    this.provider = new GithubAuthProvider();
+    this.provider.addScope("repo");
+    this.initAuth();
   }
 
-  private initAuthStateListener() {
-    const auth = getAuth(this.app);
-    if (window.location.hostname === 'localhost') {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099');
+  private async initAuth() {
+    try {
+      await setPersistence(this.auth, browserLocalPersistence);
+      this.auth.onAuthStateChanged((user: User | null) => {
+        if (user) {
+          this.user = user;
+          this.startTokenRefresh()
+        } else {
+          this.user = null;
+          setGithubToken(undefined);
+        }
+      });
+
+    } catch (error) {
+      console.error('Error initializing authentication:', error);
     }
-    onAuthStateChanged(auth, (user) => {
-      console.log("User state changed:", user);
+  }
+
+  private startTokenRefresh() {
+    setInterval(async () => {
+      const user = this.auth.currentUser;
       if (user) {
-        this.user = user;
-        this.ghToken.set(getGithubToken());
-      } else {
-        this.user = null;
-        this.ghToken.set(null);
+        try {
+          const token = await user.getIdToken(true);
+          setGithubToken(token);
+        } catch (error) {
+          this.signOut();
+        }
       }
-    });
+    }, this.refreshInterval);
   }
 
   public async signIn() {
-    const auth = getAuth(this.app);
-    await setPersistence(auth, browserLocalPersistence);
-    const provider = new GithubAuthProvider();
-    provider.addScope("repo");
-
     try {
-      const result = await signInWithRedirect(auth, provider);
-      console.log("Signed in:", result);
-      const userCred = await getRedirectResult(auth);
-      console.log("User cred:", userCred);
+      const result = await signInWithPopup(this.auth, this.provider);
       const credential = GithubAuthProvider.credentialFromResult(result);
-      console.log("Credential:", credential);
-
-      if (credential?.accessToken) {
-        setGithubToken(credential.accessToken);
-        this.ghToken.set(credential.accessToken);
+      if (credential) {
+        const token = credential.accessToken;
+        setGithubToken(token);
       }
-      console.log("Signed in:", userCred);
-      this.user = userCred;
-      return true;
     } catch (error) {
-      console.error("Error signing in:", error);
-      return false;
+      console.error('Error signing in:', error);
     }
   }
 
   public async signOut() {
-    const auth = getAuth(this.app);
-    await signOut(auth);
+    await signOut(this.auth);
     clearSiteData();
-    this.user.set(null);
-    this.ghToken.set(null);
+    this.user = null;
   }
 
-  @handleLoading
-  public async getConfig() {
-    const user = get(this.user);
-    if (!user) return;
+  public async getPRsConfig() {
+    this.loading = true;
+    console.log('getPRsConfig');
+    if (!this.user?.uid) {
+      console.log('no user');
+      this.loading = false;
+      return [];
+    }
 
-    const docRef = doc(collection(this.db, "configs"), user.uid);
+    const docRef = doc(collection(this.db, "configs"), this.user.uid, "pullRequests");
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      this.config.set(docSnap.data() as Config);
+      this.loading = false;
+      console.log('docSnap.data() as RepoConfig[]', docSnap.data() as RepoConfig[]);
+      return docSnap.data() as RepoConfig[]
     }
+
+    this.loading = false;
+    return [];
   }
 
-  @handleLoading
-  public async saveConfig(config: Config) {
-    const user = get(this.user);
-    if (!user) return;
+  public async getActionsConfig() {
+    this.loading = true;
+    if (!this.user) {
+      this.loading = false;
+      return [];
+    }
 
-    const docRef = doc(collection(this.db, "configs"), user.uid);
+    const docRef = doc(collection(this.db, "configs"), this.user.uid, "actions");
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      this.loading = false;
+      return docSnap.data() as RepoConfig[]
+    }
+
+    this.loading = false;
+    return [];
+  }
+
+  public async savePRConfig(config: RepoConfig[]) {
+    this.loading = true;
+    if (!this.user) {
+      this.loading = false;
+      return;
+    }
+
+    const docRef = doc(collection(this.db, "configs"), this.user.uid, "pullRequests");
     await setDoc(docRef, config);
-    this.config.set(config);
+    this.loading = false;
+  }
+
+  public async saveActionsConfig(config: RepoConfig[]) {
+    this.loading = true;
+    if (!this.user) {
+      this.loading = false;
+      return;
+    }
+
+    const docRef = doc(collection(this.db, "configs"), this.user.uid, "actions");
+    await setDoc(docRef, config);
+    this.loading = false;
   }
 }
 
-export const firebase = new Firebase();;
+export const firebase = new Firebase();

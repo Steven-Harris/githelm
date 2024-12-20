@@ -1,5 +1,8 @@
 <script lang="ts">
-  let { login, logout, signedIn } = $props();
+  import { firebase } from "../services/firebase.svelte";
+
+  let signedIn = $derived(firebase.user !== null);
+  let isLoading = $derived(signedIn && !firebase.loading);
 </script>
 
 <header
@@ -18,7 +21,7 @@
   <div id="buttons" class="flex space-x-4">
     {#if signedIn}
       <button
-        onclick={logout}
+        onclick={() => firebase.signOut()}
         id="logout-button"
         type="button"
         class="nav-button"
@@ -26,7 +29,11 @@
         Logout
       </button>
     {:else}
-      <button onclick={login} type="button" class="nav-button">
+      <button
+        onclick={() => firebase.signIn()}
+        type="button"
+        class="nav-button"
+      >
         Login with GitHub
       </button>
     {/if}

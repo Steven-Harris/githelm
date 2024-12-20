@@ -1,6 +1,6 @@
 <script lang="ts">
-  import checkSVG from "@assets/check.svg";
-  import commentSVG from "@assets/comment.svg";
+  import checkSVG from "../../assets/check.svg";
+  import commentSVG from "../../assets/comment.svg";
 
   let { reviews } = $props();
 

@@ -1,5 +1,15 @@
 <script lang="ts">
-  let { pullRequests, isLoading } = $props();
+  import { onMount } from "svelte";
+  import { firebase } from "../services/firebase.svelte";
+  import type { RepoConfig } from "../services/models";
+  import PullRequest from "./pull-requests/PullRequest.svelte";
+
+  let configs: RepoConfig[] = $state([]);
+  let isLoading = $derived(firebase.loading);
+  onMount(async () => {
+    console.log("Mounting PullRequestsContainer");
+    configs = await firebase.getPRsConfig();
+  });
 </script>
 
 <section
@@ -37,10 +47,10 @@
       >
     </div>
   </div>
-  {#if pullRequests.length > 0}
+  {#if configs.length > 0}
     <ul>
-      {#each pullRequests as pr}
-        <li>{pr.title}</li>
+      {#each configs as pr}
+        <PullRequest {...pr} />
       {/each}
     </ul>
   {:else if !isLoading}

@@ -1,18 +1,16 @@
-import { LAST_UPDATED, REFRESH_BUTTON } from "../modules/ui/elements";
 import { getLastUpdated } from "./storage.svelte";
 
 export class LastUpdated {
 
+  public lastUpdated: number = $state(0);
   private timer: any | undefined;
-  private lastUpdated: number = 0;
   public startTimer() {
     if (this.timer) {
       this.resetTimer(this.timer);
     }
-    this.updateTimer()
-    REFRESH_BUTTON.classList.remove('hidden');
+    this.elapsedSeconds()
 
-    this.timer = setInterval(() => this.updateTimer(), 1000);
+    this.timer = setInterval(() => this.elapsedSeconds(), 1000);
   }
 
   private elapsedSeconds(): number {
@@ -27,16 +25,10 @@ export class LastUpdated {
     return Math.floor((Date.now() - this.lastUpdated) / 1000);
   }
 
-
-  private updateTimer(): void {
-    LAST_UPDATED.innerHTML = `Last updated ${this.elapsedSeconds()}s ago`;
-  }
-
   private resetTimer(timerInterval: any) {
     if (timerInterval) {
       clearInterval(timerInterval);
     }
-    LAST_UPDATED.innerHTML = 'Last updated 0s ago';
     this.lastUpdated = 0;
   }
 }

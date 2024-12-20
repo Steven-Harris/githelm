@@ -1,13 +1,21 @@
-<script>
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { fetchPullRequests } from "../../services/github";
+  import type { PullRequest } from "../../services/models";
   import Reviews from "./Reviews.svelte";
-  let { org, repo, pullRequests } = $props();
+  let { org, repo, filters } = $props();
+
+  let pullRequests: PullRequest[] = $state([]);
+  onMount(async () => {
+    pullRequests = await fetchPullRequests(org, repo, filters);
+  });
 </script>
 
 <h3 class="text-lg font-semibold hover:underline">
   <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank">{repo}</a>
 </h3>
 <ul>
-  {#each pullRequests.items as pr}
+  {#each pullRequests as pr}
     <li class="mb-2 flex flex-col">
       <a href={pr.html_url} target="_blank">
         <div
