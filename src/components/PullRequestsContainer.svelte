@@ -1,14 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { firebase } from "../services/firebase.svelte";
+  import { firebase } from "../services/firebase";
   import type { RepoConfig } from "../services/models";
   import PullRequest from "./pull-requests/PullRequest.svelte";
 
   let configs: RepoConfig[] = $state([]);
-  let isLoading = $derived(firebase.loading);
+  let isLoading: boolean = $state(false);
   onMount(async () => {
-    console.log("Mounting PullRequestsContainer");
     configs = await firebase.getPRsConfig();
+    firebase.loading.subscribe((loading) => {
+      isLoading = loading;
+    });
   });
 </script>
 
@@ -47,16 +49,18 @@
       >
     </div>
   </div>
-  {#if configs.length > 0}
-    <ul>
-      {#each configs as pr}
-        <PullRequest {...pr} />
-      {/each}
-    </ul>
-  {:else if !isLoading}
-    <p id="prs-not-found">
-      No pull requests found. Configure repositories by clicking the pencil icon
-      above.
-    </p>
+  {#if !isLoading}
+    {#if configs.length > 0}
+      <ul>
+        {#each configs as config (config.repo)}
+          <PullRequest {...config} />
+        {/each}
+      </ul>
+    {:else}
+      <p id="prs-not-found">
+        No pull requests found. Configure repositories by clicking the pencil
+        icon above.
+      </p>
+    {/if}
   {/if}
 </section>

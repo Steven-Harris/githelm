@@ -1,9 +1,9 @@
 import type { PendingDeployments } from './models';
-import { getGithubToken } from './storage.svelte';
+import { getGithubToken } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filter: string) {
   try {
-    const labels = filter ? `+label:${filter}` : '';
+    const labels = filter != '' ? `+label:${filter}` : '';
     const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open${labels}`);
 
     for (let item of data.items) {

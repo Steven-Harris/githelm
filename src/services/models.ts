@@ -33,12 +33,6 @@ export interface User {
   site_admin: boolean;
 }
 
-export interface PullRequest {
-  url: string;
-  html_url: string;
-  merged_at: string | null;
-}
-
 export interface Reaction {
   url: string;
   total_count: number;
@@ -90,6 +84,11 @@ export interface PullRequests {
   repo: string;
   org: string;
   data: PullRequests;
+}
+
+export interface Action {
+  total_count: number;
+  workflow_runs: WorkflowRun[];
 }
 
 export interface WorkflowRun {

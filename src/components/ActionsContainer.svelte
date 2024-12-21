@@ -1,7 +1,16 @@
 <script lang="ts">
-  import { firebase } from "../services/firebase.svelte";
-  let actions: any[] = $state([]);
-  let isLoading = $derived(firebase.loading);
+  import { onMount } from "svelte";
+  import { firebase } from "../services/firebase";
+  import type { RepoConfig } from "../services/models";
+  import Actions from "./actions/Actions.svelte";
+  let configs: RepoConfig[] = $state([]);
+  let isLoading: boolean = $state(false);
+  onMount(async () => {
+    configs = await firebase.getActionsConfig();
+    firebase.loading.subscribe((loading) => {
+      isLoading = loading;
+    });
+  });
 </script>
 
 <section
@@ -41,16 +50,16 @@
     </div>
   </div>
   {#if !isLoading}
-    <p id="actions-not-found">
-      No actions found. Configure repositories by clicking the pencil icon
-      above.
-    </p>
-  {/if}
-  {#if actions.length > 0}
-    <ul>
-      {#each actions as action}
-        <li>{action.name}</li>
+    {#if configs.length === 0}
+      <p id="actions-not-found">
+        No actions found. Configure repositories by clicking the pencil icon
+        above.
+      </p>
+    {/if}
+    {#if configs.length > 0}
+      {#each configs as config (config.repo)}
+        <Actions {...config} />
       {/each}
-    </ul>
+    {/if}
   {/if}
 </section>

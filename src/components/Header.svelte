@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { firebase } from "../services/firebase.svelte";
-
-  let signedIn = $derived(firebase.user !== null);
-  let isLoading = $derived(signedIn && !firebase.loading);
+  import { firebase } from "../services/firebase";
+  let { signedIn } = $props();
 </script>
 
 <header

@@ -1,7 +1,7 @@
 
 const SITE_DATA_KEY = 'SITE_DATA';
 const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
-// const LAST_UPDATED_KEY = 'LAST_UPDATED';
+const LAST_UPDATED_KEY = 'LAST_UPDATED';
 
 //   data: { pullRequests: [], actions: [] },
 //   loading: false,
@@ -21,9 +21,9 @@ const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
 //   setItem(LAST_UPDATED_KEY, Date.now().toString());
 // }
 
-// export function getLastUpdated(): string | null {
-//   return getItem(LAST_UPDATED_KEY);
-// }
+export function getLastUpdated(): string | null {
+  return getItem(LAST_UPDATED_KEY);
+}
 
 export function clearSiteData(): void {
   removeItem(SITE_DATA_KEY);

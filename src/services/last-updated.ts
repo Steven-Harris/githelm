@@ -1,4 +1,4 @@
-import { getLastUpdated } from "./storage.svelte";
+import { getLastUpdated } from "./storage";
 
 export class LastUpdated {
 

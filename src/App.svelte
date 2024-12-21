@@ -4,17 +4,20 @@
   import Footer from "./components/Footer.svelte";
   import Header from "./components/Header.svelte";
   import PullRequestsContainer from "./components/PullRequestsContainer.svelte";
-  import { firebase } from "./services/firebase.svelte";
+  import { firebase } from "./services/firebase";
   import { initPWA } from "./services/pwa";
 
-  let signedIn = $derived(firebase.user !== null);
+  let signedIn = $state(false);
 
   onMount(async () => {
     initPWA();
   });
+  firebase.user.subscribe((user) => {
+    signedIn = user !== null;
+  });
 </script>
 
-<Header />
+<Header {signedIn} />
 
 <main class="flex-1 px-5 bg-gray-900">
   <div id="content" class="content grid grid-cols-1 md:grid-cols-2 gap-4">

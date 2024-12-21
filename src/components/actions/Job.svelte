@@ -1,7 +1,8 @@
-<script>
-  let { org, repo, job, reviewDeployment } = $props();
+<script lang="ts">
+  import type { Job } from "../../services/models";
 
-  const jobColor = () => {
+  let { job } = $props();
+  const jobColor = (job: Job) => {
     if (job.status === "completed" && job.conclusion === "success") {
       return "bg-sky-600 border-sky-800 text-white";
     } else if (job.conclusion === "failure") {
@@ -18,13 +19,14 @@
 
 <li class="p-1">
   {#if job.status == "pending"}
-    <span class="{jobColor()} flex justify-between items-center">
+    <span class="{jobColor(job)} flex justify-between items-center">
       <span class="text-sm">{job.name}</span>
     </span>
   {:else}
     <button
-      onclick={() => reviewDeployment(org, repo, job.run_id)}
-      class="{jobColor()} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white"
+      class="{jobColor(
+        job,
+      )} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white"
     >
       {job.name}
     </button>

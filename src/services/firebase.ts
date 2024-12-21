@@ -2,8 +2,9 @@ import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
 import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import { get, writable, type Writable } from 'svelte/store';
 import type { RepoConfig } from './models';
-import { clearSiteData, setGithubToken } from './storage.svelte';
+import { clearSiteData, setGithubToken } from './storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -16,8 +17,8 @@ const firebaseConfig = {
 };
 
 class Firebase {
-  public loading: boolean = $state(false);
-  public user: User | null = $state({} as User);
+  public loading: Writable<boolean> = writable(false);
+  public user: Writable<User | null> = writable();
   private db: Firestore;
   private provider: GithubAuthProvider;
   private auth: Auth;
@@ -34,21 +35,16 @@ class Firebase {
   }
 
   private async initAuth() {
-    try {
-      await setPersistence(this.auth, browserLocalPersistence);
-      this.auth.onAuthStateChanged((user: User | null) => {
-        if (user) {
-          this.user = user;
-          this.startTokenRefresh()
-        } else {
-          this.user = null;
-          setGithubToken(undefined);
-        }
-      });
-
-    } catch (error) {
-      console.error('Error initializing authentication:', error);
-    }
+    await setPersistence(this.auth, browserLocalPersistence);
+    this.auth.onAuthStateChanged((user: User | null) => {
+      if (user) {
+        this.user.set(user);
+        this.startTokenRefresh()
+      } else {
+        this.user.set(null);
+        setGithubToken(undefined);
+      }
+    });
   }
 
   private startTokenRefresh() {
@@ -81,72 +77,73 @@ class Firebase {
   public async signOut() {
     await signOut(this.auth);
     clearSiteData();
-    this.user = null;
+    this.user.set(null);
   }
 
-  public async getPRsConfig() {
-    this.loading = true;
-    console.log('getPRsConfig');
-    if (!this.user?.uid) {
-      console.log('no user');
-      this.loading = false;
+  public async getPRsConfig(): Promise<RepoConfig[]> {
+    this.loading.set(true);
+    const user = get(this.user);
+    if (!user?.uid) {
+      this.loading.set(false);
       return [];
     }
 
-    const docRef = doc(collection(this.db, "configs"), this.user.uid, "pullRequests");
+    const docRef = doc(collection(this.db, "configs"), user.uid);
     const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      this.loading = false;
-      console.log('docSnap.data() as RepoConfig[]', docSnap.data() as RepoConfig[]);
-      return docSnap.data() as RepoConfig[]
-    }
-
-    this.loading = false;
-    return [];
-  }
-
-  public async getActionsConfig() {
-    this.loading = true;
-    if (!this.user) {
-      this.loading = false;
+    if (!docSnap.exists()) {
       return [];
     }
 
-    const docRef = doc(collection(this.db, "configs"), this.user.uid, "actions");
-    const docSnap = await getDoc(docRef);
+    const pullRequests = docSnap.data().pullRequests;
+    this.loading.set(false);
+    return pullRequests ? pullRequests : [];
+  }
 
-    if (docSnap.exists()) {
-      this.loading = false;
-      return docSnap.data() as RepoConfig[]
+  public async getActionsConfig(): Promise<RepoConfig[]> {
+    this.loading.set(true);
+    const user = get(this.user);
+    if (!user) {
+      this.loading.set(false);
+      return [];
     }
 
-    this.loading = false;
-    return [];
+    const docRef = doc(collection(this.db, "configs"), user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return [];
+    }
+
+    const actions = docSnap.data().actions;
+    this.loading.set(false);
+    return actions ? actions : [];
   }
 
   public async savePRConfig(config: RepoConfig[]) {
-    this.loading = true;
-    if (!this.user) {
-      this.loading = false;
+    this.loading.set(true);
+    const user = get(this.user)
+    if (!user) {
+      this.loading.set(false);
       return;
     }
 
-    const docRef = doc(collection(this.db, "configs"), this.user.uid, "pullRequests");
+    const docRef = doc(collection(this.db, "configs"), user.uid, "pullRequests");
     await setDoc(docRef, config);
-    this.loading = false;
+    this.loading.set(false);
   }
 
   public async saveActionsConfig(config: RepoConfig[]) {
-    this.loading = true;
-    if (!this.user) {
-      this.loading = false;
+    this.loading.set(true);
+    const user = get(this.user)
+    if (!user) {
+      this.loading.set(false);
       return;
     }
 
-    const docRef = doc(collection(this.db, "configs"), this.user.uid, "actions");
+    const docRef = doc(collection(this.db, "configs"), user.uid, "actions");
     await setDoc(docRef, config);
-    this.loading = false;
+    this.loading.set(false);
   }
 }
 

@@ -15,7 +15,7 @@
   <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank">{repo}</a>
 </h3>
 <ul>
-  {#each pullRequests as pr}
+  {#each pullRequests as pr (pr.id)}
     <li class="mb-2 flex flex-col">
       <a href={pr.html_url} target="_blank">
         <div
