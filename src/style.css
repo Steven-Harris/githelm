@@ -28,16 +28,6 @@ body {
   flex-direction: column;
 }
 
-header,
-#tabs,
-#pull-request-header,
-#actions-header {
-  position: sticky;
-  top: 0;
-  background-color: var(--primary-color);
-  /* Tailwind bg-gray-900 */
-}
-
 @keyframes spin {
   from {
     transform: rotate(0deg);

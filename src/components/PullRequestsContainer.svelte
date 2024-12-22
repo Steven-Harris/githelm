@@ -14,11 +14,8 @@
   });
 </script>
 
-<section
-  id="pull-requests-section"
-  class="glow bg-gray-800 pl-5 pr-5 rounded-lg"
->
-  <div class="flex justify-between pb-4 pt-3 lg:sticky top-0 z-10 bg-gray-800">
+<section id="pull-requests-section" class="glow bg-gray-800 p-5 rounded-lg">
+  <div class="flex justify-between lg:sticky top-0 z-10 bg-gray-800">
     <h2 class="text-xl font-bold">Pull Requests</h2>
     <div>
       <button

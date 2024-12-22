@@ -86,11 +86,14 @@ export interface PullRequests {
   data: PullRequests;
 }
 
-export interface Action {
+export interface Actions {
+  workflows: Workflow[];
+}
+
+export interface Workflow {
   total_count: number;
   workflow_runs: WorkflowRun[];
 }
-
 export interface WorkflowRun {
   id: number;
   name: string;
@@ -127,6 +130,10 @@ export interface WorkflowRun {
   head_commit: Headcommit;
   repository: Repository;
   head_repository: Repository;
+}
+
+export interface WorkflowJobs {
+  total_count: number;
   jobs: Job[];
 }
 

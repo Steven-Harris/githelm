@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Job } from "../../services/models";
 
-  let { job } = $props();
+  let { jobs } = $props();
   const jobColor = (job: Job) => {
     if (job.status === "completed" && job.conclusion === "success") {
       return "bg-sky-600 border-sky-800 text-white";
@@ -17,18 +17,20 @@
   };
 </script>
 
-<li class="p-1">
-  {#if job.status == "pending"}
-    <span class="{jobColor(job)} flex justify-between items-center">
-      <span class="text-sm">{job.name}</span>
-    </span>
-  {:else}
-    <button
-      class="{jobColor(
-        job,
-      )} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white"
-    >
-      {job.name}
-    </button>
-  {/if}
-</li>
+{#each jobs as job (job.id)}
+  <li class="p-1">
+    {#if job.status == "pending"}
+      <span class="{jobColor(job)} flex justify-between items-center">
+        <span class="text-sm">{job.name}</span>
+      </span>
+    {:else}
+      <button
+        class="{jobColor(
+          job,
+        )} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white"
+      >
+        {job.name}
+      </button>
+    {/if}
+  </li>
+{/each}

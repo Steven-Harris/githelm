@@ -1,4 +1,5 @@
-import type { PendingDeployments } from './models';
+import type Workflow from '../components/actions/Workflow.svelte';
+import type { PendingDeployments, WorkflowJobs } from './models';
 import { getGithubToken } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filter: string) {
@@ -18,19 +19,25 @@ export async function fetchPullRequests(org: string, repo: string, filter: strin
   }
 }
 
-export async function fetchActions(org: string, repo: string, filter: string) {
+export async function fetchActions(org: string, repo: string, filters: string[]): Promise<Workflow[]> {
   try {
-    const data = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
+    const requests = filters.map(filter => {
+      return fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
+    });
 
-    for (let run of data.workflow_runs) {
-      const jobs = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${run.id}/jobs`);
-      run.jobs = jobs.jobs;
-    }
-
-    return data.workflow_runs;
+    return await Promise.all(requests)
   } catch (error) {
     console.error('Error fetching actions:', error);
     return [];
+  }
+}
+
+export async function fetchWorkflowJobs(org: string, repo: string, runId: string): Promise<WorkflowJobs> {
+  try {
+    return await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
+  } catch (error) {
+    console.error('Error fetching workflow run:', error);
+    return {} as WorkflowJobs;
   }
 }
 

@@ -44,6 +44,8 @@
     color: white;
     padding: 1em;
     text-align: center;
+    position: sticky;
+    top: 0;
   }
 
   h1 {
