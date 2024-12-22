@@ -3,37 +3,16 @@
   let { signedIn } = $props();
 </script>
 
-<header
-  class="flex justify-between items-center pl-5 pr-5 pb-4 pt-4 sticky top-0 z-10"
->
+<header class="flex justify-between items-center pl-5 pr-5 pb-4 pt-4 sticky top-0 z-10">
   <div id="header" class="flex">
-    <img
-      src="src/assets/helm.svg"
-      alt="site logo"
-      width="50"
-      height="50"
-      class="mr-2"
-    />
+    <img src="src/assets/helm.svg" alt="site logo" width="50" height="50" class="mr-2" />
     <h1 class="text-4xl font-bold">GitHelm</h1>
   </div>
   <div id="buttons" class="flex space-x-4">
     {#if signedIn}
-      <button
-        onclick={() => firebase.signOut()}
-        id="logout-button"
-        type="button"
-        class="nav-button"
-      >
-        Logout
-      </button>
+      <button onclick={() => firebase.signOut()} id="logout-button" type="button" class="nav-button"> Logout </button>
     {:else}
-      <button
-        onclick={() => firebase.signIn()}
-        type="button"
-        class="nav-button"
-      >
-        Login with GitHub
-      </button>
+      <button onclick={() => firebase.signIn()} type="button" class="nav-button"> Login with GitHub </button>
     {/if}
   </div>
 </header>

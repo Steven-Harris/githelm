@@ -18,18 +18,9 @@
   {#each pullRequests as pr (pr.id)}
     <li class="mb-2 flex flex-col">
       <a href={pr.html_url} target="_blank">
-        <div
-          id="pr-item"
-          class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center"
-        >
-          <img
-            src={pr.user.avatar_url}
-            class="avatar mr-1"
-            alt={pr.user.login}
-          />
-          <span class="cursor-pointer flex-grow max-w-[70%] hover:underline"
-            >{pr.title}</span
-          >
+        <div id="pr-item" class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center">
+          <img src={pr.user.avatar_url} class="avatar mr-1" alt={pr.user.login} />
+          <span class="cursor-pointer flex-grow max-w-[70%] hover:underline">{pr.title}</span>
           <Reviews {org} {repo} prNumber={pr.number} />
         </div>
       </a>

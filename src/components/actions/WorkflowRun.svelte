@@ -12,12 +12,8 @@
 </script>
 
 <li class="mb-2 flex-grow items-center">
-  <div
-    class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow"
-  >
-    <a href={run.html_url} target="_blank" class="hover:underline"
-      >{run.display_title}</a
-    >
+  <div class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
+    <a href={run.html_url} target="_blank" class="hover:underline">{run.display_title}</a>
     <ul class="flex flex-wrap -m-1">
       <Jobs {jobs} />
     </ul>

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fetchActions } from "../../services/github";
-  import WorkflowRun from "./WorkflowRun.svelte";
   import type { Workflow } from "../../services/models";
+  import WorkflowRun from "./WorkflowRun.svelte";
   let { org, repo, filters } = $props();
 
   let workflows: Workflow[] = $state([]);
@@ -13,9 +13,7 @@
 </script>
 
 <h3 class="text-lg font-semibold hover:underline">
-  <a href={`https://github.com/${org}/${repo}/actions`} target="_blank"
-    >{repo}</a
-  >
+  <a href={`https://github.com/${org}/${repo}/actions`} target="_blank">{repo}</a>
 </h3>
 {#each workflows as workflow, i (i)}
   <ul class="flex flex-wrap">

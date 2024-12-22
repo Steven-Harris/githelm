@@ -24,11 +24,7 @@
         <span class="text-sm">{job.name}</span>
       </span>
     {:else}
-      <button
-        class="{jobColor(
-          job,
-        )} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white"
-      >
+      <button class="{jobColor(job)} cursor-pointer border rounded-lg p-3 shadow-sm flex justify-between items-center text-white">
         {job.name}
       </button>
     {/if}
