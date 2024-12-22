@@ -32,3 +32,4 @@ export class LastUpdated {
     this.lastUpdated = 0;
   }
 }
+

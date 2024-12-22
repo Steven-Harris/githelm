@@ -2,14 +2,21 @@
   import { onMount } from "svelte";
   import { firebase } from "../../services/firebase";
   import type { RepoConfig } from "../../services/models";
-  import Actions from "./Actions.svelte";
+  import { getStorageObject, setStorageObject } from "../../services/storage";
+  import Actions from "./ViewActions.svelte";
+
   let configs: RepoConfig[] = $state([]);
   let isLoading: boolean = $state(false);
   onMount(async () => {
     firebase.loading.subscribe((loading) => {
       isLoading = loading;
     });
-    configs = await firebase.getActionsConfig();
+    const actionConfigs = getStorageObject<RepoConfig[]>("actions-configs");
+    configs = actionConfigs.data;
+    if (actionConfigs.lastUpdated === 0) {
+      configs = await firebase.getActionsConfig();
+      setStorageObject("actions-configs", configs);
+    }
   });
 </script>
 

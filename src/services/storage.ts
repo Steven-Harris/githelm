@@ -1,33 +1,14 @@
+import type { StorageObject } from "./models";
 
-const SITE_DATA_KEY = 'SITE_DATA';
 const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
 const LAST_UPDATED_KEY = 'LAST_UPDATED';
-
-//   data: { pullRequests: [], actions: [] },
-//   loading: false,
-// });
-// export function loadData(): any {
-//   storage.loading = true;
-//   const temp = getItem(SITE_DATA_KEY);
-//   if (temp) {
-//     storage.data = JSON.parse(temp);
-//   }
-//   storage.loading = false;
-// }
-
-// export function setSiteData(obj: any): void {
-//   storage.data = obj;
-//   setItem(SITE_DATA_KEY, JSON.stringify(obj));
-//   setItem(LAST_UPDATED_KEY, Date.now().toString());
-// }
 
 export function getLastUpdated(): string | null {
   return getItem(LAST_UPDATED_KEY);
 }
 
 export function clearSiteData(): void {
-  removeItem(SITE_DATA_KEY);
-  removeItem(GITHUB_TOKEN_KEY);
+  localStorage.clear();
 }
 
 export function getGithubToken(): string | null {
@@ -40,6 +21,21 @@ export function setGithubToken(token: string | undefined): void {
     return;
   }
   setItem(GITHUB_TOKEN_KEY, token);
+}
+
+export function getStorageObject<T = {} | []>(key: string): StorageObject<T> {
+  const item = getItem(key);
+  if (!item) {
+    return { lastUpdated: 0, data: typeof {} === 'object' ? {} as T : [] as T };
+  }
+  return JSON.parse(item);
+}
+
+export function setStorageObject<T>(key: string, value: T): number {
+  const lastUpdated = Date.now();
+  const obj = { lastUpdated, data: value };
+  setItem(key, JSON.stringify(obj));
+  return lastUpdated
 }
 
 function getItem(key: string): string | null {

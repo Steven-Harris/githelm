@@ -2,7 +2,8 @@
   import { onMount } from "svelte";
   import { firebase } from "../../services/firebase";
   import type { RepoConfig } from "../../services/models";
-  import PullRequest from "./PullRequest.svelte";
+  import { getStorageObject, setStorageObject } from "../../services/storage";
+  import PullRequest from "./ViewPullRequest.svelte";
 
   let configs: RepoConfig[] = $state([]);
   let isLoading: boolean = $state(false);
@@ -10,7 +11,12 @@
     firebase.loading.subscribe((loading) => {
       isLoading = loading;
     });
-    configs = await firebase.getPRsConfig();
+    const prConfigs = getStorageObject<RepoConfig[]>("pull-requests-configs");
+    configs = prConfigs.data;
+    if (prConfigs.lastUpdated === 0) {
+      configs = await firebase.getPRsConfig();
+      setStorageObject("pull-requests-configs", configs);
+    }
   });
 </script>
 

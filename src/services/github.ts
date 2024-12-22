@@ -1,14 +1,14 @@
-import type { PendingDeployments, PullRequest, Review, Workflow, WorkflowJobs } from './models';
+import type { Job, PendingDeployments, PullRequest, PullRequests, Review, Workflow, WorkflowJobs } from './models';
 import { getGithubToken } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   try {
     let results: any[] = [];
     if (filters.length === 0) {
-      results.push(fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open`));
+      results.push(fetchData<PullRequests>(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open`));
     } else {
       filters.forEach(filter => {
-        results.push(fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+label:${filter}`));
+        results.push(fetchData<PullRequests>(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+label:${filter}`));
       });
     }
     return (await Promise.all(results)).flatMap((result: any) => result.items);
@@ -20,7 +20,7 @@ export async function fetchPullRequests(org: string, repo: string, filters: stri
 
 export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
   try {
-    return await fetchData(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
+    return await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return [];
@@ -30,7 +30,7 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
 export async function fetchActions(org: string, repo: string, filters: string[]): Promise<Workflow[]> {
   try {
     const requests = filters.map(filter => {
-      return fetchData(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
+      return fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
     });
 
     return await Promise.all(requests)
@@ -40,19 +40,18 @@ export async function fetchActions(org: string, repo: string, filters: string[])
   }
 }
 
-export async function fetchWorkflowJobs(org: string, repo: string, runId: string): Promise<WorkflowJobs> {
+export async function fetchWorkflowJobs(org: string, repo: string, runId: string): Promise<Job[]> {
   try {
-    return await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
+    return (await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`)).jobs;
   } catch (error) {
     console.error('Error fetching workflow run:', error);
-    return {} as WorkflowJobs;
+    return [];
   }
 }
 
 export async function getPendingEnvironments(org: string, repo: string, runId: string) {
   try {
-    const response = await fetchData(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`) as PendingDeployments[];
-    return response;
+    return await fetchData<PendingDeployments[]>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`);
   } catch (error) {
     console.error('Error fetching pending environments:', error);
     return [];
@@ -71,13 +70,17 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
   });
 }
 
-async function fetchData(url: string) {
+async function fetchData<T = {} | []>(url: string): Promise<T> {
   try {
     const response = await fetch(url, { headers: getHeaders() });
-    if (response.status === 401) {
-      window.location.reload();
+    //if (response.status === 401) {
+    //  window.location.reload();
+    //}
+    if (!response.ok) {
+      console.log('Error fetching data:', response);
+      return typeof {} === 'object' ? {} as T : [] as T;
     }
-    return await response.json();
+    return await response.json() as T;
   } catch (error) {
     console.error('Error fetching data:', error);
     throw error;
