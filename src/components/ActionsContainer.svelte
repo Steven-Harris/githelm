@@ -6,10 +6,10 @@
   let configs: RepoConfig[] = $state([]);
   let isLoading: boolean = $state(false);
   onMount(async () => {
-    configs = await firebase.getActionsConfig();
     firebase.loading.subscribe((loading) => {
       isLoading = loading;
     });
+    configs = await firebase.getActionsConfig();
   });
 </script>
 

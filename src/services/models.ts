@@ -70,7 +70,29 @@ export interface PullRequest {
   reactions: Reaction;
   performed_via_github_app: any;
   state_reason: any;
-  reviews: any[];
+}
+
+export interface Review {
+  id: number;
+  node_id: string;
+  user: User;
+  body: string;
+  state: string;
+  html_url: string;
+  pull_request_url: string;
+  author_association: string;
+  _links: Links;
+  submitted_at: string;
+  commit_id: string;
+}
+
+interface Links {
+  html: Html;
+  pull_request: Html;
+}
+
+interface Html {
+  href: string;
 }
 
 export interface PullRequests {

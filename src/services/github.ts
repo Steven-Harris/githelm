@@ -1,20 +1,22 @@
-import type Workflow from '../components/actions/Workflow.svelte';
-import type { PendingDeployments, WorkflowJobs } from './models';
+import type { PendingDeployments, PullRequest, Review, Workflow, WorkflowJobs } from './models';
 import { getGithubToken } from './storage';
 
-export async function fetchPullRequests(org: string, repo: string, filter: string) {
+export async function fetchPullRequests(org: string, repo: string, filter: string): Promise<PullRequest[]> {
   try {
     const labels = filter != '' ? `+label:${filter}` : '';
     const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open${labels}`);
-
-    for (let item of data.items) {
-      const reviews = await fetchData(`https://api.github.com/repos/${org}/${repo}/pulls/${item.number}/reviews`);
-      item.reviews = reviews;
-    }
-
-    return data.items;
+    return data?.items || [];
   } catch (error) {
     console.error('Error fetching pull requests:', error);
+    return [];
+  }
+}
+
+export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
+  try {
+    return await fetchData(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
     return [];
   }
 }

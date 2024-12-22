@@ -30,7 +30,7 @@
           <span class="cursor-pointer flex-grow max-w-[70%] hover:underline"
             >{pr.title}</span
           >
-          <Reviews reviews={pr.reviews} />
+          <Reviews {org} {repo} prNumber={pr.number} />
         </div>
       </a>
     </li>

@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { fetchActions } from "../../services/github";
-  import Workflow from "./Workflow.svelte";
+  import WorkflowRun from "./WorkflowRun.svelte";
+  import type { Workflow } from "../../services/models";
   let { org, repo, filters } = $props();
 
   let workflows: Workflow[] = $state([]);
@@ -19,7 +20,7 @@
 {#each workflows as workflow, i (i)}
   <ul class="flex flex-wrap">
     {#each workflow.workflow_runs as run (run.id)}
-      <Workflow {org} {repo} {run} />
+      <WorkflowRun {org} {repo} {run} />
     {/each}
   </ul>
 {/each}
