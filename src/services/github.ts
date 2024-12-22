@@ -1,11 +1,17 @@
 import type { PendingDeployments, PullRequest, Review, Workflow, WorkflowJobs } from './models';
 import { getGithubToken } from './storage';
 
-export async function fetchPullRequests(org: string, repo: string, filter: string): Promise<PullRequest[]> {
+export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   try {
-    const labels = filter != '' ? `+label:${filter}` : '';
-    const data = await fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open${labels}`);
-    return data?.items || [];
+    let results: any[] = [];
+    if (filters.length === 0) {
+      results.push(fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open`));
+    } else {
+      filters.forEach(filter => {
+        results.push(fetchData(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+label:${filter}`));
+      });
+    }
+    return (await Promise.all(results)).flatMap((result: any) => result.items);
   } catch (error) {
     console.error('Error fetching pull requests:', error);
     return [];
