@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import ActionsContainer from "./components/ActionsContainer.svelte";
+  import ActionsContainer from "./components/actions/ActionsContainer.svelte";
   import Footer from "./components/Footer.svelte";
   import Header from "./components/Header.svelte";
-  import PullRequestsContainer from "./components/PullRequestsContainer.svelte";
+  import PullRequestsContainer from "./components/pull-requests/PullRequestsContainer.svelte";
   import Tabs from "./components/Tabs.svelte";
   import { firebase } from "./services/firebase";
   import { initPWA } from "./services/pwa";

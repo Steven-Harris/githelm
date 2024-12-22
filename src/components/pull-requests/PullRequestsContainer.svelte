@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { firebase } from "../services/firebase";
-  import type { RepoConfig } from "../services/models";
-  import PullRequest from "./pull-requests/PullRequest.svelte";
+  import { firebase } from "../../services/firebase";
+  import type { RepoConfig } from "../../services/models";
+  import PullRequest from "./PullRequest.svelte";
 
   let configs: RepoConfig[] = $state([]);
   let isLoading: boolean = $state(false);

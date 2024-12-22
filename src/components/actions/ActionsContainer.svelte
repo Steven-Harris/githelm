@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { firebase } from "../services/firebase";
-  import type { RepoConfig } from "../services/models";
-  import Actions from "./actions/Actions.svelte";
+  import { firebase } from "../../services/firebase";
+  import type { RepoConfig } from "../../services/models";
+  import Actions from "./Actions.svelte";
   let configs: RepoConfig[] = $state([]);
   let isLoading: boolean = $state(false);
   onMount(async () => {
