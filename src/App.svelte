@@ -9,11 +9,14 @@
   import { initPWA } from "./services/pwa";
 
   import { isMobile } from "./services/mobile.state";
-  let signedIn = $derived(firebase.isSignedIn());
+  let signedIn = $state(false);
   let activeTab = $state("pull-requests");
 
   onMount(async () => {
     initPWA();
+    firebase.user.subscribe((user) => {
+      signedIn = user !== null;
+    });
   });
   function switchTab(tab: string) {
     activeTab = tab;

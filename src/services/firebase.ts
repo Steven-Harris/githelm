@@ -19,7 +19,6 @@ const firebaseConfig = {
 class Firebase {
   public loading: Writable<boolean> = writable(false);
   public user: Writable<User | null> = writable();
-  public isSignedIn = () => get(this.user) !== null;
   private db: Firestore;
   private provider: GithubAuthProvider;
   private auth: Auth;
