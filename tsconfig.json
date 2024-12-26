@@ -9,10 +9,22 @@
     "checkJs": true,
     "isolatedModules": true,
     "moduleDetection": "force",
+    "baseUrl": ".",
     "types": [
       "vite-plugin-pwa/client",
       "vite-plugin-pwa/svelte"
-    ]
+    ],
+    "paths": {
+      "@integrations": [
+        "./src/integrations/index.ts"
+      ],
+      "@services/*": [
+        "./src/services/*"
+      ],
+      "@assets/*": [
+        "./src/assets/*"
+      ],
+    }
   },
   "include": [
     "src/**/*.ts",

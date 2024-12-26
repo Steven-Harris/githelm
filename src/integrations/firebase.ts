@@ -3,7 +3,6 @@ import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
 import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
-import type { RepoConfig } from './models';
 import { clearSiteData, setGithubToken } from './storage';
 
 const firebaseConfig = {
@@ -15,6 +14,16 @@ const firebaseConfig = {
   appId: "1:329298744372:web:db5c6a79d68616c3d76661",
   measurementId: "G-7HWYDWLL6P"
 };
+export interface RepoConfig {
+  org: string;
+  repo: string;
+  filters: string[];
+}
+
+export interface Config {
+  pullRequests: RepoConfig[];
+  actions: RepoConfig[];
+}
 
 class Firebase {
   public loading: Writable<boolean> = writable(false);

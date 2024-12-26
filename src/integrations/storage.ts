@@ -1,7 +1,10 @@
-import type { StorageObject } from "./models";
-
 const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
 const LAST_UPDATED_KEY = 'LAST_UPDATED';
+
+export interface StorageObject<T> {
+  lastUpdated: number;
+  data: T;
+}
 
 export function getLastUpdated(): string | null {
   return getItem(LAST_UPDATED_KEY);

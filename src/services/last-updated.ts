@@ -1,4 +1,4 @@
-import { getLastUpdated } from "./storage";
+import { getLastUpdated } from "@integrations";
 
 export class LastUpdated {
 

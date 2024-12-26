@@ -1,8 +1,6 @@
 <script lang="ts">
+  import { firebase, getStorageObject, setStorageObject, type RepoConfig } from "@integrations";
   import { onMount } from "svelte";
-  import { firebase } from "../../services/firebase";
-  import type { RepoConfig } from "../../services/models";
-  import { getStorageObject, setStorageObject } from "../../services/storage";
   import Actions from "./ViewActions.svelte";
 
   let configs: RepoConfig[] = $state([]);

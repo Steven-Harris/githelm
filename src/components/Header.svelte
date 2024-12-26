@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { firebase } from "../services/firebase";
+  import { firebase } from "@integrations";
+
   let { signedIn } = $props();
 </script>
 

@@ -1,14 +1,14 @@
 <script lang="ts">
+  import { firebase } from "@integrations";
   import { onMount } from "svelte";
   import ActionsContainer from "./components/actions/ActionsContainer.svelte";
   import Footer from "./components/Footer.svelte";
   import Header from "./components/Header.svelte";
   import PullRequestsContainer from "./components/pull-requests/PullRequestsContainer.svelte";
   import Tabs from "./components/Tabs.svelte";
-  import { firebase } from "./services/firebase";
-  import { initPWA } from "./services/pwa";
 
-  import { isMobile } from "./services/mobile.state";
+  import { isMobile } from "@services/mobile.state";
+  import { initPWA } from "@services/pwa";
   let signedIn = $state(false);
   let activeTab = $state("pull-requests");
 

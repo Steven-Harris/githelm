@@ -1,5 +1,5 @@
+import { getStorageObject, setStorageObject } from "@integrations";
 import { readable } from "svelte/store";
-import { getStorageObject, setStorageObject } from "../services/storage";
 
 const POLL_INTERVAL = 60000; // 60 seconds
 const RETRY_INTERVAL = 10000; // 10 seconds

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isMobile } from "../services/mobile.state";
+  import { isMobile } from "@services/mobile.state";
 
   let { activeTab, switchTab } = $props();
   const pullRequestsTab = "pull-requests";

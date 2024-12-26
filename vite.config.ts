@@ -1,5 +1,6 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import cssnano from 'cssnano';
+import path from 'path';
 import tailwindcss from 'tailwindcss';
 import { defineConfig } from 'vite';
 import viteCompression from 'vite-plugin-compression';
@@ -30,7 +31,6 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,ts}'],
     setupFiles: "./vitest.setup.ts"
   },
-  resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
   css: {
     postcss: {
       plugins: [
@@ -39,6 +39,13 @@ export default defineConfig({
           preset: 'default',
         }),
       ],
+    },
+  },
+  resolve: {
+    alias: {
+      "@integrations": path.resolve(__dirname, './src/integrations'),
+      "@services": path.resolve(__dirname, './src/services'),
+      "@assets": path.resolve(__dirname, './src/assets'),
     },
   },
   plugins: [
