@@ -38,23 +38,10 @@ body {
   }
 }
 
-/* Component Styles */
-#content {
-  margin-top: 1rem;
-}
-
-.glow {
-  box-shadow: 0 0 8px var(--secondary-accent-color);
-}
-
 .spinner {
   width: 10rem;
   height: 10rem;
   animation: spin 1.5s linear infinite;
-}
-
-.content {
-  height: calc(100vh - 10rem);
 }
 
 .tab-button {
@@ -178,14 +165,3 @@ button#pwa-refresh {
   }
 }
 
-.chip {
-  display: inline-block;
-  padding: 0.5rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-  margin-right: 0.25rem;
-  background-color: var(--tertiary-accent-color);
-  color: var(--secondary-text-color);
-  border-radius: 0.25rem;
-  cursor: pointer;
-}

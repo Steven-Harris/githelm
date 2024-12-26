@@ -23,7 +23,7 @@ function createPollingStore<T>(key: string, fetchDataCallback: () => Promise<T>)
   const checkAndFetchData = async (set: (value: T) => void) => {
     const storage = getStorageObject<T>(key);
     const now = Date.now();
-    if (!storage.data || now - storage.lastUpdated > STALE_THRESHOLD) {
+    if (!storage.data || now - storage.lastUpdated > Date.now() - STALE_THRESHOLD) {
       await fetchData(set);
     } else {
       set(storage.data);

@@ -2,7 +2,7 @@
   import checkSVG from "@assets/check.svg";
   import commentSVG from "@assets/comment.svg";
   import { fetchReviews, type Review } from "@integrations";
-  import createPollingStore from "@services/poll";
+  import createPollingStore from "@services/polling-store";
 
   let { org, repo, prNumber } = $props();
 

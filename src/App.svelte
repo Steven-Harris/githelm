@@ -10,12 +10,16 @@
   import { isMobile } from "@services/mobile.state";
   import { initPWA } from "@services/pwa";
   let signedIn = $state(false);
+  let loading = $state(true);
   let activeTab = $state("pull-requests");
 
   onMount(async () => {
     initPWA();
     firebase.user.subscribe((user) => {
       signedIn = user !== null;
+    });
+    firebase.loading.subscribe((load) => {
+      loading = load;
     });
   });
   function switchTab(tab: string) {
@@ -27,8 +31,8 @@
 
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
   <Tabs {activeTab} {switchTab} />
-  <div id="content" class="mt-1 content grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
-    {#if signedIn}
+  <div id="content" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
+    {#if signedIn && !loading}
       {#if $isMobile}
         {#if activeTab === "pull-requests"}
           <PullRequestsContainer />

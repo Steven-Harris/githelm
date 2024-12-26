@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
 import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
-import { clearSiteData, setGithubToken } from './storage';
+import { clearSiteData, getGithubToken, setGithubToken } from './storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -47,12 +47,18 @@ class Firebase {
     await setPersistence(this.auth, browserLocalPersistence);
     this.auth.onAuthStateChanged((user: User | null) => {
       if (user) {
-        this.user.set(user);
+        if (getGithubToken()) {
+          user.getIdToken(true).then(token => {
+            setGithubToken(token);
+          });
+        }
         this.startTokenRefresh()
+        this.user.set(user);
       } else {
         this.user.set(null);
         setGithubToken(undefined);
       }
+      this.loading.set(false);
     });
   }
 
@@ -90,10 +96,8 @@ class Firebase {
   }
 
   public async getPRsConfig(): Promise<RepoConfig[]> {
-    this.loading.set(true);
     const user = get(this.user);
     if (!user?.uid) {
-      this.loading.set(false);
       return [];
     }
 
@@ -105,15 +109,12 @@ class Firebase {
     }
 
     const pullRequests = docSnap.data().pullRequests;
-    this.loading.set(false);
     return pullRequests ? pullRequests : [];
   }
 
   public async getActionsConfig(): Promise<RepoConfig[]> {
-    this.loading.set(true);
     const user = get(this.user);
     if (!user) {
-      this.loading.set(false);
       return [];
     }
 
@@ -125,34 +126,27 @@ class Firebase {
     }
 
     const actions = docSnap.data().actions;
-    this.loading.set(false);
     return actions ? actions : [];
   }
 
   public async savePRConfig(config: RepoConfig[]) {
-    this.loading.set(true);
     const user = get(this.user)
     if (!user) {
-      this.loading.set(false);
       return;
     }
 
     const docRef = doc(collection(this.db, "configs"), user.uid, "pullRequests");
     await setDoc(docRef, config);
-    this.loading.set(false);
   }
 
   public async saveActionsConfig(config: RepoConfig[]) {
-    this.loading.set(true);
     const user = get(this.user)
     if (!user) {
-      this.loading.set(false);
       return;
     }
 
     const docRef = doc(collection(this.db, "configs"), user.uid, "actions");
     await setDoc(docRef, config);
-    this.loading.set(false);
   }
 }
 

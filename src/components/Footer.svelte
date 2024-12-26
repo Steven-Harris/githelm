@@ -21,14 +21,10 @@
   footer {
     background-color: var(--primary-color);
     color: white;
-    padding: 1em;
+    padding: 0.5rem 1rem;
     text-align: center;
     position: fixed;
     width: 100%;
     bottom: 0;
-  }
-
-  p {
-    margin: 0;
   }
 </style>
