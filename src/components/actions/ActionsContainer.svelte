@@ -56,7 +56,7 @@
   </div>
   {#if !isLoading}
     {#if isEditing}
-      <EditActions {configs} />
+      <EditActions bind:configs />
     {:else if configs.length === 0}
       <p id="actions-not-found">No actions found. Configure repositories by clicking the pencil icon above.</p>
     {:else}

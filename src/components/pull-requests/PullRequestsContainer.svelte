@@ -62,7 +62,7 @@
   </div>
   {#if !isLoading}
     {#if isEditing}
-      <EditPullRequests {configs} />
+      <EditPullRequests bind:configs />
     {:else if configs.length > 0}
       <ul>
         {#each configs as config (config.repo)}

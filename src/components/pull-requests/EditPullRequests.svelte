@@ -1,7 +1,7 @@
 <script lang="ts">
   import ListConfigs from "../config-edit/ListConfigs.svelte";
 
-  let { configs } = $props();
+  let { configs = $bindable() } = $props();
 </script>
 
-<ListConfigs name="pull-requests" {configs} />
+<ListConfigs name="pull-requests" filterLabel="Label Filters" bind:configs />

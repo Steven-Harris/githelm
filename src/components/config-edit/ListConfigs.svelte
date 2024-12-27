@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import EditForm from "./EditForm.svelte";
 
-  let { name, configs } = $props();
+  let { name, filterLabel, configs = $bindable([]) } = $props();
   onMount(() => {
     const CONFIG_LIST = document.getElementById(`${name}-config-list`)!;
     Sortable.create(CONFIG_LIST, {
@@ -12,11 +12,15 @@
       handle: ".sortable-handle",
     });
   });
+
+  function addConfig(org: string, repo: string, filters: string[]) {
+    configs = [...configs, { org, repo, filters }];
+  }
 </script>
 
 <div id="{name}-config-list">
   {#each configs as config}
-    <div class="p-2 bg-gray-700 rounded-md hover:bg-gray-600 mb-2 sortable-handle cursor-move">
+    <div class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 mb-2 sortable-handle cursor-move">
       <div class="flex justify-between">
         <span>
           <span class="mr-2">☰</span>
@@ -24,8 +28,8 @@
             {config.org}/{config.repo}
           </strong>
         </span>
-        <button class="remove-repo-button text-white">
-          <span class="hover:font-bold"> &times;</span>
+        <button class="remove-repo-button text-white" title="remove repository">
+          <span class="hover:font-bold">&times;</span>
         </button>
       </div>
       {#each config.filters as filter}
@@ -36,7 +40,7 @@
     </div>
   {/each}
 </div>
-<EditForm />
+<EditForm {addConfig} {filterLabel} />
 
 <style>
   .chip {

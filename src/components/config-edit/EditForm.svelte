@@ -1,18 +1,47 @@
 <script lang="ts">
+  let { addConfig, filterLabel } = $props();
+  let org = $state("");
+  let repo = $state("");
+  let labels = $state([]);
+  function onSubmit(e: Event) {
+    e.preventDefault();
+    console.log(org, repo, labels);
+    addConfig(org, repo, labels);
+    org = "";
+    repo = "";
+    labels = [];
+  }
 </script>
 
-<form id="repo-form" class="p-4 bg-gray-700 rounded-md space-y-4">
+<form id="repo-form" onsubmit={onSubmit} class="p-4 bg-gray-700 rounded-md space-y-4">
   <div>
     <label for="org-input" class="block text-sm font-medium text-white">Organization</label>
-    <input id="org-input" type="text" class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white" required />
+    <input
+      id="org-input"
+      type="text"
+      bind:value={org}
+      class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
+      required
+    />
   </div>
   <div>
     <label for="repo-input" class="block text-sm font-medium text-white">Repository</label>
-    <input id="repo-input" type="text" class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white" required />
+    <input
+      id="repo-input"
+      type="text"
+      bind:value={repo}
+      class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
+      required
+    />
   </div>
   <div>
-    <label for="repo-labels-input" class="block text-sm font-medium text-white">Labels</label>
-    <input id="repo-labels-input" type="text" class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white" required />
+    <label for="repo-labels-input" class="block text-sm font-medium text-white">{filterLabel}</label>
+    <input
+      id="repo-labels-input"
+      type="text"
+      bind:value={labels}
+      class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
+    />
   </div>
-  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Add</button>
+  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md group-invalid:pointer-events-none group-invalid:opacity-30">Add</button>
 </form>
