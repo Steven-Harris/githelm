@@ -10,7 +10,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
-    "generate-pwa-icons": "pwa-assets-generator"
+    "generate-pwa-assets": "vite-pwa-assets-generator --config .config/pwa-assets.config.ts"
   },
   "repository": {
     "type": "git",

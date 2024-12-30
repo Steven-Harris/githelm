@@ -1,4 +1,5 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte';
+import autoprefixer from 'autoprefixer';
 import cssnano from 'cssnano';
 import path from 'path';
 import tailwindcss from 'tailwindcss';
@@ -29,12 +30,13 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,ts}'],
-    setupFiles: "./vitest.setup.ts"
+    setupFiles: path.resolve(__dirname, ".config/vitest.setup.ts")
   },
   css: {
     postcss: {
       plugins: [
-        tailwindcss(),
+        tailwindcss(path.resolve(__dirname, '.config/tailwind.config.ts')),
+        autoprefixer(),
         cssnano({
           preset: 'default',
         }),
@@ -49,11 +51,12 @@ export default defineConfig({
     },
   },
   plugins: [
-    svelte(),
+    svelte({
+      configFile: path.resolve(__dirname, '.config/svelte.config.js')
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
-
       pwaAssets: {
         disabled: false,
         config: true,
