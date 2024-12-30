@@ -8,6 +8,7 @@
     "esModuleInterop": false,
     "skipLibCheck": false,
     "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
     "noEmit": true,
     "useDefineForClassFields": true,
     "noUncheckedSideEffectImports": true,
