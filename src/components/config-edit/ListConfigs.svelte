@@ -1,16 +1,21 @@
 <script lang="ts">
   import Sortable from "sortablejs";
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import EditForm from "./EditForm.svelte";
 
   let { name, filterLabel, configs = $bindable([]) } = $props();
+  let sortable: Sortable | null = null;
   onMount(() => {
     const CONFIG_LIST = document.getElementById(`${name}-config-list`)!;
-    Sortable.create(CONFIG_LIST, {
+    sortable = Sortable.create(CONFIG_LIST, {
       animation: 150,
       ghostClass: "sortable-ghost",
       handle: ".sortable-handle",
     });
+  });
+
+  onDestroy(() => {
+    if (sortable) sortable.destroy();
   });
 
   function addConfig(org: string, repo: string, filters: string[]) {
@@ -19,7 +24,7 @@
 </script>
 
 <div id="{name}-config-list">
-  {#each configs as config}
+  {#each configs as config, i (i)}
     <div class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 mb-2 sortable-handle cursor-move">
       <div class="flex justify-between">
         <span>

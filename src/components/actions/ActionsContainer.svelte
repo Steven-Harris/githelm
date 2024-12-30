@@ -25,6 +25,7 @@
 
   async function saveActionsConfig() {
     isEditing = false;
+    console.log(configs);
     await firebase.saveActionsConfig(configs);
     setStorageObject("actions-configs", configs);
   }
