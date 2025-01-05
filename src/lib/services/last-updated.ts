@@ -1,4 +1,4 @@
-import { getLastUpdated } from "@integrations";
+import { getLastUpdated } from "$lib/integrations";
 
 export class LastUpdated {
 

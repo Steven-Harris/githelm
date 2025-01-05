@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type RepoConfig, firebase, getStorageObject, setStorageObject } from "@integrations";
+  import { type RepoConfig, firebase, getStorageObject, setStorageObject } from "$lib/integrations";
   import { onMount } from "svelte";
   import EditPullRequests from "./EditPullRequests.svelte";
   import PullRequest from "./ViewPullRequest.svelte";
@@ -19,10 +19,6 @@
     }
   });
 
-  function editPullRequestsConfig() {
-    isEditing = true;
-  }
-
   async function savePullRequestsConfig() {
     isEditing = false;
     await firebase.savePRConfig(configs);
@@ -40,24 +36,15 @@
   <div class="flex justify-between lg:sticky top-0 z-10 bg-gray-800">
     <h2 class="text-xl font-bold">Pull Requests</h2>
     <div>
-      {#if !isEditing}
-        <button id="edit-pull-requests-button" type="button" class="hover:underline" title="edit pull requests configuration" onclick={editPullRequestsConfig}>
-          <img alt="edit pull request config" src="src/assets/edit.svg" width="20" height="20" class="-mb-1" />
-        </button>
-      {:else}
-        <button
-          id="save-pull-requests-config-button"
-          type="button"
-          class="mb-1 px-2 py-1 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded"
-          onclick={savePullRequestsConfig}>Save</button
-        >
-        <button
-          id="cancel-pull-requests-config-button"
-          type="button"
-          class="mb-1 px-2 py-1 bg-red-500 hover:bg-red-700 text-white font-bold rounded"
-          onclick={cancelPullRequestsConfig}>Cancel</button
-        >
-      {/if}
+      <button id="save-pull-requests-config-button" type="button" class="mb-1 px-2 py-1 bg-blue-500 hover:bg-blue-700 text-white font-bold rounded" onclick={savePullRequestsConfig}
+        >Save</button
+      >
+      <button
+        id="cancel-pull-requests-config-button"
+        type="button"
+        class="mb-1 px-2 py-1 bg-red-500 hover:bg-red-700 text-white font-bold rounded"
+        onclick={cancelPullRequestsConfig}>Cancel</button
+      >
     </div>
   </div>
   {#if !isLoading}

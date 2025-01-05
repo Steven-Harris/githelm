@@ -1,8 +1,8 @@
 <script lang="ts">
-  import checkSVG from "@assets/check.svg";
-  import commentSVG from "@assets/comment.svg";
-  import { fetchReviews, type Review } from "@integrations";
-  import createPollingStore from "@services/polling-store";
+  import { fetchReviews, type Review } from "$lib/integrations";
+  import createPollingStore from "$lib/services/polling-store";
+  import checkSVG from "../../assets/check.svg";
+  import commentSVG from "../../assets/comment.svg";
 
   let { org, repo, prNumber } = $props();
 

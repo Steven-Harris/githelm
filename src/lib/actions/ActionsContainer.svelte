@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { firebase, getStorageObject, setStorageObject, type RepoConfig } from "@integrations";
+  import { firebase, getStorageObject, setStorageObject, type RepoConfig } from "$lib/integrations";
   import { onMount } from "svelte";
   import EditActions from "./EditActions.svelte";
   import Actions from "./ViewActions.svelte";

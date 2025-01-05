@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { type Job, fetchWorkflowJobs } from "@integrations";
-  import createPollingStore from "@services/polling-store";
+  import { type Job, fetchWorkflowJobs } from "$lib/integrations";
+  import createPollingStore from "$lib/services/polling-store";
 
   let { org, repo, run } = $props();
   const jobsStore = createPollingStore<Job[]>(`${org}-${repo}-${run.id}-jobs`, () => fetchWorkflowJobs(org, repo, run.id));

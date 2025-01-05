@@ -11,6 +11,9 @@ export function getLastUpdated(): string | null {
 }
 
 export function clearSiteData(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
   localStorage.clear();
 }
 
@@ -42,13 +45,22 @@ export function setStorageObject<T>(key: string, value: T): number {
 }
 
 function getItem(key: string): string | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
   return localStorage.getItem(key);
 }
 
 function setItem(key: string, value: string): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
   localStorage.setItem(key, value);
 }
 
 function removeItem(key: string): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
   localStorage.removeItem(key);
 }

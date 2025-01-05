@@ -1,4 +1,3 @@
-import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
 import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
@@ -36,7 +35,6 @@ class Firebase {
   constructor() {
     const app = initializeApp(firebaseConfig);
     this.db = getFirestore(app);
-    getAnalytics(app);
     this.auth = getAuth(app);
     this.provider = new GithubAuthProvider();
     this.provider.addScope("repo");

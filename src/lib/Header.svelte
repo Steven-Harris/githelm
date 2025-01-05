@@ -1,7 +1,12 @@
 <script lang="ts">
-  import { firebase } from "@integrations";
+  import { firebase } from "$lib/integrations";
+  import { onMount } from "svelte";
 
   let { signedIn } = $props();
+  let isConfig = $state(false);
+  onMount(() => {
+    isConfig = location.pathname === "/config";
+  });
 </script>
 
 <header class="flex justify-between items-center pl-5 pr-5 pb-4 pt-4 sticky top-0 z-10">
@@ -11,6 +16,11 @@
   </div>
   <div id="buttons" class="flex space-x-4">
     {#if signedIn}
+      {#if !isConfig}
+        <button onclick={() => location.assign("/config")} id="config-button" type="button" class="nav-button"> Config </button>
+      {:else}
+        <button onclick={() => location.assign("/")} id="home-button" type="button" class="nav-button"> Home </button>
+      {/if}
       <button onclick={() => firebase.signOut()} id="logout-button" type="button" class="nav-button"> Logout </button>
     {:else}
       <button onclick={() => firebase.signIn()} type="button" class="nav-button"> Login with GitHub </button>

@@ -1,9 +1,12 @@
 <script lang="ts">
-  import { isMobile } from "@services/mobile.state";
+  import { isMobile } from "$lib/services/mobile.state";
 
-  let { activeTab, switchTab } = $props();
+  let { activeTab = $bindable("pull-requests") } = $props();
   const pullRequestsTab = "pull-requests";
   const actionsTab = "actions";
+  function switchTab(tab: string) {
+    activeTab = tab;
+  }
 </script>
 
 {#if $isMobile}
