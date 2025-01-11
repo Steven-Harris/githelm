@@ -1,12 +1,33 @@
 <script lang="ts">
-  import { firebase } from "$lib/integrations";
   import { onMount } from "svelte";
+  import { firebase } from "./integrations";
+  import { eventBus } from "./services/event-bus";
 
   let { signedIn } = $props();
   let isConfig = $state(false);
+  let prConfigSaved = false;
+  let actionConfigSaved = false;
   onMount(() => {
     isConfig = location.pathname === "/config";
   });
+  function save() {
+    eventBus.subscribe((event) => {
+      console.log(event);
+      if (event === "pr-saved") {
+        prConfigSaved = true;
+      }
+      if (event === "action-saved") {
+        actionConfigSaved = true;
+      }
+      if (prConfigSaved && actionConfigSaved) {
+        location.assign("/");
+      }
+    });
+    eventBus.set("save-config");
+  }
+  function cancel() {
+    location.assign("/");
+  }
 </script>
 
 <header class="flex justify-between items-center pl-5 pr-5 pb-4 pt-4 sticky top-0 z-10">
@@ -16,12 +37,13 @@
   </div>
   <div id="buttons" class="flex space-x-4">
     {#if signedIn}
-      {#if !isConfig}
-        <button onclick={() => location.assign("/config")} id="config-button" type="button" class="nav-button"> Config </button>
+      {#if isConfig}
+        <button onclick={cancel} id="cancel-config-button" type="button" class="nav-button"> Cancel </button>
+        <button onclick={save} id="save-config-button" type="button" class="nav-button primary"> Save </button>
       {:else}
-        <button onclick={() => location.assign("/")} id="home-button" type="button" class="nav-button"> Home </button>
+        <button onclick={() => location.assign("/config")} id="config-button" type="button" class="nav-button"> Config </button>
+        <button onclick={() => firebase.signOut()} id="logout-button" type="button" class="nav-button"> Logout </button>
       {/if}
-      <button onclick={() => firebase.signOut()} id="logout-button" type="button" class="nav-button"> Logout </button>
     {:else}
       <button onclick={() => firebase.signIn()} type="button" class="nav-button"> Login with GitHub </button>
     {/if}
@@ -54,8 +76,12 @@
   }
 
   .nav-button:hover {
-    background-color: var(--secondary-accent-color);
-    color: var(--primary-color);
+    background-color: var(--primary-accent-hover-color);
+    color: var(--primary-text-color);
+  }
+
+  .primary {
+    background-color: var(--primary-accent-color);
   }
 
   @media (max-width: 768px) {

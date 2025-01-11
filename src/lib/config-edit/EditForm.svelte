@@ -43,5 +43,25 @@
       class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
     />
   </div>
-  <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md group-invalid:pointer-events-none group-invalid:opacity-30">Add</button>
+  <button type="submit" class="submit-button">Add</button>
+
+  <style>
+    .submit-button {
+      background-color: var(--secondary-accent-color);
+      color: white;
+      font-weight: bold;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.3s;
+    }
+
+    .submit-button:hover {
+      background-color: var(--secondary-accent-hover-color);
+    }
+
+    .submit-button:disabled {
+      pointer-events: none;
+      opacity: 0.3;
+    }
+  </style>
 </form>

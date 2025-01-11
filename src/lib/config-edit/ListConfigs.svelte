@@ -23,7 +23,8 @@
   }
 </script>
 
-<div id="{name}-config-list">
+<EditForm {addConfig} {filterLabel} />
+<div id="{name}-config-list" class="mt-2">
   {#each configs as config, i (i)}
     <div class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 mb-2 sortable-handle cursor-move">
       <div class="flex justify-between">
@@ -45,7 +46,6 @@
     </div>
   {/each}
 </div>
-<EditForm {addConfig} {filterLabel} />
 
 <style>
   .chip {

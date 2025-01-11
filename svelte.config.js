@@ -5,7 +5,15 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
   preprocess: vitePreprocess(),
   kit: {
-    adapter: adapter(),
+    adapter: adapter({
+      // default options are shown. On some platforms
+      // these options are set automatically — see below
+      pages: 'build',
+      assets: 'build',
+      fallback: undefined,
+      precompress: true,
+      strict: true
+    }),
     serviceWorker: {
       register: false
     },

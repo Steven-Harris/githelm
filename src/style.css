@@ -4,7 +4,9 @@
 
 :root {
   --primary-accent-color: #3b82f6;
-  --secondary-accent-color: #38bdf8;
+  --primary-accent-hover-color: #2563eb;
+  --secondary-accent-color: #50b0dafd;
+  --secondary-accent-hover-color: #2c87ad;
   --tertiary-accent-color: #eab308;
   --tertiary-accent-hover-color: #a16207;
   --primary-color: #1f2937;

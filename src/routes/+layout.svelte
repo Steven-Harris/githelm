@@ -1,15 +1,16 @@
 <script lang="ts">
-  export const prerender = true;
-  let { children } = $props();
   import Footer from "$lib/Footer.svelte";
   import Header from "$lib/Header.svelte";
   import Tabs from "$lib/Tabs.svelte";
   import { firebase } from "$lib/integrations";
   import { onMount } from "svelte";
+  import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
+  let { children } = $props();
   let signedIn = $state(false);
   let loading = $state(true);
   let activeTab = $state("pull-requests");
+  let webManifest = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : "");
 
   onMount(async () => {
     firebase.user.subscribe((user) => {
@@ -21,6 +22,10 @@
   });
 </script>
 
+<svelte:head>
+  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+  {@html webManifest}
+</svelte:head>
 <Header {signedIn} />
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
   <Tabs bind:activeTab />
@@ -34,3 +39,6 @@
 </main>
 
 <Footer />
+{#await import("$lib/ReloadPrompt.svelte") then { default: ReloadPrompt }}
+  <ReloadPrompt />
+{/await}

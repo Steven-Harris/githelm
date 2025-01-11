@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
-import { Firestore, collection, doc, getDoc, getFirestore, setDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getFirestore, setDoc, type Firestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from './storage';
 
