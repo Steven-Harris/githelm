@@ -1,19 +1,16 @@
 <script lang="ts">
-  let { addConfig, filterLabel } = $props();
-  let org = $state("");
-  let repo = $state("");
-  let labels = $state([]);
+  let { saveConfig, cancelConfig = null, filterLabel, org = "", repo = "", filters: labels = [], isEditing = true } = $props();
   function onSubmit(e: Event) {
     e.preventDefault();
     console.log(org, repo, labels);
-    addConfig(org, repo, labels);
+    saveConfig(org, repo, labels);
     org = "";
     repo = "";
     labels = [];
   }
 </script>
 
-<form id="repo-form" onsubmit={onSubmit} class="p-4 bg-gray-700 rounded-md space-y-4">
+<form id="repo-form" onsubmit={onSubmit} class="{isEditing ? '' : 'p-4'} bg-gray-700 rounded-md space-y-4">
   <div>
     <label for="org-input" class="block text-sm font-medium text-white">Organization</label>
     <input
@@ -43,11 +40,19 @@
       class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
     />
   </div>
-  <button type="submit" class="submit-button">Add</button>
+  <button type="submit" class="submit-button">{isEditing ? "Save" : "Add"}</button>
+  {#if isEditing}
+    <button type="button" class="cancel-button" onclick={cancelConfig}>Cancel</button>
+  {/if}
 
   <style>
     .submit-button {
       background-color: var(--secondary-accent-color);
+    }
+    .cancel-button {
+      background-color: var(--secondary-color);
+    }
+    button {
       color: white;
       font-weight: bold;
       padding: 0.5rem 1rem;

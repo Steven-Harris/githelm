@@ -1,9 +1,8 @@
 import { getStorageObject, setStorageObject } from "$lib/integrations";
 import { readable } from "svelte/store";
 
-const POLL_INTERVAL = 60000; // 60 seconds
-const RETRY_INTERVAL = 10000; // 10 seconds
-const STALE_THRESHOLD = 60000; // 1 minute
+const STALE_INTERVAL = 60 * 1000; // 60 seconds
+const RETRY_INTERVAL = 10 * 1000; // 10 seconds
 
 function createPollingStore<T>(key: string, fetchDataCallback: () => Promise<T>) {
   const storage = getStorageObject<T>(key);
@@ -23,7 +22,7 @@ function createPollingStore<T>(key: string, fetchDataCallback: () => Promise<T>)
   const checkAndFetchData = async (set: (value: T) => void) => {
     const storage = getStorageObject<T>(key);
     const now = Date.now();
-    if (!storage.data || now - storage.lastUpdated > Date.now() - STALE_THRESHOLD) {
+    if (!storage.data || now - storage.lastUpdated > Date.now() - STALE_INTERVAL) {
       await fetchData(set);
     } else {
       set(storage.data);
@@ -31,7 +30,7 @@ function createPollingStore<T>(key: string, fetchDataCallback: () => Promise<T>)
   };
 
   const startPolling = (set: (value: T) => void) => {
-    const interval = setInterval(() => checkAndFetchData(set), POLL_INTERVAL);
+    const interval = setInterval(() => checkAndFetchData(set), STALE_INTERVAL);
     return () => clearInterval(interval);
   };
 

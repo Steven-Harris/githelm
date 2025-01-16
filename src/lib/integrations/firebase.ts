@@ -43,15 +43,23 @@ class Firebase {
 
   private async initAuth() {
     await setPersistence(this.auth, browserLocalPersistence);
-    this.auth.onAuthStateChanged((user: User | null) => {
+    this.auth.onAuthStateChanged(async (user: User | null) => {
       if (user) {
-        if (getGithubToken()) {
-          user.getIdToken(true).then(token => {
-            setGithubToken(token);
-          });
+        const tokenResult = await user.getIdTokenResult();
+        const isExpired = new Date(tokenResult.expirationTime) < new Date();
+
+        if (isExpired) {
+          this.user.set(null);
+          setGithubToken(undefined);
+        } else {
+          if (getGithubToken()) {
+            user.getIdToken(true).then(token => {
+              setGithubToken(token);
+            });
+          }
+          this.startTokenRefresh();
+          this.user.set(user);
         }
-        this.startTokenRefresh()
-        this.user.set(user);
       } else {
         this.user.set(null);
         setGithubToken(undefined);

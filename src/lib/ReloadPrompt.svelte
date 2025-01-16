@@ -2,7 +2,7 @@
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
   // replaced dynamically
-  const buildDate = __DATE__;
+  const buildDate = Date.now();
 
   const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
     onRegisteredSW(swUrl, r) {
