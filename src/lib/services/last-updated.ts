@@ -1,5 +1,7 @@
 import { getLastUpdated } from "$lib/integrations";
+import { writable } from "svelte/store";
 
+export const manualTrigger = writable();
 export class LastUpdated {
 
   public lastUpdated: number = $state(0);

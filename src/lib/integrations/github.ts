@@ -1,3 +1,4 @@
+import { firebase } from './firebase';
 import { getGithubToken } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
@@ -70,20 +71,19 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 }
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
-  try {
-    const response = await fetch(url, { headers: getHeaders() });
-    //if (response.status === 401) {
-    //  window.location.reload();
-    //}
-    if (!response.ok) {
-      console.log('Error fetching data:', response);
-      return typeof {} === 'object' ? {} as T : [] as T;
-    }
-    return await response.json() as T;
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    throw error;
+  const response = await fetch(url, { headers: getHeaders() });
+  if (response.status === 401) {
+    firebase.signOut();
+    window.location.reload();
   }
+  if (response.status === 403) {
+    throw new Error('Rate limit exceeded');
+  }
+  if (!response.ok) {
+    console.log('Error fetching data:', response);
+    return typeof {} === 'object' ? {} as T : [] as T;
+  }
+  return await response.json() as T;
 }
 
 function getHeaders() {
