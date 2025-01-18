@@ -101,7 +101,8 @@ body {
 }
 
 .chip {
-  padding-left: 0.5rem;
+  display: inline-block;
+  padding: 0.5rem;
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
   margin-right: 0.25rem;
@@ -112,9 +113,6 @@ body {
   max-height: 4rem;
 }
 
-.chip > button {
-  padding-left:.5rem;
-}
 #pwa-toast {
   visibility: hidden;
   position: fixed;

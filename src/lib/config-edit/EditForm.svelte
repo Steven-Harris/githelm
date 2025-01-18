@@ -55,7 +55,7 @@
     <label for="repo-labels-input" class="block text-sm font-medium text-white">{filterLabel}</label>
     <div class="w-full p-2 rounded bg-gray-600 text-white mb-2 flex flex-wrap items-center border border-gray-600 focus-within:border-white">
       {#each filters as label, index}
-        <div class="chip">
+        <div class="chip p-0">
           {label}
           <button type="button" onclick={() => removeLabel(index)}>&times;</button>
         </div>
@@ -98,13 +98,8 @@
       opacity: 0.3;
     }
 
-    .badge {
-      display: inline-block;
-      padding: 0.5rem;
-      background-color: var(--tertiary-accent-color);
-      color: var(--secondary-text-color);
-      border-radius: 0.25rem;
-      cursor: pointer;
+    .chip > button {
+      padding: 0;
     }
   </style>
 </form>
