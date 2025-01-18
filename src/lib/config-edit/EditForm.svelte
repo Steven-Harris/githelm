@@ -1,12 +1,32 @@
 <script lang="ts">
-  let { saveConfig, cancelConfig = null, filterLabel, org = "", repo = "", filters: labels = [], isEditing = true } = $props();
+  let { saveConfig, cancelConfig = null, filterLabel, org = "", repo = "", filters = [], isEditing = true } = $props();
+  let filter: string = $state("");
+
   function onSubmit(e: Event) {
     e.preventDefault();
-    console.log(org, repo, labels);
-    saveConfig(org, repo, labels);
+    console.log(org, repo, filters);
+    saveConfig(org, repo, filters);
     org = "";
     repo = "";
-    labels = [];
+    filters = [];
+  }
+
+  function handleLabel(event: { key: string; preventDefault: () => void }) {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      addLabel();
+    }
+  }
+
+  function addLabel() {
+    if (filter.trim() !== "") {
+      filters = [...filters, filter.trim()];
+      filter = "";
+    }
+  }
+
+  function removeLabel(index: number) {
+    filters = filters.filter((_, i) => i !== index);
   }
 </script>
 
@@ -33,12 +53,21 @@
   </div>
   <div>
     <label for="repo-labels-input" class="block text-sm font-medium text-white">{filterLabel}</label>
-    <input
-      id="repo-labels-input"
-      type="text"
-      bind:value={labels}
-      class="mt-1 block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
-    />
+    <div class="w-full p-2 rounded bg-gray-600 text-white mb-2 flex flex-wrap items-center border border-gray-600 focus-within:border-white">
+      {#each filters as label, index}
+        <div class="chip">
+          {label}
+          <button type="button" onclick={() => removeLabel(index)}>&times;</button>
+        </div>
+      {/each}
+      <input
+        id="repo-labels-input"
+        type="text"
+        bind:value={filter}
+        onkeydown={handleLabel}
+        class="block w-full p-2 rounded-md bg-gray-600 text-white border-gray-600 focus:border-white focus:ring-white"
+      />
+    </div>
   </div>
   <button type="submit" class="submit-button">{isEditing ? "Save" : "Add"}</button>
   {#if isEditing}
@@ -67,6 +96,15 @@
     .submit-button:disabled {
       pointer-events: none;
       opacity: 0.3;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.5rem;
+      background-color: var(--tertiary-accent-color);
+      color: var(--secondary-text-color);
+      border-radius: 0.25rem;
+      cursor: pointer;
     }
   </style>
 </form>

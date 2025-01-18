@@ -100,6 +100,21 @@ body {
   font-size: 0.875rem;
 }
 
+.chip {
+  padding-left: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  margin-right: 0.25rem;
+  background-color: var(--tertiary-accent-color);
+  color: var(--secondary-text-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  max-height: 4rem;
+}
+
+.chip > button {
+  padding-left:.5rem;
+}
 #pwa-toast {
   visibility: hidden;
   position: fixed;

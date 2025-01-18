@@ -1,6 +1,7 @@
 <script lang="ts">
   import Sortable from "sortablejs";
   import { onDestroy, onMount } from "svelte";
+  import editSVG from "../../assets/edit.svg";
   import EditForm from "./EditForm.svelte";
 
   let { name, filterLabel, configs = $bindable([]) } = $props();
@@ -58,13 +59,13 @@
             <strong>
               {config.org}/{config.repo}
             </strong>
-            <button class="edit-repo-button text-white" title="edit repository" onclick={() => editConfig(i)}>
-              <span class="hover:font-boldi">🖉</span>
+            <button class="edit-repo-button text-white" aria-label="edit {config.org}/{config.repo} button" title="edit {config.org}/{config.repo}" onclick={() => editConfig(i)}>
+              <img src={editSVG} alt="pencil" width="15" height="15" />
             </button>
           </span>
           <span>
             <button class="remove-repo-button text-white" title="remove repository" onclick={() => removeConfig(i)}>
-              <span class="hover:font-bold">&times;</span>
+              <span>&times;</span>
             </button>
           </span>
         </div>
@@ -79,15 +80,4 @@
 </div>
 
 <style>
-  .chip {
-    display: inline-block;
-    padding: 0.5rem;
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-    margin-right: 0.25rem;
-    background-color: var(--tertiary-accent-color);
-    color: var(--secondary-text-color);
-    border-radius: 0.25rem;
-    cursor: pointer;
-  }
 </style>
