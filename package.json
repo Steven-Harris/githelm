@@ -26,20 +26,20 @@
     "sharp-ico": "0.1.5"
   },
   "dependencies": {
-    "firebase": "^11.1.0",
+    "firebase": "^11.2.0",
     "sortablejs": "^1.15.6"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
+    "@types/node": "^22.10.7",
     "@types/sortablejs": "^1.15.8",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "cssnano": "^7.0.6",
-    "postcss": "^8.4.49",
+    "postcss": "^8.5.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
-    "vite": "^6.0.7",
+    "vite": "^6.0.9",
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-pwa": "^0.21.1",
     "vite-tsconfig-paths": "^5.1.4",
