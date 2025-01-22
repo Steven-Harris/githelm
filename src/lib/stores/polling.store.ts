@@ -1,6 +1,6 @@
 import { getStorageObject, setStorageObject } from "$lib/integrations";
 import { readable } from "svelte/store";
-import { manualTrigger } from "./last-updated";
+import { manualTrigger } from "./last-updated.store";
 
 const STALE_INTERVAL = 60 * 1000; // 60 seconds
 const RANDOM_RETRY_INTERVAL = () => Math.floor(Math.random() * 10) * 1000; // random wait between 1 and 10 seconds

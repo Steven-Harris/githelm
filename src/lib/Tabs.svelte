@@ -1,19 +1,31 @@
 <script lang="ts">
-  import { isMobile } from "$lib/services/mobile.state";
-
-  let { activeTab = $bindable("pull-requests") } = $props();
+  import { activeTab } from "$lib/stores/active-tab.store";
+  import { isMobile } from "$lib/stores/mobile.store";
   const pullRequestsTab = "pull-requests";
+
   const actionsTab = "actions";
   function switchTab(tab: string) {
-    activeTab = tab;
+    activeTab.set(tab);
+  }
+
+  function pullRequestsTabActive() {
+    return $activeTab === pullRequestsTab ? "active" : "";
+  }
+
+  function actionTabActive() {
+    return $activeTab === actionsTab ? "active" : "";
   }
 </script>
 
 {#if $isMobile}
   <div id="tabs" class="flex justify-center w-full mb-4 md:hidden sticky top-0 z-10 bg-gray-900">
-    <button id="tab-pull-requests" type="button" class="tab-button {activeTab === pullRequestsTab ? 'active' : ''}" onclick={() => switchTab(pullRequestsTab)}>
-      Pull Requests
-    </button>
-    <button id="tab-actions" type="button" class="tab-button {activeTab === actionsTab ? 'active' : ''}" onclick={() => switchTab(actionsTab)}> Actions </button>
+    <button id="tab-pull-requests" type="button" class="tab-button {pullRequestsTabActive()}" onclick={() => switchTab(pullRequestsTab)}> Pull Requests </button>
+    <button id="tab-actions" type="button" class="tab-button {actionTabActive()}" onclick={() => switchTab(actionsTab)}> Actions </button>
   </div>
 {/if}
+
+<style>
+  #tabs {
+    background-color: var(--primary-color);
+  }
+</style>

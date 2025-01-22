@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import refreshSVG from "../assets/refresh.svg";
-  import { lastUpdatedStore, manualTrigger } from "./services/last-updated";
+  import { lastUpdatedStore, manualTrigger } from "./stores/last-updated.store";
 
   const year = new Date().getFullYear();
   let { isConfig } = $props();

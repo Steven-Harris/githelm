@@ -1,6 +1,6 @@
 <script lang="ts">
   import { fetchReviews, type Review } from "$lib/integrations";
-  import createPollingStore from "$lib/services/polling-store";
+  import createPollingStore from "$lib/stores/polling.store";
   import checkSVG from "../../assets/check.svg";
   import commentSVG from "../../assets/comment.svg";
 

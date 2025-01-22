@@ -9,7 +9,6 @@
   let { children } = $props();
   let signedIn = $state(false);
   let loading = $state(true);
-  let activeTab = $state("pull-requests");
   let webManifest = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : "");
   let isConfig = $state(false);
   onMount(async () => {
@@ -29,10 +28,10 @@
 </svelte:head>
 <Header {signedIn} {isConfig} />
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
-  <Tabs bind:activeTab />
+  <Tabs />
   <div id="content" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
     {#if signedIn && !loading}
-      {@render children()}
+      {@render children?.()}
     {:else}
       <h1>Login to view your GitHub data</h1>
     {/if}

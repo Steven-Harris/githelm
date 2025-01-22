@@ -1,6 +1,6 @@
 <script lang="ts">
   import { firebase } from "./integrations";
-  import { eventBus } from "./services/event-bus";
+  import { eventBus } from "./stores/event-bus.store";
 
   let { signedIn, isConfig } = $props();
 

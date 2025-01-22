@@ -2,10 +2,10 @@
   import EditActions from "$lib/actions/EditActions.svelte";
   import { firebase, getStorageObject, type RepoConfig, setStorageObject } from "$lib/integrations";
   import EditPullRequests from "$lib/pull-requests/EditPullRequests.svelte";
-  import { eventBus } from "$lib/services/event-bus";
-  import { isMobile } from "$lib/services/mobile.state";
+  import { activeTab } from "$lib/stores/active-tab.store";
+  import { eventBus } from "$lib/stores/event-bus.store";
+  import { isMobile } from "$lib/stores/mobile.store";
   import { onMount } from "svelte";
-  let activeTab = $state("pull-requests");
   let prConfigs: RepoConfig[] = $state([]);
   let actionsConfigs: RepoConfig[] = $state([]);
   onMount(async () => {
@@ -40,7 +40,7 @@
 </script>
 
 {#if $isMobile}
-  {#if activeTab === "pull-requests"}
+  {#if $activeTab === "pull-requests"}
     <EditPullRequests bind:configs={prConfigs} />
   {:else}
     <EditActions bind:configs={actionsConfigs} />

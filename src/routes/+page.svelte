@@ -1,13 +1,12 @@
 <script lang="ts">
   import ActionsContainer from "$lib/actions/ActionsContainer.svelte";
   import PullRequestsContainer from "$lib/pull-requests/PullRequestsContainer.svelte";
-
-  import { isMobile } from "$lib/services/mobile.state";
-  let activeTab = $state("pull-requests");
+  import { activeTab } from "$lib/stores/active-tab.store";
+  import { isMobile } from "$lib/stores/mobile.store";
 </script>
 
 {#if $isMobile}
-  {#if activeTab === "pull-requests"}
+  {#if $activeTab === "pull-requests"}
     <PullRequestsContainer />
   {:else}
     <ActionsContainer />
