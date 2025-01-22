@@ -11,8 +11,12 @@
     });
     const prConfigs = getStorageObject<RepoConfig[]>("pull-requests-configs");
     configs = prConfigs.data;
-    if (prConfigs.lastUpdated === 0) {
-      configs = await firebase.getPRsConfig();
+    if (prConfigs.lastUpdated !== 0) {
+      return;
+    }
+
+    configs = await firebase.getPRsConfig();
+    if (configs.length > 0) {
       setStorageObject("pull-requests-configs", configs);
     }
   });

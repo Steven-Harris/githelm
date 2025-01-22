@@ -135,24 +135,16 @@ class Firebase {
     return actions ? actions : [];
   }
 
-  public async savePRConfig(config: RepoConfig[]) {
-    const user = get(this.user)
+  public async saveConfigs(prConfig: RepoConfig[], actionsConfig: RepoConfig[]) {
+    const user = get(this.user);
     if (!user) {
       return;
     }
 
-    const docRef = doc(collection(this.db, "configs"), user.uid, "pullRequests");
-    await setDoc(docRef, config);
-  }
+    console.log('saving configs', { prConfig, actionsConfig });
 
-  public async saveActionsConfig(config: RepoConfig[]) {
-    const user = get(this.user)
-    if (!user) {
-      return;
-    }
-
-    const docRef = doc(collection(this.db, "configs"), user.uid, "actions");
-    await setDoc(docRef, config);
+    const docRef = doc(collection(this.db, "configs"), user.uid);
+    await setDoc(docRef, { pullRequests: prConfig, actions: actionsConfig });
   }
 }
 

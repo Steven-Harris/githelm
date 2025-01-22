@@ -6,8 +6,13 @@ export interface StorageObject<T> {
   data: T;
 }
 
-export function getLastUpdated(): string | null {
-  return getItem(LAST_UPDATED_KEY);
+export function getLastUpdated(): number {
+  const value = getItem(LAST_UPDATED_KEY);
+  return value ? parseInt(value) : 0;
+}
+
+export function setLastUpdated(): void {
+  setItem(LAST_UPDATED_KEY, Date.now().toString());
 }
 
 export function clearSiteData(): void {

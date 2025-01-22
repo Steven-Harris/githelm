@@ -20,7 +20,7 @@
     if (sortable) sortable.destroy();
   });
 
-  function saveConfig(org: string, repo: string, filters: string[]) {
+  function updateConfig(org: string, repo: string, filters: string[]) {
     if (editingIndex !== -1) {
       configs[editingIndex] = { org, repo, filters };
       configs = [...configs];
@@ -43,15 +43,11 @@
   }
 </script>
 
-{#if editingIndex === -1}
-  <EditForm {saveConfig} {filterLabel} isEditing={false} />
-{/if}
-
 <div id="{name}-config-list" class="mt-2">
   {#each configs as config, i (i)}
     <div class="p-2 px-4 bg-gray-700 rounded-md {editingIndex !== i ? 'hover:bg-gray-600' : ''} mb-2 sortable-handle cursor-move">
       {#if editingIndex === i}
-        <EditForm org={config.org} repo={config.repo} filters={config.filters} {filterLabel} {saveConfig} {cancelConfig} />
+        <EditForm org={config.org} repo={config.repo} filters={config.filters} {filterLabel} {updateConfig} {cancelConfig} />
       {:else}
         <div class="flex justify-between">
           <span>
@@ -78,6 +74,9 @@
     </div>
   {/each}
 </div>
+{#if editingIndex === -1}
+  <EditForm {updateConfig} {filterLabel} isEditing={false} />
+{/if}
 
 <style>
 </style>

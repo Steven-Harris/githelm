@@ -1,6 +1,20 @@
-<script>
+<script lang="ts">
+  import { onMount } from "svelte";
   import refreshSVG from "../assets/refresh.svg";
+  import { lastUpdatedStore, manualTrigger } from "./services/last-updated";
+
   const year = new Date().getFullYear();
+  let { isConfig } = $props();
+  let lastUpdated = $state(0);
+  onMount(() => {
+    lastUpdatedStore().subscribe((value) => {
+      lastUpdated = value;
+    });
+  });
+
+  function refresh() {
+    manualTrigger.set(true);
+  }
 </script>
 
 <footer class="p-1 bg-gray-800 flex justify-between items-center">
@@ -9,12 +23,14 @@
       &copy;{year} GitHelm. All rights reserved.</a
     >
   </div>
-  <div class="flex-1">
-    <label for="refresh-button" id="last-updated" class="text-gray-400">Last updated: 12s</label>
-    <button type="button" title="refresh content" aria-label="refresh content" id="refresh-button">
-      <img src={refreshSVG} title="refresh" alt="refresh" width="20" height="20" class="pt-2 size-5 text-gray-400" />
-    </button>
-  </div>
+  {#if lastUpdated > 0 && !isConfig}
+    <div class="flex-1 text-center text-gray-400">
+      Last updated: {lastUpdated}s ago
+      <button type="button" title="refresh content" aria-label="refresh content" id="refresh-button" class="p-0" onclick={refresh}>
+        <img src={refreshSVG} title="refresh" alt="refresh" width="15" height="15" class="pt-2 size-5 mt-0 text-gray-400" />
+      </button>
+    </div>
+  {/if}
   <a href="https://www.flaticon.com" title="rudder edit icons" class="flex-1 hover:underline text-right" target="_blank" rel="noopener">Icons created by Flat Icons </a>
 </footer>
 

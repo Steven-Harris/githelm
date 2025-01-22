@@ -1,28 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { firebase } from "./integrations";
   import { eventBus } from "./services/event-bus";
 
-  let { signedIn } = $props();
-  let isConfig = $state(false);
-  let prConfigSaved = false;
-  let actionConfigSaved = false;
-  onMount(() => {
-    isConfig = location.pathname === "/config";
-  });
+  let { signedIn, isConfig } = $props();
+
   function save() {
-    eventBus.subscribe((event) => {
-      console.log(event);
-      if (event === "pr-saved") {
-        prConfigSaved = true;
-      }
-      if (event === "action-saved") {
-        actionConfigSaved = true;
-      }
-      if (prConfigSaved && actionConfigSaved) {
-        location.assign("/");
-      }
-    });
     eventBus.set("save-config");
   }
   function cancel() {

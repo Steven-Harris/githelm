@@ -28,8 +28,10 @@ async function checkAndFetchData<T>(key: string, fetchDataCallback: () => Promis
 function startPolling<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
   let interval = setInterval(() => checkAndFetchData(key, fetchDataCallback, set), STALE_INTERVAL);
 
-  const unsubscribeManualTrigger = manualTrigger.subscribe(() => {
-    console.log("manualTrigger");
+  const unsubscribeManualTrigger = manualTrigger.subscribe(trigger => {
+    if (!trigger) {
+      return;
+    }
     clearInterval(interval);
     fetchData(key, fetchDataCallback, set);
     manualTrigger.set(false);

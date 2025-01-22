@@ -11,8 +11,12 @@
     });
     const actionConfigs = getStorageObject<RepoConfig[]>("actions-configs");
     configs = actionConfigs.data;
-    if (actionConfigs.lastUpdated === 0) {
-      configs = await firebase.getActionsConfig();
+    if (actionConfigs.lastUpdated !== 0) {
+      return;
+    }
+
+    configs = await firebase.getActionsConfig();
+    if (configs.length > 0) {
       setStorageObject("actions-configs", configs);
     }
   });

@@ -1,5 +1,5 @@
 import { firebase } from './firebase';
-import { getGithubToken } from './storage';
+import { getGithubToken, setLastUpdated } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   try {
@@ -83,6 +83,7 @@ async function fetchData<T = {} | []>(url: string): Promise<T> {
     console.log('Error fetching data:', response);
     return typeof {} === 'object' ? {} as T : [] as T;
   }
+  setLastUpdated();
   return await response.json() as T;
 }
 

@@ -1,11 +1,10 @@
 <script lang="ts">
-  let { saveConfig, cancelConfig = null, filterLabel, org = "", repo = "", filters = [], isEditing = true } = $props();
+  let { updateConfig, cancelConfig = null, filterLabel, org = "", repo = "", filters = [], isEditing = true } = $props();
   let filter: string = $state("");
 
   function onSubmit(e: Event) {
     e.preventDefault();
-    console.log(org, repo, filters);
-    saveConfig(org, repo, filters);
+    updateConfig(org, repo, filters);
     org = "";
     repo = "";
     filters = [];

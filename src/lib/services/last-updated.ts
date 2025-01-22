@@ -1,37 +1,33 @@
 import { getLastUpdated } from "$lib/integrations";
-import { writable } from "svelte/store";
+import { readable, writable } from "svelte/store";
 
-export const manualTrigger = writable();
-export class LastUpdated {
+export const manualTrigger = writable(false);
 
-  public lastUpdated: number = $state(0);
-  private timer: any | undefined;
-  public startTimer() {
-    if (this.timer) {
-      this.resetTimer(this.timer);
-    }
-    this.elapsedSeconds()
-
-    this.timer = setInterval(() => this.elapsedSeconds(), 1000);
+function lastUpdated(): number {
+  const lastUpdated: number = getLastUpdated();
+  if (!lastUpdated) {
+    return 0;
   }
-
-  private elapsedSeconds(): number {
-    if (this.lastUpdated === 0) {
-      const lastUpdated = getLastUpdated();
-      if (!lastUpdated) {
-        return 0;
-      }
-      this.lastUpdated = Number(lastUpdated)
-    }
-
-    return Math.floor((Date.now() - this.lastUpdated) / 1000);
-  }
-
-  private resetTimer(timerInterval: any) {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
-    this.lastUpdated = 0;
-  }
+  return Math.floor((Date.now() - lastUpdated) / 1000);
 }
 
+function watchTimeElapsed(set: (value: number) => void): any {
+  return setInterval(() => set(lastUpdated()), 1000);
+}
+
+function resetTimer(timer: any, set: (value: number) => void) {
+  if (timer) {
+    clearInterval(timer);
+  }
+  set(0);
+}
+
+export function lastUpdatedStore() {
+  return readable<number>(0, set => {
+    let timer = watchTimeElapsed(set);
+
+    return () => {
+      resetTimer(timer, set);
+    };
+  });
+}
