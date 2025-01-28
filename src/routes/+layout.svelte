@@ -1,8 +1,9 @@
 <script lang="ts">
   import Footer from "$lib/Footer.svelte";
   import Header from "$lib/Header.svelte";
+  import Loading from "$lib/Loading.svelte";
   import Tabs from "$lib/Tabs.svelte";
-  import { firebase } from "$lib/integrations";
+  import { firebase } from "$lib/integrations/firebase";
   import { onMount } from "svelte";
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
@@ -30,6 +31,7 @@
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
   <Tabs />
   <div id="content" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
+    <Loading {loading} />
     {#if signedIn && !loading}
       {@render children?.()}
     {:else}

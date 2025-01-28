@@ -82,7 +82,7 @@ const config: UserConfig = {
   ],
   resolve: {
     alias: {
-      "$lib/integrations": resolve(__dirname, 'src/integrations'),
+      "$assets/*": resolve(__dirname, 'src/assets/*'),
     },
   }
 };

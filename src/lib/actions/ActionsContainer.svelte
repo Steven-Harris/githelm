@@ -1,14 +1,11 @@
 <script lang="ts">
-  import { firebase, getStorageObject, setStorageObject, type RepoConfig } from "$lib/integrations";
+  import { type RepoConfig, firebase } from "$lib/integrations/firebase";
+  import { getStorageObject, setStorageObject } from "$lib/integrations/storage";
   import { onMount } from "svelte";
   import Actions from "./ViewActions.svelte";
 
   let configs: RepoConfig[] = $state([]);
-  let isLoading: boolean = $state(false);
   onMount(async () => {
-    firebase.loading.subscribe((loading) => {
-      isLoading = loading;
-    });
     const actionConfigs = getStorageObject<RepoConfig[]>("actions-configs");
     configs = actionConfigs.data;
     if (actionConfigs.lastUpdated !== 0) {
@@ -26,14 +23,12 @@
   <div class="flex justify-between lg:sticky top-0 z-10 bg-gray-800">
     <h2 class="text-xl font-bold">Actions</h2>
   </div>
-  {#if !isLoading}
-    {#if configs.length === 0}
-      <p id="actions-not-found">No actions found. Configure repositories by clicking the pencil icon above.</p>
-    {:else}
-      {#each configs as config (config.repo)}
-        <Actions {...config} />
-      {/each}
-    {/if}
+  {#if configs.length === 0}
+    <p id="actions-not-found">No actions found. Configure repositories by clicking the pencil icon above.</p>
+  {:else}
+    {#each configs as config (config.repo)}
+      <Actions {...config} />
+    {/each}
   {/if}
 </section>
 

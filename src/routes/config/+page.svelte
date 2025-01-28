@@ -1,6 +1,7 @@
 <script lang="ts">
   import EditActions from "$lib/actions/EditActions.svelte";
-  import { firebase, getStorageObject, type RepoConfig, setStorageObject } from "$lib/integrations";
+  import { type RepoConfig, firebase } from "$lib/integrations/firebase";
+  import { getStorageObject, setStorageObject } from "$lib/integrations/storage";
   import EditPullRequests from "$lib/pull-requests/EditPullRequests.svelte";
   import { activeTab } from "$lib/stores/active-tab.store";
   import { eventBus } from "$lib/stores/event-bus.store";
@@ -13,9 +14,10 @@
 
     eventBus.subscribe(async (event) => {
       if (event === "save-config") {
+        setStorageObject("pull-requests-configs", prConfigs);
         setStorageObject("action-configs", actionsConfigs);
         await firebase.saveConfigs(prConfigs, actionsConfigs);
-        location.assign("/");
+        //location.assign("/");
       }
     });
   });

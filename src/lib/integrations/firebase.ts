@@ -44,40 +44,31 @@ class Firebase {
   private async initAuth() {
     await setPersistence(this.auth, browserLocalPersistence);
     this.auth.onAuthStateChanged(async (user: User | null) => {
-      if (user) {
-        const tokenResult = await user.getIdTokenResult();
-        const isExpired = new Date(tokenResult.expirationTime) < new Date();
-
-        if (isExpired) {
-          this.user.set(null);
-          setGithubToken(undefined);
-        } else {
-          if (getGithubToken()) {
-            user.getIdToken(true).then(token => {
-              setGithubToken(token);
-            });
-          }
-          this.startTokenRefresh();
-          this.user.set(user);
-        }
-      } else {
-        this.user.set(null);
-        setGithubToken(undefined);
+      if (!user) {
+        this.signOut();
+        return;
       }
+      const tokenResult = await user.getIdTokenResult();
+      const isExpired = new Date(tokenResult.expirationTime) < new Date();
+      isExpired ? this.signOut() : this.startTokenRefresh(user);
       this.loading.set(false);
     });
   }
 
-  private startTokenRefresh() {
+  private async startTokenRefresh(user: User) {
+    if (getGithubToken()) {
+      const token = await user.getIdToken(true);
+      setGithubToken(token);
+    }
+    this.user.set(user);
     setInterval(async () => {
-      const user = this.auth.currentUser;
-      if (user) {
-        try {
-          const token = await user.getIdToken(true);
-          setGithubToken(token);
-        } catch (error) {
-          this.signOut();
-        }
+      try {
+        this.loading.set(true);
+        const token = await user.getIdToken(true);
+        setGithubToken(token);
+        this.loading.set(false);
+      } catch (error) {
+        this.signOut();
       }
     }, this.refreshInterval);
   }
@@ -140,8 +131,6 @@ class Firebase {
     if (!user) {
       return;
     }
-
-    console.log('saving configs', { prConfig, actionsConfig });
 
     const docRef = doc(collection(this.db, "configs"), user.uid);
     await setDoc(docRef, { pullRequests: prConfig, actions: actionsConfig });

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Job, fetchWorkflowJobs } from "$lib/integrations";
+  import { type Job, fetchWorkflowJobs } from "$lib/integrations/github";
   import createPollingStore from "$lib/stores/polling.store";
 
   let { org, repo, run } = $props();

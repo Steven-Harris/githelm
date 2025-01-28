@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { fetchActions, type Workflow } from "$lib/integrations";
+  import { fetchActions, type Workflow } from "$lib/integrations/github";
   import createPollingStore from "$lib/stores/polling.store";
   import WorkflowRun from "./WorkflowRun.svelte";
   let { org, repo, filters } = $props();
