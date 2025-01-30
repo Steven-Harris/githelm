@@ -1,24 +1,39 @@
 <script lang="ts">
   import Sortable from "sortablejs";
-  import { onDestroy, onMount } from "svelte";
+  import { onDestroy, onMount, tick } from "svelte";
   import editSVG from "../../assets/edit.svg";
   import EditForm from "./EditForm.svelte";
 
-  let { name, filterLabel, configs = $bindable([]) } = $props();
+  let { filterLabel, configs = $bindable([]) } = $props();
   let sortable: Sortable | null = null;
   let editingIndex = $state(-1);
+  let list: HTMLDivElement;
   onMount(() => {
-    const CONFIG_LIST = document.getElementById(`${name}-config-list`)!;
-    sortable = Sortable.create(CONFIG_LIST, {
+    sortable = Sortable.create(list, {
       animation: 150,
-      ghostClass: "sortable-ghost",
-      handle: ".sortable-handle",
+      onUpdate: async ({ newIndex, oldIndex }) => {
+        // move the item in configs from the oldIndex to the newIndex and update the editingIndex if it's the same item
+        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) {
+          return;
+        }
+
+        moveItem(oldIndex, newIndex);
+        await tick();
+        console.log(configs);
+      },
     });
   });
 
   onDestroy(() => {
     if (sortable) sortable.destroy();
   });
+
+  function moveItem(oldIndex: number, newIndex: number) {
+    const updatedConfigs = [...configs];
+    const [movedConfig] = updatedConfigs.splice(oldIndex, 1);
+    updatedConfigs.splice(newIndex, 0, movedConfig);
+    configs = updatedConfigs;
+  }
 
   function updateConfig(org: string, repo: string, filters: string[]) {
     if (editingIndex !== -1) {
@@ -43,7 +58,7 @@
   }
 </script>
 
-<div id="{name}-config-list" class="mt-2">
+<div bind:this={list} class="mt-2">
   {#each configs as config, i (i)}
     <div class="p-2 px-4 bg-gray-700 rounded-md {editingIndex !== i ? 'hover:bg-gray-600' : ''} mb-2 sortable-handle cursor-move">
       {#if editingIndex === i}

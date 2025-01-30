@@ -13,12 +13,15 @@
     await Promise.all([getPRConfigs(), getActionsConfigs()]);
 
     eventBus.subscribe(async (event) => {
-      if (event === "save-config") {
-        setStorageObject("pull-requests-configs", prConfigs);
-        setStorageObject("action-configs", actionsConfigs);
-        await firebase.saveConfigs(prConfigs, actionsConfigs);
-        //location.assign("/");
+      if (event !== "save-config") {
+        return;
       }
+
+      setStorageObject("pull-requests-configs", prConfigs);
+      setStorageObject("action-configs", actionsConfigs);
+      await firebase.saveConfigs(prConfigs, actionsConfigs);
+      console.log(actionsConfigs);
+      //location.assign("/");
     });
   });
 

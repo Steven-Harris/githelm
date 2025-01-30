@@ -2,7 +2,7 @@ import { getStorageObject, setStorageObject } from "$lib/integrations/storage";
 import { readable } from "svelte/store";
 import { manualTrigger } from "./last-updated.store";
 
-const STALE_INTERVAL = 60 * 1000 - 200; // 60 seconds - 200ms for random jitter
+const STALE_INTERVAL = 60 * 1000; // 60 seconds
 const RANDOM_RETRY_INTERVAL = () => Math.floor(Math.random() * 10) * 1000; // random wait between 1 and 10 seconds
 
 async function fetchData<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
@@ -17,13 +17,12 @@ async function fetchData<T>(key: string, fetchDataCallback: () => Promise<T>, se
 
 async function checkAndFetchData<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
   const storage = getStorageObject<T>(key);
-  // now - 400ms to account for any time it took to get the data
-  const now = Date.now();
-  if (!storage.data || storage.lastUpdated + STALE_INTERVAL <= now) {
-    await fetchData(key, fetchDataCallback, set);
-  } else {
+  if (storage.data && storage.lastUpdated + STALE_INTERVAL - 3000 > Date.now()) {
     set(storage.data);
+    return
   }
+
+  await fetchData(key, fetchDataCallback, set);
 }
 
 function startPolling<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
