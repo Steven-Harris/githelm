@@ -1,38 +1,39 @@
 <script lang="ts">
   import Sortable from "sortablejs";
-  import { onDestroy, onMount, tick } from "svelte";
   import editSVG from "../../assets/edit.svg";
   import EditForm from "./EditForm.svelte";
 
   let { filterLabel, configs = $bindable([]) } = $props();
-  let sortable: Sortable | null = null;
   let editingIndex = $state(-1);
-  let list: HTMLDivElement;
-  onMount(() => {
-    sortable = Sortable.create(list, {
+
+  function sortable(list: any) {
+    const sort = Sortable.create(list, {
       animation: 150,
-      onUpdate: async ({ newIndex, oldIndex }) => {
+      onUpdate: ({ newIndex, oldIndex }) => {
         // move the item in configs from the oldIndex to the newIndex and update the editingIndex if it's the same item
         if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) {
           return;
         }
 
-        moveItem(oldIndex, newIndex);
-        await tick();
-        console.log(configs);
+        const updatedConfigs = [...configs];
+        const [movedConfig] = updatedConfigs.splice(oldIndex, 1);
+        updatedConfigs.splice(newIndex, 0, movedConfig);
+        configs = updatedConfigs;
+        if (editingIndex === oldIndex) {
+          editingIndex = newIndex;
+        } else if (oldIndex < editingIndex && editingIndex <= newIndex) {
+          editingIndex--;
+        } else if (newIndex <= editingIndex && editingIndex < oldIndex) {
+          editingIndex++;
+        }
       },
     });
-  });
 
-  onDestroy(() => {
-    if (sortable) sortable.destroy();
-  });
-
-  function moveItem(oldIndex: number, newIndex: number) {
-    const updatedConfigs = [...configs];
-    const [movedConfig] = updatedConfigs.splice(oldIndex, 1);
-    updatedConfigs.splice(newIndex, 0, movedConfig);
-    configs = updatedConfigs;
+    return {
+      destroy() {
+        sort.destroy();
+      },
+    };
   }
 
   function updateConfig(org: string, repo: string, filters: string[]) {
@@ -58,7 +59,7 @@
   }
 </script>
 
-<div bind:this={list} class="mt-2">
+<div use:sortable class="mt-2">
   {#each configs as config, i (i)}
     <div class="p-2 px-4 bg-gray-700 rounded-md {editingIndex !== i ? 'hover:bg-gray-600' : ''} mb-2 sortable-handle cursor-move">
       {#if editingIndex === i}
