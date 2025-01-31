@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { activeTab } from "$lib/stores/active-tab.store";
-  import { isMobile } from "$lib/stores/mobile.store";
+  import { activeTab } from "$stores/active-tab.store";
+  import { isMobile } from "$stores/mobile.store";
   const pullRequestsTab = "pull-requests";
 
   const actionsTab = "actions";

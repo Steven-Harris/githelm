@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { fetchReviews, type Review } from "$lib/integrations/github";
-  import createPollingStore from "$lib/stores/polling.store";
-  import checkSVG from "../../assets/check.svg";
-  import commentSVG from "../../assets/comment.svg";
+  import checkSVG from "$assets/check.svg";
+  import commentSVG from "$assets/comment.svg";
+  import { fetchReviews, type Review } from "$integrations/github";
+  import createPollingStore from "$stores/polling.store";
 
   let { org, repo, prNumber } = $props();
 

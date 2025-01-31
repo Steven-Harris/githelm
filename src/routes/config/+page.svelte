@@ -1,11 +1,11 @@
 <script lang="ts">
+  import { type RepoConfig, firebase } from "$integrations/firebase";
+  import { getStorageObject, setStorageObject } from "$integrations/storage";
   import EditActions from "$lib/actions/EditActions.svelte";
-  import { type RepoConfig, firebase } from "$lib/integrations/firebase";
-  import { getStorageObject, setStorageObject } from "$lib/integrations/storage";
   import EditPullRequests from "$lib/pull-requests/EditPullRequests.svelte";
-  import { activeTab } from "$lib/stores/active-tab.store";
-  import { eventBus } from "$lib/stores/event-bus.store";
-  import { isMobile } from "$lib/stores/mobile.store";
+  import { activeTab } from "$stores/active-tab.store";
+  import { eventBus } from "$stores/event-bus.store";
+  import { isMobile } from "$stores/mobile.store";
   import { onMount } from "svelte";
   let prConfigs: RepoConfig[] = $state([]);
   let actionsConfigs: RepoConfig[] = $state([]);
@@ -20,8 +20,7 @@
       setStorageObject("pull-requests-configs", prConfigs);
       setStorageObject("action-configs", actionsConfigs);
       await firebase.saveConfigs(prConfigs, actionsConfigs);
-      console.log(actionsConfigs);
-      //location.assign("/");
+      location.assign("/");
     });
   });
 

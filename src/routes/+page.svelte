@@ -1,8 +1,8 @@
 <script lang="ts">
   import ActionsContainer from "$lib/actions/ActionsContainer.svelte";
   import PullRequestsContainer from "$lib/pull-requests/PullRequestsContainer.svelte";
-  import { activeTab } from "$lib/stores/active-tab.store";
-  import { isMobile } from "$lib/stores/mobile.store";
+  import { activeTab } from "$stores/active-tab.store";
+  import { isMobile } from "$stores/mobile.store";
 </script>
 
 {#if $isMobile}

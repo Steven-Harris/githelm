@@ -1,6 +1,6 @@
 <script lang="ts">
+  import refreshSVG from "$assets/refresh.svg";
   import { onMount } from "svelte";
-  import refreshSVG from "../assets/refresh.svg";
   import { lastUpdatedStore, manualTrigger } from "./stores/last-updated.store";
 
   const year = new Date().getFullYear();

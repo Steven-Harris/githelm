@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { firebase } from "$integrations/firebase";
   import Footer from "$lib/Footer.svelte";
   import Header from "$lib/Header.svelte";
   import Loading from "$lib/Loading.svelte";
   import Tabs from "$lib/Tabs.svelte";
-  import { firebase } from "$lib/integrations/firebase";
   import { onMount } from "svelte";
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";

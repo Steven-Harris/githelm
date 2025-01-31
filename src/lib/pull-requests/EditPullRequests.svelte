@@ -8,5 +8,5 @@
   <div class="flex justify-between lg:sticky top-0 z-10 bg-gray-800">
     <h2 class="text-xl font-bold">Pull Requests</h2>
   </div>
-  <ListConfigs name="pull-requests" filterLabel="Label Filters" bind:configs />
+  <ListConfigs filterLabel="Label Filters" bind:configs />
 </section>

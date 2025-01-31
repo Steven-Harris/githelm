@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { type RepoConfig, firebase } from "$lib/integrations/firebase";
-  import { getStorageObject, setStorageObject } from "$lib/integrations/storage";
+  import { type RepoConfig, firebase } from "$integrations/firebase";
+  import { getStorageObject, setStorageObject } from "$integrations/storage";
   import { onMount } from "svelte";
   import PullRequest from "./ViewPullRequest.svelte";
 

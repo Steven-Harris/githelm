@@ -1,4 +1,4 @@
-import { getLastUpdated } from "$lib/integrations/storage";
+import { getLastUpdated } from "$integrations/storage";
 import { readable, writable } from "svelte/store";
 
 export const manualTrigger = writable(false);

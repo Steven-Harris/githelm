@@ -8,5 +8,5 @@
   <div class="flex justify-between lg:sticky top-0 z-10 bg-gray-800">
     <h2 class="text-xl font-bold">Actions</h2>
   </div>
-  <ListConfigs name="actions" filterLabel="Action Filters" bind:configs />
+  <ListConfigs filterLabel="Action Filters" bind:configs />
 </section>

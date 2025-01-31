@@ -1,5 +1,5 @@
 <script lang="ts">
-  import editSVG from "../../assets/edit.svg";
+  import editSVG from "$assets/edit.svg";
   import EditForm from "./EditForm.svelte";
 
   let { filterLabel, configs = $bindable([]) } = $props();

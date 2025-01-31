@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { firebase } from "./integrations/firebase";
+  import helmSVG from "$assets/helm.svg";
+  import { firebase } from "$integrations/firebase";
   import { eventBus } from "./stores/event-bus.store";
 
   let { signedIn, isConfig } = $props();
@@ -14,7 +15,7 @@
 
 <header class="flex justify-between items-center pl-5 pr-5 pb-4 pt-4 sticky top-0 z-10">
   <div id="header" class="flex">
-    <img src="src/assets/helm.svg" alt="site logo" width="50" height="50" class="mr-2" />
+    <img src={helmSVG} alt="site logo" width="50" height="50" class="mr-2" />
     <h1 class="text-4xl font-bold">GitHelm</h1>
   </div>
   <div id="buttons" class="flex space-x-4">

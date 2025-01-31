@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { type PullRequest, fetchPullRequests } from "$lib/integrations/github";
-  import createPollingStore from "$lib/stores/polling.store";
+  import { type PullRequest, fetchPullRequests } from "$integrations/github";
+  import createPollingStore from "$stores/polling.store";
   import Reviews from "./Reviews.svelte";
   let { org, repo, filters } = $props();
 
