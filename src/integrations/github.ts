@@ -1,4 +1,3 @@
-import { firebase } from './firebase';
 import { getGithubToken, setLastUpdated } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
@@ -72,10 +71,6 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
   const response = await fetch(url, { headers: getHeaders() });
-  if (response.status === 401) {
-    firebase.signOut();
-    window.location.reload();
-  }
   if (response.status === 403) {
     throw new Error('Rate limit exceeded');
   }
