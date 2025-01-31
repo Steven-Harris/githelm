@@ -1,40 +1,12 @@
 <script lang="ts">
-  import Sortable from "sortablejs";
   import editSVG from "../../assets/edit.svg";
   import EditForm from "./EditForm.svelte";
 
   let { filterLabel, configs = $bindable([]) } = $props();
   let editingIndex = $state(-1);
-
-  function sortable(list: any) {
-    const sort = Sortable.create(list, {
-      animation: 150,
-      onUpdate: ({ newIndex, oldIndex }) => {
-        // move the item in configs from the oldIndex to the newIndex and update the editingIndex if it's the same item
-        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) {
-          return;
-        }
-
-        const updatedConfigs = [...configs];
-        const [movedConfig] = updatedConfigs.splice(oldIndex, 1);
-        updatedConfigs.splice(newIndex, 0, movedConfig);
-        configs = updatedConfigs;
-        if (editingIndex === oldIndex) {
-          editingIndex = newIndex;
-        } else if (oldIndex < editingIndex && editingIndex <= newIndex) {
-          editingIndex--;
-        } else if (newIndex <= editingIndex && editingIndex < oldIndex) {
-          editingIndex++;
-        }
-      },
-    });
-
-    return {
-      destroy() {
-        sort.destroy();
-      },
-    };
-  }
+  let dragStartIndex: number;
+  let dragEnterIndex: number;
+  let dropIndex: number;
 
   function updateConfig(org: string, repo: string, filters: string[]) {
     if (editingIndex !== -1) {
@@ -57,11 +29,48 @@
   function cancelConfig() {
     editingIndex = -1;
   }
+
+  function handleDragStart(index: number) {
+    dragStartIndex = index;
+  }
+
+  function handleDragEnter(index: number) {
+    dragEnterIndex = index;
+  }
+  function handleDragOver(e: DragEvent) {
+    const targetTop = (e.target as HTMLElement).getBoundingClientRect().top;
+    const targetHeight = (e.target as HTMLElement).getBoundingClientRect().height;
+    const yLoc = e.clientY - targetTop;
+    dropIndex = yLoc < targetHeight ? dragEnterIndex : dragEnterIndex + 1;
+  }
+
+  function handleDrop() {
+    if (dragStartIndex === dropIndex) return;
+    const draggedItem = configs[dragStartIndex];
+    const newItems = [...configs];
+    newItems.splice(dragStartIndex, 1);
+    newItems.splice(dropIndex, 0, draggedItem);
+    configs = newItems;
+  }
 </script>
 
-<div use:sortable class="mt-2">
+<div
+  class="mt-2"
+  role="list"
+  ondrop={handleDrop}
+  ondragover={(e) => {
+    e.preventDefault();
+    handleDragOver(e);
+  }}
+>
   {#each configs as config, i (i)}
-    <div class="p-2 px-4 bg-gray-700 rounded-md {editingIndex !== i ? 'hover:bg-gray-600' : ''} mb-2 sortable-handle cursor-move">
+    <div
+      class="p-2 px-4 bg-gray-700 rounded-md {editingIndex !== i ? 'hover:bg-gray-600' : ''} mb-2 sortable-handle cursor-move"
+      draggable="true"
+      role="listitem"
+      ondragstart={() => handleDragStart(i)}
+      ondragenter={() => handleDragEnter(i)}
+    >
       {#if editingIndex === i}
         <EditForm org={config.org} repo={config.repo} filters={config.filters} {filterLabel} {updateConfig} {cancelConfig} />
       {:else}
