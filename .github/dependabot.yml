@@ -4,7 +4,6 @@ updates:
     directory: "/" 
     schedule:
       interval: "weekly"
-    target-branch: "preview"
     groups:
       major-updates:
         update-types:
@@ -17,4 +16,3 @@ updates:
     directory: "/" 
     schedule:
       interval: "weekly"
-    target-branch: "preview"

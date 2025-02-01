@@ -1,8 +1,5 @@
-name: 🔥 Deploy
+name: 🔍 Pull Request
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -10,7 +7,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Firebase Hosting 🚀
-    environment: prd
+    environment: dev
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -32,11 +29,12 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Deploy to main
+      - name: Deploy to preview
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
           projectId: githelm
-          target: main
-          channelId: live
+          target: preview
+          channelId: preview
+      

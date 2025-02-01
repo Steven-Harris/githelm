@@ -2,7 +2,6 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import autoprefixer from 'autoprefixer';
 import cssnano from 'cssnano';
-import path from 'path';
 import tailwindcss from 'tailwindcss';
 import type { UserConfig } from 'vite';
 
@@ -17,7 +16,7 @@ const config: UserConfig = {
   css: {
     postcss: {
       plugins: [
-        tailwindcss(path.resolve(__dirname, '.config/tailwind.config.ts')),
+        tailwindcss(),
         autoprefixer(),
         cssnano({
           preset: 'default',
