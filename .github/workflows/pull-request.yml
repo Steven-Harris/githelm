@@ -3,10 +3,16 @@ on:
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: pull-request
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy to Firebase Hosting 🚀
+    name: Deploy Preview to Firebase Hosting 🚀
+    if: github.actor == 'dependabot[bot]' || github.actor == 'steven-harris'
     environment: dev
     steps:
       - name: Checkout repo
@@ -29,12 +35,12 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Deploy to preview
+      - name: Deploy to Firebase Hosting Preview Channel
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
           projectId: githelm
           target: preview
-          channelId: preview
-      
+          channelId: ${{ github.head_ref }}
+          expires: 7d
