@@ -64,6 +64,7 @@ declare global {
 }
 
 document.addEventListener("DOMContentLoaded", async function () {
+    console.log('preview')
     const firebase = new Firebase();
     const lastUpdated = new LastUpdated();
     Sortable.create(PULL_REQUESTS_CONFIG, {
