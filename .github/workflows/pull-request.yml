@@ -43,7 +43,7 @@ jobs:
           projectId: githelm
           target: preview
           channelId: pr-${{ github.event.number }}
-          expireTime: 7d
+          expires: 7d
 
       - name: Comment on PR with Preview URL
         if: success()
