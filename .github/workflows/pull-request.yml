@@ -12,7 +12,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Deploy to Firebase Hosting 🚀
+    name: Deploy Preview to Firebase Hosting 🚀
     environment: dev
     steps:
       - name: Checkout repo
