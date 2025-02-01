@@ -3,6 +3,14 @@
     "default": "githelm",
     "preview": "githelm"
   },
-  "targets": {},
+  "targets": {
+    "githelm": {
+      "hosting": {
+        "preview": [
+          "githelm"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
