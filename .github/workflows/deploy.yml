@@ -33,10 +33,24 @@ jobs:
       - name: Move config files
         run: mv .config/firebase.json .config/.firebaserc .
       
-      - uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Deploy to preview
+        if: github.ref == 'refs/heads/preview'
+        environment: dev
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
           projectId: githelm
-          target: ${{ github.ref == 'refs/heads/main' && 'main' || 'preview' }}
-          channelId: ${{ github.ref == 'refs/heads/main' && 'live' || 'preview' }}
+          target: preview
+          channelId: preview
+      
+      - name: Deploy to main
+        if: github.ref == 'refs/heads/main'
+        environment: prd
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
+          projectId: githelm
+          target: main
+          channelId: live
