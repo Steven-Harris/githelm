@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - preview
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -36,5 +37,6 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
-          channelId: live
           projectId: githelm
+          target: ${{ github.ref == 'refs/heads/main' && 'main' || 'preview' }}
+          channelId: ${{ github.ref == 'refs/heads/main' && 'live' || 'preview' }}
