@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "githelm"
-  }
+  },
+  "targets": {
+    "preview": {
+      "hosting": {
+        "live": [
+          "githelm"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
