@@ -1,15 +1,8 @@
 {
   "projects": {
-    "default": "githelm"
+    "default": "githelm",
+    "preview": "githelm"
   },
-  "targets": {
-    "preview": {
-      "hosting": {
-        "main": [
-          "githelm"
-        ]
-      }
-    }
-  },
+  "targets": {},
   "etags": {}
 }
