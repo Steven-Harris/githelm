@@ -13,6 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy Preview to Firebase Hosting 🚀
+    if: github.actor == 'dependabot[bot]' || github.actor == 'steven-harris'
     environment: dev
     steps:
       - name: Checkout repo
@@ -42,7 +43,7 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
           projectId: githelm
           target: preview
-          channelId: pr-${{ github.event.number }}
+          channelId: ${{ github.head_ref }}
           expires: 7d
 
       - name: Comment on PR with Preview URL
