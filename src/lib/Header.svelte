@@ -72,7 +72,7 @@
       box-shadow: none;
       background-color: transparent;
       transition: none;
-      width: 7rem;
+      width: 2rem;
       height: 3rem;
       margin-left: 1rem;
       margin-right: 1rem;

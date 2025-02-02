@@ -86,6 +86,12 @@ class Firebase {
     }
   }
 
+  public async reLogin() {
+    await signOut(this.auth);
+    setGithubToken(undefined);
+    await this.signIn();
+  }
+
   public async signOut() {
     await signOut(this.auth);
     clearSiteData();

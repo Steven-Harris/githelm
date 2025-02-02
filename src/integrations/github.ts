@@ -1,3 +1,4 @@
+import { killSwitch } from '$stores/kill-switch.store';
 import { getGithubToken, setLastUpdated } from './storage';
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
@@ -46,9 +47,10 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
   const response = await fetch(url, { headers: getHeaders() });
-  response.headers.forEach((value, key) => {
-    console.log(key, value);
-  });
+  if (response.headers.get('X-RateLimit-Remaining') === '0') {
+    console.log('Rate limit exceeded');
+    killSwitch.set(true);
+  }
   if (response.status === 403) {
     throw new Error('Rate limit exceeded');
   }

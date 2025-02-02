@@ -7,7 +7,8 @@
   --secondary-accent-hover-color: #2c87ad;
   --tertiary-accent-color: #eab308;
   --tertiary-accent-hover-color: #a16207;
-  --primary-color: #1f2937;
+  --primary-color: rgb(31, 41, 55);
+  --primary-color-rgb: 31, 41, 55; /* RGB components of --primary-color */
   --secondary-color: #374151;
   --active-highlight-color: #2d3748;
   --primary-text-color: white;
