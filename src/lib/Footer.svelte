@@ -5,10 +5,23 @@
 
   const year = new Date().getFullYear();
   let { isConfig } = $props();
-  let lastUpdated = $state(0);
+  let lastUpdated = $state("");
   onMount(() => {
     lastUpdatedStore().subscribe((value) => {
-      lastUpdated = value;
+      const units = [
+        { label: "d", mod: 86400 },
+        { label: "h", mod: 3600 },
+        { label: "m", mod: 60 },
+        { label: "s", mod: 1 },
+      ];
+
+      lastUpdated = units
+        .reduce((acc, { label, mod }) => {
+          const unitValue = Math.floor(value / mod);
+          value %= mod;
+          return unitValue > 0 ? `${acc} ${unitValue}${label}` : acc;
+        }, "")
+        .trim();
     });
   });
 
@@ -23,9 +36,9 @@
       &copy;{year} GitHelm. All rights reserved.</a
     >
   </div>
-  {#if lastUpdated > 0 && !isConfig}
+  {#if lastUpdated != "" && !isConfig}
     <div class="flex-1 text-center text-gray-400">
-      Last updated: {lastUpdated}s ago
+      Last updated: {lastUpdated} ago
       <button type="button" title="refresh content" aria-label="refresh content" id="refresh-button" class="p-0" onclick={refresh}>
         <img src={refreshSVG} title="refresh" alt="refresh" width="15" height="15" class="pt-2 size-5 mt-0 text-gray-400" />
       </button>
