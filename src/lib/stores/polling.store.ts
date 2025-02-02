@@ -2,41 +2,44 @@ import { getStorageObject, setStorageObject } from "$integrations/storage";
 import { readable } from "svelte/store";
 import { manualTrigger } from "./last-updated.store";
 
+type ValueSetter<T> = (value: T) => void;
+type AsyncCallback<T> = () => Promise<T>;
+
 const STALE_INTERVAL = 60 * 1000; // 60 seconds
 const RANDOM_RETRY_INTERVAL = () => Math.floor(Math.random() * 10) * 1000; // random wait between 1 and 10 seconds
 
-async function fetchData<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
+async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
   try {
-    const data = await fetchDataCallback();
+    const data = await callback();
     setStorageObject(key, data);
     set(data);
-  } catch (error) {
-    setTimeout(() => fetchData(key, fetchDataCallback, set), RANDOM_RETRY_INTERVAL());
+  } catch {
+    setTimeout(() => fetchData(key, callback, set), RANDOM_RETRY_INTERVAL());
   }
 }
 
-async function checkAndFetchData<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
+async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
   const storage = getStorageObject<T>(key);
   if (storage.data && storage.lastUpdated + STALE_INTERVAL - 3000 > Date.now()) {
     set(storage.data);
     return
   }
 
-  await fetchData(key, fetchDataCallback, set);
+  await fetchData(key, callback, set);
 }
 
-function startPolling<T>(key: string, fetchDataCallback: () => Promise<T>, set: (value: T) => void) {
-  checkAndFetchData(key, fetchDataCallback, set);
-  let interval = setInterval(() => checkAndFetchData(key, fetchDataCallback, set), STALE_INTERVAL);
+function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
+  checkAndFetchData(key, callback, set);
+  let interval = setInterval(() => checkAndFetchData(key, callback, set), STALE_INTERVAL);
 
   const unsubscribeManualTrigger = manualTrigger.subscribe(trigger => {
     if (!trigger) {
       return;
     }
     clearInterval(interval);
-    fetchData(key, fetchDataCallback, set);
+    fetchData(key, callback, set);
     manualTrigger.set(false);
-    interval = setInterval(() => checkAndFetchData(key, fetchDataCallback, set), STALE_INTERVAL);
+    interval = setInterval(() => checkAndFetchData(key, callback, set), STALE_INTERVAL);
   });
 
   return () => {
@@ -45,10 +48,10 @@ function startPolling<T>(key: string, fetchDataCallback: () => Promise<T>, set: 
   };
 }
 
-function createPollingStore<T>(key: string, fetchDataCallback: () => Promise<T>) {
+function createPollingStore<T>(key: string, callback: AsyncCallback<T>) {
   const storage = getStorageObject<T>(key);
   const initialData = storage.data || {} as T;
-  return readable<T>(initialData, set => startPolling(key, fetchDataCallback, set));
+  return readable<T>(initialData, set => startPolling(key, callback, set));
 }
 
 export default createPollingStore;

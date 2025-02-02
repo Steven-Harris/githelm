@@ -15,8 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/Steven-Harris/githelm.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "steven-harris",
   "bugs": {
     "url": "https://github.com/Steven-Harris/githelm/issues"
   },
