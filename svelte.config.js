@@ -9,7 +9,7 @@ const config = {
       pages: 'dist',
       assets: 'dist',
       fallback: undefined,
-      precompress: true,
+      precompress: false,
       strict: true
     }),
     serviceWorker: {

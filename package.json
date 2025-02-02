@@ -21,34 +21,25 @@
     "url": "https://github.com/Steven-Harris/githelm/issues"
   },
   "homepage": "https://githelm.com",
-  "resolutions": {
-    "sharp": "0.32.6",
-    "sharp-ico": "0.1.5"
-  },
   "dependencies": {
-    "@tailwindcss/container-queries": "^0.1.1",
-    "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/typography": "^0.5.16",
-    "firebase": "^11.2.0"
+    "firebase": "^11.2.0",
+    "tailwindcss": "^4.0.2"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.16.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tailwindcss/vite": "^4.0.3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/svelte": "^5.2.6",
     "@tsconfig/svelte": "5.0.4",
-    "@types/node": "^22.13.0",
+    "@vite-pwa/assets-generator": "^0.2.6",
     "@vite-pwa/sveltekit": "^0.6.7",
-    "autoprefixer": "^10.4.20",
-    "cssnano": "^7.0.6",
-    "globals": "^15.14.0",
-    "jsdom": "^25.0.1",
-    "postcss": "^8.5.1",
+    "sharp": "0.32.6",
+    "sharp-ico": "0.1.5",
     "svelte": "^5.19.6",
     "svelte-check": "^4.1.4",
     "svelte-preprocess": "^6.0.3",
-    "tailwindcss": "^3.4.17",
     "tslib": "2.8.1",
     "typescript": "^5.7.3",
     "vite": "^6.0.11",
@@ -56,10 +47,5 @@
     "vite-plugin-pwa": "^0.21.1",
     "vitest": "^2.1.8",
     "workbox-window": "^7.3.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "cookie@<0.7.0": ">=0.7.0"
-    }
   }
 }

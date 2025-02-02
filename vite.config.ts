@@ -1,8 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
-import autoprefixer from 'autoprefixer';
-import cssnano from 'cssnano';
-import tailwindcss from 'tailwindcss';
 import type { UserConfig } from 'vite';
 
 
@@ -13,18 +11,8 @@ const config: UserConfig = {
     emptyOutDir: true,
     assetsDir: 'src/assets',
   },
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss(),
-        autoprefixer(),
-        cssnano({
-          preset: 'default',
-        }),
-      ],
-    },
-  },
   plugins: [
+    tailwindcss(),
     sveltekit(),
     SvelteKitPWA({
       srcDir: './src',
@@ -82,3 +70,4 @@ const config: UserConfig = {
 };
 
 export default config;
+
