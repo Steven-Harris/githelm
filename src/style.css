@@ -1,13 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --primary-accent-color: #3b82f6;
-  --secondary-accent-color: #38bdf8;
-  --tertiary-accent-color: #EAB308;
-  --tertiary-accent-hover-color: #A16207;
+  --primary-accent-hover-color: #2563eb;
+  --secondary-accent-color: #50b0dafd;
+  --secondary-accent-hover-color: #2c87ad;
+  --tertiary-accent-color: #eab308;
+  --tertiary-accent-hover-color: #a16207;
   --primary-color: #1f2937;
+  --primary-color-rgb: 31, 41, 55; /* RGB components of --primary-color */
   --secondary-color: #374151;
   --active-highlight-color: #2d3748;
   --primary-text-color: white;
@@ -28,21 +29,6 @@ body {
   flex-direction: column;
 }
 
-main {
-  flex: 1;
-  overflow: auto;
-}
-
-header,
-#tabs,
-#pull-request-header,
-#actions-header {
-  position: sticky;
-  top: 0;
-  background-color: var(--primary-color);
-  /* Tailwind bg-gray-900 */
-}
-
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -53,38 +39,10 @@ header,
   }
 }
 
-
-/* Component Styles */
-#content {
-  margin-top: 1rem;
-}
-
-.nav-button {
-  background-color: var(--secondary-color);
-  border-radius: 0.5rem;
-  transition: background-color 300ms, color 300ms;
-  font-size: 0.875rem;
-  width: 10rem;
-  height: 3rem;
-}
-
-.nav-button:hover {
-  background-color: var(--secondary-accent-color);
-  color: var(--primary-color);
-}
-
-.glow {
-  box-shadow: 0 0 8px var(--secondary-accent-color);
-}
-
 .spinner {
   width: 10rem;
   height: 10rem;
   animation: spin 1.5s linear infinite;
-}
-
-.content {
-  height: calc(100vh - 10rem);
 }
 
 .tab-button {
@@ -139,6 +97,19 @@ header,
   color: var(--primary-text-color);
   margin-left: 8px;
   font-size: 0.875rem;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  margin-right: 0.25rem;
+  background-color: var(--tertiary-accent-color);
+  color: var(--secondary-text-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  max-height: 4rem;
 }
 
 #pwa-toast {
@@ -206,36 +177,5 @@ button#pwa-refresh {
     word-wrap: break-word;
     overflow-x: hidden;
   }
-
-  .nav-button {
-    box-shadow: none;
-    background-color: transparent;
-    transition: none;
-    width: 7rem;
-    height: 3rem;
-    margin-left: 1rem;
-    ;
-    margin-right: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .nav-button::before {
-    content: '';
-    width: 1.5rem;
-    height: 1.5rem;
-    background-size: cover;
-  }
 }
 
-.chip {
-  display: inline-block;
-  padding: 0.5rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-  margin-right: 0.25rem;
-  background-color: var(--tertiary-accent-color);
-  color: var(--secondary-text-color);
-  border-radius: 0.25rem;
-  cursor: pointer;
-}

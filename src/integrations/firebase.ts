@@ -1,0 +1,146 @@
+import { initializeApp } from 'firebase/app';
+import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
+import { collection, doc, getDoc, getFirestore, setDoc, type Firestore } from 'firebase/firestore';
+import { get, writable, type Writable } from 'svelte/store';
+import { clearSiteData, getGithubToken, setGithubToken } from './storage';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
+  authDomain: "githelm.firebaseapp.com",
+  projectId: "githelm",
+  storageBucket: "githelm.appspot.com",
+  messagingSenderId: "329298744372",
+  appId: "1:329298744372:web:db5c6a79d68616c3d76661",
+  measurementId: "G-7HWYDWLL6P"
+};
+export interface RepoConfig {
+  org: string;
+  repo: string;
+  filters: string[];
+}
+
+export interface Config {
+  pullRequests: RepoConfig[];
+  actions: RepoConfig[];
+}
+
+class Firebase {
+  public loading: Writable<boolean> = writable(false);
+  public user: Writable<User | null> = writable();
+  private db: Firestore;
+  private provider: GithubAuthProvider;
+  private auth: Auth;
+  private refreshInterval: number = 60 * 60 * 1000;
+
+  constructor() {
+    const app = initializeApp(firebaseConfig);
+    this.db = getFirestore(app);
+    this.auth = getAuth(app);
+    this.provider = new GithubAuthProvider();
+    this.provider.addScope("repo");
+    this.initAuth();
+  }
+
+  private async initAuth() {
+    await setPersistence(this.auth, browserLocalPersistence);
+    this.auth.onAuthStateChanged(async (user: User | null) => {
+      if (!user) {
+        this.signOut();
+        return;
+      }
+      const tokenResult = await user.getIdTokenResult();
+      const isExpired = new Date(tokenResult.expirationTime) < new Date();
+      isExpired ? this.signOut() : this.startTokenRefresh(user);
+      this.loading.set(false);
+    });
+  }
+
+  private async startTokenRefresh(user: User) {
+    if (getGithubToken()) {
+      const token = await user.getIdToken(true);
+      setGithubToken(token);
+    }
+    this.user.set(user);
+    setInterval(async () => {
+      try {
+        this.loading.set(true);
+        const token = await user.getIdToken(true);
+        setGithubToken(token);
+        this.loading.set(false);
+      } catch (error) {
+        this.signOut();
+      }
+    }, this.refreshInterval);
+  }
+
+  public async signIn() {
+    try {
+      const result = await signInWithPopup(this.auth, this.provider);
+      const credential = GithubAuthProvider.credentialFromResult(result);
+      if (credential) {
+        const token = credential.accessToken;
+        setGithubToken(token);
+      }
+    } catch (error) {
+      console.error('Error signing in:', error);
+    }
+  }
+
+  public async reLogin() {
+    await signOut(this.auth);
+    setGithubToken(undefined);
+    await this.signIn();
+  }
+
+  public async signOut() {
+    await signOut(this.auth);
+    clearSiteData();
+    this.user.set(null);
+  }
+
+  public async getPRsConfig(): Promise<RepoConfig[]> {
+    const user = get(this.user);
+    if (!user?.uid) {
+      return [];
+    }
+
+    const docRef = doc(collection(this.db, "configs"), user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return [];
+    }
+
+    const pullRequests = docSnap.data().pullRequests;
+    return pullRequests ? pullRequests : [];
+  }
+
+  public async getActionsConfig(): Promise<RepoConfig[]> {
+    const user = get(this.user);
+    if (!user) {
+      return [];
+    }
+
+    const docRef = doc(collection(this.db, "configs"), user.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (!docSnap.exists()) {
+      return [];
+    }
+
+    const actions = docSnap.data().actions;
+    return actions ? actions : [];
+  }
+
+  public async saveConfigs(prConfig: RepoConfig[], actionsConfig: RepoConfig[]) {
+    const user = get(this.user);
+    if (!user) {
+      return;
+    }
+
+    const docRef = doc(collection(this.db, "configs"), user.uid);
+    await setDoc(docRef, { pullRequests: prConfig, actions: actionsConfig });
+  }
+}
+
+export const firebase = new Firebase();

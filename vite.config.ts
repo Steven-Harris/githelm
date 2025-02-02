@@ -1,29 +1,36 @@
-import cssnano from 'cssnano';
-import tailwindcss from 'tailwindcss';
-import { defineConfig } from 'vite';
-import viteCompression from 'vite-plugin-compression';
-import { VitePWA } from 'vite-plugin-pwa';
-import tsconfigPaths from 'vite-tsconfig-paths';
+import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
+import { SvelteKitPWA } from '@vite-pwa/sveltekit';
+import type { UserConfig } from 'vite';
 
-export default defineConfig({
+
+const config: UserConfig = {
+  logLevel: 'info',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    assetsDir: 'src/assets',
+  },
   plugins: [
-    tsconfigPaths(),
-    VitePWA({
+    tailwindcss(),
+    sveltekit(),
+    SvelteKitPWA({
+      srcDir: './src',
+      strategies: 'generateSW',
       registerType: 'autoUpdate',
-      injectRegister: false,
-
+      scope: '/',
+      base: '/',
+      selfDestroying: true,
       pwaAssets: {
-        disabled: false,
         config: true,
       },
-
       manifest: {
         name: 'githelm',
         short_name: 'githelm',
+        display: 'standalone',
         description: 'A repository monitoring application to manage pull requests and actions',
         theme_color: '#111827',
         background_color: '#111827',
-
         icons: [{
           src: 'pwa-64x64.png',
           sizes: '64x64',
@@ -43,50 +50,24 @@ export default defineConfig({
           purpose: 'maskable',
         }],
       },
-
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
+      injectManifest: {
+        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
       },
-
+      workbox: {
+        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
+      },
       devOptions: {
         enabled: false,
-        navigateFallback: 'index.html',
-        suppressWarnings: true,
+        suppressWarnings: process.env.SUPPRESS_WARNING === 'true',
         type: 'module',
+        navigateFallback: '/',
       },
-    }),
-    viteCompression({
-      algorithm: 'brotliCompress',
-      ext: '.br',
+      kit: {
+        includeVersionFile: true,
+      }
     }),
   ],
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss(),
-        cssnano({
-          preset: 'default',
-        }),
-      ],
-    },
-  },
-  root: '.',
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: 'index.html',
-      output: {
-        manualChunks: {
-          firebase: ['firebase/app', 'firebase/analytics', 'firebase/auth', 'firebase/firestore'],
-          sortable: ['sortablejs'],
-        }
-      }
-    }
-  },
-  server: {
-    hmr: true
-  }
-});
+};
+
+export default config;
+
