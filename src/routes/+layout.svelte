@@ -5,9 +5,15 @@
   import Loading from "$lib/Loading.svelte";
   import Tabs from "$lib/Tabs.svelte";
   import { onMount } from "svelte";
+  import { pwaAssetsHead } from "virtual:pwa-assets/head";
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
-  let { children } = $props();
+  interface Props {
+    children?: import("svelte").Snippet;
+  }
+
+  let { children }: Props = $props();
+
   let signedIn = $state(false);
   let loading = $state(true);
   let webManifest = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : "");
@@ -24,6 +30,12 @@
 </script>
 
 <svelte:head>
+  {#if pwaAssetsHead.themeColor}
+    <meta name="theme-color" content={pwaAssetsHead.themeColor.content} />
+  {/if}
+  {#each pwaAssetsHead.links as link}
+    <link {...link} />
+  {/each}
   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html webManifest}
 </svelte:head>

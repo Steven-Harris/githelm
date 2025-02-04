@@ -48,14 +48,12 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 async function fetchData<T = {} | []>(url: string): Promise<T> {
   const response = await fetch(url, { headers: getHeaders() });
   if (response.headers.get('X-RateLimit-Remaining') === '0') {
-    console.log('Rate limit exceeded');
     killSwitch.set(true);
   }
   if (response.status === 403) {
     throw new Error('Rate limit exceeded');
   }
   if (!response.ok) {
-    console.log('Error fetching data:', response);
     return typeof {} === 'object' ? {} as T : [] as T;
   }
   setLastUpdated();

@@ -1,9 +1,37 @@
 <script lang="ts">
   import { type Job, fetchWorkflowJobs } from "$integrations/github";
+  import { getStorageObject } from "$integrations/storage";
   import createPollingStore from "$stores/polling.store";
+  import { onDestroy, onMount } from "svelte";
 
   let { org, repo, run } = $props();
-  const jobsStore = createPollingStore<Job[]>(`${org}-${repo}-${run.id}-jobs`, () => fetchWorkflowJobs(org, repo, run.id));
+
+  const key = `${org}-${repo}-${run.id}-jobs`;
+  let jobs: Job[] = $state([]);
+  let unsubscribe: () => void;
+  onMount(async () => {
+    if (run.status === "completed") {
+      return await fetchOnce();
+    }
+    const jobsStore = createPollingStore<Job[]>(key, () => fetchWorkflowJobs(org, repo, run.id));
+    unsubscribe = jobsStore.subscribe((value) => {
+      jobs = value;
+    });
+  });
+
+  onDestroy(() => {
+    unsubscribe?.();
+  });
+
+  async function fetchOnce() {
+    const storage = getStorageObject<Job[]>(key);
+    if (storage.data.length > 0) {
+      jobs = storage.data;
+      return;
+    }
+    jobs = await fetchWorkflowJobs(org, repo, run.id);
+    return;
+  }
 
   const jobColor = (job: Job) => {
     if (job.status === "completed" && job.conclusion === "success") {
@@ -24,7 +52,7 @@
   <div class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
     <a href={run.html_url} target="_blank" class="hover:underline">{run.display_title}</a>
     <ul class="flex flex-wrap -m-1">
-      {#each $jobsStore as job (job.id)}
+      {#each jobs as job, i (i)}
         <li class="p-1">
           {#if job.status == "pending"}
             <span class="{jobColor(job)} flex justify-between items-center">
