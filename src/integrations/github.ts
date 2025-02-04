@@ -1,7 +1,7 @@
 import { getGithubToken, setLastUpdated } from './storage';
 
-const MIN_DELAY = 1250; // Minimum delay in milliseconds (0.25 seconds)
-const MAX_DELAY = 5500; // Maximum delay in milliseconds (0.5 seconds)
+const MIN_DELAY = 1000; // Minimum delay in milliseconds (1 seconds)
+const MAX_DELAY = 2500; // Maximum delay in milliseconds (2.5 seconds)
 
 function getRandomDelay() {
   return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY;

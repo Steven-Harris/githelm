@@ -39,7 +39,7 @@
   {#if lastUpdated != "" && !isConfig}
     <div class="flex-1 text-center text-gray-400">
       Last updated: {lastUpdated} ago
-      <button type="button" title="refresh content" aria-label="refresh content" id="refresh-button" class="p-0" onclick={refresh}>
+      <button type="button" title="refresh content" aria-label="refresh content" id="refresh-button" class="p-0 cursor-pointer" onclick={refresh}>
         <img src={refreshSVG} title="refresh" alt="refresh" width="15" height="15" class="pt-2 size-5 mt-0 text-gray-400" />
       </button>
     </div>
