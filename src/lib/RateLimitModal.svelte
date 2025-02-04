@@ -1,10 +1,12 @@
 <script lang="ts">
   import { firebase } from "$integrations/firebase";
   import { killSwitch } from "$stores/kill-switch.store";
+  import { manualTrigger } from "$stores/last-updated.store";
 
   async function reLogin() {
     await firebase.reLogin();
     killSwitch.set(false);
+    manualTrigger.set(true);
   }
 </script>
 
@@ -12,8 +14,8 @@
   <div class="modal-overlay">
     <div class="modal">
       <h2>Rate Limit Exceeded</h2>
-      <p>Unfortunately, GitHub's Rate Limit has been hit. The only options are to wait and continue or try re-logging in.</p>
-      <button onclick={() => killSwitch.set(false)}>Continue</button>
+      <p>Unfortunately, GitHub's Rate Limit has been hit. If you're feeling lucky you can try again or re-logging in.</p>
+      <button onclick={() => killSwitch.set(false)}>I'm feeling lucky</button>
       <button onclick={reLogin}>Re-Login</button>
     </div>
   </div>
