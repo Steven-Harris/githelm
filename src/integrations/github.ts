@@ -1,5 +1,15 @@
-import { killSwitch } from '$stores/kill-switch.store';
 import { getGithubToken, setLastUpdated } from './storage';
+
+const MIN_DELAY = 1250; // Minimum delay in milliseconds (0.25 seconds)
+const MAX_DELAY = 5500; // Maximum delay in milliseconds (0.5 seconds)
+
+function getRandomDelay() {
+  return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY;
+}
+
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   let results: any[] = [];
@@ -46,10 +56,8 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 }
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
+  await delay(getRandomDelay());
   const response = await fetch(url, { headers: getHeaders() });
-  if (response.headers.get('X-RateLimit-Remaining') === '0') {
-    killSwitch.set(true);
-  }
   if (response.status === 403) {
     throw new Error('Rate limit exceeded');
   }
