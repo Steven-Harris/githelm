@@ -2,6 +2,7 @@ import { getGithubToken, setLastUpdated } from './storage';
 
 const MIN_DELAY = 1000; // Minimum delay in milliseconds (1 seconds)
 const MAX_DELAY = 2500; // Maximum delay in milliseconds (2.5 seconds)
+let requestCount = 0;
 
 function getRandomDelay() {
   return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY;
@@ -57,15 +58,28 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
   await delay(getRandomDelay());
+  requestCount++;
   const response = await fetch(url, { headers: getHeaders() });
-  if (response.status === 403) {
-    throw new Error('Rate limit exceeded');
-  }
+  console.log(requestCount);
   if (!response.ok) {
-    return typeof {} === 'object' ? {} as T : [] as T;
+    throw new Error('Rate limit exceeded');
   }
   setLastUpdated();
   return await response.json() as T;
+}
+
+export async function isGithubTokenValid(token: string): Promise<boolean> {
+  try {
+    const response = await fetch('https://api.github.com', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('Error validating GitHub token:', error);
+    return false;
+  }
 }
 
 function getHeaders() {

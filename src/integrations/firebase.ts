@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type Auth, type User } from 'firebase/auth';
 import { collection, doc, getDoc, getFirestore, setDoc, type Firestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
+import { isGithubTokenValid } from './github';
 import { clearSiteData, getGithubToken, setGithubToken } from './storage';
 
 const firebaseConfig = {
@@ -56,7 +57,13 @@ class Firebase {
   }
 
   private async startTokenRefresh(user: User) {
-    if (getGithubToken()) {
+    const githubToken = getGithubToken();
+    if (githubToken) {
+      const isValid = await isGithubTokenValid(githubToken);
+      if (!isValid) {
+        await this.reLogin();
+        return;
+      }
       const token = await user.getIdToken(true);
       setGithubToken(token);
     }
