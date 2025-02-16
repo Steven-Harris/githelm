@@ -9,13 +9,13 @@ type AsyncCallback<T> = () => Promise<T>;
 const STALE_INTERVAL = 60 * 1000; // 60 seconds
 const RANDOM_RETRY_INTERVAL = () => Math.floor(Math.random() * 10) * 1000; // random wait between 1 and 10 seconds
 let kill = false;
+const ongoingRequests = new Set<string>();
 
 function createPollingStore<T>(key: string, callback: AsyncCallback<T>) {
   const storage = getStorageObject<T>(key);
   const initialData = storage.data || {} as T;
   return readable<T>(initialData, set => startPolling(key, callback, set));
 }
-
 
 function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
   let interval: NodeJS.Timeout;
@@ -56,26 +56,30 @@ function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSett
     unsubscribeKillSwitch();
   };
 }
+
 async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
   const storage = getStorageObject<T>(key);
   if (storage.data && storage.lastUpdated + STALE_INTERVAL - 3000 > Date.now()) {
     set(storage.data);
-    return
+    return;
   }
 
   await fetchData(key, callback, set);
 }
 
 async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
-  if (kill) {
-    return
+  if (kill || ongoingRequests.has(key)) {
+    return;
   }
+  ongoingRequests.add(key);
   try {
     const data = await callback();
     setStorageObject(key, data);
     set(data);
   } catch {
     setTimeout(() => fetchData(key, callback, set), RANDOM_RETRY_INTERVAL());
+  } finally {
+    ongoingRequests.delete(key);
   }
 }
 

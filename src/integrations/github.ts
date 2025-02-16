@@ -2,7 +2,6 @@ import { getGithubToken, setLastUpdated } from './storage';
 
 const MIN_DELAY = 1000; // Minimum delay in milliseconds (1 seconds)
 const MAX_DELAY = 2500; // Maximum delay in milliseconds (2.5 seconds)
-let requestCount = 0;
 
 function getRandomDelay() {
   return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY;
@@ -13,24 +12,21 @@ function delay(ms: number) {
 }
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
-  let results: any[] = [];
-  if (filters.length === 0) {
-    results.push(fetchData<PullRequests>(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open`));
-  } else {
-    filters.forEach(filter => {
-      results.push(fetchData<PullRequests>(`https://api.github.com/search/issues?q=repo:${org}/${repo}+is:pr+is:open+label:${filter}`));
-    });
-  }
-  return (await Promise.all(results)).flatMap((result: any) => result.items);
+  const queries = filters.length === 0
+    ? [`repo:${org}/${repo}+is:pr+is:open`]
+    : filters.map(filter => `repo:${org}/${repo}+is:pr+is:open+label:${filter}`);
+
+  const results = await Promise.all(queries.map(query => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`)));
+  return results.flatMap(result => result.items);
 }
 
 export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
   return await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
 }
 
-export async function fetchActions(org: string, repo: string, filters: string[]): Promise<Workflow[]> {
-  const requests = filters.map(filter => {
-    return fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${filter}/runs?per_page=1`);
+export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
+  const requests = actions.map(action => {
+    return fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
   });
 
   return await Promise.all(requests)
@@ -58,9 +54,7 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
   await delay(getRandomDelay());
-  requestCount++;
   const response = await fetch(url, { headers: getHeaders() });
-  console.log(requestCount);
   if (!response.ok) {
     throw new Error('Rate limit exceeded');
   }

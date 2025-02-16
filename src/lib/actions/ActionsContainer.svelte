@@ -12,8 +12,9 @@
       return;
     }
 
-    configs = await firebase.getActionsConfig();
-    if (configs.length > 0) {
+    const { actions } = await firebase.getConfigs();
+    if (actions.length > 0) {
+      configs = actions;
       setStorageObject("actions-configs", configs);
     }
   });

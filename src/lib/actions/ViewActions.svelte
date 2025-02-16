@@ -2,9 +2,9 @@
   import { fetchActions, type Workflow } from "$integrations/github";
   import createPollingStore from "$stores/polling.store";
   import WorkflowRun from "./WorkflowRun.svelte";
-  let { org, repo, filters } = $props();
+  let { org, repo, filters: actions } = $props();
 
-  const workflowStore = createPollingStore<Workflow[]>(`${org}-${repo}-actions`, () => fetchActions(org, repo, filters));
+  const workflowStore = createPollingStore<Workflow[]>(`${org}-${repo}-actions`, () => fetchActions(org, repo, actions));
 </script>
 
 <h3 class="text-lg font-semibold hover:underline">

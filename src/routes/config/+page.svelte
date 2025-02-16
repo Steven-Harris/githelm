@@ -28,7 +28,8 @@
     const storage = getStorageObject<RepoConfig[]>("pull-requests-configs");
     prConfigs = storage.data;
     if (storage.lastUpdated === 0) {
-      prConfigs = await firebase.getPRsConfig();
+      const { pullRequests } = await firebase.getConfigs();
+      prConfigs = pullRequests;
       setStorageObject("pull-requests-configs", prConfigs);
     }
   }
@@ -37,7 +38,8 @@
     const storage = getStorageObject<RepoConfig[]>("actions-configs");
     actionsConfigs = storage.data;
     if (storage.lastUpdated === 0) {
-      actionsConfigs = await firebase.getActionsConfig();
+      const { actions } = await firebase.getConfigs();
+      actionsConfigs = actions;
       setStorageObject("actions-configs", actionsConfigs);
     }
   }

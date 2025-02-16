@@ -12,8 +12,9 @@
       return;
     }
 
-    configs = await firebase.getPRsConfig();
-    if (configs.length > 0) {
+    const { pullRequests } = await firebase.getConfigs();
+    if (pullRequests.length > 0) {
+      configs = pullRequests;
       setStorageObject("pull-requests-configs", configs);
     }
   });

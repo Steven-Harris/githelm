@@ -20,7 +20,7 @@ export interface RepoConfig {
   filters: string[];
 }
 
-export interface Config {
+export interface Configs {
   pullRequests: RepoConfig[];
   actions: RepoConfig[];
 }
@@ -105,38 +105,20 @@ class Firebase {
     this.user.set(null);
   }
 
-  public async getPRsConfig(): Promise<RepoConfig[]> {
+  public async getConfigs(): Promise<Configs> {
     const user = get(this.user);
     if (!user?.uid) {
-      return [];
+      return { pullRequests: [], actions: [] };
     }
 
     const docRef = doc(collection(this.db, "configs"), user.uid);
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
-      return [];
+      return { pullRequests: [], actions: [] };
     }
 
-    const pullRequests = docSnap.data().pullRequests;
-    return pullRequests ? pullRequests : [];
-  }
-
-  public async getActionsConfig(): Promise<RepoConfig[]> {
-    const user = get(this.user);
-    if (!user) {
-      return [];
-    }
-
-    const docRef = doc(collection(this.db, "configs"), user.uid);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      return [];
-    }
-
-    const actions = docSnap.data().actions;
-    return actions ? actions : [];
+    return docSnap.data() as Configs;
   }
 
   public async saveConfigs(prConfig: RepoConfig[], actionsConfig: RepoConfig[]) {
