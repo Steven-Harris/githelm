@@ -1,8 +1,8 @@
 <script lang="ts">
   import { type RepoConfig, firebase } from "$integrations/firebase";
   import { getStorageObject, setStorageObject } from "$integrations/storage";
-  import EditActions from "$lib/actions/EditActions.svelte";
-  import EditPullRequests from "$lib/pull-requests/EditPullRequests.svelte";
+  import EditActions from "$lib/config/EditActions.svelte";
+  import EditPullRequests from "$lib/config/EditPullRequests.svelte";
   import { activeTab } from "$stores/active-tab.store";
   import { eventBus } from "$stores/event-bus.store";
   import { isMobile } from "$stores/mobile.store";

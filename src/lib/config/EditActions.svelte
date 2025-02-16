@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ListConfigs from "../config-edit/ListConfigs.svelte";
+  import ListConfigs from "./ListConfigs.svelte";
 
   let { configs = $bindable([]) } = $props();
 </script>
