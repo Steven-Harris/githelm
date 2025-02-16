@@ -11,7 +11,7 @@
   <a href={`https://github.com/${org}/${repo}/actions`} target="_blank">{repo}</a>
 </h3>
 {#if $workflowStore.length !== 0}
-  {#each $workflowStore as workflow, i (i)}
+  {#each $workflowStore as workflow (workflow.name)}
     <ul class="flex flex-wrap">
       {#each workflow.workflow_runs as run (run.id)}
         <WorkflowRun {org} {repo} {run} />

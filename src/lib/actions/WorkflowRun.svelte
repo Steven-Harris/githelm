@@ -52,7 +52,7 @@
   <div class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow">
     <a href={run.html_url} target="_blank" class="hover:underline">{run.display_title}</a>
     <ul class="flex flex-wrap -m-1">
-      {#each jobs as job, i (i)}
+      {#each jobs as job (job.id)}
         <li class="p-1">
           {#if job.status == "pending"}
             <span class="{jobColor(job)} flex justify-between items-center">

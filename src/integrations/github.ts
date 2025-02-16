@@ -25,8 +25,13 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
 }
 
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
-  const requests = actions.map(action => {
-    return fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+  const requests = actions.map(async action => {
+    const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+    return {
+      name: action,
+      total_count: data.total_count,
+      workflow_runs: data.workflow_runs
+    }
   });
 
   return await Promise.all(requests)
@@ -171,9 +176,11 @@ export interface Actions {
 }
 
 export interface Workflow {
+  name: string;
   total_count: number;
   workflow_runs: WorkflowRun[];
 }
+
 export interface WorkflowRun {
   id: number;
   name: string;

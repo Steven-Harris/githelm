@@ -2,7 +2,7 @@
   import { type RepoConfig, firebase } from "$integrations/firebase";
   import { getStorageObject, setStorageObject } from "$integrations/storage";
   import { onMount } from "svelte";
-  import Actions from "./ViewActions.svelte";
+  import Actions from "./List.svelte";
 
   let configs: RepoConfig[] = $state([]);
   onMount(async () => {

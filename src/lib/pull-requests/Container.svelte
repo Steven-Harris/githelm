@@ -2,7 +2,7 @@
   import { type RepoConfig, firebase } from "$integrations/firebase";
   import { getStorageObject, setStorageObject } from "$integrations/storage";
   import { onMount } from "svelte";
-  import PullRequest from "./ViewPullRequest.svelte";
+  import PullRequests from "./List.svelte";
 
   let configs: RepoConfig[] = $state([]);
   onMount(async () => {
@@ -27,7 +27,7 @@
   {#if configs.length > 0}
     <ul>
       {#each configs as config (config.repo)}
-        <PullRequest {...config} />
+        <PullRequests {...config} />
       {/each}
     </ul>
   {:else}

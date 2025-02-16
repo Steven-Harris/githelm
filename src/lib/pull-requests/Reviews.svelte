@@ -22,7 +22,7 @@
 
 <span class="reviews-container h-7 flex items-center overflow-hidden">
   {#if $reviewsStore.length !== 0}
-    {#each $reviewsStore as review}
+    {#each $reviewsStore as review (review.id)}
       <div class="avatar-container mr-1">
         <img src={review.user.avatar_url} class="avatar" alt={review.user.login} />
         {#if review.state === "APPROVED"}
