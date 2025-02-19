@@ -32,6 +32,7 @@ class Firebase {
   private provider: GithubAuthProvider;
   private auth: Auth;
   private refreshInterval: number = 60 * 60 * 1000;
+  private interval: NodeJS.Timeout | undefined;
 
   constructor() {
     const app = initializeApp(firebaseConfig);
@@ -64,20 +65,29 @@ class Firebase {
         await this.reLogin();
         return;
       }
-      const token = await user.getIdToken(true);
-      setGithubToken(token);
+      this.refreshGHToken()
     }
+
     this.user.set(user);
-    setInterval(async () => {
+    clearInterval(this.interval);
+    this.interval = setInterval(async () => {
       try {
         this.loading.set(true);
-        const token = await user.getIdToken(true);
-        setGithubToken(token);
+        this.refreshGHToken()
         this.loading.set(false);
       } catch (error) {
         this.signOut();
       }
     }, this.refreshInterval);
+  }
+
+  public async refreshGHToken() {
+    const currentUser = get(this.user);
+    if (!currentUser) {
+      throw new Error('User is not authenticated');
+    }
+    const token = await currentUser.getIdToken(true);
+    setGithubToken(token);
   }
 
   public async signIn() {

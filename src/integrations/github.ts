@@ -1,3 +1,5 @@
+import { killSwitch } from '$stores/kill-switch.store';
+import { firebase } from './firebase';
 import { getGithubToken, setLastUpdated } from './storage';
 
 const MIN_DELAY = 1000; // Minimum delay in milliseconds (1 seconds)
@@ -7,9 +9,6 @@ function getRandomDelay() {
   return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY;
 }
 
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   const queries = filters.length === 0
@@ -58,9 +57,15 @@ export async function reviewDeployment(org: string, repo: string, runId: string,
 }
 
 async function fetchData<T = {} | []>(url: string): Promise<T> {
-  await delay(getRandomDelay());
   const response = await fetch(url, { headers: getHeaders() });
   if (!response.ok) {
+    if (response.status === 401) {
+      await firebase.refreshGHToken()
+    }
+    const rateLimit = response.headers.get('X-RateLimit-Remaining');
+    if (rateLimit && parseInt(rateLimit) === 0) {
+      killSwitch.set(true);
+    }
     throw new Error('Rate limit exceeded');
   }
   setLastUpdated();
