@@ -50,6 +50,7 @@ class Firebase {
         this.signOut();
         return;
       }
+      this.user.set(user);
       const tokenResult = await user.getIdTokenResult();
       const isExpired = new Date(tokenResult.expirationTime) < new Date();
       isExpired ? this.signOut() : this.startTokenRefresh(user);

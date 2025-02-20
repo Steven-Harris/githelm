@@ -1,6 +1,6 @@
 <script lang="ts">
   import { type Job, fetchWorkflowJobs } from "$integrations/github";
-  import { getStorageObject } from "$integrations/storage";
+  import { getStorageObject, setStorageObject } from "$integrations/storage";
   import createPollingStore from "$stores/polling.store";
   import { onDestroy, onMount } from "svelte";
 
@@ -29,7 +29,9 @@
       jobs = storage.data;
       return;
     }
+
     jobs = await fetchWorkflowJobs(org, repo, run.id);
+    setStorageObject(key, jobs);
     return;
   }
 
