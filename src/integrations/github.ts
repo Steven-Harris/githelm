@@ -1,4 +1,5 @@
 import { killSwitch } from '$stores/kill-switch.store';
+import { run } from 'svelte/legacy';
 import { firebase } from './firebase';
 import { getGithubToken, setLastUpdated } from './storage';
 
@@ -20,7 +21,9 @@ export async function fetchPullRequests(org: string, repo: string, filters: stri
 }
 
 export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
-  return await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
+  const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
+  console.log('Reviews:', reviews);
+  return reviews;
 }
 
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
@@ -37,7 +40,28 @@ export async function fetchActions(org: string, repo: string, actions: string[])
 }
 
 export async function fetchWorkflowJobs(org: string, repo: string, runId: string): Promise<Job[]> {
-  return (await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`)).jobs;
+  const key = `${org}/${repo}:${runId}`;
+
+  const run = localStorage.getItem(key);
+  if (run !== null && run !== undefined) {
+    const parsedRun = JSON.parse(run) as Job[];
+    return parsedRun;
+  }
+
+  const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`)
+  
+  let allSuccess = true;
+  workflows.jobs.forEach(job => {
+    if (job.status !== 'completed' || job.conclusion !== 'success') {
+      allSuccess = false;
+    }
+  });
+  
+  if (allSuccess) {
+    localStorage.setItem(key, JSON.stringify(workflows.jobs));
+  }
+
+  return workflows.jobs;
 }
 
 export async function getPendingEnvironments(org: string, repo: string, runId: string) {
