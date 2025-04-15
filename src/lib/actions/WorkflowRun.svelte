@@ -10,9 +10,6 @@
   let jobs: Job[] = $state([]);
   let unsubscribe: () => void;
   onMount(async () => {
-    if (run.status === "completed") {
-      return await fetchOnce();
-    }
     const jobsStore = createPollingStore<Job[]>(key, () => fetchWorkflowJobs(org, repo, run.id));
     unsubscribe = jobsStore.subscribe((value) => {
       jobs = value;
@@ -23,17 +20,6 @@
     unsubscribe?.();
   });
 
-  async function fetchOnce() {
-    const storage = getStorageObject<Job[]>(key);
-    if (storage.data.length > 0) {
-      jobs = storage.data;
-      return;
-    }
-
-    jobs = await fetchWorkflowJobs(org, repo, run.id);
-    setStorageObject(key, jobs);
-    return;
-  }
 
   const jobColor = (job: Job) => {
     if (job.status === "completed" && job.conclusion === "success") {

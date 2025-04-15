@@ -22,7 +22,6 @@ export async function fetchPullRequests(org: string, repo: string, filters: stri
 
 export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
   const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
-  console.log('Reviews:', reviews);
   return reviews;
 }
 
@@ -51,9 +50,16 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
   const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`)
   
   let allSuccess = true;
-  workflows.jobs.forEach(job => {
-    if (job.status !== 'completed' || job.conclusion !== 'success') {
+
+  workflows.jobs = workflows.jobs.filter(job => {
+    if (job.status === 'completed') {
+      if (job.conclusion == 'success') {
+        return true;
+      } else if (job.conclusion == 'skipped') {
+        return false;
+      }
       allSuccess = false;
+      return true;
     }
   });
   
