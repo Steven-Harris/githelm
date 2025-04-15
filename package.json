@@ -51,6 +51,8 @@
     "onlyBuiltDependencies": [
       "@firebase/util",
       "esbuild",
+      "protobufjs",
+      "sharp",
       "svelte-preprocess"
     ]
   }
