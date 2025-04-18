@@ -4,11 +4,17 @@
   import type { Review } from "$integrations/github";
 
   let { reviews = [] } = $props<{ reviews: Review[] }>();
+  
+  // Ensure each review has a valid ID to use as a key
+  function getUniqueKey(review: Review, index: number): string {
+    // Use a combination of review ID (if valid) and index to ensure uniqueness
+    return review?.id ? `${review.id}-${index}` : `review-${index}`;
+  }
 </script>
 
 <span class="reviews-container h-7 flex items-center overflow-hidden">
   {#if reviews.length !== 0}
-    {#each reviews.slice(0, 3) as review (review.id)}
+    {#each reviews.slice(0, 3) as review, index (getUniqueKey(review, index))}
       <div class="avatar-container mr-1">
         <img src={review.user.avatar_url} class="avatar" alt={review.user.login} />
         {#if review.state === "APPROVED"}
