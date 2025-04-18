@@ -17,13 +17,10 @@ const config: UserConfig = {
     SvelteKitPWA({
       srcDir: './src',
       strategies: 'generateSW',
-      registerType: 'autoUpdate',
+      registerType: 'prompt', 
       scope: '/',
       base: '/',
-      selfDestroying: true,
-      pwaAssets: {
-        config: true,
-      },
+      selfDestroying: false, 
       manifest: {
         name: 'githelm',
         short_name: 'githelm',
@@ -54,7 +51,9 @@ const config: UserConfig = {
         globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
       },
       workbox: {
-        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
+        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+        clientsClaim: true,
+        skipWaiting: false
       },
       devOptions: {
         enabled: false,

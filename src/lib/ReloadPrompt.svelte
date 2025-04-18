@@ -1,10 +1,8 @@
 <script lang="ts">
   import { useRegisterSW } from "virtual:pwa-register/svelte";
 
-  // replaced dynamically
-  const buildDate = Date.now();
-
   const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
+    immediate: true,
     onRegisteredSW(swUrl, r) {
       r &&
         setInterval(async () => {
@@ -21,15 +19,20 @@
           });
 
           if (resp?.status === 200) await r.update();
-        }, 20000 /* 20s for testing purposes */);
+        }, 60 * 60 * 1000); // Check for updates once per hour
     },
     onRegisterError(error) {
-      console.log("SW registration error", error);
+      console.error("Service worker registration error", error);
     },
   });
+  
   const close = () => {
     offlineReady.set(false);
     needRefresh.set(false);
+  };
+
+  const update = () => {
+    updateServiceWorker(true);
   };
 
   let toast = $derived($offlineReady || $needRefresh);
@@ -39,47 +42,77 @@
   <div class="pwa-toast" role="alert">
     <div class="message">
       {#if $offlineReady}
-        <span> App ready to work offline </span>
+        <span>✅ GitHelm is ready to work offline</span>
       {:else}
-        <span> New content available, click on reload button to update. </span>
+        <span>🔄 New version available!</span>
       {/if}
     </div>
-    {#if $needRefresh}
-      <button onclick={() => updateServiceWorker(true)}> Reload </button>
-    {/if}
-    <button onclick={close}> Close </button>
+    <div class="buttons">
+      {#if $needRefresh}
+        <button onclick={update} class="update-button">
+          Update
+        </button>
+      {/if}
+      <button onclick={close} class="close-button">
+        {$offlineReady ? 'Close' : 'Dismiss'}
+      </button>
+    </div>
   </div>
 {/if}
 
-<div class="pwa-date">
-  {buildDate}
-</div>
-
 <style>
-  .pwa-date {
-    visibility: hidden;
-  }
   .pwa-toast {
     position: fixed;
     right: 0;
     bottom: 0;
     margin: 16px;
-    padding: 12px;
+    padding: 16px;
     border: 1px solid #8885;
-    border-radius: 4px;
-    z-index: 2;
+    border-radius: 8px;
+    z-index: 100;
     text-align: left;
-    box-shadow: 3px 4px 5px 0 #8885;
-    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    background-color: #1f2937;
+    color: white;
+    font-weight: 500;
   }
+  
   .pwa-toast .message {
-    margin-bottom: 8px;
+    margin-bottom: 12px;
+    font-size: 16px;
   }
+  
+  .buttons {
+    display: flex;
+    gap: 8px;
+  }
+  
   .pwa-toast button {
-    border: 1px solid #8885;
+    border: none;
     outline: none;
-    margin-right: 5px;
-    border-radius: 2px;
-    padding: 3px 10px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .update-button {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .update-button:hover {
+    background-color: #2563eb;
+  }
+  
+  .close-button {
+    background-color: transparent;
+    color: #d1d5db;
+    border: 1px solid #4b5563;
+  }
+  
+  .close-button:hover {
+    background-color: #374151;
   }
 </style>
