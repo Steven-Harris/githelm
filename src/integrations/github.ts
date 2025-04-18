@@ -127,8 +127,7 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
         eyes: 0
       },
       state_reason: null,
-      // Store reviews directly with the PR to avoid additional API calls
-      _reviews: transformGraphQLReviews(node.reviews.edges)
+      reviews: transformGraphQLReviews(node.reviews.edges)
     };
   });
 }
@@ -183,8 +182,8 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
       const pr = pullRequestsCache.data.find(pr => pr.number === prNumber);
       
       // If we have cached reviews for this PR, return them
-      if (pr && pr._reviews) {
-        return pr._reviews;
+      if (pr && pr.reviews) {
+        return pr.reviews;
       }
     }
     
@@ -515,7 +514,7 @@ export interface PullRequest {
   body: string | null;
   reactions: Reaction;
   state_reason: any;
-  _reviews?: Review[];
+  reviews?: Review[];
 }
 
 export interface Review {
