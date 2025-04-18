@@ -7,9 +7,7 @@ import type { UserConfig } from 'vite';
 const config: UserConfig = {
   logLevel: 'info',
   build: {
-    outDir: 'dist',
     emptyOutDir: true,
-    assetsDir: 'src/assets',
   },
   plugins: [
     tailwindcss(),
