@@ -1,15 +1,201 @@
 import { killSwitch } from '$stores/kill-switch.store';
 import { run } from 'svelte/legacy';
 import { firebase } from './firebase';
-import { getGithubToken, setLastUpdated } from './storage';
+import { getGithubToken, setLastUpdated, getStorageObject, setStorageObject } from './storage';
 
-const MIN_DELAY = 1000; // Minimum delay in milliseconds (1 seconds)
-const MAX_DELAY = 2500; // Maximum delay in milliseconds (2.5 seconds)
+const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
-function getRandomDelay() {
-  return Math.floor(Math.random() * (MAX_DELAY - MIN_DELAY + 1)) + MIN_DELAY;
+// The new GraphQL query to fetch pull requests and their reviews simultaneously
+export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
+  const labelsFilter = filters.length > 0 
+    ? `labels: ${JSON.stringify(filters)}` 
+    : '';
+  
+  const query = `
+    query GetPullRequests($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequests(first: 20, states: OPEN ${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          edges {
+            node {
+              id
+              number
+              title
+              url
+              bodyText
+              isDraft
+              state
+              createdAt
+              updatedAt
+              comments {
+                totalCount
+              }
+              author {
+                login
+                avatarUrl
+              }
+              labels(first: 10) {
+                edges {
+                  node {
+                    name
+                    color
+                  }
+                }
+              }
+              reviews(first: 10) {
+                edges {
+                  node {
+                    id
+                    author {
+                      login
+                      avatarUrl
+                    }
+                    state
+                    bodyText
+                    createdAt
+                    url
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  
+  const variables = { owner: org, repo: repo };
+  
+  try {
+    const data = await executeGraphQLQuery(query, variables);
+    return transformGraphQLPullRequests(data);
+  } catch (error) {
+    console.error('Error fetching pull requests with GraphQL:', error);
+    // Fall back to REST API as a backup
+    console.log('Falling back to REST API');
+    return fetchPullRequests(org, repo, filters);
+  }
 }
 
+// Transform GraphQL response into the existing PullRequest format
+function transformGraphQLPullRequests(data: any): PullRequest[] {
+  if (!data?.repository?.pullRequests?.edges) {
+    return [];
+  }
+  
+  return data.repository.pullRequests.edges.map((edge: any) => {
+    const node = edge.node;
+    
+    // Transform labels from GraphQL format to REST API format
+    const labels = node.labels.edges.map((labelEdge: any) => ({
+      name: labelEdge.node.name,
+      color: labelEdge.node.color
+    }));
+    
+    return {
+      id: parseInt(node.id.split('_').pop()),
+      number: node.number,
+      title: node.title,
+      html_url: node.url,
+      url: node.url,
+      events_url: node.url,
+      state: node.state.toLowerCase(),
+      comments: node.comments.totalCount,
+      draft: node.isDraft,
+      body: node.bodyText,
+      user: {
+        login: node.author?.login || 'unknown',
+        avatar_url: node.author?.avatarUrl || '',
+        id: 0,
+        gravatar_id: '',
+        url: '',
+        html_url: '',
+        gists_url: '',
+        type: '',
+        user_view_type: ''
+      },
+      labels: labels,
+      reactions: {
+        url: '',
+        total_count: 0,
+        "+1": 0,
+        "-1": 0,
+        laugh: 0,
+        hooray: 0,
+        confused: 0,
+        heart: 0,
+        rocket: 0,
+        eyes: 0
+      },
+      state_reason: null,
+      // Store reviews directly with the PR to avoid additional API calls
+      _reviews: transformGraphQLReviews(node.reviews.edges)
+    };
+  });
+}
+
+// Transform GraphQL reviews to the REST API format
+function transformGraphQLReviews(reviewEdges: any[]): Review[] {
+  if (!reviewEdges) return [];
+  
+  return reviewEdges.map((edge: any) => {
+    const node = edge.node;
+    return {
+      id: parseInt(node.id.split('_').pop()),
+      node_id: node.id,
+      user: {
+        login: node.author?.login || 'unknown',
+        avatar_url: node.author?.avatarUrl || '',
+        id: 0,
+        gravatar_id: '',
+        url: '',
+        html_url: '',
+        gists_url: '',
+        type: '',
+        user_view_type: ''
+      },
+      body: node.bodyText || '',
+      state: node.state,
+      html_url: node.url,
+      pull_request_url: '',
+      author_association: '',
+      submitted_at: node.createdAt,
+      commit_id: '',
+      _links: {
+        html: {
+          href: node.url
+        },
+        pull_request: {
+          href: ''
+        }
+      }
+    };
+  });
+}
+
+// Modified function to get reviews using cached data from GraphQL when available
+export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
+  try {
+    // Try to find the PR in our cached GraphQL data first
+    const pullRequestsCache = getStorageObject<PullRequest[]>(`graphql-${JSON.stringify({ owner: org, repo: repo })}`);
+    
+    if (pullRequestsCache.data && Array.isArray(pullRequestsCache.data)) {
+      // Find the PR in our cached data
+      const pr = pullRequestsCache.data.find(pr => pr.number === prNumber);
+      
+      // If we have cached reviews for this PR, return them
+      if (pr && pr._reviews) {
+        return pr._reviews;
+      }
+    }
+    
+    // Fall back to REST API if not found in cache
+    const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
+    return reviews;
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return [];
+  }
+}
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   const queries = filters.length === 0
@@ -20,22 +206,45 @@ export async function fetchPullRequests(org: string, repo: string, filters: stri
   return results.flatMap(result => result.items);
 }
 
-export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
-  const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
-  return reviews;
-}
-
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
-  const requests = actions.map(async action => {
+  const workflowPromises = actions.map(async action => {
     const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+    
+    // Process each workflow run sequentially
+    const processedWorkflowRuns = await Promise.all(data.workflow_runs.map(async run => {
+      const jobs = await fetchWorkflowJobs(org, repo, run.id.toString());
+      
+      return {
+        ...run,
+        workflow_jobs: {
+          total_count: jobs.length,
+          jobs: jobs.map(job => ({
+            ...job,
+            steps: job.steps.filter(step => step.status === 'completed' && step.conclusion === 'success')
+              .filter(step => {
+                if (step.status === 'completed') {
+                  if (step.conclusion === 'success') {
+                    return true;
+                  } else if (step.conclusion === 'skipped') {
+                    return false;
+                  }
+                  return true;
+                }
+                return false;
+              })
+          }))
+        }
+      };
+    }));
+    
     return {
       name: action,
       total_count: data.total_count,
-      workflow_runs: data.workflow_runs
-    }
+      workflow_runs: processedWorkflowRuns
+    };
   });
 
-  return await Promise.all(requests)
+  return await Promise.all(workflowPromises);
 }
 
 export async function fetchWorkflowJobs(org: string, repo: string, runId: string): Promise<Job[]> {
@@ -102,6 +311,62 @@ async function fetchData<T = {} | []>(url: string): Promise<T> {
   return await response.json() as T;
 }
 
+async function executeGraphQLQuery<T = any>(query: string, variables: Record<string, any> = {}): Promise<T> {
+  const cacheKey = `graphql-${JSON.stringify(variables)}`;
+  const cachedData = getStorageObject<T>(cacheKey);
+  
+  // Return cached data if it exists and is less than 5 minutes old
+  if (cachedData.lastUpdated > Date.now() - 5 * 60 * 1000) {
+    return cachedData.data;
+  }
+  
+  const token = getGithubToken();
+  const response = await fetch(GITHUB_GRAPHQL_API, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query,
+      variables
+    })
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      await firebase.refreshGHToken();
+      throw new Error('Authentication error');
+    }
+    
+    const responseBody = await response.json();
+    
+    // Check for rate limiting errors
+    if (responseBody.errors?.some((error: any) => 
+      error.type === 'RATE_LIMITED' || 
+      error.message?.includes('API rate limit exceeded')
+    )) {
+      killSwitch.set(true);
+      throw new Error('Rate limit exceeded');
+    }
+    
+    throw new Error(`GraphQL request failed: ${JSON.stringify(responseBody.errors)}`);
+  }
+  
+  const result = await response.json();
+  setLastUpdated();
+  
+  if (result.errors) {
+    console.error('GraphQL errors:', result.errors);
+    throw new Error(`GraphQL returned errors: ${JSON.stringify(result.errors)}`);
+  }
+  
+  // Cache the successful response
+  setStorageObject(cacheKey, result.data);
+  
+  return result.data;
+}
+
 export async function isGithubTokenValid(token: string): Promise<boolean> {
   try {
     const response = await fetch('https://api.github.com', {
@@ -123,6 +388,81 @@ function getHeaders() {
     'Accept': 'application/vnd.github.v3+json',
     'X-GitHub-Api-Version': '2022-11-28 '
   };
+}
+
+// Add GraphQL query to search for user repositories
+export async function searchUserRepositories(): Promise<Repository[]> {
+  const query = `
+    query SearchUserRepos {
+      viewer {
+        repositories(first: 100, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          nodes {
+            name
+            nameWithOwner
+            owner {
+              login
+            }
+            isPrivate
+          }
+        }
+      }
+    }
+  `;
+  
+  try {
+    const data = await executeGraphQLQuery(query);
+    return transformUserRepositories(data);
+  } catch (error) {
+    console.error('Error fetching user repositories:', error);
+    return [];
+  }
+}
+
+function transformUserRepositories(data: any): Repository[] {
+  if (!data?.viewer?.repositories?.nodes) {
+    return [];
+  }
+  
+  return data.viewer.repositories.nodes.map((repo: any) => ({
+    id: 0, // Actual ID not needed for our purpose
+    name: repo.name,
+    full_name: repo.nameWithOwner,
+    owner: {
+      login: repo.owner.login
+    },
+    html_url: `https://github.com/${repo.nameWithOwner}`,
+    isPrivate: repo.isPrivate
+  }));
+}
+
+// Add function to search for repository labels
+export async function searchRepositoryLabels(owner: string, repo: string): Promise<string[]> {
+  if (!owner || !repo) return [];
+  
+  const query = `
+    query SearchRepoLabels($owner: String!, $repo: String!) {
+      repository(owner: $owner, name: $repo) {
+        labels(first: 100) {
+          nodes {
+            name
+          }
+        }
+      }
+    }
+  `;
+  
+  try {
+    const data = await executeGraphQLQuery(query, { owner, repo });
+    
+    if (!data?.repository?.labels?.nodes) {
+      return [];
+    }
+    
+    return data.repository.labels.nodes.map((label: any) => label.name);
+  } catch (error) {
+    console.error('Error fetching repository labels:', error);
+    return [];
+  }
 }
 
 export interface PendingDeployments {
@@ -175,6 +515,7 @@ export interface PullRequest {
   body: string | null;
   reactions: Reaction;
   state_reason: any;
+  _reviews?: Review[];
 }
 
 export interface Review {
@@ -244,6 +585,7 @@ export interface WorkflowRun {
   rerun_url: string;
   previous_attempt_url: null;
   workflow_url: string;
+  workflow_jobs: WorkflowJobs;
 }
 
 export interface WorkflowJobs {

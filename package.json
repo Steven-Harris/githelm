@@ -22,6 +22,7 @@
   "homepage": "https://githelm.com",
   "dependencies": {
     "firebase": "^11.6.0",
+    "graphql": "^16.10.0",
     "tailwindcss": "^4.1.4"
   },
   "devDependencies": {

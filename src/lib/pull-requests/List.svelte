@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { type PullRequest, fetchPullRequests } from "$integrations/github";
+  import { type PullRequest, fetchPullRequestsWithGraphQL } from "$integrations/github";
   import createPollingStore from "$stores/polling.store";
   import Reviews from "./Reviews.svelte";
   let { org, repo, filters } = $props();
 
-  const pullRequestsStore = createPollingStore<PullRequest[]>(`${org}-${repo}-pull-requests`, () => fetchPullRequests(org, repo, filters));
+  const pullRequestsStore = createPollingStore<PullRequest[]>(`${org}-${repo}-pull-requests`, () => fetchPullRequestsWithGraphQL(org, repo, filters));
 </script>
 
 <h3 class="text-lg font-semibold hover:underline">
@@ -18,7 +18,7 @@
           <div id="pr-item" class="cursor-pointer p-2 bg-gray-700 rounded-md hover:bg-gray-600 flex-grow flex items-center">
             <img src={pr.user.avatar_url} class="avatar mr-1" alt={pr.user.login} />
             <span class="cursor-pointer flex-grow max-w-[70%] hover:underline">{pr.title}</span>
-            <Reviews {org} {repo} prNumber={pr.number} />
+            <Reviews reviews={pr._reviews || []} />
           </div>
         </a>
       </li>

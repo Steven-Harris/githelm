@@ -1,6 +1,5 @@
 <script lang="ts">
   import { type Job, fetchWorkflowJobs } from "$integrations/github";
-  import { getStorageObject, setStorageObject } from "$integrations/storage";
   import createPollingStore from "$stores/polling.store";
   import { onDestroy, onMount } from "svelte";
 
@@ -43,7 +42,7 @@
       {#each jobs as job (job.id)}
         <li class="p-1">
           {#if job.status == "pending"}
-            <span class="{jobColor(job)} flex justify-between items-center">
+            <span class="{jobColor(job)} border rounded-lg p-3 shadow-sm flex justify-between items-center">
               <span class="text-sm">{job.name}</span>
             </span>
           {:else}
