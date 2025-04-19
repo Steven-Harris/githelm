@@ -53,9 +53,7 @@ class FirebaseClient {
   private interval: NodeJS.Timeout | undefined;
   private authInProgress = false;
 
-  constructor(private readonly options: {
-    enableLogging?: boolean;
-  } = {}) {
+  constructor() {
     const app = initializeApp(firebaseConfig);
     this.db = getFirestore(app);
     this.auth = getAuth(app);

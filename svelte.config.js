@@ -17,6 +17,8 @@ const config = {
     },
     alias: {
       '$assets/*': './src/assets/*',
+      '$integrations/firebase': './src/integrations/firebase/index',
+      '$integrations/github': './src/integrations/github/index',
       '$integrations/*': './src/integrations/*',
       '$stores/*': './src/lib/stores/*',
     },
