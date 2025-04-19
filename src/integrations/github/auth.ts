@@ -22,15 +22,12 @@ let isProcessingQueue = false;
 
 /**
  * Initialize the GitHub authentication state handling
- * Sets up subscriptions to auth state changes
  */
 export function initAuthStateHandling(): void {
-  // Clean up any existing subscription
   if (authStateSubscription) {
     authStateSubscription();
   }
   
-  // Now it's safe to subscribe
   if (firebase.authState) {
     authStateSubscription = firebase.authState.subscribe(state => {
       if (state === 'authenticated' && apiQueue.length > 0) {
@@ -47,7 +44,6 @@ async function processApiQueue(): Promise<void> {
   if (isProcessingQueue) return;
   
   isProcessingQueue = true;
-  console.log(`Processing ${apiQueue.length} queued API calls`);
   
   const currentQueue = [...apiQueue];
   apiQueue = [];
@@ -65,7 +61,6 @@ async function processApiQueue(): Promise<void> {
 
 /**
  * Get current authentication state
- * @returns Current auth state as string
  */
 export function getCurrentAuthState(): string {
   try {
@@ -78,14 +73,11 @@ export function getCurrentAuthState(): string {
 
 /**
  * Queue an API call if authentication is in progress
- * @param apiCall Function that makes the API call
- * @returns Promise that resolves with the API call result
  */
 export function queueApiCallIfNeeded<T>(apiCall: () => Promise<T>): Promise<T> {
   const currentAuthState = getCurrentAuthState();
   
   if (currentAuthState === 'authenticating' || currentAuthState === 'initializing') {
-    console.log('API call queued until authentication completes');
     return new Promise<T>((resolve, reject) => {
       apiQueue.push(async () => {
         try {
@@ -103,7 +95,6 @@ export function queueApiCallIfNeeded<T>(apiCall: () => Promise<T>): Promise<T> {
 
 /**
  * Get GitHub token with refresh synchronization
- * @returns Promise that resolves with the GitHub token
  */
 export async function getTokenSafely(): Promise<string> {
   // If auth is in progress, wait for it
@@ -143,7 +134,6 @@ export async function getTokenSafely(): Promise<string> {
 
 /**
  * Refresh GitHub token with synchronization to prevent multiple simultaneous refreshes
- * @returns Promise that resolves with a refreshed GitHub token
  */
 export async function refreshTokenSafely(): Promise<string> {
   if (isRefreshingToken && tokenRefreshPromise) {
@@ -153,7 +143,6 @@ export async function refreshTokenSafely(): Promise<string> {
   isRefreshingToken = true;
   tokenRefreshPromise = (async () => {
     try {
-      console.log('Refreshing GitHub token...');
       await firebase.refreshGithubToken();
       const newToken = getGithubToken();
       if (!newToken) {
@@ -161,7 +150,6 @@ export async function refreshTokenSafely(): Promise<string> {
       }
       return newToken;
     } catch (error) {
-      console.error("Error refreshing GitHub token:", error);
       throw new Error('Failed to refresh GitHub token');
     } finally {
       isRefreshingToken = false;
@@ -174,7 +162,6 @@ export async function refreshTokenSafely(): Promise<string> {
 
 /**
  * Set the GitHub token in storage
- * @param token The GitHub token to store
  */
 function setToken(token: string | null): void {
   if (token) {
@@ -184,7 +171,6 @@ function setToken(token: string | null): void {
 
 /**
  * Create headers for GitHub API requests
- * @returns Promise that resolves with headers object including auth token
  */
 export async function getHeadersAsync(): Promise<Record<string, string>> {
   const token = await getTokenSafely();

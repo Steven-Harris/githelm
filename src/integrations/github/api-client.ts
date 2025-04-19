@@ -12,10 +12,6 @@ export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
 /**
  * Fetch data from GitHub REST API with automatic retry and authentication
- * 
- * @param url API endpoint URL
- * @param retryCount Current retry attempt (used internally for recursion)
- * @returns Promise resolving to the parsed JSON response
  */
 export async function fetchData<T = {} | []>(url: string, retryCount = 0): Promise<T> {
   // Skip if authentication is in progress
@@ -34,7 +30,6 @@ export async function fetchData<T = {} | []>(url: string, retryCount = 0): Promi
   }
   
   try {
-    // Get headers with authentication token
     const headers = await getHeadersAsync();
     
     const response = await fetch(url, { headers });
@@ -43,7 +38,7 @@ export async function fetchData<T = {} | []>(url: string, retryCount = 0): Promi
       if (response.status === 401) {
         if (retryCount < MAX_RETRIES) {
           // Token invalid, refresh it
-          await getTokenSafely(); // This will trigger a token refresh if needed
+          await getTokenSafely();
           
           // Retry with exponential backoff
           const delay = RETRY_DELAY_BASE_MS * Math.pow(2, retryCount);
@@ -74,11 +69,6 @@ export async function fetchData<T = {} | []>(url: string, retryCount = 0): Promi
 
 /**
  * Execute a GraphQL query with caching, retry and authentication handling
- * 
- * @param query GraphQL query string
- * @param variables Query variables
- * @param retryCount Current retry attempt (used internally for recursion)
- * @returns Promise resolving to the query result
  */
 export async function executeGraphQLQuery<T = any>(
   query: string, 
@@ -103,7 +93,6 @@ export async function executeGraphQLQuery<T = any>(
   }
   
   try {
-    // Get token for authentication
     const token = await getTokenSafely();
     
     const response = await fetch(GITHUB_GRAPHQL_API, {
@@ -119,7 +108,7 @@ export async function executeGraphQLQuery<T = any>(
       if (response.status === 401) {
         if (retryCount < MAX_RETRIES) {
           // Token invalid - refresh it and retry with exponential backoff
-          await getTokenSafely(); // This will trigger a token refresh if needed
+          await getTokenSafely();
           
           const delay = RETRY_DELAY_BASE_MS * Math.pow(2, retryCount);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -163,10 +152,6 @@ export async function executeGraphQLQuery<T = any>(
 
 /**
  * Perform a POST request to GitHub API
- * 
- * @param url API endpoint URL
- * @param body Request body
- * @returns Promise resolving to the Response object
  */
 export async function postData(url: string, body: any): Promise<Response> {
   try {

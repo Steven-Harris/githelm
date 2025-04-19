@@ -25,7 +25,6 @@ import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
 import { type AuthState, type Configs, type RepoConfig } from './types';
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
   authDomain: "githelm.firebaseapp.com",
@@ -36,7 +35,6 @@ const firebaseConfig = {
   measurementId: "G-7HWYDWLL6P"
 };
 
-// Store for signaling authentication state to the app
 export const authState = writable<AuthState>('initializing');
 
 /**
@@ -46,7 +44,7 @@ export const authState = writable<AuthState>('initializing');
 class FirebaseClient {
   public loading: Writable<boolean> = writable(false);
   public user: Writable<User | null> = writable();
-  public authState = authState; // Expose authState publicly
+  public authState = authState;
   
   private db: Firestore;
   private auth: Auth;
@@ -55,10 +53,6 @@ class FirebaseClient {
   private interval: NodeJS.Timeout | undefined;
   private authInProgress = false;
 
-  /**
-   * Initialize Firebase client
-   * @param options Optional configuration options
-   */
   constructor(private readonly options: {
     enableLogging?: boolean;
   } = {}) {
@@ -68,17 +62,9 @@ class FirebaseClient {
     this.provider = new GithubAuthProvider();
     this.provider.addScope("repo");
     
-    if (this.options.enableLogging) {
-      console.log('Firebase Client initialized');
-    }
-    
     this.initAuth();
   }
 
-  /**
-   * Initialize Firebase authentication
-   * Sets up auth state listener and token refresh
-   */
   private async initAuth() {
     authState.set('initializing');
     await setPersistence(this.auth, browserLocalPersistence);
@@ -106,12 +92,7 @@ class FirebaseClient {
     });
   }
 
-  /**
-   * Setup token refresh mechanism for GitHub OAuth token
-   * @param user Firebase user
-   */
   private async startTokenRefresh(user: User) {
-    // Clear any existing refresh interval
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = undefined;
@@ -119,36 +100,23 @@ class FirebaseClient {
     
     const githubToken = getGithubToken();
     if (githubToken) {
-      // Validate the existing GitHub token
       try {
         const isValid = await this.validateGithubToken(githubToken);
         if (!isValid) {
-          if (this.options.enableLogging) {
-            console.log('GitHub token invalid, initiating re-auth');
-          }
           authState.set('authenticating');
           await this.reLogin();
           return;
         }
-        if (this.options.enableLogging) {
-          console.log('GitHub token is valid');
-        }
       } catch (error) {
-        console.error('Error validating GitHub token:', error);
         authState.set('authenticating');
         await this.reLogin();
         return;
       }
     } else {
-      // No GitHub token, need to refresh
       try {
-        if (this.options.enableLogging) {
-          console.log('No GitHub token found, refreshing');
-        }
         authState.set('authenticating');
         await this.refreshGithubToken();
       } catch (error) {
-        console.error('Error refreshing GitHub token:', error);
         authState.set('error');
         await this.signOut();
         return;
@@ -166,18 +134,12 @@ class FirebaseClient {
         authState.set('authenticated');
         this.loading.set(false);
       } catch (error) {
-        console.error('Error in token refresh interval:', error);
         authState.set('error');
         this.signOut();
       }
     }, this.refreshInterval);
   }
 
-  /**
-   * Validate if a GitHub token is valid
-   * @param token GitHub OAuth token
-   * @returns Promise resolving to true if token is valid
-   */
   private async validateGithubToken(token: string): Promise<boolean> {
     try {
       const response = await fetch('https://api.github.com/user', {
@@ -187,19 +149,12 @@ class FirebaseClient {
       });
       return response.status === 200;
     } catch (error) {
-      console.error('Error validating token:', error);
       return false;
     }
   }
 
-  /**
-   * Refresh GitHub OAuth token
-   */
   public async refreshGithubToken() {
     if (this.authInProgress) {
-      if (this.options.enableLogging) {
-        console.log('Auth already in progress, waiting...');
-      }
       return;
     }
     
@@ -210,26 +165,17 @@ class FirebaseClient {
         throw new Error('User is not authenticated');
       }
       
-      // For direct Firebase->GitHub token refresh
-      // We need to re-authenticate to get a fresh GitHub OAuth token
       await this.reLogin();
       
       this.authInProgress = false;
     } catch (error) {
       this.authInProgress = false;
-      console.error('Failed to refresh GitHub token:', error);
       throw error;
     }
   }
 
-  /**
-   * Sign in with GitHub via Firebase
-   */
   public async signIn() {
     if (this.authInProgress) {
-      if (this.options.enableLogging) {
-        console.log('Auth already in progress, waiting...');
-      }
       return;
     }
     
@@ -240,20 +186,12 @@ class FirebaseClient {
       const result = await signInWithPopup(this.auth, this.provider);
       const credential = GithubAuthProvider.credentialFromResult(result);
       
-      // Extract the GitHub OAuth access token from the credential
       if (credential?.accessToken) {
-        if (this.options.enableLogging) {
-          console.log('Received GitHub OAuth token');
-        }
         setGithubToken(credential.accessToken);
         authState.set('authenticated');
       } else if (result.user) {
-        // Try to get the token from the additional user info
         const additionalUserInfo = (result as any)._tokenResponse;
         if (additionalUserInfo?.oauthAccessToken) {
-          if (this.options.enableLogging) {
-            console.log('Extracted GitHub OAuth token from additional user info');
-          }
           setGithubToken(additionalUserInfo.oauthAccessToken);
           authState.set('authenticated');
         } else {
@@ -272,14 +210,8 @@ class FirebaseClient {
     }
   }
 
-  /**
-   * Re-authenticate the user to refresh tokens
-   */
   public async reLogin() {
     if (this.authInProgress) {
-      if (this.options.enableLogging) {
-        console.log('Auth already in progress, waiting...');
-      }
       return;
     }
     
@@ -298,9 +230,6 @@ class FirebaseClient {
     }
   }
 
-  /**
-   * Sign out the user and clear data
-   */
   public async signOut() {
     await signOut(this.auth);
     clearSiteData();
@@ -312,10 +241,6 @@ class FirebaseClient {
     }
   }
 
-  /**
-   * Get user configurations from Firestore
-   * @returns Promise resolving to user configurations
-   */
   public async getConfigs(): Promise<Configs> {
     const user = get(this.user);
     if (!user?.uid) {
@@ -329,16 +254,10 @@ class FirebaseClient {
       return { pullRequests: [], actions: [] };
     }
 
-    // Parse and map the configurations
     const data = docSnap.data() as Configs;
     return this.mapConfigs(data);
   }
 
-  /**
-   * Save user configurations to Firestore
-   * @param prConfig Pull request configurations
-   * @param actionsConfig Actions configurations
-   */
   public async saveConfigs(prConfig: RepoConfig[], actionsConfig: RepoConfig[]) {
     const user = get(this.user);
     if (!user) {
@@ -352,9 +271,6 @@ class FirebaseClient {
     });
   }
   
-  /**
-   * Map configs to ensure consistent format
-   */
   private mapConfigs(configs: Configs): Configs {
     return {
       pullRequests: this.mapRepoConfigs(configs.pullRequests),
@@ -362,9 +278,6 @@ class FirebaseClient {
     };
   }
   
-  /**
-   * Map repository configurations to ensure consistent format
-   */
   private mapRepoConfigs(configs: RepoConfig[]): RepoConfig[] {
     return configs.map(config => ({
       org: config.org,
@@ -374,7 +287,6 @@ class FirebaseClient {
   }
 }
 
-// Create and export a default Firebase client instance
 export const firebase = new FirebaseClient({
   enableLogging: false
 });
