@@ -3,7 +3,6 @@
   import { fetchMultipleRepositoriesPullRequests, type PullRequest } from "$integrations/github";
   import { getStorageObject, setStorageObject } from "$integrations/storage";
   import createPollingStore from "$stores/polling.store";
-  import { derived, type Readable } from "svelte/store";
   import { onMount } from "svelte";
   import PullRequests from "./List.svelte";
 

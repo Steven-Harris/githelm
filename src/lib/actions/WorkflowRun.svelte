@@ -1,24 +1,12 @@
 <script lang="ts">
-  import { type Job, fetchWorkflowJobs } from "$integrations/github";
-  import createPollingStore from "$stores/polling.store";
-  import { onDestroy, onMount } from "svelte";
+  import { type Job } from "$integrations/github";
 
-  let { org, repo, run } = $props();
-
-  const key = `${org}-${repo}-${run.id}-jobs`;
-  let jobs: Job[] = $state([]);
-  let unsubscribe: () => void;
-  onMount(async () => {
-    const jobsStore = createPollingStore<Job[]>(key, () => fetchWorkflowJobs(org, repo, run.id));
-    unsubscribe = jobsStore.subscribe((value) => {
-      jobs = value;
-    });
-  });
-
-  onDestroy(() => {
-    unsubscribe?.();
-  });
-
+  let { org, repo, run, jobs = [] } = $props<{
+    org: string;
+    repo: string;
+    run: any;
+    jobs: Job[];
+  }>();
 
   const jobColor = (job: Job) => {
     if (job.status === "completed" && job.conclusion === "success") {

@@ -25,14 +25,19 @@ export interface Configs {
   actions: RepoConfig[];
 }
 
+// Store for signaling authentication state to the app
+export const authState = writable<'initializing' | 'authenticating' | 'authenticated' | 'error' | 'unauthenticated'>('initializing');
+
 class Firebase {
   public loading: Writable<boolean> = writable(false);
   public user: Writable<User | null> = writable();
+  public authState = authState; // Expose authState publicly
   private db: Firestore;
   private provider: GithubAuthProvider;
   private auth: Auth;
   private refreshInterval: number = 60 * 60 * 1000;
   private interval: NodeJS.Timeout | undefined;
+  private authInProgress = false;
 
   constructor() {
     const app = initializeApp(firebaseConfig);
@@ -44,76 +49,195 @@ class Firebase {
   }
 
   private async initAuth() {
+    authState.set('initializing');
     await setPersistence(this.auth, browserLocalPersistence);
     this.auth.onAuthStateChanged(async (user: User | null) => {
       if (!user) {
+        authState.set('unauthenticated');
         this.signOut();
         return;
       }
       this.user.set(user);
       const tokenResult = await user.getIdTokenResult();
       const isExpired = new Date(tokenResult.expirationTime) < new Date();
-      isExpired ? this.signOut() : this.startTokenRefresh(user);
+      if (isExpired) {
+        authState.set('unauthenticated');
+        this.signOut();
+      } else {
+        await this.startTokenRefresh(user);
+        authState.set('authenticated');
+        
+        // Initialize GitHub auth handling
+        this.initGitHubAuthHandling();
+      }
       this.loading.set(false);
+    });
+  }
+  
+  // Add method to initialize GitHub auth handling
+  private initGitHubAuthHandling() {
+    // Import here to avoid circular dependency
+    import('./github').then(github => {
+      if (github.initAuthStateHandling) {
+        github.initAuthStateHandling();
+      }
+    }).catch(err => {
+      console.error('Failed to initialize GitHub auth handling:', err);
     });
   }
 
   private async startTokenRefresh(user: User) {
+    // Clear any existing refresh interval
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = undefined;
+    }
+    
     const githubToken = getGithubToken();
     if (githubToken) {
-      const isValid = await isGithubTokenValid(githubToken);
-      if (!isValid) {
+      // Validate the existing GitHub token
+      try {
+        const isValid = await isGithubTokenValid(githubToken);
+        if (!isValid) {
+          console.log('GitHub token invalid, initiating re-auth');
+          authState.set('authenticating');
+          await this.reLogin();
+          return;
+        }
+        // Token is valid, no need to refresh
+        console.log('GitHub token is valid');
+      } catch (error) {
+        console.error('Error validating GitHub token:', error);
+        authState.set('authenticating');
         await this.reLogin();
         return;
       }
-      this.refreshGHToken()
+    } else {
+      // No GitHub token, need to refresh
+      try {
+        console.log('No GitHub token found, refreshing');
+        authState.set('authenticating');
+        await this.refreshGHToken();
+      } catch (error) {
+        console.error('Error refreshing GitHub token:', error);
+        authState.set('error');
+        await this.signOut();
+        return;
+      }
     }
 
     this.user.set(user);
-    clearInterval(this.interval);
     this.interval = setInterval(async () => {
       try {
         this.loading.set(true);
-        this.refreshGHToken()
+        authState.set('authenticating');
+        await this.refreshGHToken();
+        authState.set('authenticated');
         this.loading.set(false);
       } catch (error) {
+        console.error('Error in token refresh interval:', error);
+        authState.set('error');
         this.signOut();
       }
     }, this.refreshInterval);
   }
 
   public async refreshGHToken() {
-    const currentUser = get(this.user);
-    if (!currentUser) {
-      throw new Error('User is not authenticated');
+    if (this.authInProgress) {
+      console.log('Auth already in progress, waiting...');
+      return;
     }
-    const token = await currentUser.getIdToken(true);
-    setGithubToken(token);
+    
+    this.authInProgress = true;
+    try {
+      const currentUser = get(this.user);
+      if (!currentUser) {
+        throw new Error('User is not authenticated');
+      }
+      
+      // For direct Firebase->GitHub token refresh
+      // We need to re-authenticate to get a fresh GitHub OAuth token
+      await this.reLogin();
+      
+      this.authInProgress = false;
+    } catch (error) {
+      this.authInProgress = false;
+      console.error('Failed to refresh GitHub token:', error);
+      throw error;
+    }
   }
 
   public async signIn() {
+    if (this.authInProgress) {
+      console.log('Auth already in progress, waiting...');
+      return;
+    }
+    
+    this.authInProgress = true;
+    authState.set('authenticating');
+    
     try {
       const result = await signInWithPopup(this.auth, this.provider);
       const credential = GithubAuthProvider.credentialFromResult(result);
-      if (credential) {
-        const token = credential.accessToken;
-        setGithubToken(token);
+      
+      // Extract the GitHub OAuth access token from the credential
+      if (credential?.accessToken) {
+        console.log('Received GitHub OAuth token');
+        setGithubToken(credential.accessToken);
+        authState.set('authenticated');
+      } else if (result.user) {
+        // Try to get the token from the additional user info
+        const additionalUserInfo = (result as any)._tokenResponse;
+        if (additionalUserInfo?.oauthAccessToken) {
+          console.log('Extracted GitHub OAuth token from additional user info');
+          setGithubToken(additionalUserInfo.oauthAccessToken);
+          authState.set('authenticated');
+        } else {
+          console.error('No GitHub token found in auth response');
+          authState.set('error');
+        }
+      } else {
+        console.error('No credential or user returned from auth');
+        authState.set('error');
       }
     } catch (error) {
       console.error('Error signing in:', error);
+      authState.set('error');
+    } finally {
+      this.authInProgress = false;
     }
   }
 
   public async reLogin() {
-    await signOut(this.auth);
-    setGithubToken(undefined);
-    await this.signIn();
+    if (this.authInProgress) {
+      console.log('Auth already in progress, waiting...');
+      return;
+    }
+    
+    this.authInProgress = true;
+    authState.set('authenticating');
+    
+    try {
+      await signOut(this.auth);
+      setGithubToken(undefined);
+      await this.signIn();
+    } catch (error) {
+      console.error('Error during relogin:', error);
+      authState.set('error');
+    } finally {
+      this.authInProgress = false;
+    }
   }
 
   public async signOut() {
     await signOut(this.auth);
     clearSiteData();
     this.user.set(null);
+    authState.set('unauthenticated');
+    if (this.interval) {
+      clearInterval(this.interval);
+      this.interval = undefined;
+    }
   }
 
   public async getConfigs(): Promise<Configs> {
