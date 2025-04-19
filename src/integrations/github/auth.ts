@@ -5,7 +5,7 @@
 
 import { get } from 'svelte/store';
 import { firebase } from '../firebase';
-import { getGithubToken } from '../storage';
+import { getGithubToken, setGithubToken } from '../storage';
 
 // Constants
 const MAX_RETRIES = 2;
@@ -154,13 +154,15 @@ export async function refreshTokenSafely(): Promise<string> {
   tokenRefreshPromise = (async () => {
     try {
       console.log('Refreshing GitHub token...');
-      await firebase.refreshGHToken();
+      await firebase.refreshGithubToken();
       const newToken = getGithubToken();
       if (!newToken) {
-        throw new Error('Failed to get GitHub token after refresh');
+        throw new Error('Failed to refresh GitHub token');
       }
-      console.log('Token refresh complete');
       return newToken;
+    } catch (error) {
+      console.error("Error refreshing GitHub token:", error);
+      throw new Error('Failed to refresh GitHub token');
     } finally {
       isRefreshingToken = false;
       tokenRefreshPromise = null;
@@ -168,6 +170,16 @@ export async function refreshTokenSafely(): Promise<string> {
   })();
   
   return tokenRefreshPromise;
+}
+
+/**
+ * Set the GitHub token in storage
+ * @param token The GitHub token to store
+ */
+function setToken(token: string | null): void {
+  if (token) {
+    setGithubToken(token);
+  }
 }
 
 /**

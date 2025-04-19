@@ -1,45 +1,15 @@
 /**
- * GitHub Integration Main Module
- * Entry point for GitHub API functionality
+ * GitHub Integration (Legacy Adapter)
+ * 
+ * This file exists for backward compatibility.
+ * All new code should import directly from the new modular GitHub implementation.
  */
 
-import { 
-  githubClient,
-  type PullRequest,
-  type Review,
-  type WorkflowRun,
-  type Job,
-  type Repository,
-  type PendingDeployments
-} from './github/index';
+// Re-export all types and functions from the new modular GitHub implementation
+export * from './github/index';
 
-// Export the GitHub client for easier access
-export const github = githubClient;
+// Re-export the default GitHub client
+export { github } from './github/index';
 
-// Re-export necessary types for backwards compatibility
-export type {
-  PullRequest,
-  Review,
-  WorkflowRun,
-  Job,
-  Repository,
-  PendingDeployments
-};
-
-// Re-export the functions needed by other parts of the application
-// This maintains backwards compatibility with existing code
-export {
-  initAuthStateHandling,
-  isGithubTokenValid,
-  fetchActions,
-  fetchPullRequests,
-  fetchPullRequestsWithGraphQL,
-  fetchReviews,
-  fetchWorkflowJobs,
-  fetchMultipleWorkflowJobs,
-  getPendingEnvironments,
-  reviewDeployment,
-  searchUserRepositories,
-  searchRepositoryLabels,
-  fetchMultipleRepositoriesPullRequests
-} from './github/index';
+// Re-export auth handling function for backward compatibility
+export { initAuthStateHandling } from './github/auth';
