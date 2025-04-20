@@ -68,7 +68,8 @@ export async function fetchData<T = {} | []>(url: string, retryCount = 0): Promi
 }
 
 /**
- * Execute a GraphQL query with caching, retry and authentication handling
+ * Execute a GraphQL query with retry and authentication handling
+ * Caching is managed by the polling store, not here
  */
 export async function executeGraphQLQuery<T = any>(
   query: string, 
@@ -81,15 +82,6 @@ export async function executeGraphQLQuery<T = any>(
     return queueApiCallIfNeeded(async () => {
       return executeGraphQLQuery<T>(query, variables);
     });
-  }
-  
-  // Check cache first
-  const cacheKey = `graphql-${JSON.stringify(variables)}`;
-  const cachedData = getStorageObject<T>(cacheKey);
-  
-  // Return cached data if it exists and is less than 5 minutes old
-  if (cachedData.lastUpdated > Date.now() - 5 * 60 * 1000) {
-    return cachedData.data;
   }
   
   try {
@@ -140,7 +132,8 @@ export async function executeGraphQLQuery<T = any>(
       throw new Error(`GraphQL returned errors: ${JSON.stringify(result.errors)}`);
     }
     
-    // Cache the successful response
+    // Cache the successful response with the key that includes variables
+    const cacheKey = `graphql-${JSON.stringify(variables)}`;
     setStorageObject(cacheKey, result.data);
     
     return result.data;

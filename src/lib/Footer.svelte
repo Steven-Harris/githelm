@@ -1,38 +1,29 @@
 <script lang="ts">
   import refreshSVG from "$assets/refresh.svg";
+  import { onMount } from "svelte";
   import { lastUpdatedStore, manualTrigger } from "./stores/last-updated.store";
   import { page } from "$app/state";
 
   const year = new Date().getFullYear();
-  
-  // Use derived to safely access page properties with null checking
-  let isConfig = $derived(() => {
-    return page?.url?.pathname === "/config";
-  });
-  
-  // Format the last updated time using derived state
-  let formattedLastUpdate = $derived(() => {
-    const lastUpdatedValue = lastUpdatedStore();
-    if (lastUpdatedValue === undefined || lastUpdatedValue === null) return "";
-    
-    // Ensure we're working with a number
-    let value = Number(lastUpdatedValue);
-    if (isNaN(value) || value <= 0) return "";
-    
-    const units = [
-      { label: "d", mod: 86400 },
-      { label: "h", mod: 3600 },
-      { label: "m", mod: 60 },
-      { label: "s", mod: 1 },
-    ];
+  let isConfig = $derived(page.url.pathname === "/config");   
+  let lastUpdated = $state("");
+  onMount(() => {
+    lastUpdatedStore().subscribe((value) => {
+      const units = [
+        { label: "d", mod: 86400 },
+        { label: "h", mod: 3600 },
+        { label: "m", mod: 60 },
+        { label: "s", mod: 1 },
+      ];
 
-    return units
-      .reduce((acc, { label, mod }) => {
-        const unitValue = Math.floor(value / mod);
-        value %= mod;
-        return unitValue > 0 ? `${acc} ${unitValue}${label}` : acc;
-      }, "")
-      .trim();
+      lastUpdated = units
+        .reduce((acc, { label, mod }) => {
+          const unitValue = Math.floor(value / mod);
+          value %= mod;
+          return unitValue > 0 ? `${acc} ${unitValue}${label}` : acc;
+        }, "")
+        .trim();
+    });
   });
 
   function refresh() {
@@ -46,9 +37,9 @@
       &copy;{year} GitHelm. All rights reserved.</a
     >
   </div>
-  {#if formattedLastUpdate && !isConfig}
+  {#if lastUpdated != "" && !isConfig}
     <div class="flex-1 text-center text-gray-400">
-      Last updated: {formattedLastUpdate} ago
+      Last updated: {lastUpdated} ago
       <button type="button" title="refresh content" aria-label="refresh content" id="refresh-button" class="p-0 cursor-pointer" onclick={refresh}>
         <img src={refreshSVG} title="refresh" alt="refresh" width="15" height="15" class="pt-2 size-5 mt-0 text-gray-400" />
       </button>
