@@ -1,41 +1,13 @@
-/**
- * GitHub Actions Module
- * Handles all GitHub Actions workflows related operations including jobs and deployments
- */
-
 import { fetchData, postData } from './api-client';
-import { queueApiCallIfNeeded, getHeadersAsync } from './auth';
-import {
-  type Workflow,
-  type WorkflowRun,
-  type WorkflowJobs,
-  type Job,
-  type Step,
-  type PendingDeployments
-} from './types';
+import { queueApiCallIfNeeded } from './auth';
+import { type Workflow,  type WorkflowRun,  type WorkflowJobs,  type Job,  type Step,  type PendingDeployments } from './types';
 
-/**
- * Fetch workflow data for the specified GitHub actions
- * 
- * @param org Organization name
- * @param repo Repository name
- * @param actions Array of action names/paths
- * @returns Promise resolving to workflows array
- */
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
   return queueApiCallIfNeeded(async () => {
     return Promise.all(actions.map(action => fetchSingleWorkflow(org, repo, action)));
   });
 }
 
-/**
- * Fetch data for a single workflow action
- * 
- * @param org Organization name
- * @param repo Repository name
- * @param action Action name/path
- * @returns Promise resolving to a workflow
- */
 async function fetchSingleWorkflow(org: string, repo: string, action: string): Promise<Workflow> {
   const data = await fetchData<Workflow>(
     `https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`
@@ -52,14 +24,6 @@ async function fetchSingleWorkflow(org: string, repo: string, action: string): P
   };
 }
 
-/**
- * Process a single workflow run, fetching its jobs and enhancing the data structure
- * 
- * @param org Organization name
- * @param repo Repository name
- * @param run Workflow run object
- * @returns Promise resolving to enhanced workflow run
- */
 async function processWorkflowRun(org: string, repo: string, run: WorkflowRun): Promise<WorkflowRun> {
   const jobs = await fetchWorkflowJobs(org, repo, run.id.toString());
   
@@ -75,19 +39,12 @@ async function processWorkflowRun(org: string, repo: string, run: WorkflowRun): 
   };
 }
 
-/**
- * Filter steps to only include relevant ones based on status and conclusion
- * 
- * @param steps Array of workflow steps
- * @returns Filtered array of workflow steps
- */
 export function filterSuccessfulSteps(steps: Step[]): Step[] {
   return steps.filter(step => {
     if (step.status !== 'completed') {
       return false;
     }
     
-    // Keep successful steps or failed steps, but skip skipped ones
     if (step.conclusion === 'success') {
       return true;
     } else if (step.conclusion === 'skipped') {
@@ -98,14 +55,6 @@ export function filterSuccessfulSteps(steps: Step[]): Step[] {
   });
 }
 
-/**
- * Fetch jobs for a specific workflow run with caching
- * 
- * @param org Organization name
- * @param repo Repository name
- * @param runId Run ID
- * @returns Promise resolving to jobs array
- */
 export async function fetchWorkflowJobs(org: string, repo: string, runId: string): Promise<Job[]> {
   return queueApiCallIfNeeded(async () => {
     const key = `${org}/${repo}:${runId}`;
@@ -121,7 +70,6 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
       }
     }
 
-    // Fetch from API if not in cache
     const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
     
     let allSuccess = true;
@@ -149,12 +97,6 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
   });
 }
 
-/**
- * Fetch jobs for multiple workflow runs in a batch to reduce API calls
- * 
- * @param workflowRuns Array of workflow runs to fetch jobs for
- * @returns Promise resolving to record of run keys to jobs arrays
- */
 export async function fetchMultipleWorkflowJobs(
   workflowRuns: Array<{org: string, repo: string, runId: string}>
 ): Promise<Record<string, Job[]>> {
@@ -176,7 +118,7 @@ export async function fetchMultipleWorkflowJobs(
         }
       }
       
-      return true; // Need to fetch if not in cache
+      return true; // Need to fetch this run
     });
     
     // If we have runs that need fetching
@@ -209,51 +151,4 @@ export async function fetchMultipleWorkflowJobs(
     
     return results;
   });
-}
-
-/**
- * Get pending deployment environments for a workflow run
- * 
- * @param org Organization name
- * @param repo Repository name
- * @param runId Run ID
- * @returns Promise resolving to pending deployments array
- */
-export async function getPendingEnvironments(
-  org: string, 
-  repo: string, 
-  runId: string
-): Promise<PendingDeployments[]> {
-  return await fetchData<PendingDeployments[]>(
-    `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`
-  );
-}
-
-/**
- * Review a pending deployment (approve or reject)
- * 
- * @param org Organization name
- * @param repo Repository name
- * @param runId Run ID
- * @param envIds Array of environment IDs
- * @param state Approval state ('approved' or 'rejected')
- * @param comment Review comment
- * @returns Promise resolving to fetch response
- */
-export async function reviewDeployment(
-  org: string, 
-  repo: string, 
-  runId: string, 
-  envIds: number[], 
-  state: string, 
-  comment: string
-): Promise<Response> {
-  return await postData(
-    `https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/pending_deployments`,
-    {
-      state: state,
-      environment_ids: envIds,
-      comment: comment
-    }
-  );
 }

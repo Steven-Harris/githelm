@@ -1,54 +1,29 @@
 <script lang="ts">
-  import { type RepoConfig, firebase } from "$integrations/firebase";
-  import { fetchMultipleRepositoriesPullRequests, type PullRequest } from "$integrations/github";
-  import { getStorageObject, setStorageObject } from "$integrations/storage";
-  import createPollingStore from "$stores/polling.store";
+  import { type RepoConfig } from "$integrations/firebase";
   import { onMount } from "svelte";
+  import { 
+    loadRepositoryConfigs, 
+    initializePullRequestsPolling, 
+    allPullRequests 
+  } from "$lib/stores/repository-service";
   import PullRequests from "./List.svelte";
 
   let configs: RepoConfig[] = $state([]);
-  let allPullRequests: Record<string, PullRequest[]> = $state({});
-  
-  onMount(async () => {
-    const prConfigs = getStorageObject<RepoConfig[]>("pull-requests-configs");
-    configs = prConfigs.data || [];
+  let unsubscribe: (() => void) | undefined;
+
+  onMount(() => {
+    loadData();
     
-    if (prConfigs.lastUpdated === 0) {
-      const { pullRequests } = await firebase.getConfigs();
-      if (pullRequests.length > 0) {
-        configs = pullRequests;
-        setStorageObject("pull-requests-configs", configs);
-      }
-    }
-    
-    // Start polling for pull requests if we have configs
-    if (configs.length > 0) {
-      initializePullRequestsPolling(configs);
-    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   });
-  
-  function initializePullRequestsPolling(repoConfigs: RepoConfig[]) {
-    // Create inputs for fetchMultipleRepositoriesPullRequests
-    const pullRequestParams = repoConfigs.map(config => ({
-      org: config.org,
-      repo: config.repo,
-      filters: config.filters || []
-    }));
-    
-    // Create a polling store for all pull requests
-    const pullRequestsStore = createPollingStore<Record<string, PullRequest[]>>(
-      'all-pull-requests',
-      () => fetchMultipleRepositoriesPullRequests(pullRequestParams)
-    );
-    
-    // Subscribe to the store
-    const unsubscribe = pullRequestsStore.subscribe(prs => {
-      if (prs) {
-        allPullRequests = prs;
-      }
-    });
-    
-    return () => unsubscribe();
+
+  async function loadData() {
+    configs = await loadRepositoryConfigs('pull-requests');
+    if (configs.length > 0) {
+      unsubscribe = initializePullRequestsPolling(configs);
+    }
   }
 </script>
 
@@ -62,7 +37,7 @@
         <PullRequests 
           org={config.org} 
           repo={config.repo} 
-          pullRequests={allPullRequests[`${config.org}/${config.repo}`] || []} 
+          pullRequests={$allPullRequests[`${config.org}/${config.repo}`] || []} 
         />
       {/each}
     </ul>

@@ -1,5 +1,5 @@
 /**
- * Firebase Client Implementation
+ * Firebase Authentication Client Implementation
  */
 
 import { initializeApp } from 'firebase/app';
@@ -13,17 +13,10 @@ import {
   type Auth, 
   type User 
 } from 'firebase/auth';
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getFirestore, 
-  setDoc, 
-  type Firestore 
-} from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
-import { type AuthState, type Configs, type RepoConfig } from './types';
+import { type AuthState } from './types';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -37,29 +30,20 @@ const firebaseConfig = {
 
 export const authState = writable<AuthState>('initializing');
 
-/**
- * Firebase Client Class
- * Handles authentication, token management, and Firestore operations
- */
-class FirebaseClient {
+class FirebaseAuthClient {
   public loading: Writable<boolean> = writable(false);
   public user: Writable<User | null> = writable();
   public authState = authState;
   
-  private db: Firestore;
-  private auth: Auth;
-  private provider: GithubAuthProvider;
+  private db = getFirestore(initializeApp(firebaseConfig));
+  private auth = getAuth();
+  private provider = new GithubAuthProvider();
   private refreshInterval: number = 60 * 60 * 1000; // 1 hour
   private interval: NodeJS.Timeout | undefined;
   private authInProgress = false;
-
+  
   constructor() {
-    const app = initializeApp(firebaseConfig);
-    this.db = getFirestore(app);
-    this.auth = getAuth(app);
-    this.provider = new GithubAuthProvider();
     this.provider.addScope("repo");
-    
     this.initAuth();
   }
 
@@ -76,28 +60,41 @@ class FirebaseClient {
       
       this.user.set(user);
       const tokenResult = await user.getIdTokenResult();
-      const isExpired = new Date(tokenResult.expirationTime) < new Date();
       
-      if (isExpired) {
+      if (new Date(tokenResult.expirationTime) < new Date()) {
         authState.set('unauthenticated');
-        this.signOut();
-      } else {
-        await this.startTokenRefresh(user);
-        authState.set('authenticated');
+        await this.signOut();
+        return;
       }
       
+      await this.startTokenRefresh(user);
+      authState.set('authenticated');
       this.loading.set(false);
     });
   }
 
   private async startTokenRefresh(user: User) {
+    // Clear any existing refresh interval
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = undefined;
     }
     
     const githubToken = getGithubToken();
-    if (githubToken) {
+    
+    // No token available - need to get one
+    if (!githubToken) {
+      authState.set('authenticating');
+      try {
+        await this.refreshGithubToken();
+      } catch (error) {
+        authState.set('error');
+        await this.signOut();
+        return;
+      }
+    } 
+    // Verify existing token validity
+    else {
       try {
         const isValid = await this.validateGithubToken(githubToken);
         if (!isValid) {
@@ -110,43 +107,35 @@ class FirebaseClient {
         await this.reLogin();
         return;
       }
-    } else {
-      try {
-        authState.set('authenticating');
-        await this.refreshGithubToken();
-      } catch (error) {
-        authState.set('error');
-        await this.signOut();
-        return;
-      }
     }
 
     this.user.set(user);
     
     // Set up periodic token refresh
-    this.interval = setInterval(async () => {
-      try {
-        this.loading.set(true);
-        authState.set('authenticating');
-        await this.refreshGithubToken();
-        authState.set('authenticated');
-        this.loading.set(false);
-      } catch (error) {
-        authState.set('error');
-        this.signOut();
-      }
-    }, this.refreshInterval);
+    this.interval = setInterval(this.refreshTokenPeriodically.bind(this), this.refreshInterval);
+  }
+  
+  private async refreshTokenPeriodically() {
+    try {
+      this.loading.set(true);
+      authState.set('authenticating');
+      await this.refreshGithubToken();
+      authState.set('authenticated');
+    } catch (error) {
+      authState.set('error');
+      await this.signOut();
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async validateGithubToken(token: string): Promise<boolean> {
     try {
       const response = await fetch('https://api.github.com/user', {
-        headers: {
-          Authorization: `token ${token}`
-        }
+        headers: { Authorization: `token ${token}` }
       });
       return response.status === 200;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -157,18 +146,19 @@ class FirebaseClient {
     }
     
     this.authInProgress = true;
+    
+    const currentUser = get(this.user);
+    if (!currentUser) {
+      this.authInProgress = false;
+      throw new Error('User is not authenticated');
+    }
+    
     try {
-      const currentUser = get(this.user);
-      if (!currentUser) {
-        throw new Error('User is not authenticated');
-      }
-      
       await this.reLogin();
-      
-      this.authInProgress = false;
     } catch (error) {
-      this.authInProgress = false;
       throw error;
+    } finally {
+      this.authInProgress = false;
     }
   }
 
@@ -184,22 +174,29 @@ class FirebaseClient {
       const result = await signInWithPopup(this.auth, this.provider);
       const credential = GithubAuthProvider.credentialFromResult(result);
       
+      // First try to get token from credential
       if (credential?.accessToken) {
         setGithubToken(credential.accessToken);
         authState.set('authenticated');
-      } else if (result.user) {
-        const additionalUserInfo = (result as any)._tokenResponse;
-        if (additionalUserInfo?.oauthAccessToken) {
-          setGithubToken(additionalUserInfo.oauthAccessToken);
-          authState.set('authenticated');
-        } else {
-          console.error('No GitHub token found in auth response');
-          authState.set('error');
-        }
-      } else {
+        return;
+      }
+      
+      // No credential but we have a user, try to get token from additionalUserInfo
+      if (!result.user) {
         console.error('No credential or user returned from auth');
         authState.set('error');
+        return;
       }
+      
+      const additionalUserInfo = (result as any)._tokenResponse;
+      if (!additionalUserInfo?.oauthAccessToken) {
+        console.error('No GitHub token found in auth response');
+        authState.set('error');
+        return;
+      }
+      
+      setGithubToken(additionalUserInfo.oauthAccessToken);
+      authState.set('authenticated');
     } catch (error) {
       console.error('Error signing in:', error);
       authState.set('error');
@@ -233,58 +230,16 @@ class FirebaseClient {
     clearSiteData();
     this.user.set(null);
     authState.set('unauthenticated');
+    
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = undefined;
     }
   }
 
-  public async getConfigs(): Promise<Configs> {
-    const user = get(this.user);
-    if (!user?.uid) {
-      return { pullRequests: [], actions: [] };
-    }
-
-    const docRef = doc(collection(this.db, "configs"), user.uid);
-    const docSnap = await getDoc(docRef);
-
-    if (!docSnap.exists()) {
-      return { pullRequests: [], actions: [] };
-    }
-
-    const data = docSnap.data() as Configs;
-    return this.mapConfigs(data);
-  }
-
-  public async saveConfigs(prConfig: RepoConfig[], actionsConfig: RepoConfig[]) {
-    const user = get(this.user);
-    if (!user) {
-      return;
-    }
-
-    const docRef = doc(collection(this.db, "configs"), user.uid);
-    await setDoc(docRef, { 
-      pullRequests: this.mapRepoConfigs(prConfig), 
-      actions: this.mapRepoConfigs(actionsConfig) 
-    });
-  }
-  
-  private mapConfigs(configs: Configs): Configs {
-    return {
-      pullRequests: this.mapRepoConfigs(configs.pullRequests),
-      actions: this.mapRepoConfigs(configs.actions)
-    };
-  }
-  
-  private mapRepoConfigs(configs: RepoConfig[]): RepoConfig[] {
-    return configs.map(config => ({
-      org: config.org,
-      repo: config.repo,
-      filters: config.filters || []
-    }));
+  public getDb() {
+    return this.db;
   }
 }
 
-export const firebase = new FirebaseClient({
-  enableLogging: false
-});
+export const firebase = new FirebaseAuthClient();

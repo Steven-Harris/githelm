@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type RepoConfig, firebase } from "$integrations/firebase";
+  import { type RepoConfig, firebase, configService } from "$integrations/firebase";
   import { getStorageObject, setStorageObject } from "$integrations/storage";
   import EditActions from "$lib/config/EditActions.svelte";
   import EditPullRequests from "$lib/config/EditPullRequests.svelte";
@@ -19,7 +19,7 @@
 
       setStorageObject("pull-requests-configs", prConfigs);
       setStorageObject("action-configs", actionsConfigs);
-      await firebase.saveConfigs(prConfigs, actionsConfigs);
+      await configService.saveConfigs(prConfigs, actionsConfigs);
       location.assign("/");
     });
   });
@@ -28,7 +28,7 @@
     const storage = getStorageObject<RepoConfig[]>("pull-requests-configs");
     prConfigs = storage.data;
     if (storage.lastUpdated === 0) {
-      const { pullRequests } = await firebase.getConfigs();
+      const { pullRequests } = await configService.getConfigs();
       prConfigs = pullRequests;
       setStorageObject("pull-requests-configs", prConfigs);
     }
@@ -38,7 +38,7 @@
     const storage = getStorageObject<RepoConfig[]>("actions-configs");
     actionsConfigs = storage.data;
     if (storage.lastUpdated === 0) {
-      const { actions } = await firebase.getConfigs();
+      const { actions } = await configService.getConfigs();
       actionsConfigs = actions;
       setStorageObject("actions-configs", actionsConfigs);
     }

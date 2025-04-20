@@ -1,12 +1,7 @@
 <script lang="ts">
   import { type Job } from "$integrations/github";
 
-  let { org, repo, run, jobs = [] } = $props<{
-    org: string;
-    repo: string;
-    run: any;
-    jobs: Job[];
-  }>();
+  let { run, jobs = [] } = $props();
 
   const jobColor = (job: Job) => {
     if (job.status === "completed" && job.conclusion === "success") {
