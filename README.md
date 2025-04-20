@@ -83,18 +83,18 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 2. **Run the Development Server**:
 
    ```sh
-   pnpm run dev
+   pnpm dev
    ```
 
 3. **Build the Application**:
 
    ```sh
-   pnpm run build
+   pnpm build
    ```
 
 4. **Preview the Production Build**:
 
    ```sh
-   pnpm run serve
+   pnpm serve
    ```
 

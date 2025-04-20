@@ -1,28 +1,17 @@
-/**
- * GitHub Authentication Module
- * Handles token management, authentication state, and request queueing
- */
-
 import { get } from 'svelte/store';
 import { firebase } from '../firebase';
 import { getGithubToken, setGithubToken } from '../storage';
 
-// Constants
 const MAX_RETRIES = 2;
 const RETRY_DELAY_BASE_MS = 1000;
 
-// Authentication state management
 let authStateSubscription: Function | null = null;
 let tokenRefreshPromise: Promise<string> | null = null;
 let isRefreshingToken = false;
 
-// Request queue for authentication
 let apiQueue: Array<() => Promise<any>> = [];
 let isProcessingQueue = false;
 
-/**
- * Initialize the GitHub authentication state handling
- */
 export function initAuthStateHandling(): void {
   if (authStateSubscription) {
     authStateSubscription();
@@ -37,9 +26,6 @@ export function initAuthStateHandling(): void {
   }
 }
 
-/**
- * Process all queued API calls after authentication completes
- */
 async function processApiQueue(): Promise<void> {
   if (isProcessingQueue) return;
   
@@ -59,9 +45,6 @@ async function processApiQueue(): Promise<void> {
   isProcessingQueue = false;
 }
 
-/**
- * Get current authentication state
- */
 export function getCurrentAuthState(): string {
   try {
     return get(firebase.authState) || 'initializing';
@@ -71,107 +54,67 @@ export function getCurrentAuthState(): string {
   }
 }
 
-/**
- * Queue an API call if authentication is in progress
- */
 export function queueApiCallIfNeeded<T>(apiCall: () => Promise<T>): Promise<T> {
   const currentAuthState = getCurrentAuthState();
-  
-  if (currentAuthState === 'authenticating' || currentAuthState === 'initializing') {
+
+  if (currentAuthState !== 'authenticated') {
     return new Promise<T>((resolve, reject) => {
-      apiQueue.push(async () => {
-        try {
-          const result = await apiCall();
-          resolve(result);
-        } catch (error) {
-          reject(error);
-        }
-      });
+      apiQueue.push(() => apiCall().then(resolve).catch(reject));
     });
   }
-  
+
   return apiCall();
 }
 
-/**
- * Get GitHub token with refresh synchronization
- */
 export async function getTokenSafely(): Promise<string> {
-  // If auth is in progress, wait for it
   const currentAuthState = getCurrentAuthState();
+
+  if (currentAuthState === 'authenticated') {
+    const token = getGithubToken();
+    return token || refreshTokenSafely();
+  }
+
   if (currentAuthState === 'authenticating' || currentAuthState === 'initializing') {
     return new Promise((resolve, reject) => {
       const unsubscribe = firebase.authState.subscribe(state => {
+        unsubscribe();
         if (state === 'authenticated') {
-          unsubscribe();
           const token = getGithubToken();
-          if (token) {
-            resolve(token);
-          } else {
-            reject(new Error('No token available after authentication'));
-          }
-        } else if (state === 'error' || state === 'unauthenticated') {
-          unsubscribe();
+          token ? resolve(token) : reject(new Error('No token available after authentication'));
+        } else {
           reject(new Error(`Authentication failed with state: ${state}`));
         }
       });
     });
   }
-  
-  // If already refreshing, wait for it to complete
+
   if (isRefreshingToken && tokenRefreshPromise) {
     return tokenRefreshPromise;
   }
-  
-  const token = getGithubToken();
-  if (!token) {
-    // No token available, signal auth needed
-    return refreshTokenSafely();
-  }
-  
-  return token;
+
+  return refreshTokenSafely();
 }
 
-/**
- * Refresh GitHub token with synchronization to prevent multiple simultaneous refreshes
- */
 export async function refreshTokenSafely(): Promise<string> {
   if (isRefreshingToken && tokenRefreshPromise) {
     return tokenRefreshPromise;
   }
-  
-  isRefreshingToken = true;
-  tokenRefreshPromise = (async () => {
-    try {
-      await firebase.refreshGithubToken();
-      const newToken = getGithubToken();
-      if (!newToken) {
-        throw new Error('Failed to refresh GitHub token');
-      }
-      return newToken;
-    } catch (error) {
-      throw new Error('Failed to refresh GitHub token');
-    } finally {
-      isRefreshingToken = false;
-      tokenRefreshPromise = null;
-    }
-  })();
-  
-  return tokenRefreshPromise;
-}
 
-/**
- * Set the GitHub token in storage
- */
-function setToken(token: string | null): void {
-  if (token) {
-    setGithubToken(token);
+  isRefreshingToken = true;
+
+  try {
+    await firebase.refreshGithubToken();
+    const newToken = getGithubToken();
+    if (!newToken) {
+      throw new Error('Failed to refresh GitHub token');
+    }
+    return newToken;
+  } finally {
+    isRefreshingToken = false;
+    tokenRefreshPromise = null;
   }
 }
 
-/**
- * Create headers for GitHub API requests
- */
 export async function getHeadersAsync(): Promise<Record<string, string>> {
   const token = await getTokenSafely();
   return {

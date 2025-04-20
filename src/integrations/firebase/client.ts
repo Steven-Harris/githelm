@@ -6,6 +6,7 @@ import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
 import { type AuthState } from './types';
+import { startRequest, endRequest } from '$lib/stores/loading.store';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -20,7 +21,6 @@ const firebaseConfig = {
 export const authState = writable<AuthState>('initializing');
 
 class FirebaseAuthClient {
-  public loading: Writable<boolean> = writable(false);
   public user: Writable<User | null> = writable();
   public authState = authState;
   
@@ -58,7 +58,6 @@ class FirebaseAuthClient {
       
       await this.startTokenRefresh(user);
       authState.set('authenticated');
-      this.loading.set(false);
     });
   }
 
@@ -106,7 +105,7 @@ class FirebaseAuthClient {
   
   private async refreshTokenPeriodically() {
     try {
-      this.loading.set(true);
+      startRequest(); // Track authentication request
       authState.set('authenticating');
       await this.refreshGithubToken();
       authState.set('authenticated');
@@ -114,7 +113,7 @@ class FirebaseAuthClient {
       authState.set('error');
       await this.signOut();
     } finally {
-      this.loading.set(false);
+      endRequest(); // End tracking authentication request
     }
   }
 
@@ -158,6 +157,7 @@ class FirebaseAuthClient {
     
     this.authInProgress = true;
     authState.set('authenticating');
+    startRequest(); // Track auth request
     
     try {
       const result = await signInWithPopup(this.auth, this.provider);
@@ -191,6 +191,7 @@ class FirebaseAuthClient {
       authState.set('error');
     } finally {
       this.authInProgress = false;
+      endRequest(); // End tracking auth request
     }
   }
 
@@ -201,6 +202,7 @@ class FirebaseAuthClient {
     
     this.authInProgress = true;
     authState.set('authenticating');
+    startRequest(); // Track auth request
     
     try {
       await signOut(this.auth);
@@ -211,6 +213,7 @@ class FirebaseAuthClient {
       authState.set('error');
     } finally {
       this.authInProgress = false;
+      endRequest(); // End tracking auth request
     }
   }
 

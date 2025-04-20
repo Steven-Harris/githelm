@@ -6,6 +6,7 @@
   import Loading from "$lib/Loading.svelte";
   import Tabs from "$lib/Tabs.svelte";
   import { loadRepositoryConfigs } from "$lib/stores/repository-service";
+  import { isLoading } from "$lib/stores/loading.store";
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
@@ -19,21 +20,28 @@
   let signedIn = $state(false);
   let loading = $state(false);
   let isAuth = $state();
+  let subscriptions = [];
+  
   onMount(() => {
-    firebase.loading.subscribe((state) => {
+    subscriptions.push(isLoading.subscribe((state) => {
       loading = state;
-    });
+    }));
 
-    firebase.user.subscribe((user) => {
+    subscriptions.push(firebase.user.subscribe((user) => {
       signedIn = user !== null;
-    });
-    authState.subscribe((state) => {
+    }));
+    
+    subscriptions.push(authState.subscribe((state) => {
       isAuth = state;
       if (state === 'authenticated') {
         initAuthStateHandling();
         loadRepositoryConfigs();
       }
-    });
+    }));
+    
+    return () => {
+      subscriptions.forEach((unsubscribe) => unsubscribe());
+    };
   });
 </script>
 
@@ -66,7 +74,7 @@
     {/if}
     
     <Loading {loading} />
-    {#if signedIn && !loading && isAuth === 'authenticated'}
+    {#if signedIn && isAuth === 'authenticated'}
       {@render children?.()}
     {:else if isAuth === 'unauthenticated'}
       <h1>Login to view your GitHub data</h1>
