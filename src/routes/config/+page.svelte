@@ -7,6 +7,8 @@
   import { eventBus } from "$stores/event-bus.store";
   import { isMobile } from "$stores/mobile.store";
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
+
   let prConfigs: RepoConfig[] = $state([]);
   let actionsConfigs: RepoConfig[] = $state([]);
   onMount(async () => {
@@ -18,9 +20,14 @@
       }
 
       setStorageObject("pull-requests-configs", prConfigs);
-      setStorageObject("action-configs", actionsConfigs);
+      setStorageObject("actions-configs", actionsConfigs);
       await configService.saveConfigs(prConfigs, actionsConfigs);
-      location.assign("/");
+
+      // Emit event to notify that configs have been updated
+      eventBus.set('config-updated');
+
+      // Navigate back to home
+      goto("/");
     });
   });
 

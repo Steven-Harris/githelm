@@ -2,14 +2,22 @@
   import helmSVG from "$assets/helm.svg";
   import { firebase } from "$integrations/firebase";
   import { eventBus } from "./stores/event-bus.store";
+  import { page } from "$app/state";
+  import { goto } from "$app/navigation";
 
-  let { signedIn, isConfig } = $props();
+  let { signedIn } = $props();
+  let isConfig = $derived(page.url.pathname === "/config");
 
   function save() {
     eventBus.set("save-config");
   }
+  
   function cancel() {
-    location.assign("/");
+    goto("/");
+  }
+  
+  function navigateToConfig() {
+    goto("/config");
   }
 </script>
 
@@ -24,7 +32,7 @@
         <button onclick={cancel} id="cancel-config-button" type="button" class="nav-button"> Cancel </button>
         <button onclick={save} id="save-config-button" type="button" class="nav-button primary"> Save </button>
       {:else}
-        <button onclick={() => location.assign("/config")} id="config-button" type="button" class="nav-button"> Config </button>
+        <button onclick={navigateToConfig} id="config-button" type="button" class="nav-button"> Config </button>
         <button onclick={() => firebase.signOut()} id="logout-button" type="button" class="nav-button"> Logout </button>
       {/if}
     {:else}

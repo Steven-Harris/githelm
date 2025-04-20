@@ -1,16 +1,5 @@
-/**
- * Firebase Authentication Client Implementation
- */
-
 import { initializeApp } from 'firebase/app';
-import { 
-  GithubAuthProvider, 
-  browserLocalPersistence, 
-  getAuth, 
-  setPersistence, 
-  signInWithPopup, 
-  signOut, 
-  type Auth, 
+import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, 
   type User 
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
