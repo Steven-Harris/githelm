@@ -5,33 +5,43 @@ import { getTokenSafely, getCurrentAuthState, queueApiCallIfNeeded, MAX_RETRIES,
 
 export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
-type RequestOptions = {
+interface RequestOptions {
   method?: string;
   body?: any;
   cacheKey?: string;
   retryCount?: number;
-};
+  skipLoadingIndicator?: boolean;
+}
 
-export async function fetchData<T = {} | []>(url: string, retryCount = 0): Promise<T> {
-  return executeRequest<T>(url, { retryCount });
+export async function fetchData<T = {} | []>(
+  url: string, 
+  retryCount = 0, 
+  skipLoadingIndicator = false
+): Promise<T> {
+  return executeRequest<T>(url, { retryCount, skipLoadingIndicator });
 }
 
 export async function executeGraphQLQuery<T = any>(
   query: string, 
   variables: Record<string, any> = {}, 
-  retryCount = 0
+  retryCount = 0,
+  skipLoadingIndicator = false
 ): Promise<T> {
   const cacheKey = `graphql-${JSON.stringify(variables)}`;
   return executeRequest<T>(GITHUB_GRAPHQL_API, {
     method: 'POST',
     body: { query, variables },
     cacheKey,
-    retryCount
+    retryCount,
+    skipLoadingIndicator
   });
 }
 
-export async function postData(url: string, body: any): Promise<Response> {
-  startRequest(); // Track this request
+export async function postData(url: string, body: any, skipLoadingIndicator = false): Promise<Response> {
+  if (!skipLoadingIndicator) {
+    startRequest();
+  }
+  
   try {
     const token = await getTokenSafely();
     
@@ -44,7 +54,9 @@ export async function postData(url: string, body: any): Promise<Response> {
       body: JSON.stringify(body)
     });
   } finally {
-    endRequest(); // End tracking regardless of outcome
+    if (!skipLoadingIndicator) {
+      endRequest();
+    }
   }
 }
 
@@ -52,7 +64,13 @@ async function executeRequest<T>(
   url: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = 'GET', body, cacheKey, retryCount = 0 } = options;
+  const { 
+    method = 'GET', 
+    body, 
+    cacheKey, 
+    retryCount = 0,
+    skipLoadingIndicator = false
+  } = options;
   
   // Check authentication state
   const currentAuthState = getCurrentAuthState();
@@ -60,8 +78,10 @@ async function executeRequest<T>(
     return queueApiCallIfNeeded(() => executeRequest<T>(url, options));
   }
   
-  // Start tracking this request
-  startRequest();
+  // Start tracking this request if not skipping loading indicator
+  if (!skipLoadingIndicator) {
+    startRequest();
+  }
   
   try {
     // Get authentication headers
@@ -85,7 +105,9 @@ async function executeRequest<T>(
     if (!response.ok) {
       if (response.status === 401 && retryCount < MAX_RETRIES) {
         // Token invalid - refresh and retry with exponential backoff
-        endRequest(); // End tracking for this attempt before retrying
+        if (!skipLoadingIndicator) {
+          endRequest(); // End tracking for this attempt before retrying
+        }
         await getTokenSafely();
         const delay = RETRY_DELAY_BASE_MS * Math.pow(2, retryCount);
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -134,7 +156,9 @@ async function executeRequest<T>(
     console.error(`Error executing request to ${url}:`, error);
     throw error;
   } finally {
-    // Always end tracking, even if there's an error
-    endRequest();
+    // Always end tracking if we started it, even if there's an error
+    if (!skipLoadingIndicator) {
+      endRequest();
+    }
   }
 }

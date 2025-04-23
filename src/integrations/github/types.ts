@@ -1,8 +1,3 @@
-/**
- * GitHub integration type definitions
- * This file contains all types related to GitHub API responses and internal data structures
- */
-
 export interface PendingDeployments {
   environment: Environment;
   current_user_can_approve: boolean;
@@ -176,4 +171,21 @@ export interface RepoInfo {
   org: string;
   repo: string;
   filters: string[];
+}
+
+export interface RepositoryInfo {
+  id: number;
+  name: string;
+  full_name: string;
+  description: string;
+  html_url: string;
+  default_branch: string;
+}
+
+export interface OrganizationInfo {
+  login: string;
+  id: number;
+  avatar_url: string;
+  name: string;
+  description: string;
 }

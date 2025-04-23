@@ -5,13 +5,48 @@ import {
     fetchMultipleWorkflowJobs,
     type PullRequest,
     type WorkflowRun,
-    type Job
+    type Job,
 } from "$integrations/github";
 import { getStorageObject, setStorageObject } from "$integrations/storage";
 import createPollingStore from "./polling.store";
 import { eventBus } from "./event-bus.store";
 import { writable, get, derived } from "svelte/store";
 
+// Type definitions for repository service
+export type { SearchRepositoryResult } from "$integrations/github";
+
+export interface RepositoryLabel {
+    name: string;
+    color: string;
+    description: string | null;
+}
+
+export interface Workflow {
+    id: number;
+    name: string;
+    path: string;
+    state: string;
+    created_at: string;
+    updated_at: string;
+    url: string;
+    html_url: string;
+    badge_url: string;
+}
+
+interface WorkflowsResponse {
+    total_count: number;
+    workflows: Workflow[];
+}
+
+// Combined config types for the config page
+export interface CombinedConfig {
+    org: string;
+    repo: string;
+    pullRequests?: string[];
+    actions?: string[];
+}
+
+// Stores for PR and actions management
 export const allPullRequests = writable<Record<string, PullRequest[]>>({});
 export const allWorkflowRuns = writable<Record<string, WorkflowRun[]>>({});
 export const allWorkflowJobs = writable<Record<string, Job[]>>({});
@@ -35,7 +70,7 @@ export function getRepoKey(config: RepoConfig): string {
     return `${config.org}/${config.repo}`;
 }
 
-function unsubscribe(key: string) {
+function unsubscribe(key: string): void {
     const unsub = pollingUnsubscribers.get(key);
     if (unsub) {
         unsub();
@@ -43,15 +78,146 @@ function unsubscribe(key: string) {
     }
 }
 
+// Subscribe to config-updated events to refresh configurations
 eventBus.subscribe(async (event) => {
     if (event === 'config-updated') await refreshConfigurations();
 });
 
-export async function refreshConfigurations() {
+// Repository configuration management functions
+export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
+    try {
+        const configs = await configService.getConfigs();
+        const updatedConfigs = [...configs.pullRequests || [], config];
+        
+        await configService.saveConfigs({ 
+            ...configs, 
+            pullRequests: updatedConfigs 
+        });
+        
+        setStorageObject("pull-requests-configs", updatedConfigs);
+        pullRequestConfigs.set(updatedConfigs);
+        eventBus.set('config-updated');
+        
+        return Promise.resolve();
+    } catch (error) {
+        console.error("Error saving repository config:", error);
+        return Promise.reject(error);
+    }
+}
+
+// Get combined configuration for the config page
+export async function getCombinedConfigs(): Promise<CombinedConfig[]> {
+    const prConfigs = getStorageObject<RepoConfig[]>("pull-requests-configs").data || [];
+    const actionConfigs = getStorageObject<RepoConfig[]>("actions-configs").data || [];
+    
+    return mergeConfigs(prConfigs, actionConfigs);
+}
+
+// Merge PR and Action configs into a single combined format
+function mergeConfigs(
+    pullRequests: RepoConfig[], 
+    actions: RepoConfig[]
+): CombinedConfig[] {
+    const combined = new Map<string, CombinedConfig>();
+    
+    // Process pull request configs
+    for (const config of pullRequests) {
+        const key = `${config.org}/${config.repo}`;
+        if (!combined.has(key)) {
+            combined.set(key, {
+                org: config.org,
+                repo: config.repo
+            });
+        }
+        
+        const combinedConfig = combined.get(key)!;
+        combinedConfig.pullRequests = config.filters || [];
+    }
+    
+    // Process actions configs
+    for (const config of actions) {
+        const key = `${config.org}/${config.repo}`;
+        if (!combined.has(key)) {
+            combined.set(key, {
+                org: config.org,
+                repo: config.repo
+            });
+        }
+        
+        const combinedConfig = combined.get(key)!;
+        combinedConfig.actions = config.filters || [];
+    }
+    
+    return Array.from(combined.values());
+}
+
+// Split combined configs back to separate PR and Actions configs
+function splitCombinedConfigs(combinedConfigs: CombinedConfig[]): {
+    prConfigs: RepoConfig[];
+    actionConfigs: RepoConfig[];
+} {
+    const prConfigs: RepoConfig[] = [];
+    const actionConfigs: RepoConfig[] = [];
+    
+    for (const config of combinedConfigs) {
+        if (config.pullRequests) {
+            prConfigs.push({
+                org: config.org,
+                repo: config.repo,
+                filters: config.pullRequests
+            });
+        }
+        
+        if (config.actions) {
+            actionConfigs.push({
+                org: config.org,
+                repo: config.repo,
+                filters: config.actions
+            });
+        }
+    }
+    
+    return { prConfigs, actionConfigs };
+}
+
+// Update configs from the combined format
+export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[]): Promise<void> {
+    const { prConfigs, actionConfigs } = splitCombinedConfigs(combinedConfigs);
+    
+    try {
+        const configs = await configService.getConfigs();
+        
+        // Update in Firestore
+        await configService.saveConfigs({
+            ...configs,
+            pullRequests: prConfigs,
+            actions: actionConfigs
+        });
+        
+        // Update in local storage
+        setStorageObject("pull-requests-configs", prConfigs);
+        setStorageObject("actions-configs", actionConfigs);
+        
+        // Update stores
+        pullRequestConfigs.set(prConfigs);
+        actionsConfigs.set(actionConfigs);
+        
+        // Trigger config updated event
+        eventBus.set('config-updated');
+        
+        return Promise.resolve();
+    } catch (error) {
+        console.error("Error updating repository configs:", error);
+        return Promise.reject(error);
+    }
+}
+
+// Refresh configuration functions
+export async function refreshConfigurations(): Promise<void> {
     await Promise.all([refreshPRConfigs(), refreshActionConfigs()]);
 }
 
-async function refreshPRConfigs() {
+async function refreshPRConfigs(): Promise<void> {
     const configs = getStorageObject<RepoConfig[]>("pull-requests-configs");
     if (configs.data?.length) {
         pullRequestConfigs.set(configs.data);
@@ -59,7 +225,7 @@ async function refreshPRConfigs() {
     }
 }
 
-async function refreshActionConfigs() {
+async function refreshActionConfigs(): Promise<void> {
     const configs = getStorageObject<RepoConfig[]>("actions-configs");
     if (configs.data?.length) {
         actionsConfigs.set(configs.data);
@@ -191,7 +357,7 @@ export async function refreshActionsData(repoConfigs: RepoConfig[]): Promise<voi
     allWorkflowRuns.set(orderedRuns);
 }
 
-function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]) {
+function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]): void {
     if (!runs?.length) return;
     const params = runs.map(run => ({ org, repo, runId: run.id.toString() }));
     fetchMultipleWorkflowJobs(params)

@@ -60,26 +60,24 @@
 
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
   <Tabs />
-  <div id="content" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
-    {#if isAuth === 'authenticating'}
-      <div class="col-span-full bg-yellow-800 text-white p-2 rounded text-center">
-        Authentication in progress - please wait while we connect to GitHub...
-      </div>
-    {/if}
+  {#if isAuth === 'authenticating'}
+    <div class="col-span-full bg-yellow-800 text-white p-2 rounded text-center">
+      Authentication in progress - please wait while we connect to GitHub...
+    </div>
+  {/if}
+  
+  {#if isAuth === 'error'}
+    <div class="col-span-full bg-red-800 text-white p-2 rounded text-center">
+      Authentication error - please try refreshing the page
+    </div>
+  {/if}
     
-    {#if isAuth === 'error'}
-      <div class="col-span-full bg-red-800 text-white p-2 rounded text-center">
-        Authentication error - please try refreshing the page
-      </div>
-    {/if}
-    
-    <Loading {loading} />
-    {#if signedIn && isAuth === 'authenticated'}
-      {@render children?.()}
-    {:else if isAuth === 'unauthenticated'}
-      <h1>Login to view your GitHub data</h1>
-    {/if}
-  </div>
+  <Loading {loading} />
+  {#if signedIn && isAuth === 'authenticated'}
+    {@render children?.()}
+  {:else if isAuth === 'unauthenticated'}
+    <h1>Login to view your GitHub data</h1>
+  {/if}
 </main>
 
 <Footer />

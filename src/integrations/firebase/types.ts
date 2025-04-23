@@ -12,11 +12,20 @@ export interface RepoConfig {
 }
 
 /**
+ * GitHub organization definition
+ */
+export interface Organization {
+  name: string;
+  avatarUrl?: string;
+}
+
+/**
  * User configurations stored in Firestore
  */
 export interface Configs {
   pullRequests: RepoConfig[];
   actions: RepoConfig[];
+  organizations: Organization[];
 }
 
 /**

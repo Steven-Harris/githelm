@@ -1,68 +1,50 @@
-/**
- * GitHub Repositories Module
- * Handles repository listing and information retrieval
- */
+import { fetchData } from './api-client';
 
-import { executeGraphQLQuery } from './api-client';
-import { type Repository } from './types';
+export interface SearchRepositoryResult {
+  name: string;
+  full_name: string;
+  description: string | null;
+}
 
-/**
- * Search for repositories accessible to the authenticated user
- * 
- * @returns Promise resolving to array of repositories
- */
-export async function searchUserRepositories(): Promise<Repository[]> {
-  const query = `
-    query SearchUserRepos {
-      viewer {
-        repositories(first: 100, orderBy: {field: UPDATED_AT, direction: DESC}) {
-          nodes {
-            name
-            nameWithOwner
-            owner {
-              login
-            }
-            isPrivate
-          }
-        }
-      }
-    }
-  `;
-  
+export async function searchRepositories(
+  org: string,
+  searchTerm: string
+): Promise<SearchRepositoryResult[]> {
   try {
-    const data = await executeGraphQLQuery(query);
-    return transformUserRepositories(data);
+    const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(searchTerm)}+org:${org}`;
+    const data = await fetchData<{items: any[]}>(url, 0, true);
+    
+    return data.items.map(repo => ({
+      name: repo.name,
+      full_name: repo.full_name,
+      description: repo.description
+    }));
   } catch (error) {
-    console.error('Error fetching user repositories:', error);
+    console.error("Error searching repositories:", error);
     return [];
   }
 }
 
-/**
- * Transform GraphQL repositories response to Repository format
- * 
- * @param data GraphQL response data
- * @returns Array of repositories
- */
-function transformUserRepositories(data: any): Repository[] {
-  if (!data?.viewer?.repositories?.nodes) {
+export async function fetchRepositoryLabels(owner: string, repo: string): Promise<string[]> {
+  try {
+    const labels = await fetchData<{name: string}[]>(`https://api.github.com/repos/${owner}/${repo}/labels?per_page=100`, 0, true);
+    return labels.map(label => label.name);
+  } catch (error) {
+    console.error(`Error fetching labels for ${owner}/${repo}:`, error);
     return [];
   }
-  
-  return data.viewer.repositories.nodes.map((repo: any) => ({
-    id: 0, // Actual ID not needed for our purpose
-    name: repo.name,
-    full_name: repo.nameWithOwner,
-    owner: {
-      login: repo.owner.login
-    },
-    html_url: `https://github.com/${repo.nameWithOwner}`,
-    isPrivate: repo.isPrivate,
-    // Add minimal required properties to satisfy the Repository interface
-    node_id: '',
-    fork: false,
-    url: `https://api.github.com/repos/${repo.nameWithOwner}`,
-    subscribers_url: `https://api.github.com/repos/${repo.nameWithOwner}/subscribers`,
-    subscription_url: `https://api.github.com/repos/${repo.nameWithOwner}/subscription`
-  }));
+}
+
+export async function fetchRepositoryWorkflows(owner: string, repo: string): Promise<string[]> {
+  try {
+    const workflows = await fetchData<{workflows: {path: string}[]}>(`https://api.github.com/repos/${owner}/${repo}/actions/workflows`, 0, true);
+    return workflows.workflows.map(workflow => {
+      // Extract just the filename from the path (e.g., ".github/workflows/ci.yml" -> "ci.yml")
+      const parts = workflow.path.split('/');
+      return parts[parts.length - 1];
+    });
+  } catch (error) {
+    console.error(`Error fetching workflows for ${owner}/${repo}:`, error);
+    return [];
+  }
 }
