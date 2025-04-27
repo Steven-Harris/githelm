@@ -5,9 +5,7 @@
 
   let { reviews = [] } = $props<{ reviews: Review[] }>();
   
-  // Ensure each review has a valid ID to use as a key
   function getUniqueKey(review: Review, index: number): string {
-    // Use a combination of review ID (if valid) and index to ensure uniqueness
     return review?.id ? `${review.id}-${index}` : `review-${index}`;
   }
 </script>

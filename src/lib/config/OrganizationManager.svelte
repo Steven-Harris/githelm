@@ -10,17 +10,17 @@
   let editOrgName = $state("");
   let loading = $state(false);
   
-  // Create a custom event for organization changes
-  const dispatchOrgChange = () => {
-    eventBus.set('organizations-updated');
-  };
-  
   onMount(async () => {
     loading = true;
     
     try {
-      const configs = await configService.getConfigs();
-      organizations = configs.organizations || [];
+      const localOrgs = configService.getLocalOrganizations();
+      if (localOrgs.length > 0) {
+        organizations = localOrgs;
+      } else {
+        const configs = await configService.getConfigs();
+        organizations = configs.organizations || [];
+      }
     } catch (error) {
       console.error("Error loading organizations:", error);
     } finally {
@@ -28,34 +28,26 @@
     }
   });
   
-  async function addOrganization() {
+  function addOrganization() {
     if (!newOrgName.trim()) return;
     
     const orgName = newOrgName.trim();
     
-    // Check if org already exists
     if (organizations.some(org => org.name.toLowerCase() === orgName.toLowerCase())) {
       alert("This organization is already added.");
       return;
     }
     
     try {
-      // Add to local state
       organizations = [...organizations, { name: orgName }];
       
-      // Save to Firebase
-      await configService.saveOrganizations(organizations);
+      configService.updateLocalOrganizations(organizations);
       
-      // Clear input
       newOrgName = "";
       
-      // Notify others about the change
-      dispatchOrgChange();
+      eventBus.set('organizations-updated');
     } catch (error) {
       console.error("Error adding organization:", error);
-      
-      // Revert local state
-      organizations = organizations.filter(org => org.name !== orgName);
     }
   }
   
@@ -69,48 +61,35 @@
     editOrgName = "";
   }
   
-  async function saveEditedOrg() {
+  function saveEditedOrg() {
     if (!editOrgName.trim()) return;
     
     const orgName = editOrgName.trim();
-    const currentName = organizations[editingOrgIndex].name;
     
-    // Check if the new name already exists (except for the current org)
     if (organizations.some((org, i) => i !== editingOrgIndex && org.name.toLowerCase() === orgName.toLowerCase())) {
       alert("An organization with this name already exists.");
       return;
     }
     
     try {
-      // Update local state
       const updatedOrgs = [...organizations];
       updatedOrgs[editingOrgIndex].name = orgName;
       organizations = updatedOrgs;
       
-      // Save to Firebase
-      await configService.saveOrganizations(organizations);
+      configService.updateLocalOrganizations(organizations);
       
-      // Reset editing state
       cancelEditing();
       
-      // Notify others about the change
-      dispatchOrgChange();
+      eventBus.set('organizations-updated');
     } catch (error) {
       console.error("Error updating organization:", error);
-      
-      // Revert local state
-      const updatedOrgs = [...organizations];
-      updatedOrgs[editingOrgIndex].name = currentName;
-      organizations = updatedOrgs;
     }
   }
   
-  async function deleteOrganization(index: number) {
+  function deleteOrganization(index: number) {
     if (!confirm("Are you sure you want to delete this organization? This may affect your repository configurations.")) {
       return;
     }
-    
-    const orgToDelete = organizations[index];
     
     try {
       // Update local state
@@ -118,17 +97,13 @@
       updatedOrgs.splice(index, 1);
       organizations = updatedOrgs;
       
-      // Save to Firebase
-      await configService.saveOrganizations(organizations);
+      // Update local orgs in the service (don't save to Firebase yet)
+      configService.updateLocalOrganizations(organizations);
       
       // Notify others about the change
-      dispatchOrgChange();
+      eventBus.set('organizations-updated');
     } catch (error) {
       console.error("Error deleting organization:", error);
-      
-      // Revert local state
-      organizations = [...organizations];
-      organizations.splice(index, 0, orgToDelete);
     }
   }
 </script>
@@ -213,5 +188,11 @@
         Add
       </button>
     </div>
+
+    {#if configService.hasUnsavedOrganizationChanges()}
+      <div class="mt-3 text-amber-400 text-sm">
+        <i>* Organization changes will be saved when you save all configurations</i>
+      </div>
+    {/if}
   {/if}
 </div>

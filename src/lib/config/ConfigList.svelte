@@ -32,9 +32,7 @@
   let editingIndex = $state<number>(-1);
   let draggedItem = $state<RepoConfig | null>(null);
   let draggedOverIndex = $state<number | null>(null);
-  let draggedItemRect = $state<DraggedItemRect>(null);
   let mouseOffset = $state<MouseOffset>({ x: 0, y: 0 });
-  let dragPreviewStyle = $state<string>("");
   
   function startEditing(index: number): void {
     editingIndex = index;
@@ -109,10 +107,6 @@
     };
     
     draggedItem = configs[index];
-    draggedItemRect = {
-      width: rect.width,
-      height: rect.height
-    };
     
     const dragImage = item.cloneNode(true) as HTMLElement;
     dragImage.style.opacity = "0.5";
@@ -139,8 +133,6 @@
     
     draggedItem = null;
     draggedOverIndex = null;
-    draggedItemRect = null;
-    dragPreviewStyle = "";
   }
   
   function handleDragOver(e: DragEvent, index: number): void {
@@ -237,7 +229,6 @@
           <RepositoryForm 
             {config} 
             onSave={(data: any) => handleSave(data, i)} 
-            onCancel={handleCancel} 
           />
         {:else}
           <div
@@ -324,7 +315,7 @@
   {/if}
   
   {#if editingIndex === -2}
-    <RepositoryForm onSave={handleSave} onCancel={handleCancel} />
+    <RepositoryForm onSave={handleSave} />
   {/if}
 </div>
 

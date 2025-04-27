@@ -6,7 +6,6 @@ import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
 import { type AuthState } from './types';
-import { startRequest, endRequest } from '$lib/stores/loading.store';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -62,7 +61,6 @@ class FirebaseAuthClient {
   }
 
   private async startTokenRefresh(user: User) {
-    // Clear any existing refresh interval
     if (this.interval) {
       clearInterval(this.interval);
       this.interval = undefined;
@@ -70,7 +68,6 @@ class FirebaseAuthClient {
     
     const githubToken = getGithubToken();
     
-    // No token available - need to get one
     if (!githubToken) {
       authState.set('authenticating');
       try {
@@ -81,7 +78,6 @@ class FirebaseAuthClient {
         return;
       }
     } 
-    // Verify existing token validity
     else {
       try {
         const isValid = await this.validateGithubToken(githubToken);
@@ -99,21 +95,17 @@ class FirebaseAuthClient {
 
     this.user.set(user);
     
-    // Set up periodic token refresh
     this.interval = setInterval(this.refreshTokenPeriodically.bind(this), this.refreshInterval);
   }
   
   private async refreshTokenPeriodically() {
     try {
-      startRequest(); // Track authentication request
       authState.set('authenticating');
       await this.refreshGithubToken();
       authState.set('authenticated');
     } catch (error) {
       authState.set('error');
       await this.signOut();
-    } finally {
-      endRequest(); // End tracking authentication request
     }
   }
 
@@ -157,20 +149,17 @@ class FirebaseAuthClient {
     
     this.authInProgress = true;
     authState.set('authenticating');
-    startRequest(); // Track auth request
     
     try {
       const result = await signInWithPopup(this.auth, this.provider);
       const credential = GithubAuthProvider.credentialFromResult(result);
       
-      // First try to get token from credential
       if (credential?.accessToken) {
         setGithubToken(credential.accessToken);
         authState.set('authenticated');
         return;
       }
       
-      // No credential but we have a user, try to get token from additionalUserInfo
       if (!result.user) {
         console.error('No credential or user returned from auth');
         authState.set('error');
@@ -191,7 +180,6 @@ class FirebaseAuthClient {
       authState.set('error');
     } finally {
       this.authInProgress = false;
-      endRequest(); // End tracking auth request
     }
   }
 
@@ -202,7 +190,6 @@ class FirebaseAuthClient {
     
     this.authInProgress = true;
     authState.set('authenticating');
-    startRequest(); // Track auth request
     
     try {
       await signOut(this.auth);
@@ -213,7 +200,6 @@ class FirebaseAuthClient {
       authState.set('error');
     } finally {
       this.authInProgress = false;
-      endRequest(); // End tracking auth request
     }
   }
 

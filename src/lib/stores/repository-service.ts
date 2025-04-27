@@ -191,7 +191,8 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
         await configService.saveConfigs({
             ...configs,
             pullRequests: prConfigs,
-            actions: actionConfigs
+            actions: actionConfigs,
+            // If we have unsaved organization changes, the ConfigService will include them when saving
         });
         
         // Update in local storage

@@ -3,6 +3,9 @@ import { get } from 'svelte/store';
 import { firebase } from './client';
 import { type Configs, type RepoConfig, type Organization } from './types';
 
+let localOrganizations: Organization[] = [];
+let hasUnsavedOrganizations = false;
+
 export class ConfigService {
   public async getConfigs(): Promise<Configs> {
     const user = get(firebase.user);
@@ -19,13 +22,24 @@ export class ConfigService {
     }
 
     const data = docSnap.data() as Configs;
-    return this.mapConfigs(data);
+    const configs = this.mapConfigs(data);
+    
+    if (localOrganizations.length === 0 && !hasUnsavedOrganizations) {
+      localOrganizations = [...configs.organizations];
+    }
+    
+    return configs;
   }
 
   public async saveConfigs(configs: Configs) {
     const user = get(firebase.user);
     if (!user) {
       return;
+    }
+
+    if (hasUnsavedOrganizations) {
+      configs.organizations = [...localOrganizations];
+      hasUnsavedOrganizations = false;
     }
 
     const db = firebase.getDb();
@@ -41,6 +55,20 @@ export class ConfigService {
     const configs = await this.getConfigs();
     configs.organizations = organizations;
     await this.saveConfigs(configs);
+  }
+  
+  public getLocalOrganizations(): Organization[] {
+    return localOrganizations;
+  }
+  
+  public updateLocalOrganizations(organizations: Organization[]) {
+    localOrganizations = [...organizations];
+    hasUnsavedOrganizations = true;
+    return localOrganizations;
+  }
+  
+  public hasUnsavedOrganizationChanges(): boolean {
+    return hasUnsavedOrganizations;
   }
   
   private mapConfigs(configs: Configs): Configs {
