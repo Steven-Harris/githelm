@@ -44,10 +44,8 @@
 
   async function loadConfigs(): Promise<void> {
     try {
-      // First load the repository configs to ensure data is available
       await loadRepositoryConfigs();
       
-      // Then get the combined configs from the repository service
       combinedConfigs = await getCombinedConfigs();
     } catch (error) {
       console.error("Error loading configurations:", error);
@@ -55,12 +53,10 @@
     }
   }
   
-  // Handle config updates from the ConfigList component
   function handleConfigUpdate(configs: CombinedConfig[]): void {
     combinedConfigs = configs;
   }
   
-  // Save changes when triggered by the header save button via event bus
   async function saveChanges(): Promise<void> {
     if (saveInProgress) return;
     
@@ -68,10 +64,8 @@
     errorMessage = null;
     
     try {
-      // Use the repository service to save the combined configs
       await updateRepositoryConfigs(combinedConfigs);
       
-      // Navigate back to home page on success
       goto("/");
     } catch (error) {
       errorMessage = "Failed to save configurations";

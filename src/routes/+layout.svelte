@@ -14,7 +14,6 @@
   
   let { children } = $props();
 
-  // Use derived values instead of explicit store subscriptions
   let webManifest = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : "");
   
   let signedIn = $state(false);
@@ -52,7 +51,6 @@
   {#each pwaAssetsHead.links as link}
     <link {...link} />
   {/each}
-  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
   {@html webManifest}
 </svelte:head>
 

@@ -13,7 +13,6 @@
   }
   
   function cancel() {
-    // Emit cancel event before navigation
     eventBus.set("cancel-config");
     goto("/");
   }
