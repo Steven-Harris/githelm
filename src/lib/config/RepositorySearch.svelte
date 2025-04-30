@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { searchRepositories } from "$integrations/github";
-  import type { SearchRepositoryResult } from "$lib/stores/repository-service";
+  import { searchRepositories } from "@integrations/github";
+  import type { SearchRepositoryResult } from "@lib/stores/repository-service";
   
   let { orgName = "", repoName = "", disabled = false, onChange } = $props();
   

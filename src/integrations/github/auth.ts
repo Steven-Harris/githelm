@@ -1,127 +1,117 @@
-import { get } from 'svelte/store';
-import { firebase } from '../firebase';
-import { getGithubToken, setGithubToken } from '../storage';
+/**
+ * GitHub Integration - Authentication Module
+ * Handles token management and authenticated API calls
+ */
 
-const MAX_RETRIES = 2;
-const RETRY_DELAY_BASE_MS = 1000;
+import { authController, MAX_RETRIES, RETRY_DELAY_BASE_MS } from '../../controllers/auth.controller';
+import { loadingController } from '../../controllers/loading.controller';
 
-let authStateSubscription: Function | null = null;
-let tokenRefreshPromise: Promise<string> | null = null;
-let isRefreshingToken = false;
+// Token management
+let githubToken: string | undefined;
 
-let apiQueue: Array<() => Promise<any>> = [];
-let isProcessingQueue = false;
+/**
+ * Get the GitHub token from local storage
+ */
+export function getGithubToken(): string | undefined {
+  if (githubToken) {
+    return githubToken;
+  }
+  
+  try {
+    githubToken = localStorage.getItem('github-token') || undefined;
+    return githubToken;
+  } catch {
+    return undefined;
+  }
+}
 
+/**
+ * Check if we have a valid GitHub token
+ */
+export function hasValidGithubToken(): boolean {
+  return !!getGithubToken();
+}
+
+/**
+ * Initialize auth state handling
+ * This sets up listeners for auth changes and handles token refresh
+ */
 export function initAuthStateHandling(): void {
-  if (authStateSubscription) {
-    authStateSubscription();
+  // Listen for user changes to update token status
+  authController.addEventListener(authController.constructor.USER_CHANGED, () => {
+    // Token is managed by the service worker, so we just need to retrieve it
+    githubToken = getGithubToken();
+  });
+}
+
+/**
+ * Queue an API call if authentication is needed
+ * If we're already authenticated, the call will be executed immediately
+ * If not, it will be queued until authentication completes
+ */
+export function queueApiCallIfNeeded<T>(
+  apiCall: () => Promise<T>
+): Promise<T> {
+  if (authController.isAuthenticated && hasValidGithubToken()) {
+    return apiCall();
   }
   
-  if (firebase.authState) {
-    authStateSubscription = firebase.authState.subscribe(state => {
-      if (state === 'authenticated' && apiQueue.length > 0) {
-        processApiQueue();
+  // If we're not authenticated, we need to wait for authentication to complete
+  return new Promise((resolve, reject) => {
+    const checkAuth = () => {
+      if (authController.isAuthenticated && hasValidGithubToken()) {
+        // We're authenticated now, so execute the API call
+        apiCall()
+          .then(resolve)
+          .catch(reject);
+        authController.removeEventListener(authController.constructor.AUTH_STATE_CHANGED, listener);
       }
-    });
-  }
+    };
+    
+    const listener = () => {
+      checkAuth();
+    };
+    
+    // Listen for auth state changes
+    authController.addEventListener(authController.constructor.AUTH_STATE_CHANGED, listener);
+    
+    // Check if we're already authenticated
+    checkAuth();
+  });
 }
 
-async function processApiQueue(): Promise<void> {
-  if (isProcessingQueue) return;
-  
-  isProcessingQueue = true;
-  
-  const currentQueue = [...apiQueue];
-  apiQueue = [];
-  
-  for (const apiCall of currentQueue) {
-    try {
-      await apiCall();
-    } catch (error) {
-      console.error('Error processing queued API call:', error);
-    }
-  }
-  
-  isProcessingQueue = false;
-}
+/**
+ * This file re-exports the core authentication functionality from the auth controller
+ * to maintain backward compatibility with existing code
+ */
 
-export function getCurrentAuthState(): string {
-  try {
-    return get(firebase.authState) || 'initializing';
-  } catch (e) {
-    console.error('Error getting auth state:', e);
-    return 'initializing';
-  }
-}
-
-export function queueApiCallIfNeeded<T>(apiCall: () => Promise<T>): Promise<T> {
-  const currentAuthState = getCurrentAuthState();
-
-  if (currentAuthState !== 'authenticated') {
-    return new Promise<T>((resolve, reject) => {
-      apiQueue.push(() => apiCall().then(resolve).catch(reject));
-    });
-  }
-
-  return apiCall();
-}
-
-export async function getTokenSafely(): Promise<string> {
-  const currentAuthState = getCurrentAuthState();
-
-  if (currentAuthState === 'authenticated') {
-    const token = getGithubToken();
-    return token || refreshTokenSafely();
-  }
-
-  if (currentAuthState === 'authenticating' || currentAuthState === 'initializing') {
-    return new Promise((resolve, reject) => {
-      const unsubscribe = firebase.authState.subscribe(state => {
-        unsubscribe();
-        if (state === 'authenticated') {
-          const token = getGithubToken();
-          token ? resolve(token) : reject(new Error('No token available after authentication'));
-        } else {
-          reject(new Error(`Authentication failed with state: ${state}`));
-        }
-      });
-    });
-  }
-
-  if (isRefreshingToken && tokenRefreshPromise) {
-    return tokenRefreshPromise;
-  }
-
-  return refreshTokenSafely();
-}
-
-export async function refreshTokenSafely(): Promise<string> {
-  if (isRefreshingToken && tokenRefreshPromise) {
-    return tokenRefreshPromise;
-  }
-
-  isRefreshingToken = true;
-
-  try {
-    await firebase.refreshGithubToken();
-    const newToken = getGithubToken();
-    if (!newToken) {
-      throw new Error('Failed to refresh GitHub token');
-    }
-    return newToken;
-  } finally {
-    isRefreshingToken = false;
-    tokenRefreshPromise = null;
-  }
-}
-
-export async function getHeadersAsync(): Promise<Record<string, string>> {
-  const token = await getTokenSafely();
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Accept': 'application/vnd.github.v3+json',
-    'X-GitHub-Api-Version': '2022-11-28'
-  };
-}
-
+// Re-export constants
 export { MAX_RETRIES, RETRY_DELAY_BASE_MS };
+
+/**
+ * Get the current authentication state
+ */
+export function getCurrentAuthState(): string {
+  return authController.authState;
+}
+
+/**
+ * Get GitHub token safely, refreshing if needed
+ */
+export async function getTokenSafely(): Promise<string> {
+  return authController.getTokenSafely();
+}
+
+/**
+ * Refresh the GitHub token
+ */
+export async function refreshTokenSafely(): Promise<string> {
+  return authController.refreshTokenSafely();
+}
+
+/**
+ * Get headers with authorization for GitHub API requests
+ */
+export async function getHeadersAsync(): Promise<Record<string, string>> {
+  return authController.getHeadersAsync();
+}

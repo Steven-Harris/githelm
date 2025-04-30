@@ -1,7 +1,7 @@
 <script lang="ts">
-  import checkSVG from "$assets/check.svg";
-  import commentSVG from "$assets/comment.svg";
-  import type { Review } from "$integrations/github";
+  import checkSVG from "@assets/check.svg";
+  import commentSVG from "@assets/comment.svg";
+  import type { Review } from "@integrations/github";
 
   let { reviews = [] } = $props<{ reviews: Review[] }>();
   

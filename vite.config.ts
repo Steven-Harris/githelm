@@ -1,24 +1,22 @@
-import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
-import { SvelteKitPWA } from '@vite-pwa/sveltekit';
-import type { UserConfig } from 'vite';
 
-
-const config: UserConfig = {
+export default defineConfig({
   logLevel: 'info',
   build: {
     emptyOutDir: true,
+    target: 'es2022',
   },
   plugins: [
     tailwindcss(),
-    sveltekit(),
-    SvelteKitPWA({
-      srcDir: './src',
+    VitePWA({
       strategies: 'generateSW',
       registerType: 'prompt', 
       scope: '/',
       base: '/',
-      selfDestroying: false, 
+      selfDestroying: false,
+      includeAssets: ['favicon.ico', 'pwa-*.png', 'maskable-icon-*.png', 'apple-touch-icon-*.png'],
       manifest: {
         name: 'githelm',
         short_name: 'githelm',
@@ -45,26 +43,20 @@ const config: UserConfig = {
           purpose: 'maskable',
         }],
       },
-      injectManifest: {
-        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
-      },
       workbox: {
-        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
-        clientsClaim: true,
-        skipWaiting: false
+          globDirectory: "./dev-dist",
+          globIgnores: [
+            "**/node_modules/**/*",
+            "sw.js",
+            "workbox-*.js"
+          ]
       },
       devOptions: {
-        enabled: false,
-        suppressWarnings: process.env.SUPPRESS_WARNING === 'true',
+        enabled: true,
         type: 'module',
         navigateFallback: '/',
-      },
-      kit: {
-        includeVersionFile: true,
       }
     }),
   ],
-};
-
-export default config;
+});
 

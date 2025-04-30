@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Job } from "$integrations/github";
+  import { type Job } from "@integrations/github";
 
   let { run, jobs = [] } = $props();
 

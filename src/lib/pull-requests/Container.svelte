@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { allPullRequests, pullRequestConfigs, getRepoKey } from "$lib/stores/repository-service";
+  import { allPullRequests, pullRequestConfigs, getRepoKey } from "@lib/stores/repository-service";
   import PullRequests from "./List.svelte";
 </script>
 

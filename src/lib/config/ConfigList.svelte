@@ -1,7 +1,7 @@
 <script lang="ts">
-  import editSVG from "$assets/edit.svg";
+  import editSVG from "@assets/edit.svg";
   import RepositoryForm from "./RepositoryForm.svelte";
-  import { updateRepositoryConfigs } from "$lib/stores/repository-service";
+  import { updateRepositoryConfigs } from "@lib/stores/repository-service";
   
   // Define types for the component
   type MouseOffset = { x: number; y: number };

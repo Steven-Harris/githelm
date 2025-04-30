@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { firebase, authState } from "$integrations/firebase";
-  import { initAuthStateHandling } from "$integrations/github";
-  import Footer from "$lib/Footer.svelte";
-  import Header from "$lib/Header.svelte";
-  import Loading from "$lib/Loading.svelte";
-  import Tabs from "$lib/Tabs.svelte";
-  import { loadRepositoryConfigs } from "$lib/stores/repository-service";
-  import { isLoading } from "$lib/stores/loading.store";
+  import { firebase, authState } from "@integrations/firebase";
+  import { initAuthStateHandling } from "@integrations/github";
+  import Footer from "@lib/Footer.svelte";
+  import Header from "@lib/Header.svelte";
+  import Loading from "@lib/Loading.svelte";
+  import Tabs from "@lib/Tabs.svelte";
+  import { loadRepositoryConfigs } from "@lib/stores/repository-service";
+  import { isLoading } from "@lib/stores/loading.store";
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
@@ -82,6 +82,6 @@
   <Footer />
 {/if}
 
-{#await import("$lib/ReloadPrompt.svelte") then { default: ReloadPrompt }}
+{#await import("@lib/ReloadPrompt.svelte") then { default: ReloadPrompt }}
   <ReloadPrompt />
 {/await}

@@ -1,4 +1,4 @@
-import { getStorageObject, setStorageObject } from "$integrations/storage";
+import { getStorageObject, setStorageObject } from "@integrations/storage";
 import { readable } from "svelte/store";
 import { killSwitch } from "./kill-switch.store";
 import { manualTrigger } from "./last-updated.store";

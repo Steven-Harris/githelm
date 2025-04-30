@@ -1,7 +1,7 @@
-import { killSwitch } from '$lib/stores/kill-switch.store';
-import { startRequest, endRequest } from '$lib/stores/loading.store';
+import { apiLimitController } from '../../controllers/api-limit.controller';
+import { authController, MAX_RETRIES, RETRY_DELAY_BASE_MS } from '../../controllers/auth.controller';
+import { loadingController } from '../../controllers/loading.controller';
 import { setLastUpdated, setStorageObject } from '../storage';
-import { getTokenSafely, getCurrentAuthState, queueApiCallIfNeeded, MAX_RETRIES, RETRY_DELAY_BASE_MS } from './auth';
 
 export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
@@ -39,11 +39,11 @@ export async function executeGraphQLQuery<T = any>(
 
 export async function postData(url: string, body: any, skipLoadingIndicator = false): Promise<Response> {
   if (!skipLoadingIndicator) {
-    startRequest();
+    loadingController.startRequest();
   }
   
   try {
-    const token = await getTokenSafely();
+    const token = await authController.getTokenSafely();
     
     return await fetch(url, {
       method: 'POST',
@@ -55,7 +55,7 @@ export async function postData(url: string, body: any, skipLoadingIndicator = fa
     });
   } finally {
     if (!skipLoadingIndicator) {
-      endRequest();
+      loadingController.endRequest();
     }
   }
 }
@@ -73,19 +73,19 @@ async function executeRequest<T>(
   } = options;
   
   // Check authentication state
-  const currentAuthState = getCurrentAuthState();
+  const currentAuthState = authController.authState;
   if (currentAuthState === 'authenticating' || currentAuthState === 'initializing') {
-    return queueApiCallIfNeeded(() => executeRequest<T>(url, options));
+    return authController.queueApiCallIfNeeded(() => executeRequest<T>(url, options));
   }
   
   // Start tracking this request if not skipping loading indicator
   if (!skipLoadingIndicator) {
-    startRequest();
+    loadingController.startRequest();
   }
   
   try {
     // Get authentication headers
-    const token = await getTokenSafely();
+    const token = await authController.getTokenSafely();
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${token}`
     };
@@ -106,9 +106,9 @@ async function executeRequest<T>(
       if (response.status === 401 && retryCount < MAX_RETRIES) {
         // Token invalid - refresh and retry with exponential backoff
         if (!skipLoadingIndicator) {
-          endRequest(); // End tracking for this attempt before retrying
+          loadingController.endRequest(); // End tracking for this attempt before retrying
         }
-        await getTokenSafely();
+        await authController.getTokenSafely();
         const delay = RETRY_DELAY_BASE_MS * Math.pow(2, retryCount);
         await new Promise(resolve => setTimeout(resolve, delay));
         return executeRequest<T>(url, { ...options, retryCount: retryCount + 1 });
@@ -116,8 +116,10 @@ async function executeRequest<T>(
       
       // Handle rate limiting
       const rateLimit = response.headers.get('X-RateLimit-Remaining');
+      const rateLimitReset = response.headers.get('X-RateLimit-Reset');
       if (rateLimit && parseInt(rateLimit) === 0) {
-        killSwitch.set(true);
+        const resetTime = rateLimitReset ? parseInt(rateLimitReset) * 1000 : undefined;
+        apiLimitController.setLimitExceeded(true, resetTime);
         throw new Error('Rate limit exceeded');
       }
       
@@ -129,7 +131,7 @@ async function executeRequest<T>(
         error.type === 'RATE_LIMITED' || 
         error.message?.includes('API rate limit exceeded')
       )) {
-        killSwitch.set(true);
+        apiLimitController.setLimitExceeded(true);
         throw new Error('Rate limit exceeded');
       }
       
@@ -158,7 +160,7 @@ async function executeRequest<T>(
   } finally {
     // Always end tracking if we started it, even if there's an error
     if (!skipLoadingIndicator) {
-      endRequest();
+      loadingController.endRequest();
     }
   }
 }

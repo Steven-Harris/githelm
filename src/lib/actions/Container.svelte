@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { allWorkflowRuns, actionsConfigs, getRepoKey, getJobsForRun } from "$lib/stores/repository-service";
+  import { allWorkflowRuns, actionsConfigs, getRepoKey, getJobsForRun } from "@lib/stores/repository-service";
   import Actions from "./List.svelte";
 </script>
 

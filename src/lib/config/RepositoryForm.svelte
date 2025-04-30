@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { eventBus } from "$lib/stores/event-bus.store";
-  import { fetchRepositoryLabels, fetchRepositoryWorkflows } from "$integrations/github";
+  import { eventBus } from "@lib/stores/event-bus.store";
+  import { fetchRepositoryLabels, fetchRepositoryWorkflows } from "@integrations/github";
   
   // Import our new components
   import OrganizationSelector from "./OrganizationSelector.svelte";

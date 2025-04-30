@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { configService } from "$integrations/firebase";
-  import type { Organization } from "$integrations/firebase";
-  import { eventBus } from "$lib/stores/event-bus.store";
+  import { configService } from "@integrations/firebase";
+  import type { Organization } from "@integrations/firebase";
+  import { eventBus } from "@lib/stores/event-bus.store";
   import { onMount } from "svelte";
   
   let { selectedOrg = "", disabled = false, onChange } = $props();

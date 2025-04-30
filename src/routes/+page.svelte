@@ -1,7 +1,7 @@
 <script lang="ts">
-  import ActionsContainer from "$lib/actions/Container.svelte";
-  import PullRequestsContainer from "$lib/pull-requests/Container.svelte";
-  import RateLimitModal from "$lib/RateLimitModal.svelte";
+  import ActionsContainer from "@lib/actions/Container.svelte";
+  import PullRequestsContainer from "@lib/pull-requests/Container.svelte";
+  import RateLimitModal from "@lib/RateLimitModal.svelte";
   import { activeTab } from "$stores/active-tab.store";
   import { isMobile } from "$stores/mobile.store";
 </script>

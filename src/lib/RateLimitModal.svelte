@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { firebase } from "$integrations/firebase";
+  import { firebase } from "@integrations/firebase";
   import { killSwitch } from "$stores/kill-switch.store";
   import { manualTrigger } from "$stores/last-updated.store";
 

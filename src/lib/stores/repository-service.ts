@@ -1,4 +1,4 @@
-import { type RepoConfig, configService } from "$integrations/firebase";
+import { type RepoConfig, configService } from "@integrations/firebase";
 import {
     fetchMultipleRepositoriesPullRequests,
     fetchActions,
@@ -6,14 +6,14 @@ import {
     type PullRequest,
     type WorkflowRun,
     type Job,
-} from "$integrations/github";
-import { getStorageObject, setStorageObject } from "$integrations/storage";
+} from "@integrations/github";
+import { getStorageObject, setStorageObject } from "@integrations/storage";
 import createPollingStore from "./polling.store";
 import { eventBus } from "./event-bus.store";
 import { writable, get, derived } from "svelte/store";
 
 // Type definitions for repository service
-export type { SearchRepositoryResult } from "$integrations/github";
+export type { SearchRepositoryResult } from "@integrations/github";
 
 export interface RepositoryLabel {
     name: string;

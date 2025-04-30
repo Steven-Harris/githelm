@@ -1,15 +1,15 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import OrganizationManager from "$lib/config/OrganizationManager.svelte";
-  import ConfigList from "$lib/config/ConfigList.svelte";
-  import { eventBus } from "$lib/stores/event-bus.store";
+  import OrganizationManager from "@lib/config/OrganizationManager.svelte";
+  import ConfigList from "@lib/config/ConfigList.svelte";
+  import { eventBus } from "@lib/stores/event-bus.store";
   import { 
     loadRepositoryConfigs, 
     updateRepositoryConfigs,
     getCombinedConfigs,
     type CombinedConfig
-  } from "$lib/stores/repository-service";
+  } from "@lib/stores/repository-service";
 
   // State with proper types
   let combinedConfigs = $state<CombinedConfig[]>([]);

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import refreshSVG from "$assets/refresh.svg";
+  import refreshSVG from "@assets/refresh.svg";
   import { onMount } from "svelte";
   import { lastUpdatedStore, manualTrigger } from "./stores/last-updated.store";
   import { page } from "$app/state";

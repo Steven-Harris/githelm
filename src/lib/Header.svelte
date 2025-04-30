@@ -1,6 +1,6 @@
 <script lang="ts">
-  import helmSVG from "$assets/helm.svg";
-  import { firebase } from "$integrations/firebase";
+  import helmSVG from "@assets/helm.svg";
+  import { firebase } from "@integrations/firebase";
   import { eventBus } from "./stores/event-bus.store";
   import { page } from "$app/state";
   import { goto } from "$app/navigation";

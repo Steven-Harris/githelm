@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { configService } from "$integrations/firebase";
-  import type { Organization } from "$integrations/firebase";
-  import { eventBus } from "$lib/stores/event-bus.store";
+  import { configService } from "@integrations/firebase";
+  import type { Organization } from "@integrations/firebase";
+  import { eventBus } from "@lib/stores/event-bus.store";
   
   let organizations: Organization[] = $state([]);
   let newOrgName = $state("");

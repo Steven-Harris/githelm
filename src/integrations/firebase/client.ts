@@ -3,9 +3,9 @@ import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, s
   type User 
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
-import { type AuthState } from './types';
+import { Store } from '../../controllers/base/store';
+import type { AuthState } from './types';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc2Q3c0Rd7jxT_Z7pq1urONyxIRidWDaQ",
@@ -17,11 +17,13 @@ const firebaseConfig = {
   measurementId: "G-7HWYDWLL6P"
 };
 
-export const authState = writable<AuthState>('initializing');
-
-class FirebaseAuthClient {
-  public user: Writable<User | null> = writable();
-  public authState = authState;
+class FirebaseAuthClient extends Store {
+  // Events
+  static readonly AUTH_STATE_CHANGED = 'auth-state-changed';
+  static readonly USER_CHANGED = 'user-changed';
+  
+  private _user: User | null = null;
+  private _authState: AuthState = 'initializing';
   
   private db = getFirestore(initializeApp(firebaseConfig));
   private auth = getAuth();
@@ -31,32 +33,55 @@ class FirebaseAuthClient {
   private authInProgress = false;
   
   constructor() {
+    super();
     this.provider.addScope("repo");
     this.initAuth();
   }
 
+  get user(): User | null {
+    return this._user;
+  }
+
+  get authState(): AuthState {
+    return this._authState;
+  }
+
+  private setAuthState(state: AuthState) {
+    this._authState = state;
+    this.dispatchEvent(new CustomEvent(FirebaseAuthClient.AUTH_STATE_CHANGED, { 
+      detail: state 
+    }));
+  }
+
+  private setUser(user: User | null) {
+    this._user = user;
+    this.dispatchEvent(new CustomEvent(FirebaseAuthClient.USER_CHANGED, {
+      detail: user
+    }));
+  }
+
   private async initAuth() {
-    authState.set('initializing');
+    this.setAuthState('initializing');
     await setPersistence(this.auth, browserLocalPersistence);
     
     this.auth.onAuthStateChanged(async (user: User | null) => {
       if (!user) {
-        authState.set('unauthenticated');
-        this.user.set(null);
+        this.setAuthState('unauthenticated');
+        this.setUser(null);
         return;
       }
       
-      this.user.set(user);
+      this.setUser(user);
       const tokenResult = await user.getIdTokenResult();
       
       if (new Date(tokenResult.expirationTime) < new Date()) {
-        authState.set('unauthenticated');
+        this.setAuthState('unauthenticated');
         await this.signOut();
         return;
       }
       
       await this.startTokenRefresh(user);
-      authState.set('authenticated');
+      this.setAuthState('authenticated');
     });
   }
 
@@ -69,11 +94,11 @@ class FirebaseAuthClient {
     const githubToken = getGithubToken();
     
     if (!githubToken) {
-      authState.set('authenticating');
+      this.setAuthState('authenticating');
       try {
         await this.refreshGithubToken();
       } catch (error) {
-        authState.set('error');
+        this.setAuthState('error');
         await this.signOut();
         return;
       }
@@ -82,29 +107,29 @@ class FirebaseAuthClient {
       try {
         const isValid = await this.validateGithubToken(githubToken);
         if (!isValid) {
-          authState.set('authenticating');
+          this.setAuthState('authenticating');
           await this.reLogin();
           return;
         }
       } catch (error) {
-        authState.set('authenticating');
+        this.setAuthState('authenticating');
         await this.reLogin();
         return;
       }
     }
 
-    this.user.set(user);
+    this.setUser(user);
     
     this.interval = setInterval(this.refreshTokenPeriodically.bind(this), this.refreshInterval);
   }
   
   private async refreshTokenPeriodically() {
     try {
-      authState.set('authenticating');
+      this.setAuthState('authenticating');
       await this.refreshGithubToken();
-      authState.set('authenticated');
+      this.setAuthState('authenticated');
     } catch (error) {
-      authState.set('error');
+      this.setAuthState('error');
       await this.signOut();
     }
   }
@@ -127,8 +152,7 @@ class FirebaseAuthClient {
     
     this.authInProgress = true;
     
-    const currentUser = get(this.user);
-    if (!currentUser) {
+    if (!this._user) {
       this.authInProgress = false;
       throw new Error('User is not authenticated');
     }
@@ -148,7 +172,7 @@ class FirebaseAuthClient {
     }
     
     this.authInProgress = true;
-    authState.set('authenticating');
+    this.setAuthState('authenticating');
     
     try {
       const result = await signInWithPopup(this.auth, this.provider);
@@ -156,28 +180,28 @@ class FirebaseAuthClient {
       
       if (credential?.accessToken) {
         setGithubToken(credential.accessToken);
-        authState.set('authenticated');
+        this.setAuthState('authenticated');
         return;
       }
       
       if (!result.user) {
         console.error('No credential or user returned from auth');
-        authState.set('error');
+        this.setAuthState('error');
         return;
       }
       
       const additionalUserInfo = (result as any)._tokenResponse;
       if (!additionalUserInfo?.oauthAccessToken) {
         console.error('No GitHub token found in auth response');
-        authState.set('error');
+        this.setAuthState('error');
         return;
       }
       
       setGithubToken(additionalUserInfo.oauthAccessToken);
-      authState.set('authenticated');
+      this.setAuthState('authenticated');
     } catch (error) {
       console.error('Error signing in:', error);
-      authState.set('error');
+      this.setAuthState('error');
     } finally {
       this.authInProgress = false;
     }
@@ -189,7 +213,7 @@ class FirebaseAuthClient {
     }
     
     this.authInProgress = true;
-    authState.set('authenticating');
+    this.setAuthState('authenticating');
     
     try {
       await signOut(this.auth);
@@ -197,7 +221,7 @@ class FirebaseAuthClient {
       await this.signIn();
     } catch (error) {
       console.error('Error during relogin:', error);
-      authState.set('error');
+      this.setAuthState('error');
     } finally {
       this.authInProgress = false;
     }
@@ -206,8 +230,8 @@ class FirebaseAuthClient {
   public async signOut() {
     await signOut(this.auth);
     clearSiteData();
-    this.user.set(null);
-    authState.set('unauthenticated');
+    this.setUser(null);
+    this.setAuthState('unauthenticated');
     
     if (this.interval) {
       clearInterval(this.interval);

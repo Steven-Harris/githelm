@@ -1,14 +1,13 @@
 import { collection, doc, getDoc, setDoc} from 'firebase/firestore';
-import { get } from 'svelte/store';
 import { firebase } from './client';
-import { type Configs, type RepoConfig, type Organization } from './types';
+import type { Configs, RepoConfig, Organization } from './types';
 
 let localOrganizations: Organization[] = [];
 let hasUnsavedOrganizations = false;
 
 export class ConfigService {
   public async getConfigs(): Promise<Configs> {
-    const user = get(firebase.user);
+    const user = firebase.user;
     if (!user?.uid) {
       return { pullRequests: [], actions: [], organizations: [] };
     }
@@ -32,7 +31,7 @@ export class ConfigService {
   }
 
   public async saveConfigs(configs: Configs) {
-    const user = get(firebase.user);
+    const user = firebase.user;
     if (!user) {
       return;
     }

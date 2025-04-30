@@ -15,6 +15,9 @@ dist/
 # Svelte build output
 .svelte-kit/
 
+# dev server output
+dev-dist/
+
 # Firebase 
 .firebase/
 

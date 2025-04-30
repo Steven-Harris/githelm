@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.6.5",
+  "packageManager": "pnpm@10.10.0",
   "scripts": {
     "dev": "vite",
     "test": "vitest",
@@ -21,11 +21,17 @@
   },
   "homepage": "https://githelm.com",
   "dependencies": {
+    "@lit/reactive-element": "^2.1.0",
     "firebase": "^11.6.0",
     "graphql": "^16.10.0",
+    "lit": "^3.3.0",
+    "lit-html": "^3.3.0",
     "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
+    "@lit/context": "^1.1.5",
+    "@lit/react": "^1.0.7",
+    "@lit/task": "^1.0.2",
     "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.20.7",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
