@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { firebase } from '../firebase';
-import { getGithubToken, setGithubToken } from '../storage';
+import { getGithubToken } from '../storage';
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_BASE_MS = 1000;

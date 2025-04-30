@@ -1,8 +1,3 @@
-/**
- * GitHub Pull Requests Module
- * Handles all pull request related operations including fetching, transforming and caching
- */
-
 import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
 import { getStorageObject } from '../storage';
@@ -13,10 +8,6 @@ import {
   type Review
 } from './types';
 
-/**
- * Fetch pull requests for a repository using GraphQL
- * Includes reviews data in a single request
- */
 export async function fetchPullRequestsWithGraphQL(
   org: string, 
   repo: string, 
@@ -91,9 +82,6 @@ export async function fetchPullRequestsWithGraphQL(
   });
 }
 
-/**
- * Transform GraphQL response into the PullRequest format
- */
 function transformGraphQLPullRequests(data: any): PullRequest[] {
   if (!data?.repository?.pullRequests?.edges) {
     return [];
@@ -148,9 +136,6 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
   });
 }
 
-/**
- * Transform GraphQL reviews to the REST API format
- */
 function transformGraphQLReviews(reviewEdges: any[]): Review[] {
   if (!reviewEdges) return [];
   
@@ -191,9 +176,6 @@ function transformGraphQLReviews(reviewEdges: any[]): Review[] {
   return squashReviewsByAuthor(reviews);
 }
 
-/**
- * Deduplicate reviews by author, keeping only the latest review from each author
- */
 export function squashReviewsByAuthor(reviews: Review[]): Review[] {
   if (!reviews || reviews.length === 0) return [];
   
@@ -213,9 +195,6 @@ export function squashReviewsByAuthor(reviews: Review[]): Review[] {
   return Array.from(reviewsByAuthor.values());
 }
 
-/**
- * Fetch pull request reviews, using cached data when available
- */
 export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
   return queueApiCallIfNeeded(async () => {
     try {
@@ -238,9 +217,6 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
   });
 }
 
-/**
- * Fetch pull requests using REST API
- */
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
     const queries = filters.length === 0
@@ -254,9 +230,6 @@ export async function fetchPullRequests(org: string, repo: string, filters: stri
   });
 }
 
-/**
- * Fetch pull requests for multiple repositories in a single request
- */
 export async function fetchMultipleRepositoriesPullRequests(
   configs: RepoInfo[]
 ): Promise<Record<string, PullRequest[]>> {
@@ -342,9 +315,6 @@ export async function fetchMultipleRepositoriesPullRequests(
   }
 }
 
-/**
- * Transform GraphQL response for multiple repositories into the expected format
- */
 function transformMultiRepositoryPullRequests(
   data: any, 
   configs: RepoInfo[]
@@ -412,9 +382,6 @@ function transformMultiRepositoryPullRequests(
   return results;
 }
 
-/**
- * Search for repository labels
- */
 export async function searchRepositoryLabels(owner: string, repo: string): Promise<string[]> {
   if (!owner || !repo) return [];
   

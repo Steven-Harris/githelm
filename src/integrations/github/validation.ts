@@ -1,15 +1,5 @@
-/**
- * GitHub Validation Module
- * Contains utility functions for validating GitHub tokens and other credentials
- * Separated to avoid circular dependencies
- */
+// This function is seperate to solve a circular dependency issue
 
-/**
- * Validates if a GitHub token is valid by making a lightweight API call
- * 
- * @param githubToken The GitHub token to validate
- * @returns Promise resolving to true if token is valid, false otherwise
- */
 export async function isGithubTokenValid(githubToken: string): Promise<boolean> {
   if (!githubToken) {
     return false;

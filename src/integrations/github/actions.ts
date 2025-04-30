@@ -1,6 +1,6 @@
 import { fetchData, postData } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
-import { type Workflow,  type WorkflowRun,  type WorkflowJobs,  type Job,  type Step,  type PendingDeployments } from './types';
+import type { Workflow, WorkflowRun, WorkflowJobs, Job, Step, PendingDeployments } from './types';
 
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
   return queueApiCallIfNeeded(async () => {

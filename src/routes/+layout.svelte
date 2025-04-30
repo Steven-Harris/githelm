@@ -78,9 +78,7 @@
   {/if}
 </main>
 
-{#if loading}
-  <Footer />
-{/if}
+<Footer />
 
 {#await import("$lib/ReloadPrompt.svelte") then { default: ReloadPrompt }}
   <ReloadPrompt />

@@ -5,7 +5,6 @@
   
   // Define types for the component
   type MouseOffset = { x: number; y: number };
-  type DraggedItemRect = { width: number; height: number } | null;
   
   interface RepoConfig {
     org: string;

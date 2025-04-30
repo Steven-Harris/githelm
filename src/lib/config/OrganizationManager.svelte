@@ -3,7 +3,8 @@
   import { configService } from "$integrations/firebase";
   import type { Organization } from "$integrations/firebase";
   import { eventBus } from "$lib/stores/event-bus.store";
-  
+  import editSVG from "$assets/edit.svg"; 
+
   let organizations: Organization[] = $state([]);
   let newOrgName = $state("");
   let editingOrgIndex = $state(-1);
@@ -153,7 +154,7 @@
                     onclick={() => startEditing(i)}
                     title="Edit organization"
                   >
-                    <img src="/src/assets/edit.svg" alt="Edit" class="w-4 h-4" />
+                    <img src={editSVG} alt="edit" width="15" height="15" /> 
                   </button>
                   <button 
                     class="text-red-400 hover:text-red-300"
