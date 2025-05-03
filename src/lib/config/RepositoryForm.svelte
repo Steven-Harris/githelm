@@ -22,7 +22,7 @@
     } | null;
   }
   
-  let { config = null, onSave, existingRepos = [] } = $props();
+  let { config = null, onSave, onCancel, existingRepos = [] } = $props();
   
   // Repository configuration state
   let selectedOrg = $state<string>("");
@@ -271,17 +271,28 @@
     </div>
   {/if}
   
-    <div class="flex justify-end">
+  <div class="flex justify-end gap-2">
+    {#if onCancel}
       <button 
-        class="bg-blue-500 text-white px-4 py-2 rounded-md
-        ${selectedOrg && repoName ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'}"
-        disabled={!selectedOrg || !repoName}
-        type="submit"
-        aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
-        title={config ? 'Update repository configuration' : 'Add repository configuration'}
-        onclick={handleSubmit}
+        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+        type="button"
+        aria-label="Cancel"
+        title="Cancel changes"
+        onclick={onCancel}
       >
-        {config ? 'Update' : 'Add Repository'}
+        Cancel
       </button>
-    </div>
+    {/if}
+    <button 
+      class="bg-blue-500 text-white px-4 py-2 rounded-md
+      ${selectedOrg && repoName ? 'hover:bg-blue-600' : 'opacity-50 cursor-not-allowed'}"
+      disabled={!selectedOrg || !repoName}
+      type="submit"
+      aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
+      title={config ? 'Update repository configuration' : 'Add repository configuration'}
+      onclick={handleSubmit}
+    >
+      {config ? 'Update' : 'Add Repository'}
+    </button>
+  </div>
 </div>

@@ -152,7 +152,7 @@
               class="repo-result w-full text-left p-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none rounded-md {repo.alreadyConfigured ? 'opacity-60 cursor-not-allowed' : ''}"
               onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)}
               onkeydown={(e) => !repo.alreadyConfigured && handleSearchResultKeydown(e, repo.name, i)}
-              tabindex={repo.alreadyConfigured ? "-1" : "0"}
+              tabindex={repo.alreadyConfigured ? -1 : 0}
               disabled={repo.alreadyConfigured}
             >
               <div class="flex justify-between items-center">

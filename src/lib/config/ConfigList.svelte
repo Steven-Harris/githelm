@@ -230,7 +230,8 @@
         {#if editingIndex === i}
           <RepositoryForm 
             {config} 
-            onSave={(data: any) => handleSave(data, i)} 
+            onSave={(data: any) => handleSave(data, i)}
+            onCancel={handleCancel}
           />
         {:else}
           <div
@@ -238,7 +239,7 @@
             draggable="true"
             role="listitem"
             ondragstart={(e) => handleDragStart(e, i)}
-            ondragend={(e) => handleDragEnd(e)}
+            ondragend={handleDragEnd}
             ondragover={(e) => handleDragOver(e, i)}
             ondragleave={handleDragLeave}
             ondrop={(e) => handleDrop(e, i)}
@@ -319,6 +320,7 @@
   {#if editingIndex === -2}
     <RepositoryForm 
       onSave={handleSave}
+      onCancel={handleCancel}
       existingRepos={configs}
     />
   {/if}
