@@ -3,7 +3,14 @@
   import RepositoryForm from "./RepositoryForm.svelte";
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
   import Sortable from "sortablejs";
-  import { onDestroy } from "svelte";
+  import { onMount, onDestroy } from "svelte";
+  
+  interface RepoConfig {
+    org: string;
+    repo: string;
+    pullRequests: string[];
+    actions: string[];
+  }
   
   interface SaveEventData {
     pullRequests?: {
@@ -24,60 +31,82 @@
   let configsList = $state<HTMLElement | null>(null);
   let sortableInstance: Sortable | null = null;
   
-  $effect(() => {
-    if (configsList) {
-      sortableInstance = Sortable.create(configsList, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'opacity-50',
-        dragClass: 'opacity-70',
-        filter: '.no-drag', // Prevent dragging when clicking on buttons or editable areas
-        onEnd: (evt) => {
-          if (typeof evt.oldIndex === 'number' && typeof evt.newIndex === 'number' && evt.oldIndex !== evt.newIndex) {
-            const updatedConfigs = reorderArray(configs, evt);
-            configs = updatedConfigs;
+  // Use onMount to ensure the DOM elements are fully available
+  onMount(() => {
+    initSortable();
+  });
+
+  // Initialize the sortable instance
+  function initSortable() {
+    if (!configsList) return;
+    
+    // Clean up any existing instance
+    if (sortableInstance) {
+      sortableInstance.destroy();
+    }
+    
+    sortableInstance = new Sortable(configsList, {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      dragClass: 'sortable-drag',
+      // Remove handle restriction to allow dragging from anywhere
+      filter: '.no-drag', // Prevent dragging from buttons
+      preventOnFilter: true,
+      delay: 100, // Small delay to prevent accidental drags
+      delayOnTouchOnly: true,
+      // Helps with proper positioning
+      swapThreshold: 0.65,
+      // Key option: disable automatic sorting to let us manually handle the state
+      sort: true,
+      onEnd: (evt) => {
+        if (typeof evt.oldIndex === 'number' && 
+            typeof evt.newIndex === 'number' && 
+            evt.oldIndex !== evt.newIndex) {
             
-            updateRepositoryConfigs(updatedConfigs)
-              .then(() => onUpdate(updatedConfigs))
-              .catch((error) => {
-                console.error("Error updating repository configs:", error);
-              });
-          }
+          // Create a new array that reflects the new DOM order
+          const newConfigs = [...configs];
+          const [movedItem] = newConfigs.splice(evt.oldIndex, 1);
+          newConfigs.splice(evt.newIndex, 0, movedItem);
+          
+          // Force Svelte to recognize this as a new array
+          configs = newConfigs;
+          
+          // Prevent SortableJS from reinitializing while we're updating
+          const savedInstance = sortableInstance;
+          sortableInstance = null;
+          
+          // Save to persistent storage
+          updateRepositoryConfigs(newConfigs)
+            .then(() => {
+              onUpdate(newConfigs);
+              // Restore the instance after update
+              sortableInstance = savedInstance;
+            })
+            .catch((error) => {
+              console.error("Error updating repository configs:", error);
+              // Restore the instance even if there's an error
+              sortableInstance = savedInstance;
+            });
         }
-      });
+      }
+    });
+  }
+  
+  // Re-initialize sortable when the configs array changes
+  $effect(() => {
+    if (configsList && configs) {
+      // Small timeout to ensure DOM is updated before re-initializing
+      setTimeout(initSortable, 0);
     }
   });
   
+  // Clean up on component destruction
   onDestroy(() => {
     if (sortableInstance) {
       sortableInstance.destroy();
     }
   });
-  
-  function reorderArray<T>(array: T[], evt: Sortable.SortableEvent): T[] {
-    const workArray = [...array];
-    
-    const { oldIndex, newIndex } = evt;
-    
-    if (oldIndex === undefined || newIndex === undefined) {
-      return workArray;
-    }
-    
-    if (newIndex === oldIndex) {
-      return workArray;
-    }
-    
-    const target = workArray[oldIndex];
-    const increment = newIndex < oldIndex ? -1 : 1;
-    
-    for (let k = oldIndex; k !== newIndex; k += increment) {
-      workArray[k] = workArray[k + increment];
-    }
-    
-    workArray[newIndex] = target;
-    
-    return workArray;
-  }
   
   function startEditing(index: number): void {
     editingIndex = index;
@@ -157,7 +186,7 @@
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400">☰</span>
+                <span class="mr-2 text-gray-400 drag-handle cursor-grab active:cursor-grabbing">☰</span>
                 <strong>
                   {config.org}/{config.repo}
                 </strong>
@@ -253,13 +282,30 @@
   }
   
   :global(.sortable-ghost) {
-    opacity: 0.3;
+    opacity: 0.2;
     background-color: #334155 !important;
+  }
+  
+  :global(.sortable-drag) {
+    opacity: 0.7;
+    transform: rotate(2deg);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  :global(.sortable-chosen) {
+    background-color: #1e293b !important;
+  }
+  
+  .drag-handle {
+    cursor: grab;
+    font-size: 1.2rem;
+    padding: 0px 5px;
+    color: #94a3b8;
+    transition: color 0.2s ease;
   }
   
   .drag-handle:hover {
     color: white;
-    cursor: grab;
   }
   
   .drag-handle:active {
