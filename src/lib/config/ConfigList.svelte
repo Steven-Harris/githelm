@@ -31,12 +31,31 @@
   let configsList = $state<HTMLElement | null>(null);
   let sortableInstance: Sortable | null = null;
   
-  // Use onMount to ensure the DOM elements are fully available
-  onMount(() => {
-    initSortable();
+  // Track the original configs before any drag operations
+  let originalConfigs = $state<RepoConfig[]>([]);
+  
+  $effect(() => {
+    // Update originalConfigs when configs change from outside this component
+    if (configs && !sortableInstance) {
+      originalConfigs = [...configs];
+    }
   });
-
-  // Initialize the sortable instance
+  
+  onMount(() => {
+    // Initialize sortable when component mounts
+    if (configsList) {
+      initSortable();
+    }
+  });
+  
+  // Clean up when component is destroyed
+  onDestroy(() => {
+    if (sortableInstance) {
+      sortableInstance.destroy();
+      sortableInstance = null;
+    }
+  });
+  
   function initSortable() {
     if (!configsList) return;
     
@@ -45,66 +64,87 @@
       sortableInstance.destroy();
     }
     
+    // Store original order for reference
+    originalConfigs = [...configs];
+    
     sortableInstance = new Sortable(configsList, {
       animation: 150,
       ghostClass: 'sortable-ghost',
-      chosenClass: 'sortable-chosen',
       dragClass: 'sortable-drag',
-      // Remove handle restriction to allow dragging from anywhere
+      chosenClass: 'sortable-chosen',
+      delay: 0, // No delay on desktop
+      delayOnTouchOnly: true, // Only delay on touch devices
+      touchStartThreshold: 3, // Pixels moved before drag starts on touch
       filter: '.no-drag', // Prevent dragging from buttons
       preventOnFilter: true,
-      delay: 100, // Small delay to prevent accidental drags
-      delayOnTouchOnly: true,
-      // Helps with proper positioning
-      swapThreshold: 0.65,
-      // Key option: disable automatic sorting to let us manually handle the state
-      sort: true,
+      
+      // Critical for our ID tracking
+      dataIdAttr: 'data-id',
+      
+      onStart: () => {
+        // Capture the current state before dragging
+        originalConfigs = [...configs];
+      },
+      
       onEnd: (evt) => {
+        // Only proceed if indexes are valid and have changed
         if (typeof evt.oldIndex === 'number' && 
             typeof evt.newIndex === 'number' && 
             evt.oldIndex !== evt.newIndex) {
+
+          try {
+            // Get the new order from DOM directly
+            const newOrder = sortableInstance?.toArray() || [];
             
-          // Create a new array that reflects the new DOM order
-          const newConfigs = [...configs];
-          const [movedItem] = newConfigs.splice(evt.oldIndex, 1);
-          newConfigs.splice(evt.newIndex, 0, movedItem);
-          
-          // Force Svelte to recognize this as a new array
-          configs = newConfigs;
-          
-          // Prevent SortableJS from reinitializing while we're updating
-          const savedInstance = sortableInstance;
-          sortableInstance = null;
-          
-          // Save to persistent storage
-          updateRepositoryConfigs(newConfigs)
-            .then(() => {
-              onUpdate(newConfigs);
-              // Restore the instance after update
-              sortableInstance = savedInstance;
-            })
-            .catch((error) => {
-              console.error("Error updating repository configs:", error);
-              // Restore the instance even if there's an error
-              sortableInstance = savedInstance;
-            });
+            // Safely map back to the original configs by ID
+            const updatedConfigs = newOrder.map(id => {
+              const [org, repo] = id.split('/');
+              const match = originalConfigs.find(c => c.org === org && c.repo === repo);
+              if (!match) {
+                console.warn(`Could not find config for ${id}`);
+              }
+              return match;
+            }).filter(Boolean) as RepoConfig[];
+            
+            // Only update if we have all items
+            if (updatedConfigs.length === originalConfigs.length) {
+              // Set the new config order
+              configs = updatedConfigs;
+              
+              // Store the updated order
+              updateRepositoryConfigs(updatedConfigs)
+                .then(() => onUpdate(updatedConfigs))
+                .catch((error) => {
+                  console.error("Error updating repository configs:", error);
+                  // Revert to original order on error
+                  configs = [...originalConfigs];
+                });
+            } else {
+              console.error("Item count mismatch after drag operation");
+              // Revert to original if we lost items
+              configs = [...originalConfigs];
+            }
+          } catch (error) {
+            console.error("Error during drag operation:", error);
+            // Revert to original on any error
+            configs = [...originalConfigs];
+          }
         }
       }
     });
   }
   
-  // Re-initialize sortable when the configs array changes
+  // Make sure Sortable is reinitialized when DOM elements change
   $effect(() => {
     if (configsList && configs) {
-      // Small timeout to ensure DOM is updated before re-initializing
-      setTimeout(initSortable, 0);
-    }
-  });
-  
-  // Clean up on component destruction
-  onDestroy(() => {
-    if (sortableInstance) {
-      sortableInstance.destroy();
+      // Wait for DOM to update
+      setTimeout(() => {
+        if (sortableInstance) {
+          sortableInstance.destroy();
+          sortableInstance = null;
+        }
+        initSortable();
+      }, 50);
     }
   });
   
