@@ -30,32 +30,24 @@
   let editingIndex = $state<number>(-1);
   let configsList = $state<HTMLElement | null>(null);
   let sortableInstance: Sortable | null = null;
+  let isDragInProgress = $state(false);
   
-  // Track the original configs before any drag operations
-  let originalConfigs = $state<RepoConfig[]>([]);
-  
-  $effect(() => {
-    // Update originalConfigs when configs change from outside this component
-    if (configs && !sortableInstance) {
-      originalConfigs = [...configs];
-    }
-  });
-  
+  // Use onMount to ensure the DOM elements are fully available
   onMount(() => {
-    // Initialize sortable when component mounts
     if (configsList) {
       initSortable();
     }
   });
   
-  // Clean up when component is destroyed
+  // Clean up on component destruction
   onDestroy(() => {
     if (sortableInstance) {
       sortableInstance.destroy();
       sortableInstance = null;
     }
   });
-  
+
+  // Initialize the sortable instance with stable configuration
   function initSortable() {
     if (!configsList) return;
     
@@ -64,87 +56,57 @@
       sortableInstance.destroy();
     }
     
-    // Store original order for reference
-    originalConfigs = [...configs];
+    // Generate a stable unique ID for each config
+    const getConfigId = (config: RepoConfig) => `${config.org}/${config.repo}`;
     
-    sortableInstance = new Sortable(configsList, {
+    sortableInstance = Sortable.create(configsList, {
       animation: 150,
       ghostClass: 'sortable-ghost',
       dragClass: 'sortable-drag',
-      chosenClass: 'sortable-chosen',
-      delay: 0, // No delay on desktop
-      delayOnTouchOnly: true, // Only delay on touch devices
-      touchStartThreshold: 3, // Pixels moved before drag starts on touch
-      filter: '.no-drag', // Prevent dragging from buttons
-      preventOnFilter: true,
-      
-      // Critical for our ID tracking
       dataIdAttr: 'data-id',
-      
+      swapThreshold: 0.5,
+      direction: 'vertical',
       onStart: () => {
-        // Capture the current state before dragging
-        originalConfigs = [...configs];
+        isDragInProgress = true;
       },
-      
       onEnd: (evt) => {
-        // Only proceed if indexes are valid and have changed
-        if (typeof evt.oldIndex === 'number' && 
-            typeof evt.newIndex === 'number' && 
-            evt.oldIndex !== evt.newIndex) {
-
-          try {
-            // Get the new order from DOM directly
-            const newOrder = sortableInstance?.toArray() || [];
+        setTimeout(() => {
+          isDragInProgress = false;
+          
+          if (typeof evt.oldIndex === 'number' && 
+              typeof evt.newIndex === 'number' && 
+              evt.oldIndex !== evt.newIndex) {
             
-            // Safely map back to the original configs by ID
-            const updatedConfigs = newOrder.map(id => {
-              const [org, repo] = id.split('/');
-              const match = originalConfigs.find(c => c.org === org && c.repo === repo);
-              if (!match) {
-                console.warn(`Could not find config for ${id}`);
-              }
-              return match;
-            }).filter(Boolean) as RepoConfig[];
-            
-            // Only update if we have all items
-            if (updatedConfigs.length === originalConfigs.length) {
-              // Set the new config order
-              configs = updatedConfigs;
+            try {
+              const newOrder = sortableInstance.toArray();
               
-              // Store the updated order
-              updateRepositoryConfigs(updatedConfigs)
-                .then(() => onUpdate(updatedConfigs))
-                .catch((error) => {
-                  console.error("Error updating repository configs:", error);
-                  // Revert to original order on error
-                  configs = [...originalConfigs];
-                });
-            } else {
-              console.error("Item count mismatch after drag operation");
-              // Revert to original if we lost items
-              configs = [...originalConfigs];
+              const reorderedConfigs = newOrder.map(id => {
+                const [org, repo] = id.split('/');
+                return configs.find(c => c.org === org && c.repo === repo);
+              }).filter(Boolean);
+              
+              if (reorderedConfigs.length === configs.length) {
+                configs = reorderedConfigs;
+                
+                updateRepositoryConfigs(reorderedConfigs)
+                  .then(() => onUpdate(reorderedConfigs))
+                  .catch((error) => {
+                    console.error("Error updating repository configs:", error);
+                  });
+              }
+            } catch (error) {
+              console.error("Error during drag operation:", error);
             }
-          } catch (error) {
-            console.error("Error during drag operation:", error);
-            // Revert to original on any error
-            configs = [...originalConfigs];
           }
-        }
+        }, 50);
       }
     });
   }
   
-  // Make sure Sortable is reinitialized when DOM elements change
+  // Only reinitialize when needed and not during drag
   $effect(() => {
-    if (configsList && configs) {
-      // Wait for DOM to update
-      setTimeout(() => {
-        if (sortableInstance) {
-          sortableInstance.destroy();
-          sortableInstance = null;
-        }
-        initSortable();
-      }, 50);
+    if (configsList && configs && !isDragInProgress) {
+      setTimeout(initSortable, 100);
     }
   });
   
@@ -226,7 +188,7 @@
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400 drag-handle cursor-grab active:cursor-grabbing">☰</span>
+                <span class="mr-2 text-gray-400">☰</span>
                 <strong>
                   {config.org}/{config.repo}
                 </strong>
@@ -322,7 +284,7 @@
   }
   
   :global(.sortable-ghost) {
-    opacity: 0.2;
+    opacity: 0.3;
     background-color: #334155 !important;
   }
   
@@ -331,21 +293,10 @@
     transform: rotate(2deg);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   }
-
-  :global(.sortable-chosen) {
-    background-color: #1e293b !important;
-  }
-  
-  .drag-handle {
-    cursor: grab;
-    font-size: 1.2rem;
-    padding: 0px 5px;
-    color: #94a3b8;
-    transition: color 0.2s ease;
-  }
   
   .drag-handle:hover {
     color: white;
+    cursor: grab;
   }
   
   .drag-handle:active {
