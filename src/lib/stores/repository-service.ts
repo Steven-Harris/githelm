@@ -329,7 +329,9 @@ export function initializeActionsPolling(repoConfigs: RepoConfig[]): void {
         const store = createPollingStore(storeKey, () => fetchActions(config.org, config.repo, config.filters || []));
         pollingUnsubscribers.set(storeKey, store.subscribe(workflows => {
             if (!workflows) return;
-            const runs = workflows.flatMap(workflow => workflow.workflow_runs);
+            // Make sure workflows is an array and handle if it's not
+            const workflowsArray = Array.isArray(workflows) ? workflows : [workflows].filter(Boolean);
+            const runs = workflowsArray.flatMap(workflow => workflow.workflow_runs || []);
             allWorkflowRuns.update(curr => ({ ...curr, [key]: runs }));
             fetchJobsForWorkflowRuns(config.org, config.repo, runs);
         }));
@@ -346,7 +348,9 @@ export async function refreshActionsData(repoConfigs: RepoConfig[]): Promise<voi
         const key = getRepoKey(config);
         try {
             const workflows = await fetchActions(config.org, config.repo, config.filters || []);
-            const runs: WorkflowRun[] = workflows.flatMap(workflow => workflow?.workflow_runs || []);
+            // Ensure workflows is an array
+            const workflowsArray = Array.isArray(workflows) ? workflows : [workflows].filter(Boolean);
+            const runs: WorkflowRun[] = workflowsArray.flatMap(workflow => workflow?.workflow_runs || []);
             orderedRuns[key] = runs;
             fetchJobsForWorkflowRuns(config.org, config.repo, runs);
         } catch (error) {

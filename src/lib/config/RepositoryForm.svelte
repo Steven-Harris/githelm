@@ -6,7 +6,7 @@
   // Import our new components
   import OrganizationSelector from "./OrganizationSelector.svelte";
   import RepositorySearch from "./RepositorySearch.svelte";
-  import FilterManager from "./FilterManager.svelte";
+  import LabelFilter from "./LabelFilter.svelte";
   import MonitoringToggle from "./MonitoringToggle.svelte";
   
   interface SaveEventData {
@@ -170,6 +170,17 @@
   
   function handleRepoChange(repo: string): void {
     repoName = repo;
+    
+    // When repository changes, reload labels and workflows if monitoring is enabled
+    if (repoName && selectedOrg) {
+      if (monitorPRs) {
+        loadLabels();
+      }
+      
+      if (monitorActions) {
+        loadWorkflows();
+      }
+    }
   }
   
   function toggleMonitorPRs(enabled: boolean): void {
@@ -220,7 +231,7 @@
         
         {#if monitorPRs}
           <div class="mt-3 border-t border-gray-700 pt-3">
-            <FilterManager
+            <LabelFilter
               title="Label"
               filters={prFilters}
               availableOptions={availablePRLabels}
@@ -244,7 +255,7 @@
         
         {#if monitorActions}
           <div class="mt-3 border-t border-gray-700 pt-3">
-            <FilterManager
+            <LabelFilter
               title="Workflow"
               filters={actionFilters}
               availableOptions={availableWorkflows}
@@ -258,4 +269,18 @@
       </div>
     </div>
   {/if}
+  
+    <div class="flex justify-end">
+      <button 
+        class="bg-blue-500 text-white px-4 py-2 rounded-md
+        ${selectedOrg && repoName ? 'hover:bg-blue-500' : 'opacity-50 cursor-not-allowed'}"
+        disabled={!selectedOrg || !repoName}
+        type="submit"
+        aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
+        title={config ? 'Update repository configuration' : 'Add repository configuration'}
+        onclick={handleSubmit}
+      >
+        {config ? 'Update' : 'Add Repository'}
+      </button>
+    </div>
 </div>

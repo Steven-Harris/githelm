@@ -79,6 +79,9 @@
           }
         ];
         configs = updatedConfigs;
+        
+        // Reset form after successful add
+        editingIndex = -1;
       }
     }
     
