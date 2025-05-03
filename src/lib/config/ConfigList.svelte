@@ -31,7 +31,7 @@
         ghostClass: 'sortable-ghost',
         chosenClass: 'opacity-50',
         dragClass: 'opacity-70',
-        handle: '.drag-handle',
+        filter: '.no-drag', // Prevent dragging when clicking on buttons or editable areas
         onEnd: (evt) => {
           if (typeof evt.oldIndex === 'number' && typeof evt.newIndex === 'number' && evt.oldIndex !== evt.newIndex) {
             const updatedConfigs = reorderArray(configs, evt);
@@ -152,17 +152,17 @@
           />
         {:else}
           <div
-            class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600"
+            class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 cursor-grab active:cursor-grabbing"
             data-id={`${config.org}/${config.repo}`}
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400 cursor-move drag-handle">☰</span>
+                <span class="mr-2 text-gray-400">☰</span>
                 <strong>
                   {config.org}/{config.repo}
                 </strong>
                 <button 
-                  class="ml-2 text-white" 
+                  class="ml-2 text-white no-drag" 
                   aria-label="edit {config.org}/{config.repo}" 
                   title="Edit repository configuration" 
                   onclick={() => startEditing(i)}
@@ -171,7 +171,7 @@
                 </button>
               </span>
               <button 
-                class="text-gray-400 hover:text-white" 
+                class="text-gray-400 hover:text-white no-drag" 
                 title="Remove repository" 
                 onclick={() => removeConfig(i)}
               >
