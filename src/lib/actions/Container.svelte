@@ -1,11 +1,45 @@
 <script lang="ts">
   import List from "./List.svelte";
+  import WorkflowStatusFilter from "./WorkflowStatusFilter.svelte";
   import { actionsConfigs, getRepoKey, allWorkflowRuns } from "$lib/stores/repository-service";
+  import { workflowStatusFilters, type WorkflowStatus } from "$lib/stores/workflow-status-filter.store";
+  import { derived } from "svelte/store";
+  import type { WorkflowRun } from "$integrations/github";
+
+  // Derive filtered workflow runs based on the status filters
+  const filteredWorkflowRunsByRepo = derived(
+    [allWorkflowRuns, workflowStatusFilters],
+    ([$allWorkflowRuns, $statusFilters]) => {
+      const filtered: Record<string, WorkflowRun[]> = {};
+      
+      Object.entries($allWorkflowRuns).forEach(([repoKey, runs]) => {
+        filtered[repoKey] = runs.filter(run => {
+          const status = run.conclusion || run.status;
+          const normalizedStatus = status.toLowerCase();
+          
+          // Map completed to success for consistency
+          const filterStatus = normalizedStatus === 'completed' ? 'success' : normalizedStatus;
+          
+          // Check if this status type is enabled in filters
+          // Use type assertion to ensure TypeScript knows this is a valid WorkflowStatus
+          // or default to showing it if it's not a recognized status
+          return (Object.keys($statusFilters).includes(filterStatus) 
+                  ? $statusFilters[filterStatus as WorkflowStatus] 
+                  : true);
+        });
+      });
+      
+      return filtered;
+    }
+  );
 </script>
 
 <section class="hero-section mb-6 glass-effect">
   <div class="container mx-auto">
-    <h2 class="hero-title">Actions</h2>
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="hero-title">Actions</h2>
+      <WorkflowStatusFilter />
+    </div>
     
     {#if $actionsConfigs.length === 0}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
@@ -19,15 +53,32 @@
     {:else}
       <div class="space-y-4">
         {#each $actionsConfigs as repo (repo.org + '/' + repo.repo)}
-          <div class="stagger-item">
-            <List 
-              org={repo.org} 
-              repo={repo.repo} 
-              workflowRuns={$allWorkflowRuns[getRepoKey(repo)] || []} 
-            />
-          </div>
+          {@const repoKey = getRepoKey(repo)}
+          {@const filteredRuns = $filteredWorkflowRunsByRepo[repoKey] || []}
+          
+          {#if filteredRuns.length > 0}
+            <div class="stagger-item">
+              <List 
+                org={repo.org} 
+                repo={repo.repo} 
+                workflowRuns={filteredRuns} 
+              />
+            </div>
+          {/if}
         {/each}
       </div>
+      
+      <!-- Show message if all repos are filtered out -->
+      {#if Object.values($filteredWorkflowRunsByRepo).every(runs => runs.length === 0) && $actionsConfigs.length > 0}
+        <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
+          <div class="text-lg text-[#8b949e] mb-4">
+            No workflow runs match your current filters
+          </div>
+          <div class="text-sm text-[#8b949e]">
+            Try adjusting your workflow status filters above
+          </div>
+        </div>
+      {/if}
     {/if}
   </div>
 </section>
