@@ -1,6 +1,25 @@
 <script lang="ts">
   import List from "./List.svelte";
   import { pullRequestConfigs, getRepoKey, allPullRequests } from "$lib/stores/repository-service";
+  
+  // State to track if the empty repositories section is expanded or collapsed
+  let showEmptyRepos = $state(false);
+  
+  // Computed property to separate repos with PRs from empty repos
+  let reposWithPRs = $derived($pullRequestConfigs.filter(repo => {
+    const repoKey = getRepoKey(repo);
+    return ($allPullRequests[repoKey] || []).length > 0;
+  }));
+  
+  let reposWithoutPRs = $derived($pullRequestConfigs.filter(repo => {
+    const repoKey = getRepoKey(repo);
+    return ($allPullRequests[repoKey] || []).length === 0;
+  }));
+
+  // Toggle function for the empty repositories section
+  function toggleEmptyRepos() {
+    showEmptyRepos = !showEmptyRepos;
+  }
 </script>
 
 <section class="hero-section mb-6 glass-effect">
@@ -18,7 +37,8 @@
       </div>
     {:else}
       <div class="space-y-4">
-        {#each $pullRequestConfigs as repo (repo.org + '/' + repo.repo)}
+        <!-- Repositories with Pull Requests -->
+        {#each reposWithPRs as repo (repo.org + '/' + repo.repo)}
           <div class="stagger-item">
             <List 
               org={repo.org} 
@@ -27,6 +47,44 @@
             />
           </div>
         {/each}
+
+        <!-- Empty repositories section -->
+        {#if reposWithoutPRs.length > 0}
+          <div class="mt-6 border-t border-[#30363d] pt-4">
+            <button 
+              class="flex items-center justify-between w-full text-left px-4 py-3 bg-[#161b22] text-[#c9d1d9] rounded mb-2 hover:bg-[#21262d] transition-colors"
+              onclick={toggleEmptyRepos}
+              aria-expanded={showEmptyRepos}
+            >
+              <span class="font-medium">Repositories without PRs ({reposWithoutPRs.length})</span>
+              <svg 
+                class="w-5 h-5 transition-transform duration-200" 
+                class:transform={true} 
+                class:rotate-180={showEmptyRepos}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+            
+            {#if showEmptyRepos}
+              <div class="space-y-2">
+                {#each reposWithoutPRs as repo (repo.org + '/' + repo.repo)}
+                  <div class="stagger-item">
+                    <List 
+                      org={repo.org} 
+                      repo={repo.repo} 
+                      pullRequests={$allPullRequests[getRepoKey(repo)] || []} 
+                    />
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
       </div>
     {/if}
   </div>

@@ -2,7 +2,8 @@
   import Reviews from "./Reviews.svelte";
   import { timeAgo } from "$lib/utils/date-utils";
   
-  let { org, repo, pullRequests } = $props();
+  let { org, repo, pullRequests} = $props();
+  
 </script>
 
 <div>
