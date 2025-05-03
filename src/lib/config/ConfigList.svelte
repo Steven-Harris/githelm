@@ -2,16 +2,8 @@
   import editSVG from "$assets/edit.svg";
   import RepositoryForm from "./RepositoryForm.svelte";
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
-  
-  // Define types for the component
-  type MouseOffset = { x: number; y: number };
-  
-  interface RepoConfig {
-    org: string;
-    repo: string;
-    pullRequests: string[];
-    actions: string[];
-  }
+  import Sortable from "sortablejs";
+  import { onDestroy } from "svelte";
   
   interface SaveEventData {
     pullRequests?: {
@@ -29,9 +21,63 @@
   let { configs = [], onUpdate } = $props();
   
   let editingIndex = $state<number>(-1);
-  let draggedItem = $state<RepoConfig | null>(null);
-  let draggedOverIndex = $state<number | null>(null);
-  let mouseOffset = $state<MouseOffset>({ x: 0, y: 0 });
+  let configsList = $state<HTMLElement | null>(null);
+  let sortableInstance: Sortable | null = null;
+  
+  $effect(() => {
+    if (configsList) {
+      sortableInstance = Sortable.create(configsList, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'opacity-50',
+        dragClass: 'opacity-70',
+        handle: '.drag-handle',
+        onEnd: (evt) => {
+          if (typeof evt.oldIndex === 'number' && typeof evt.newIndex === 'number' && evt.oldIndex !== evt.newIndex) {
+            const updatedConfigs = reorderArray(configs, evt);
+            configs = updatedConfigs;
+            
+            updateRepositoryConfigs(updatedConfigs)
+              .then(() => onUpdate(updatedConfigs))
+              .catch((error) => {
+                console.error("Error updating repository configs:", error);
+              });
+          }
+        }
+      });
+    }
+  });
+  
+  onDestroy(() => {
+    if (sortableInstance) {
+      sortableInstance.destroy();
+    }
+  });
+  
+  function reorderArray<T>(array: T[], evt: Sortable.SortableEvent): T[] {
+    const workArray = [...array];
+    
+    const { oldIndex, newIndex } = evt;
+    
+    if (oldIndex === undefined || newIndex === undefined) {
+      return workArray;
+    }
+    
+    if (newIndex === oldIndex) {
+      return workArray;
+    }
+    
+    const target = workArray[oldIndex];
+    const increment = newIndex < oldIndex ? -1 : 1;
+    
+    for (let k = oldIndex; k !== newIndex; k += increment) {
+      workArray[k] = workArray[k + increment];
+    }
+    
+    workArray[newIndex] = target;
+    
+    return workArray;
+  }
   
   function startEditing(index: number): void {
     editingIndex = index;
@@ -67,7 +113,6 @@
       configs = updatedConfigs;
       editingIndex = -1;
     } else {
-      // Add new config
       if (pullRequests || actions) {
         updatedConfigs = [
           ...configs, 
@@ -79,8 +124,6 @@
           }
         ];
         configs = updatedConfigs;
-        
-        // Reset form after successful add
         editingIndex = -1;
       }
     }
@@ -95,137 +138,11 @@
   function handleCancel(): void {
     editingIndex = -1;
   }
-  
-  // Drag and drop handling
-  function handleDragStart(e: DragEvent, index: number): void {
-    if (!e.target) return;
-    
-    const item = e.target as HTMLElement;
-    const rect = item.getBoundingClientRect();
-    
-    mouseOffset = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-    
-    draggedItem = configs[index];
-    
-    const dragImage = item.cloneNode(true) as HTMLElement;
-    dragImage.style.opacity = "0.5";
-    dragImage.style.position = "absolute";
-    dragImage.style.top = "-1000px";
-    document.body.appendChild(dragImage);
-    
-    if (e.dataTransfer) {
-      e.dataTransfer.setDragImage(dragImage, mouseOffset.x, mouseOffset.y);
-      e.dataTransfer.effectAllowed = "move";
-    }
-    
-    setTimeout(() => {
-      document.body.removeChild(dragImage);
-    }, 0);
-    
-    item.classList.add("opacity-50");
-  }
-  
-  function handleDragEnd(e: DragEvent): void {
-    if (e.target && e.target instanceof HTMLElement) {
-      e.target.classList.remove("opacity-50");
-    }
-    
-    draggedItem = null;
-    draggedOverIndex = null;
-  }
-  
-  function handleDragOver(e: DragEvent, index: number): void {
-    e.preventDefault();
-    if (draggedItem === null || index === editingIndex) return;
-    
-    if (draggedOverIndex === index) return;
-    
-    draggedOverIndex = index;
-    
-    if (!e.currentTarget || !(e.currentTarget instanceof HTMLElement)) return;
-    
-    const targetRect = e.currentTarget.getBoundingClientRect();
-    const mouseY = e.clientY;
-    const relativeY = mouseY - targetRect.top;
-    const halfway = targetRect.height / 2;
-    
-    const insertBefore = relativeY < halfway;
-    
-    const dropIndicator = document.getElementById("drop-indicator");
-    if (!dropIndicator) return;
-    
-    if (insertBefore) {
-      dropIndicator.style.top = `${targetRect.top}px`;
-    } else {
-      dropIndicator.style.top = `${targetRect.bottom}px`;
-    }
-    dropIndicator.style.left = `${targetRect.left}px`;
-    dropIndicator.style.width = `${targetRect.width}px`;
-    dropIndicator.style.display = "block";
-  }
-  
-  function handleDrop(e: DragEvent, index: number): void {
-    e.preventDefault();
-    
-    const dropIndicator = document.getElementById("drop-indicator");
-    if (dropIndicator) {
-      dropIndicator.style.display = "none";
-    }
-    
-    if (draggedItem === null) return;
-    
-    const draggedIndex = configs.findIndex(c => 
-      c.org === draggedItem!.org && c.repo === draggedItem!.repo
-    );
-    
-    if (draggedIndex === -1 || draggedIndex === index) return;
-    
-    if (!e.currentTarget || !(e.currentTarget instanceof HTMLElement)) return;
-    
-    const targetRect = e.currentTarget.getBoundingClientRect();
-    const mouseY = e.clientY;
-    const relativeY = mouseY - targetRect.top;
-    const halfway = targetRect.height / 2;
-    const insertBefore = relativeY < halfway;
-    
-    let targetIndex = index;
-    if (!insertBefore && targetIndex < configs.length) {
-      targetIndex += 1;
-    }
-    
-    if (draggedIndex < targetIndex) {
-      targetIndex -= 1;
-    }
-    
-    const updatedConfigs = [...configs];
-    const [removed] = updatedConfigs.splice(draggedIndex, 1);
-    updatedConfigs.splice(targetIndex, 0, removed);
-    
-    configs = updatedConfigs;
-    
-    updateRepositoryConfigs(updatedConfigs)
-      .then(() => onUpdate(updatedConfigs))
-      .catch((error) => {
-        console.error("Error updating repository configs:", error);
-      });
-  }
-  
-  function handleDragLeave(): void {
-    const dropIndicator = document.getElementById("drop-indicator");
-    if (dropIndicator) {
-      dropIndicator.style.display = "none";
-    }
-  }
 </script>
 
 <div class="mt-2">
-  <div id="drop-indicator" class="h-1 bg-blue-500 absolute z-10 hidden"></div>
-  
   {#if configs.length > 0}
-    <div class="space-y-2 mb-4">
+    <div class="space-y-2 mb-4" bind:this={configsList}>
       {#each configs as config, i}
         {#if editingIndex === i}
           <RepositoryForm 
@@ -235,18 +152,12 @@
           />
         {:else}
           <div
-            class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 cursor-move"
-            draggable="true"
-            role="listitem"
-            ondragstart={(e) => handleDragStart(e, i)}
-            ondragend={handleDragEnd}
-            ondragover={(e) => handleDragOver(e, i)}
-            ondragleave={handleDragLeave}
-            ondrop={(e) => handleDrop(e, i)}
+            class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600"
+            data-id={`${config.org}/${config.repo}`}
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400">☰</span>
+                <span class="mr-2 text-gray-400 cursor-move drag-handle">☰</span>
                 <strong>
                   {config.org}/{config.repo}
                 </strong>
@@ -339,5 +250,19 @@
   
   :global(.chip > button) {
     margin-left: 4px;
+  }
+  
+  :global(.sortable-ghost) {
+    opacity: 0.3;
+    background-color: #334155 !important;
+  }
+  
+  .drag-handle:hover {
+    color: white;
+    cursor: grab;
+  }
+  
+  .drag-handle:active {
+    cursor: grabbing;
   }
 </style>

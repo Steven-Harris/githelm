@@ -14,6 +14,9 @@ importers:
       graphql:
         specifier: ^16.10.0
         version: 16.10.0
+      sortablejs:
+        specifier: ^1.15.6
+        version: 1.15.6
       tailwindcss:
         specifier: ^4.1.4
         version: 4.1.4
@@ -39,6 +42,9 @@ importers:
       '@tsconfig/svelte':
         specifier: 5.0.4
         version: 5.0.4
+      '@types/sortablejs':
+        specifier: ^1.15.8
+        version: 1.15.8
       '@vite-pwa/assets-generator':
         specifier: ^0.2.6
         version: 0.2.6
@@ -1498,6 +1504,9 @@ packages:
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
 
+  '@types/sortablejs@1.15.8':
+    resolution: {integrity: sha512-b79830lW+RZfwaztgs1aVPgbasJ8e7AXtZYHTELNXZPsERt4ymJdjV4OccDbHQAvHrCcFpbF78jkm0R6h/pZVg==}
+
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
@@ -2782,6 +2791,9 @@ packages:
 
   smob@1.5.0:
     resolution: {integrity: sha512-g6T+p7QO8npa+/hNx9ohv1E5pVCmWrVCUzUXJyLdMmftX6ER0oiWY/w9knEonLpnOp6b6FenKnMfR8gqwWdwig==}
+
+  sortablejs@1.15.6:
+    resolution: {integrity: sha512-aNfiuwMEpfBM/CN6LY0ibyhxPfPbyFeBTYJKCvzkJ2GkUpazIt3H+QIPAMHwqQ7tMKaHz1Qj+rJJCqljnf4p3A==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -4843,6 +4855,8 @@ snapshots:
 
   '@types/resolve@1.20.2': {}
 
+  '@types/sortablejs@1.15.8': {}
+
   '@types/trusted-types@2.0.7': {}
 
   '@vite-pwa/assets-generator@0.2.6':
@@ -6305,6 +6319,8 @@ snapshots:
       totalist: 3.0.1
 
   smob@1.5.0: {}
+
+  sortablejs@1.15.6: {}
 
   source-map-js@1.2.1: {}
 
