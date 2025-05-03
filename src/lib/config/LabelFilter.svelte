@@ -82,7 +82,7 @@
 </script>
 
 <div>
-  <h5 class="text-sm font-medium mb-2">{title} Filters (optional)</h5>
+  <h5 class="text-sm font-medium mb-2 text-[#c9d1d9]">{title} Filters (optional)</h5>
   
   {#if filters.length > 0}
     <div class="flex flex-wrap gap-2 mb-2">
@@ -98,7 +98,7 @@
       {/each}
     </div>
   {:else}
-    <p class="text-xs text-gray-400 mb-2">No filters set. All {title.toLowerCase()} will be displayed.</p>
+    <p class="text-xs text-[#8b949e] mb-2">No filters set. All {title.toLowerCase()} will be displayed.</p>
   {/if}
   
   <div class="relative">
@@ -109,17 +109,17 @@
       oninput={handleInputChange}
       onkeydown={handleInputKeydown}
       onfocus={() => { if (newFilter.trim() && availableOptions.length > 0) showResults = true; }}
-      class="w-full p-2 bg-gray-600 border border-gray-600 rounded text-white"
+      class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200"
       placeholder={`Add ${title.toLowerCase()} filter`}
       aria-label="New filter"
     />
     
     {#if showResults && filteredOptions.length > 0}
-      <div class="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+      <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto">
         {#each filteredOptions as option, i}
           <button 
             type="button"
-            class="filter-option w-full text-left p-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none rounded-md"
+            class="filter-option w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9]"
             onclick={() => selectOption(option)}
             onkeydown={(e) => handleOptionKeydown(e, option, i)}
             tabindex="0"
@@ -132,11 +132,11 @@
   </div>
   
   {#if loading}
-    <p class="text-xs text-gray-400 mt-1">Loading {title.toLowerCase()}...</p>
+    <p class="text-xs text-[#8b949e] mt-1">Loading {title.toLowerCase()}...</p>
   {:else if availableOptions.length === 0}
     <button 
       type="button"
-      class="text-xs text-blue-400 mt-1"
+      class="text-xs text-[#58a6ff] mt-1 hover:underline"
       onclick={onLoadOptions}
     >
       Load available {title.toLowerCase()} from repository
@@ -148,14 +148,17 @@
   .chip {
     display: flex;
     align-items: center;
-    background-color: var(--secondary-color);
-    color: white;
+    background-color: rgba(56, 139, 253, 0.15);
+    color: #58a6ff;
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: 14px;
     font-size: 0.75rem;
+    border: 1px solid rgba(56, 139, 253, 0.4);
   }
   
   .chip > button {
     margin-left: 4px;
+    font-size: 16px;
+    line-height: 1;
   }
 </style>

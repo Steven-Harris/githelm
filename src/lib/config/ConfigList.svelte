@@ -78,7 +78,7 @@
               evt.oldIndex !== evt.newIndex) {
             
             try {
-              const newOrder = sortableInstance.toArray();
+              const newOrder = sortableInstance ? sortableInstance.toArray() : [];
               
               const reorderedConfigs = newOrder.map(id => {
                 const [org, repo] = id.split('/');
@@ -171,9 +171,9 @@
   }
 </script>
 
-<div class="mt-2">
+<div class="mt-4">
   {#if configs.length > 0}
-    <div class="space-y-2 mb-4" bind:this={configsList}>
+    <div class="space-y-3 mb-4" bind:this={configsList}>
       {#each configs as config, i}
         {#if editingIndex === i}
           <RepositoryForm 
@@ -183,17 +183,17 @@
           />
         {:else}
           <div
-            class="p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 cursor-grab active:cursor-grabbing"
+            class="p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
             data-id={`${config.org}/${config.repo}`}
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400">☰</span>
-                <strong>
-                  {config.org}/{config.repo}
+                <span class="mr-2 text-gray-400 opacity-70">☰</span>
+                <strong class="text-[#e6edf3]">
+                  {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                 </strong>
                 <button 
-                  class="ml-2 text-white no-drag" 
+                  class="ml-2 text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag" 
                   aria-label="edit {config.org}/{config.repo}" 
                   title="Edit repository configuration" 
                   onclick={() => startEditing(i)}
@@ -202,7 +202,7 @@
                 </button>
               </span>
               <button 
-                class="text-gray-400 hover:text-white no-drag" 
+                class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag" 
                 title="Remove repository" 
                 onclick={() => removeConfig(i)}
               >
@@ -210,10 +210,10 @@
               </button>
             </div>
             
-            <div class="mt-1 text-sm flex flex-wrap gap-2">
+            <div class="mt-2 text-sm flex flex-wrap gap-2">
               {#if config.pullRequests?.length > 0}
                 <div class="flex items-center">
-                  <span class="text-blue-400 font-medium mr-1">PRs:</span>
+                  <span class="text-[#58a6ff] font-medium mr-1">PRs:</span>
                   <div class="flex flex-wrap gap-1">
                     {#each config.pullRequests as filter}
                       <span class="chip">{filter}</span>
@@ -222,13 +222,13 @@
                 </div>
               {:else if config.pullRequests}
                 <div class="flex items-center">
-                  <span class="text-blue-400 font-medium">PRs: All</span>
+                  <span class="text-[#58a6ff] font-medium">PRs: All</span>
                 </div>
               {/if}
               
               {#if config.actions?.length > 0}
                 <div class="flex items-center">
-                  <span class="text-green-400 font-medium mr-1">Actions:</span>
+                  <span class="text-[#3fb950] font-medium mr-1">Actions:</span>
                   <div class="flex flex-wrap gap-1">
                     {#each config.actions as filter}
                       <span class="chip">{filter}</span>
@@ -237,7 +237,7 @@
                 </div>
               {:else if config.actions}
                 <div class="flex items-center">
-                  <span class="text-green-400 font-medium">Actions: All</span>
+                  <span class="text-[#3fb950] font-medium">Actions: All</span>
                 </div>
               {/if}
             </div>
@@ -246,15 +246,15 @@
       {/each}
     </div>
   {:else}
-    <p class="text-gray-400 mb-4">No repositories configured. Add one below.</p>
+    <p class="text-[#8b949e] mb-4">No repositories configured. Add one below.</p>
   {/if}
   
   {#if editingIndex === -1}
     <button
-      class="flex items-center p-2 px-4 bg-gray-700 rounded-md hover:bg-gray-600 w-full mb-4"
+      class="flex items-center p-3 px-4 glass-container hover:border-[#388bfd44] w-full mb-4 transition-all duration-200"
       onclick={() => editingIndex = -2}
     >
-      <span class="text-xl mr-1">+</span>
+      <span class="text-xl mr-1 text-[#3fb950]">+</span>
       <span>Add Repository</span>
     </button>
   {/if}
@@ -272,11 +272,12 @@
   :global(.chip) {
     display: flex;
     align-items: center;
-    background-color: var(--secondary-color);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background-color: rgba(88, 166, 255, 0.15);
+    color: var(--secondary-accent-color);
+    padding: 3px 8px;
+    border-radius: 6px;
     font-size: 0.75rem;
+    border: 1px solid rgba(88, 166, 255, 0.4);
   }
   
   :global(.chip > button) {
@@ -285,21 +286,14 @@
   
   :global(.sortable-ghost) {
     opacity: 0.3;
-    background-color: #334155 !important;
+    background-color: rgba(33, 38, 45, 0.8) !important;
+    border: 1px dashed var(--border-color) !important;
   }
   
   :global(.sortable-drag) {
     opacity: 0.7;
-    transform: rotate(2deg);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transform: rotate(1deg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   }
   
-  .drag-handle:hover {
-    color: white;
-    cursor: grab;
-  }
-  
-  .drag-handle:active {
-    cursor: grabbing;
-  }
 </style>

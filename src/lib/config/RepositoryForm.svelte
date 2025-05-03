@@ -200,8 +200,8 @@
   }
 </script>
 
-<div class="bg-gray-700 p-4 rounded-md mb-4">
-  <h3 class="text-lg font-bold mb-4">
+<div class="p-4 rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)]">
+  <h3 class="text-lg font-semibold mb-4 text-[#c9d1d9]">
     {config ? 'Edit' : 'Add'} Repository Configuration
   </h3>
   
@@ -222,7 +222,7 @@
   {#if selectedOrg && repoName}
     <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Pull Requests Section -->
-      <div class="bg-gray-800 p-3 rounded-md">
+      <div class="bg-[rgba(22,27,34,0.5)] p-4 rounded-md border border-[#30363d]">
         <MonitoringToggle 
           title="Monitor Pull Requests" 
           enabled={monitorPRs} 
@@ -231,7 +231,7 @@
         />
         
         {#if monitorPRs}
-          <div class="mt-3 border-t border-gray-700 pt-3">
+          <div class="mt-3 border-t border-[#30363d] pt-3">
             <LabelFilter
               title="Label"
               filters={prFilters}
@@ -246,7 +246,7 @@
       </div>
       
       <!-- GitHub Actions Section -->
-      <div class="bg-gray-800 p-3 rounded-md">
+      <div class="bg-[rgba(22,27,34,0.5)] p-4 rounded-md border border-[#30363d]">
         <MonitoringToggle 
           title="Monitor GitHub Actions" 
           enabled={monitorActions} 
@@ -255,7 +255,7 @@
         />
         
         {#if monitorActions}
-          <div class="mt-3 border-t border-gray-700 pt-3">
+          <div class="mt-3 border-t border-[#30363d] pt-3">
             <LabelFilter
               title="Workflow"
               filters={actionFilters}
@@ -274,7 +274,7 @@
   <div class="flex justify-end gap-2">
     {#if onCancel}
       <button 
-        class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+        class="bg-[rgba(110,118,129,0.4)] text-[#c9d1d9] px-4 py-2 rounded-md hover:bg-[rgba(110,118,129,0.5)] border border-[#30363d] transition-colors duration-200"
         type="button"
         aria-label="Cancel"
         title="Cancel changes"
@@ -284,9 +284,9 @@
       </button>
     {/if}
     <button 
-      class="bg-blue-500 text-white px-4 py-2 rounded-md
-      ${selectedOrg && repoName ? 'hover:bg-blue-600' : 'opacity-50 cursor-not-allowed'}"
-      disabled={!selectedOrg || !repoName}
+      class={`bg-[#238636] text-white px-4 py-2 rounded-md border border-[#2ea043] transition-colors duration-200 
+      ${selectedOrg && repoName ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}`}
+      disabled={!selectedOrg || !repoName || (!monitorPRs && !monitorActions)}
       type="submit"
       aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
       title={config ? 'Update repository configuration' : 'Add repository configuration'}

@@ -3,7 +3,7 @@
 </script>
 
 <div class="flex items-center justify-between mb-2">
-  <h4 class="font-medium">{title}</h4>
+  <h4 class="font-medium text-[#c9d1d9]">{title}</h4>
   <label class="switch">
     <input 
       type="checkbox" 
@@ -38,8 +38,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #4B5563;
+    background-color: rgba(110, 118, 129, 0.4);
     transition: .3s;
+    border: 1px solid #30363d;
   }
   
   .slider:before {
@@ -48,8 +49,8 @@
     height: 14px;
     width: 14px;
     left: 3px;
-    bottom: 3px;
-    background-color: white;
+    bottom: 2px;
+    background-color: #c9d1d9;
     transition: .3s;
   }
   
@@ -58,11 +59,11 @@
   }
   
   input:checked + .slider.blue {
-    background-color: #3B82F6;
+    background-color: #58a6ff;
   }
   
   input:checked + .slider.green {
-    background-color: #10B981;
+    background-color: #3fb950;
   }
   
   input:checked + .slider:before {
