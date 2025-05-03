@@ -2,9 +2,20 @@
   import { searchRepositories } from "$integrations/github";
   import type { SearchRepositoryResult } from "$lib/stores/repository-service";
   
-  let { orgName = "", repoName = "", disabled = false, onChange } = $props();
+  interface ExistingRepo {
+    org: string;
+    repo: string;
+  }
   
-  let searchResults = $state<SearchRepositoryResult[]>([]);
+  let { orgName = "", repoName = "", disabled = false, onChange, existingRepos = [] } = $props<{
+    orgName: string;
+    repoName: string;
+    disabled?: boolean;
+    onChange: (repo: string) => void;
+    existingRepos?: ExistingRepo[];
+  }>();
+  
+  let searchResults = $state<(SearchRepositoryResult & { alreadyConfigured?: boolean })[]>([]);
   let isLoading = $state<boolean>(false);
   let showResults = $state<boolean>(false);
   let searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
@@ -24,7 +35,15 @@
       showResults = true;
       
       try {
-        searchResults = await searchRepositories(orgName, repoName);
+        const results = await searchRepositories(orgName, repoName);
+        
+        // Mark repositories that are already configured
+        searchResults = results.map(repo => ({
+          ...repo,
+          alreadyConfigured: existingRepos.some(
+            existing => existing.org === orgName && existing.repo === repo.name
+          )
+        }));
       } catch (error) {
         console.error("Error searching repositories:", error);
         searchResults = [];
@@ -35,9 +54,16 @@
   }
   
   function selectRepository(repo: string): void {
-    onChange(repo);
-    showResults = false;
-    searchResults = [];
+    // Check if repository is already configured
+    const isAlreadyConfigured = existingRepos.some(
+      existing => existing.org === orgName && existing.repo === repo
+    );
+    
+    if (!isAlreadyConfigured) {
+      onChange(repo);
+      showResults = false;
+      searchResults = [];
+    }
   }
   
   function handleInputKeydown(e: KeyboardEvent): void {
@@ -123,12 +149,18 @@
           {#each searchResults as repo, i}
             <button 
               type="button"
-              class="repo-result w-full text-left p-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none rounded-md"
-              onclick={() => selectRepository(repo.name)}
-              onkeydown={(e) => handleSearchResultKeydown(e, repo.name, i)}
-              tabindex="0"
+              class="repo-result w-full text-left p-2 hover:bg-gray-700 focus:bg-gray-700 focus:outline-none rounded-md {repo.alreadyConfigured ? 'opacity-60 cursor-not-allowed' : ''}"
+              onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)}
+              onkeydown={(e) => !repo.alreadyConfigured && handleSearchResultKeydown(e, repo.name, i)}
+              tabindex={repo.alreadyConfigured ? "-1" : "0"}
+              disabled={repo.alreadyConfigured}
             >
-              <div class="font-medium">{repo.name}</div>
+              <div class="flex justify-between items-center">
+                <div class="font-medium">{repo.name}</div>
+                {#if repo.alreadyConfigured}
+                  <span class="text-xs bg-gray-600 px-2 py-0.5 rounded-full text-gray-300">Already configured</span>
+                {/if}
+              </div>
               {#if repo.description}
                 <div class="text-sm text-gray-400">{repo.description}</div>
               {/if}

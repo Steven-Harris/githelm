@@ -22,7 +22,7 @@
     } | null;
   }
   
-  let { config = null, onSave } = $props();
+  let { config = null, onSave, existingRepos = [] } = $props();
   
   // Repository configuration state
   let selectedOrg = $state<string>("");
@@ -215,6 +215,7 @@
     orgName={selectedOrg}
     repoName={repoName}
     disabled={config !== null}
+    existingRepos={existingRepos}
     onChange={handleRepoChange}
   />
   

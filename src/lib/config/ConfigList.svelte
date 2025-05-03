@@ -317,7 +317,10 @@
   {/if}
   
   {#if editingIndex === -2}
-    <RepositoryForm onSave={handleSave} />
+    <RepositoryForm 
+      onSave={handleSave}
+      existingRepos={configs}
+    />
   {/if}
 </div>
 
