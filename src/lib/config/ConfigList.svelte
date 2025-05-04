@@ -2,8 +2,8 @@
   import editSVG from "$assets/edit.svg";
   import RepositoryForm from "./RepositoryForm.svelte";
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
-  import { onMount } from "svelte";
   import deleteSVG from "$assets/delete.svg";
+  import { useDraggable } from "./useDraggable";
   
   interface RepoConfig {
     org: string;
@@ -28,12 +28,7 @@
   let { configs = [], onUpdate } = $props();
   
   let editingIndex = $state<number>(-1);
-  let draggedIndex = $state<number | null>(null);
-  let dragOverIndex = $state<number | null>(null);
-  let isDragging = $state(false);
-  let ghostElement = $state<HTMLElement | null>(null);
-  let mouseOffset = $state({ x: 0, y: 0 });
-  let lastMousePosition = $state({ x: 0, y: 0 });
+  let configListElement = $state<HTMLElement | null>(null);
   
   function startEditing(index: number): void {
     editingIndex = index;
@@ -95,221 +90,22 @@
     editingIndex = -1;
   }
   
-  // Drag and drop handlers
-  function handleDragStart(event: DragEvent, index: number): void {
-    // Store the dragged item's index
-    draggedIndex = index;
-    isDragging = true;
+  function handleReorder(fromIndex: number, toIndex: number): void {
+    const updatedConfigs = [...configs];
+    const [removed] = updatedConfigs.splice(fromIndex, 1);
+    updatedConfigs.splice(toIndex, 0, removed);
     
-    // Capture mouse position relative to the dragged element
-    if (event.target instanceof HTMLElement) {
-      const rect = event.target.getBoundingClientRect();
-      mouseOffset = {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
-      };
-      lastMousePosition = {
-        x: event.clientX,
-        y: event.clientY
-      };
-      
-      // Create a ghost element
-      createGhostElement(event.target, event);
-    }
-    
-    // Set data for drag operation (required for Firefox)
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', index.toString());
-      
-      try {
-        // Hide the default drag image in browsers that support it
-        const img = new Image();
-        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // 1px transparent image
-        event.dataTransfer.setDragImage(img, 0, 0);
-      } catch (e) {
-        console.warn("Couldn't set custom drag image:", e);
-      }
-    }
+    configs = updatedConfigs;
+    saveConfigs(updatedConfigs);
   }
   
-  function createGhostElement(sourceElement: HTMLElement, event: DragEvent): void {
-    // Remove any existing ghost element first
-    removeGhostElement();
-    
-    // Create a clone of the source element
-    const clone = sourceElement.cloneNode(true) as HTMLElement;
-    
-    // Style the ghost element
-    Object.assign(clone.style, {
-      position: 'fixed',
-      top: `${event.clientY - mouseOffset.y}px`,
-      left: `${event.clientX - mouseOffset.x}px`,
-      width: `${sourceElement.offsetWidth}px`,
-      height: `${sourceElement.offsetHeight}px`,
-      zIndex: '9999',
-      pointerEvents: 'none',
-      opacity: '0.7',
-      transform: 'rotate(2deg) scale(1.02)',
-      boxShadow: '0 10px 20px rgba(0, 0, 0, 0.5)',
-      background: '#0d1117',
-      borderRadius: '6px',
-      border: '1px solid rgba(88, 166, 255, 0.3)'
-    });
-    
-    // Add a class for additional styling
-    clone.classList.add('ghost-element');
-    
-    // Append to body
-    document.body.appendChild(clone);
-    
-    // Store reference to remove later
-    ghostElement = clone;
-    
-    // Set up event listeners for updating ghost position
-    document.addEventListener('mousemove', updateGhostPosition);
-    document.addEventListener('dragover', handleDragOverDocument);
-  }
-  
-  function handleDragOverDocument(event: DragEvent): void {
-    event.preventDefault();
-    updateGhostPosition(event);
-  }
-  
-  function updateGhostPosition(event: MouseEvent | DragEvent): void {
-    if (!ghostElement || !isDragging) return;
-    
-    lastMousePosition = { x: event.clientX, y: event.clientY };
-    
-    ghostElement.style.top = `${event.clientY - mouseOffset.y}px`;
-    ghostElement.style.left = `${event.clientX - mouseOffset.x}px`;
-    
-    // Apply a dynamic rotation based on movement
-    const rotationAmount = calculateRotation(event);
-    ghostElement.style.transform = `rotate(${rotationAmount}deg) scale(1.02)`;
-  }
-  
-  function calculateRotation(event: MouseEvent): number {
-    // Calculate a small rotation based on horizontal mouse movement direction
-    // This gives a natural "wobble" effect while dragging
-    const moveX = event.clientX - lastMousePosition.x;
-    // Limit rotation to a small range
-    return Math.max(-4, Math.min(4, moveX * 0.2));
-  }
-  
-  function handleDragOver(event: DragEvent, index: number): void {
-    event.preventDefault();
-    
-    // Prevent drop on the item being dragged
-    if (draggedIndex === null || draggedIndex === index) return;
-    
-    // Set the current drag over index for visual feedback
-    dragOverIndex = index;
-    
-    // Specify the drop effect
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
-    }
-  }
-  
-  function handleDragEnter(event: DragEvent): void {
-    event.preventDefault();
-    if (event.target instanceof HTMLElement) {
-      event.target.classList.add('drag-over');
-    }
-  }
-  
-  function handleDragLeave(event: DragEvent): void {
-    if (event.target instanceof HTMLElement) {
-      event.target.classList.remove('drag-over');
-    }
-  }
-  
-  function handleDrop(event: DragEvent, dropIndex: number): void {
-    event.preventDefault();
-    
-    // Remove drag-over styling
-    if (event.target instanceof HTMLElement) {
-      event.target.classList.remove('drag-over');
-    }
-    
-    // Remove ghost element and event listener
-    removeGhostElement();
-    
-    // If no item is being dragged or dropping on itself, do nothing
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
-    
-    // Reorder the configs array
-    const newConfigs = [...configs];
-    const [removed] = newConfigs.splice(draggedIndex, 1);
-    newConfigs.splice(dropIndex, 0, removed);
-    
-    // Update the configs array
-    configs = newConfigs;
-    
-    // Reset drag state
-    draggedIndex = null;
-    dragOverIndex = null;
-    
-    // Save the new order
-    saveConfigs(configs);
-  }
-  
-  function handleDragEnd(event: DragEvent): void {
-    // Reset drag state
-    isDragging = false;
-    draggedIndex = null;
-    dragOverIndex = null;
-    
-    // Remove ghost element and event listener
-    removeGhostElement();
-    
-    // Remove dragging class
-    if (event.target instanceof HTMLElement) {
-      event.target.classList.remove('dragging');
-    }
-    
-    // Remove drag-over class from all items
-    const items = document.querySelectorAll('.config-item');
-    items.forEach(item => {
-      if (item instanceof HTMLElement) {
-        item.classList.remove('drag-over');
-      }
-    });
-  }
-  
-  function removeGhostElement(): void {
-    if (ghostElement && ghostElement.parentNode) {
-      ghostElement.parentNode.removeChild(ghostElement);
-      ghostElement = null;
-    }
-    document.removeEventListener('mousemove', updateGhostPosition);
-    document.removeEventListener('dragover', handleDragOverDocument);
-  }
-  
-  // Clean up on page unload
-  onMount(() => {
-    return () => {
-      removeGhostElement();
-    };
-  });
-  
-  // Determine drag classes for visual feedback
-  function getDragClass(index: number): string {
-    if (draggedIndex === index) return 'dragging';
-    if (dragOverIndex === index) return 'drag-over';
-    return '';
-  }
-  
-  function handleMouseDown(event: MouseEvent, index: number): void {
-    // Check if the click is on an element that should NOT trigger drag
+  function handleMouseDown(event: MouseEvent): void {
     if (
       event.target instanceof HTMLElement && 
       (event.target.closest('button') || 
        event.target.classList.contains('no-drag') ||
        event.target.closest('.no-drag'))
     ) {
-      // Don't prevent default for clickable elements
       return;
     }
   }
@@ -317,7 +113,11 @@
 
 <div class="mt-4">
   {#if configs.length > 0}
-    <div class="space-y-3 mb-4">
+    <div 
+      class="space-y-3 mb-4" 
+      bind:this={configListElement}
+      use:useDraggable={{ onReorder: handleReorder }}
+    >
       {#each configs as config, i}
         {#if editingIndex === i}
           <RepositoryForm 
@@ -327,17 +127,11 @@
           />
         {:else}
           <div
-            class="config-item p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing {getDragClass(i)}"
+            class="config-item p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
             draggable="true"
             role="button"
             tabindex="0"
-            ondragstart={(e) => handleDragStart(e, i)}
-            ondragover={(e) => handleDragOver(e, i)}
-            ondragenter={handleDragEnter}
-            ondragleave={handleDragLeave}
-            ondrop={(e) => handleDrop(e, i)}
-            ondragend={handleDragEnd}
-            onmousedown={(e) => handleMouseDown(e, i)}
+            onmousedown={handleMouseDown}
             data-index={i}
           >
             <div class="flex justify-between items-center">
@@ -443,18 +237,18 @@
     transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   }
   
-  .config-item.dragging {
+  :global(.config-item.dragging) {
     opacity: 0.4;
   }
   
-  .config-item.drag-over {
+  :global(.config-item.drag-over) {
     transform: translateY(6px);
     border: 1px dashed var(--border-color);
     background-color: rgba(33, 38, 45, 0.8);
     position: relative;
   }
   
-  .config-item.drag-over::before {
+  :global(.config-item.drag-over::before) {
     content: '';
     position: absolute;
     top: -3px;
@@ -484,7 +278,7 @@
     cursor: grabbing;
   }
   
-  /* Ghost element styling */
+  /* Ghost element styling moved to global scope */
   :global(.ghost-element) {
     transition: transform 0.05s ease-out;
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 8px 10px rgba(0, 0, 0, 0.3);
