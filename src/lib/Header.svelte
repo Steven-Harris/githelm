@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import helmSrc from "$assets/helm.svg";
   import refreshSrc from "$assets/refresh.svg";
   import { firebase } from "$integrations/firebase";
@@ -8,15 +8,36 @@
   import { manualTrigger, lastUpdatedStore } from "$lib/stores/last-updated.store";
   import { isLoading } from "$lib/stores/loading.store";
   import { eventBus } from "$lib/stores/event-bus.store";
-  import { writable, get } from "svelte/store";
+  import { derived } from "svelte/store";
 
   let { signedIn } = $props();
-  // Stores
-  const isPolling = writable(false);
-  let lastUpdated = $derived.by(() => lastUpdatedStore());
+  
+  // Get the actual store instance
+  const lastUpdated = lastUpdatedStore();
+  
+  // Create a derived store to format the lastUpdated value
+  const formattedLastUpdated = derived(lastUpdated, (value) => {
+    if (value <= 0) return '';
+    
+    let remainingSeconds = value;
+    const units = [
+      { label: "d", mod: 86400 },
+      { label: "h", mod: 3600 },
+      { label: "m", mod: 60 },
+      { label: "s", mod: 1 },
+    ];
+
+    return units
+      .reduce((acc, { label, mod }) => {
+        const unitValue = Math.floor(remainingSeconds / mod);
+        remainingSeconds %= mod;
+        return unitValue > 0 ? `${acc} ${unitValue}${label}` : acc;
+      }, "")
+      .trim();
+  });
   
   // Determine if we're on the config page
-  let isConfigPage = $derived.by(() => $page.url.pathname === '/config');
+  const isConfigPage = page.url.pathname === '/config';
   
   // Action functions
   function resume() {
@@ -24,16 +45,8 @@
     manualTrigger.set(true);
   }
   
-  function refresh() {
-    isPolling.update(value => !value);
-  }
-  
   function manualRefresh() {
     manualTrigger.set(true);
-  }
-  
-  function login() {
-    firebase.signIn();
   }
   
   function logout() {
@@ -59,73 +72,65 @@
       </div>
       
       <div class="flex items-center">
-        {#if !isConfigPage}
-          <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
-            {#if $lastUpdated > 0}
-              <span class="mr-2">Updated:</span>
-              <span>{$lastUpdated}</span>
-            {:else}
-              <span class="mr-2">Updating...</span>
-            {/if}
-          </div>
-        {/if}
-        
-        {#if isConfigPage}
-          <!-- Save/Cancel buttons for config page -->
-          <button 
-            class="nav-button github-btn" 
-            onclick={saveConfig} 
-            aria-label="save configuration"
-            title="Save configuration"
-          >
-            <span class="hidden md:inline">Save</span>
-          </button>
-          
-          <button 
-            class="nav-button ml-2" 
-            onclick={cancelConfig} 
-            aria-label="cancel configuration"
-            title="Cancel configuration"
-          >
-            <span class="hidden md:inline">Cancel</span>
-          </button>
-        {:else}
-          <!-- Configure button for main page -->
-          <button 
-            class="nav-button" 
-            onclick={() => goto('/config')} 
-            aria-label="configure repositories"
-            title="Configure repositories"
-          >
-            <span class="hidden md:inline">Configure</span>
-          </button>
-          
-          <button 
-            class="nav-button ml-2" 
-            onclick={manualRefresh}
-            disabled={$isLoading || $killSwitch}
-            aria-label="refresh data"
-            title="Refresh data"
-          >
-            {#if $isLoading}
-              <div class="animate-spin">
+        {#if signedIn}
+          {#if isConfigPage}
+            <!-- Save/Cancel buttons for config page -->
+            <button 
+              class="nav-button github-btn" 
+              onclick={saveConfig} 
+              aria-label="save configuration"
+              title="Save configuration"
+            >
+              <span class="hidden md:inline">Save</span>
+            </button>
+
+            <button 
+              class="nav-button ml-2" 
+              onclick={cancelConfig} 
+              aria-label="cancel configuration"
+              title="Cancel configuration"
+            >
+              <span class="hidden md:inline">Cancel</span>
+            </button>
+          {:else}
+            <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
+              {#if $lastUpdated > 0}
+                <span class="mr-2">Updated:</span>
+                <span>{$formattedLastUpdated}</span>
+              {:else}
+                <span class="mr-2">Updating...</span>
+              {/if}
+            </div>
+            <!-- Configure button for main page -->
+            <button 
+              class="nav-button" 
+              onclick={() => goto('/config')} 
+              aria-label="configure repositories"
+              title="Configure repositories"
+            >
+              <span class="hidden md:inline">Configure</span>
+            </button>
+
+            <button 
+              class="nav-button ml-2" 
+              onclick={manualRefresh}
+              disabled={$isLoading || $killSwitch}
+              aria-label="refresh data"
+              title="Refresh data"
+            >
+              {#if $isLoading}
+                <div class="animate-spin">
+                  <img src={refreshSrc} alt="refresh" class="w-5 h-5 mx-auto" />
+                </div>
+              {:else}
                 <img src={refreshSrc} alt="refresh" class="w-5 h-5 mx-auto" />
-              </div>
-            {:else}
-              <img src={refreshSrc} alt="refresh" class="w-5 h-5 mx-auto" />
-            {/if}
-            <span class="hidden md:inline ml-1">{$isLoading ? 'Loading...' : 'Refresh'}</span>
-          </button>
-        {/if}
-        
-        {#if !signedIn}
-          <button class="nav-button ml-2 github-btn" onclick={login}>
-            <span class="hidden md:inline">Login with GitHub</span>
-          </button>
-        {:else}
-          <button class="nav-button ml-2" onclick={logout}>
-            <span class="hidden md:inline">Logout</span>
-          </button>
+              {/if}
+              <span class="hidden md:inline ml-1">{$isLoading ? 'Loading...' : 'Refresh'}</span>
+            </button>
+            <button class="nav-button ml-2" onclick={logout}>
+              <span class="hidden md:inline">Logout</span>
+            </button>
+          {/if}
         {/if}
       </div>
     </div>
