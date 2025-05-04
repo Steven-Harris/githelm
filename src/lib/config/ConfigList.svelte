@@ -2,8 +2,6 @@
   import editSVG from "$assets/edit.svg";
   import RepositoryForm from "./RepositoryForm.svelte";
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
-  import Sortable from "sortablejs";
-  import { onMount, onDestroy } from "svelte";
   import deleteSVG from "$assets/delete.svg";
   
   interface RepoConfig {
@@ -29,87 +27,9 @@
   let { configs = [], onUpdate } = $props();
   
   let editingIndex = $state<number>(-1);
-  let configsList = $state<HTMLElement | null>(null);
-  let sortableInstance: Sortable | null = null;
-  let isDragInProgress = $state(false);
-  
-  // Use onMount to ensure the DOM elements are fully available
-  onMount(() => {
-    if (configsList) {
-      initSortable();
-    }
-  });
-  
-  // Clean up on component destruction
-  onDestroy(() => {
-    if (sortableInstance) {
-      sortableInstance.destroy();
-      sortableInstance = null;
-    }
-  });
-
-  // Initialize the sortable instance with stable configuration
-  function initSortable() {
-    if (!configsList) return;
-    
-    // Clean up any existing instance
-    if (sortableInstance) {
-      sortableInstance.destroy();
-    }
-    
-    // Generate a stable unique ID for each config
-    const getConfigId = (config: RepoConfig) => `${config.org}/${config.repo}`;
-    
-    sortableInstance = Sortable.create(configsList, {
-      animation: 150,
-      ghostClass: 'sortable-ghost',
-      dragClass: 'sortable-drag',
-      dataIdAttr: 'data-id',
-      swapThreshold: 0.5,
-      direction: 'vertical',
-      onStart: () => {
-        isDragInProgress = true;
-      },
-      onEnd: (evt) => {
-        setTimeout(() => {
-          isDragInProgress = false;
-          
-          if (typeof evt.oldIndex === 'number' && 
-              typeof evt.newIndex === 'number' && 
-              evt.oldIndex !== evt.newIndex) {
-            
-            try {
-              const newOrder = sortableInstance ? sortableInstance.toArray() : [];
-              
-              const reorderedConfigs = newOrder.map(id => {
-                const [org, repo] = id.split('/');
-                return configs.find(c => c.org === org && c.repo === repo);
-              }).filter(Boolean);
-              
-              if (reorderedConfigs.length === configs.length) {
-                configs = reorderedConfigs;
-                
-                updateRepositoryConfigs(reorderedConfigs)
-                  .then(() => onUpdate(reorderedConfigs))
-                  .catch((error) => {
-                    console.error("Error updating repository configs:", error);
-                  });
-              }
-            } catch (error) {
-              console.error("Error during drag operation:", error);
-            }
-          }
-        }, 50);
-      }
-    });
-  }
-  
-  // Only reinitialize when needed and not during drag
-  $effect(() => {
-    if (configsList && configs && !isDragInProgress) {
-      setTimeout(initSortable, 100);
-    }
-  });
+  let draggedIndex = $state<number | null>(null);
+  let dragOverIndex = $state<number | null>(null);
+  let isDragging = $state(false);
   
   function startEditing(index: number): void {
     editingIndex = index;
@@ -119,8 +39,12 @@
     const updatedConfigs = [...configs];
     updatedConfigs.splice(index, 1);
     configs = updatedConfigs;
-    updateRepositoryConfigs(configs)
-      .then(() => onUpdate(configs))
+    saveConfigs(updatedConfigs);
+  }
+  
+  function saveConfigs(updatedConfigs: RepoConfig[]): void {
+    updateRepositoryConfigs(updatedConfigs)
+      .then(() => onUpdate(updatedConfigs))
       .catch((error) => {
         console.error("Error updating repository configs:", error);
       });
@@ -160,21 +84,124 @@
       }
     }
     
-    updateRepositoryConfigs(updatedConfigs)
-      .then(() => onUpdate(updatedConfigs))
-      .catch((error) => {
-        console.error("Error updating repository configs:", error);
-      });
+    saveConfigs(updatedConfigs);
   }
   
   function handleCancel(): void {
     editingIndex = -1;
   }
+  
+  // Drag and drop handlers
+  function handleDragStart(event: DragEvent, index: number): void {
+    // Store the dragged item's index
+    draggedIndex = index;
+    isDragging = true;
+    
+    // Set data for drag operation (required for Firefox)
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', index.toString());
+      
+      // Make the drag image semi-transparent
+      if (event.target instanceof HTMLElement) {
+        event.dataTransfer.setDragImage(event.target, 20, 20);
+        
+        // Add a delay to apply the dragging class for visual effect
+        setTimeout(() => {
+          if (event.target instanceof HTMLElement) {
+            event.target.classList.add('dragging');
+          }
+        }, 0);
+      }
+    }
+  }
+  
+  function handleDragOver(event: DragEvent, index: number): void {
+    event.preventDefault();
+    
+    // Prevent drop on the item being dragged
+    if (draggedIndex === null || draggedIndex === index) return;
+    
+    // Set the current drag over index for visual feedback
+    dragOverIndex = index;
+    
+    // Specify the drop effect
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  }
+  
+  function handleDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    if (event.target instanceof HTMLElement) {
+      event.target.classList.add('drag-over');
+    }
+  }
+  
+  function handleDragLeave(event: DragEvent): void {
+    if (event.target instanceof HTMLElement) {
+      event.target.classList.remove('drag-over');
+    }
+  }
+  
+  function handleDrop(event: DragEvent, dropIndex: number): void {
+    event.preventDefault();
+    
+    // Remove drag-over styling
+    if (event.target instanceof HTMLElement) {
+      event.target.classList.remove('drag-over');
+    }
+    
+    // If no item is being dragged or dropping on itself, do nothing
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+    
+    // Reorder the configs array
+    const newConfigs = [...configs];
+    const [removed] = newConfigs.splice(draggedIndex, 1);
+    newConfigs.splice(dropIndex, 0, removed);
+    
+    // Update the configs array
+    configs = newConfigs;
+    
+    // Reset drag state
+    draggedIndex = null;
+    dragOverIndex = null;
+    
+    // Save the new order
+    saveConfigs(configs);
+  }
+  
+  function handleDragEnd(event: DragEvent): void {
+    // Reset drag state
+    isDragging = false;
+    draggedIndex = null;
+    dragOverIndex = null;
+    
+    // Remove dragging class
+    if (event.target instanceof HTMLElement) {
+      event.target.classList.remove('dragging');
+    }
+    
+    // Remove drag-over class from all items
+    const items = document.querySelectorAll('.config-item');
+    items.forEach(item => {
+      if (item instanceof HTMLElement) {
+        item.classList.remove('drag-over');
+      }
+    });
+  }
+  
+  // Determine drag classes for visual feedback
+  function getDragClass(index: number): string {
+    if (draggedIndex === index) return 'dragging';
+    if (dragOverIndex === index) return 'drag-over';
+    return '';
+  }
 </script>
 
 <div class="mt-4">
   {#if configs.length > 0}
-    <div class="space-y-3 mb-4" bind:this={configsList}>
+    <div class="space-y-3 mb-4">
       {#each configs as config, i}
         {#if editingIndex === i}
           <RepositoryForm 
@@ -184,8 +211,16 @@
           />
         {:else}
           <div
-            class="p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
-            data-id={`${config.org}/${config.repo}`}
+            class="config-item p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing {getDragClass(i)}"
+            draggable="true"
+            role="listitem"
+            ondragstart={(e) => handleDragStart(e, i)}
+            ondragover={(e) => handleDragOver(e, i)}
+            ondragenter={handleDragEnter}
+            ondragleave={handleDragLeave}
+            ondrop={(e) => handleDrop(e, i)}
+            ondragend={handleDragEnd}
+            data-index={i}
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
@@ -286,16 +321,34 @@
     margin-left: 4px;
   }
   
-  :global(.sortable-ghost) {
-    opacity: 0.3;
-    background-color: rgba(33, 38, 45, 0.8) !important;
-    border: 1px dashed var(--border-color) !important;
+  .config-item {
+    transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
   }
   
-  :global(.sortable-drag) {
-    opacity: 0.7;
-    transform: rotate(1deg);
+  .config-item.dragging {
+    opacity: 0.4;
+    transform: scale(1.02) rotate(1deg);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 10;
   }
   
+  .config-item.drag-over {
+    transform: translateY(6px);
+    border: 1px dashed var(--border-color);
+    background-color: rgba(33, 38, 45, 0.8);
+  }
+
+  /* For buttons inside draggable area */
+  .config-item button {
+    pointer-events: all;
+  }
+  
+  /* Override cursor for drag handle */
+  .config-item .no-drag {
+    cursor: pointer !important;
+  }
+
+  .config-item:active {
+    cursor: grabbing;
+  }
 </style>

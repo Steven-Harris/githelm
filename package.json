@@ -23,7 +23,6 @@
   "dependencies": {
     "firebase": "^11.6.0",
     "graphql": "^16.10.0",
-    "sortablejs": "^1.15.6",
     "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
@@ -34,7 +33,6 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/svelte": "^5.2.7",
     "@tsconfig/svelte": "5.0.4",
-    "@types/sortablejs": "^1.15.8",
     "@vite-pwa/assets-generator": "^0.2.6",
     "@vite-pwa/sveltekit": "^0.6.8",
     "sharp": "0.32.6",
