@@ -88,11 +88,11 @@
       {#if organizations.length > 0}
         <div class="space-y-2">
           {#each organizations as org, i}
-            <div class="p-2 px-4 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md flex justify-between items-center backdrop-blur-sm hover:bg-[rgba(33,38,45,0.6)] transition-colors duration-200">
+            <div class="p-2 px-4 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md flex justify-between items-center backdrop-blur-sm">
                 <span class="text-[#c9d1d9]">{org.name}</span>
                 <div class="flex gap-2">
                   <button 
-                    class="text-[#f85149] hover:text-[#f85149] p-1 rounded-full hover:bg-[rgba(248,81,73,0.15)] transition-colors duration-200"
+                    class="text-[#f85149] hover:text-[#f85149] p-1 rounded-full hover:bg-[rgba(248,81,73,0.15)] transition-colors duration-200 cursor-pointer"
                     onclick={() => deleteOrganization(i)}
                     title="Delete organization"
                     aria-label="Delete organization"

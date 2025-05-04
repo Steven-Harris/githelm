@@ -1,6 +1,6 @@
 <script lang="ts">
   import Reviews from "./Reviews.svelte";
-  import { timeAgo } from "$lib/utils/date-utils";
+  import githubSVG from "$assets/github-logo.svg";
   
   let { org, repo, pullRequests} = $props();
   
@@ -15,9 +15,7 @@
           target="_blank" 
           class="link text-[#58a6ff] hover:underline flex items-center gap-1"
         >
-          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-current">
-            <path d="M7.177 3.073 9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm3.75.75a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"></path>
-          </svg>
+          <img src={githubSVG} alt="GitHub" width="16" height="16" />
           <span>
             {org}/{repo}
           </span>

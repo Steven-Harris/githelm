@@ -4,6 +4,7 @@
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
   import Sortable from "sortablejs";
   import { onMount, onDestroy } from "svelte";
+  import deleteSVG from "$assets/delete.svg";
   
   interface RepoConfig {
     org: string;
@@ -193,7 +194,8 @@
                   {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                 </strong>
                 <button 
-                  class="ml-2 text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag" 
+                  class="ml-2 text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer"
+                  type="button" 
                   aria-label="edit {config.org}/{config.repo}" 
                   title="Edit repository configuration" 
                   onclick={() => startEditing(i)}
@@ -202,11 +204,11 @@
                 </button>
               </span>
               <button 
-                class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag" 
+                class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag cursor-pointer" 
                 title="Remove repository" 
                 onclick={() => removeConfig(i)}
               >
-                &times;
+                <img src={deleteSVG} alt="Delete"  width="14" height="14" />
               </button>
             </div>
             

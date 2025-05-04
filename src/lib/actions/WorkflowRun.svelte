@@ -55,9 +55,12 @@
       <a
         href={run.html_url}
         target="_blank"
-        class="text-[#58a6ff] hover:text-[#79c0ff] text-lg font-medium hover:underline block truncate"
+        class="text-[#58a6ff] hover:text-[#79c0ff] text-sm font-medium hover:underline block truncate"
       >
-        {run.workflow_name || 'Workflow'}
+        {run.name}
+        <span class="text-sm text-[#8b949e] ml-1">
+          {run.display_title}
+        </span>
       </a>
       <div class="flex items-center flex-wrap mt-1">
         <span class={`workflow-status-icon ${getStatusClass(run.conclusion || run.status)}`}></span>
