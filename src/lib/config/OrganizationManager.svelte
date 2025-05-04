@@ -3,6 +3,7 @@
   import { configService } from "$integrations/firebase";
   import type { Organization } from "$integrations/firebase";
   import { eventBus } from "$lib/stores/event-bus.store";
+  import deleteSVG from "$assets/delete.svg";
 
   let organizations: Organization[] = $state([]);
   let newOrgName = $state("");
@@ -91,13 +92,12 @@
                 <span class="text-[#c9d1d9]">{org.name}</span>
                 <div class="flex gap-2">
                   <button 
-                    class="text-[#f85149] hover:text-[#ff7b72] p-1 rounded-full hover:bg-[rgba(248,81,73,0.15)] transition-colors duration-200"
+                    class="text-[#f85149] hover:text-[#f85149] p-1 rounded-full hover:bg-[rgba(248,81,73,0.15)] transition-colors duration-200"
                     onclick={() => deleteOrganization(i)}
                     title="Delete organization"
+                    aria-label="Delete organization"
                   >
-                    <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
-                      <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z"></path>
-                    </svg>
+                    <img src={deleteSVG} alt="Delete"  width="14" height="14" />
                   </button>
                 </div>
             </div>
