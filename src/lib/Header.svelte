@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import { page } from "$app/state";
-  import helmSrc from "$assets/helm.svg";
-  import refreshSrc from "$assets/refresh.svg";
+  import helmSVG from "$assets/helm.svg";
+  import refreshSVG from "$assets/refresh.svg";
   import { firebase } from "$integrations/firebase";
   import { killSwitch } from "$lib/stores/kill-switch.store";
   import { manualTrigger, lastUpdatedStore } from "$lib/stores/last-updated.store";
@@ -37,7 +37,7 @@
   <div class="backdrop-blur-md bg-opacity-75 bg-[#0d1117] border-b border-[#30363d] shadow-sm">
     <div class="h-full px-4 py-2 flex justify-between items-center">
       <div class="flex items-center">
-        <img src={helmSrc} alt="GitHelm logo" class="w-10 h-10 mr-2" />
+        <img src={helmSVG} alt="GitHelm logo" class="w-10 h-10 mr-2" />
         <h1 class="text-2xl font-bold text-[#f0f6fc] hidden md:block">GitHelm</h1>
       </div>
       
@@ -90,10 +90,10 @@
             >
               {#if $isLoading}
                 <div class="animate-spin">
-                  <img src={refreshSrc} alt="refresh" class="w-5 h-5 mx-auto" />
+                  <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
                 </div>
               {:else}
-                <img src={refreshSrc} alt="refresh" class="w-5 h-5 mx-auto" />
+                <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
               {/if}
               <span class="hidden md:inline ml-1">{$isLoading ? 'Loading...' : 'Refresh'}</span>
             </button>
