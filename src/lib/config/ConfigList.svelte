@@ -2,6 +2,7 @@
   import editSVG from "$assets/edit.svg";
   import RepositoryForm from "./RepositoryForm.svelte";
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
+  import { onMount } from "svelte";
   import deleteSVG from "$assets/delete.svg";
   
   interface RepoConfig {
@@ -30,6 +31,9 @@
   let draggedIndex = $state<number | null>(null);
   let dragOverIndex = $state<number | null>(null);
   let isDragging = $state(false);
+  let ghostElement = $state<HTMLElement | null>(null);
+  let mouseOffset = $state({ x: 0, y: 0 });
+  let lastMousePosition = $state({ x: 0, y: 0 });
   
   function startEditing(index: number): void {
     editingIndex = index;
@@ -97,23 +101,100 @@
     draggedIndex = index;
     isDragging = true;
     
+    // Capture mouse position relative to the dragged element
+    if (event.target instanceof HTMLElement) {
+      const rect = event.target.getBoundingClientRect();
+      mouseOffset = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+      lastMousePosition = {
+        x: event.clientX,
+        y: event.clientY
+      };
+      
+      // Create a ghost element
+      createGhostElement(event.target, event);
+    }
+    
     // Set data for drag operation (required for Firefox)
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', index.toString());
       
-      // Make the drag image semi-transparent
-      if (event.target instanceof HTMLElement) {
-        event.dataTransfer.setDragImage(event.target, 20, 20);
-        
-        // Add a delay to apply the dragging class for visual effect
-        setTimeout(() => {
-          if (event.target instanceof HTMLElement) {
-            event.target.classList.add('dragging');
-          }
-        }, 0);
+      try {
+        // Hide the default drag image in browsers that support it
+        const img = new Image();
+        img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'; // 1px transparent image
+        event.dataTransfer.setDragImage(img, 0, 0);
+      } catch (e) {
+        console.warn("Couldn't set custom drag image:", e);
       }
     }
+  }
+  
+  function createGhostElement(sourceElement: HTMLElement, event: DragEvent): void {
+    // Remove any existing ghost element first
+    removeGhostElement();
+    
+    // Create a clone of the source element
+    const clone = sourceElement.cloneNode(true) as HTMLElement;
+    
+    // Style the ghost element
+    Object.assign(clone.style, {
+      position: 'fixed',
+      top: `${event.clientY - mouseOffset.y}px`,
+      left: `${event.clientX - mouseOffset.x}px`,
+      width: `${sourceElement.offsetWidth}px`,
+      height: `${sourceElement.offsetHeight}px`,
+      zIndex: '9999',
+      pointerEvents: 'none',
+      opacity: '0.7',
+      transform: 'rotate(2deg) scale(1.02)',
+      boxShadow: '0 10px 20px rgba(0, 0, 0, 0.5)',
+      background: '#0d1117',
+      borderRadius: '6px',
+      border: '1px solid rgba(88, 166, 255, 0.3)'
+    });
+    
+    // Add a class for additional styling
+    clone.classList.add('ghost-element');
+    
+    // Append to body
+    document.body.appendChild(clone);
+    
+    // Store reference to remove later
+    ghostElement = clone;
+    
+    // Set up event listeners for updating ghost position
+    document.addEventListener('mousemove', updateGhostPosition);
+    document.addEventListener('dragover', handleDragOverDocument);
+  }
+  
+  function handleDragOverDocument(event: DragEvent): void {
+    event.preventDefault();
+    updateGhostPosition(event);
+  }
+  
+  function updateGhostPosition(event: MouseEvent | DragEvent): void {
+    if (!ghostElement || !isDragging) return;
+    
+    lastMousePosition = { x: event.clientX, y: event.clientY };
+    
+    ghostElement.style.top = `${event.clientY - mouseOffset.y}px`;
+    ghostElement.style.left = `${event.clientX - mouseOffset.x}px`;
+    
+    // Apply a dynamic rotation based on movement
+    const rotationAmount = calculateRotation(event);
+    ghostElement.style.transform = `rotate(${rotationAmount}deg) scale(1.02)`;
+  }
+  
+  function calculateRotation(event: MouseEvent): number {
+    // Calculate a small rotation based on horizontal mouse movement direction
+    // This gives a natural "wobble" effect while dragging
+    const moveX = event.clientX - lastMousePosition.x;
+    // Limit rotation to a small range
+    return Math.max(-4, Math.min(4, moveX * 0.2));
   }
   
   function handleDragOver(event: DragEvent, index: number): void {
@@ -152,6 +233,9 @@
       event.target.classList.remove('drag-over');
     }
     
+    // Remove ghost element and event listener
+    removeGhostElement();
+    
     // If no item is being dragged or dropping on itself, do nothing
     if (draggedIndex === null || draggedIndex === dropIndex) return;
     
@@ -177,6 +261,9 @@
     draggedIndex = null;
     dragOverIndex = null;
     
+    // Remove ghost element and event listener
+    removeGhostElement();
+    
     // Remove dragging class
     if (event.target instanceof HTMLElement) {
       event.target.classList.remove('dragging');
@@ -191,11 +278,40 @@
     });
   }
   
+  function removeGhostElement(): void {
+    if (ghostElement && ghostElement.parentNode) {
+      ghostElement.parentNode.removeChild(ghostElement);
+      ghostElement = null;
+    }
+    document.removeEventListener('mousemove', updateGhostPosition);
+    document.removeEventListener('dragover', handleDragOverDocument);
+  }
+  
+  // Clean up on page unload
+  onMount(() => {
+    return () => {
+      removeGhostElement();
+    };
+  });
+  
   // Determine drag classes for visual feedback
   function getDragClass(index: number): string {
     if (draggedIndex === index) return 'dragging';
     if (dragOverIndex === index) return 'drag-over';
     return '';
+  }
+  
+  function handleMouseDown(event: MouseEvent, index: number): void {
+    // Check if the click is on an element that should NOT trigger drag
+    if (
+      event.target instanceof HTMLElement && 
+      (event.target.closest('button') || 
+       event.target.classList.contains('no-drag') ||
+       event.target.closest('.no-drag'))
+    ) {
+      // Don't prevent default for clickable elements
+      return;
+    }
   }
 </script>
 
@@ -213,18 +329,20 @@
           <div
             class="config-item p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing {getDragClass(i)}"
             draggable="true"
-            role="listitem"
+            role="button"
+            tabindex="0"
             ondragstart={(e) => handleDragStart(e, i)}
             ondragover={(e) => handleDragOver(e, i)}
             ondragenter={handleDragEnter}
             ondragleave={handleDragLeave}
             ondrop={(e) => handleDrop(e, i)}
             ondragend={handleDragEnd}
+            onmousedown={(e) => handleMouseDown(e, i)}
             data-index={i}
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400 opacity-70">☰</span>
+                <span class="mr-2 text-gray-400 opacity-70 drag-handle">☰</span>
                 <strong class="text-[#e6edf3]">
                   {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                 </strong>
@@ -327,15 +445,24 @@
   
   .config-item.dragging {
     opacity: 0.4;
-    transform: scale(1.02) rotate(1deg);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    z-index: 10;
   }
   
   .config-item.drag-over {
     transform: translateY(6px);
     border: 1px dashed var(--border-color);
     background-color: rgba(33, 38, 45, 0.8);
+    position: relative;
+  }
+  
+  .config-item.drag-over::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #58a6ff;
+    opacity: 0.6;
   }
 
   /* For buttons inside draggable area */
@@ -343,12 +470,30 @@
     pointer-events: all;
   }
   
-  /* Override cursor for drag handle */
+  /* Style for the drag handle */
+  .drag-handle {
+    cursor: grab;
+  }
+  
+  /* Override cursor for non-draggable elements */
   .config-item .no-drag {
     cursor: pointer !important;
   }
 
   .config-item:active {
     cursor: grabbing;
+  }
+  
+  /* Ghost element styling */
+  :global(.ghost-element) {
+    transition: transform 0.05s ease-out;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 8px 10px rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    border: 1px solid rgba(88, 166, 255, 0.3);
+    background-color: #0d1117;
+    pointer-events: none;
+    will-change: transform;
+    opacity: 0.7 !important;
+    z-index: 9999 !important;
   }
 </style>
