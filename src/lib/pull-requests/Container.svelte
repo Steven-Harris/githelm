@@ -1,30 +1,33 @@
 <script lang="ts">
   import List from "./List.svelte";
+  import RepositoryFilter from "./RepositoryFilter.svelte";
   import { pullRequestConfigs, getRepoKey, allPullRequests } from "$lib/stores/repository-service";
+  import { repositoryFilters } from "$lib/stores/repository-filter.store";
+  import type { RepoConfig } from "$integrations/firebase";
   
-  // State to track if the empty repositories section is expanded or collapsed
-  let showEmptyRepos = $state(false);
+  // Process repositories at render time to preserve original order
+  let filteredRepos = $state<RepoConfig[]>([]);
   
-  // Computed property to separate repos with PRs from empty repos
-  let reposWithPRs = $derived($pullRequestConfigs.filter(repo => {
-    const repoKey = getRepoKey(repo);
-    return ($allPullRequests[repoKey] || []).length > 0;
-  }));
-  
-  let reposWithoutPRs = $derived($pullRequestConfigs.filter(repo => {
-    const repoKey = getRepoKey(repo);
-    return ($allPullRequests[repoKey] || []).length === 0;
-  }));
-
-  // Toggle function for the empty repositories section
-  function toggleEmptyRepos() {
-    showEmptyRepos = !showEmptyRepos;
-  }
+  $effect(() => {
+    filteredRepos = $pullRequestConfigs.filter(repo => {
+      const repoKey = getRepoKey(repo);
+      const hasPRs = ($allPullRequests[repoKey] || []).length > 0;
+      
+      // Only include if the corresponding filter is enabled
+      return (hasPRs && $repositoryFilters.with_prs) || 
+             (!hasPRs && $repositoryFilters.without_prs);
+    });
+  });
 </script>
 
 <section class="hero-section mb-6 glass-effect">
   <div class="container mx-auto">
-    <h2 class="hero-title">Pull Requests</h2>
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="hero-title">Pull Requests</h2>
+      {#if $pullRequestConfigs.length > 0}
+        <RepositoryFilter />
+      {/if}
+    </div>
     
     {#if $pullRequestConfigs.length === 0}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
@@ -35,10 +38,15 @@
           Add repositories in the configuration section to monitor pull requests
         </div>
       </div>
+    {:else if filteredRepos.length === 0}
+      <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
+        <div class="text-md text-[#8b949e]">
+          No repositories match the current filters
+        </div>
+      </div>
     {:else}
       <div class="space-y-4">
-        <!-- Repositories with Pull Requests -->
-        {#each reposWithPRs as repo (repo.org + '/' + repo.repo)}
+        {#each filteredRepos as repo (repo.org + '/' + repo.repo)}
           <div class="stagger-item">
             <List 
               org={repo.org} 
@@ -47,44 +55,6 @@
             />
           </div>
         {/each}
-
-        <!-- Empty repositories section -->
-        {#if reposWithoutPRs.length > 0}
-          <div class="mt-6 border-t border-[#30363d] pt-4">
-            <button 
-              class="flex items-center justify-between w-full text-left px-4 py-3 bg-[#161b22] text-[#c9d1d9] rounded mb-2 hover:bg-[#21262d] transition-colors"
-              onclick={toggleEmptyRepos}
-              aria-expanded={showEmptyRepos}
-            >
-              <span class="font-medium">Repositories without PRs ({reposWithoutPRs.length})</span>
-              <svg 
-                class="w-5 h-5 transition-transform duration-200" 
-                class:transform={true} 
-                class:rotate-180={showEmptyRepos}
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24" 
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-              </svg>
-            </button>
-            
-            {#if showEmptyRepos}
-              <div class="space-y-2">
-                {#each reposWithoutPRs as repo (repo.org + '/' + repo.repo)}
-                  <div class="stagger-item">
-                    <List 
-                      org={repo.org} 
-                      repo={repo.repo} 
-                      pullRequests={$allPullRequests[getRepoKey(repo)] || []} 
-                    />
-                  </div>
-                {/each}
-              </div>
-            {/if}
-          </div>
-        {/if}
       </div>
     {/if}
   </div>
