@@ -33,11 +33,6 @@ export interface Workflow {
     badge_url: string;
 }
 
-interface WorkflowsResponse {
-    total_count: number;
-    workflows: Workflow[];
-}
-
 // Combined config types for the config page
 export interface CombinedConfig {
     org: string;
