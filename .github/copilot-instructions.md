@@ -258,10 +258,150 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 
 ## Testing
 
-- Manual testing for UI components
-- Console logging for API response debugging
-- Verify authentication flow in development environment
-- Test on both desktop and mobile viewports
+### Testing Framework and Tools
+
+- **Unit & Component Testing**: Vitest - A Vite-native test runner for optimal integration with the project build system
+- **Component Testing**: @testing-library/svelte - For testing Svelte components with best practices
+- **DOM Testing**: @testing-library/jest-dom - For enhanced DOM element assertions
+- **API Mocking**: MSW (Mock Service Worker) - For API mocking and request interception
+- **Coverage**: @vitest/coverage-v8 - For generating code coverage reports
+- **E2E Testing**: Playwright - For comprehensive end-to-end browser testing
+- **Visual Interface**: @vitest/ui - For visual debugging of unit and component tests
+
+#### End-to-End Tests
+- Test complete user journeys through the application
+- Verify the application works in real browsers (Chrome, Firefox, Safari)
+- Focus on critical paths like authentication, configuration, and data viewing
+- Examples: Login flow, repository configuration, filtering pull requests
+
+### Playwright Testing Strategy
+
+Playwright is the chosen E2E testing framework for GitHelm because it offers:
+
+- **Multi-browser testing**: Test across Chromium, Firefox, and WebKit (Safari)
+- **Powerful automation**: Reliable auto-waiting and improved test stability
+- **Network interception**: Comprehensive mocking of GitHub API responses
+- **Authentication testing**: Support for testing OAuth flows and persistent authentication
+- **Mobile emulation**: Test responsiveness across different screen sizes
+- **Parallel execution**: Run tests across browsers simultaneously for faster CI
+- **Rich debugging**: Screenshots, videos, and trace viewer for diagnosing failures
+
+### E2E Testing Directory Structure
+
+```
+playwright/
+  fixtures/            # Test data and reusable test state
+    github-data.ts     # Mock GitHub API responses
+    auth-state.ts      # Authentication test states
+  pages/               # Page object models
+    login-page.ts      # Login page interactions
+    dashboard-page.ts  # Main dashboard interactions
+    config-page.ts     # Configuration page interactions
+  tests/               # Test files organized by feature
+    auth.spec.ts       # Authentication flows
+    pull-requests.spec.ts  # Pull request monitoring
+    actions.spec.ts    # GitHub Actions monitoring
+    config.spec.ts     # Repository configuration
+  playwright.config.ts # Playwright configuration
+```
+
+### Setting Up Playwright
+
+```sh
+# Install Playwright and browsers
+pnpm dlx playwright install
+
+# Add Playwright to the project dependencies
+pnpm add -D @playwright/test
+```
+
+### Running E2E Tests
+
+```sh
+# Run all E2E tests across browsers
+pnpm run test:e2e
+
+# Run tests in a specific browser
+pnpm run test:e2e:chromium
+pnpm run test:e2e:firefox
+pnpm run test:e2e:webkit
+
+# Run tests in UI mode for interactive debugging
+pnpm run test:e2e:ui
+
+# Generate a test report
+pnpm run test:e2e:report
+```
+
+### E2E Testing Best Practices
+
+- **Setup test data programmatically**: Use API calls or test fixtures rather than UI interactions for setup
+- **Test in isolation**: Each test should run independently without relying on other tests
+- **Mock external services**: Create reliable mocks for GitHub API responses
+- **Use page objects**: Encapsulate page interactions in page object models
+- **Take screenshots on failure**: Capture the state when tests fail for easier debugging
+- **Test critical user flows**: Focus on the most important paths users will take
+- **Include visual regression**: Verify key UI elements appear correctly
+
+### Package.json Scripts
+
+Add these scripts to your `package.json` file:
+
+```json
+"scripts": {
+  // Existing scripts...
+  "test:e2e": "playwright test",
+  "test:e2e:chromium": "playwright test --project=chromium",
+  "test:e2e:firefox": "playwright test --project=firefox",
+  "test:e2e:webkit": "playwright test --project=webkit",
+  "test:e2e:ui": "playwright test --ui",
+  "test:e2e:report": "playwright show-report"
+}
+```
+
+### GitHub Actions Integration
+
+Include Playwright E2E tests in your CI/CD pipeline:
+
+```yaml
+name: E2E Tests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 10.x
+      - name: Install dependencies
+        run: pnpm install
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run Playwright tests
+        run: pnpm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+```
+
+### Getting Started with Playwright Testing
+
+1. Set up a Playwright configuration file in the project root
+2. Create page object models for key pages
+3. Write tests for critical user flows
+4. Set up CI/CD integration 
+5. Add visual regression tests for key components
 
 ## Deployment
 
