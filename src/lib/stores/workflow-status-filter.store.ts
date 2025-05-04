@@ -3,16 +3,29 @@ import { writable, get } from 'svelte/store';
 // Define all possible workflow statuses
 export type WorkflowStatus = 'success' | 'failure' | 'in_progress' | 'queued' | 'pending';
 
-// Create a store to track which workflow statuses are enabled for filtering
-export const workflowStatusFilters = writable<Record<WorkflowStatus, boolean>>({
+// Define default values for filters
+const defaultFilters: Record<WorkflowStatus, boolean> = {
   success: true,
   failure: true,
   in_progress: true,
   queued: true,
   pending: true
+};
+
+const loadFilters = (): Record<WorkflowStatus, boolean> => {
+  const savedFilters = localStorage.getItem('workflow-status-filters');
+  if (savedFilters) {
+    return JSON.parse(savedFilters);
+  }
+  return { ...defaultFilters };
+};
+
+export const workflowStatusFilters = writable<Record<WorkflowStatus, boolean>>(loadFilters());
+
+workflowStatusFilters.subscribe((value) => {
+  localStorage.setItem('workflow-status-filters', JSON.stringify(value));
 });
 
-// Helper function to toggle a specific status filter
 export function toggleWorkflowStatusFilter(status: WorkflowStatus): void {
   workflowStatusFilters.update(filters => ({
     ...filters,
@@ -20,13 +33,14 @@ export function toggleWorkflowStatusFilter(status: WorkflowStatus): void {
   }));
 }
 
-// Helper function to determine if a workflow run should be shown based on current filters
+export function resetWorkflowStatusFilters(): void {
+  workflowStatusFilters.set({ ...defaultFilters });
+}
+
 export function shouldShowWorkflowRun(status: string): boolean {
   let normalizedStatus = status.toLowerCase();
   
-  // Map completed to success for consistency
   if (normalizedStatus === 'completed') normalizedStatus = 'success';
   
-  // If we don't have a specific filter for this status, default to showing it
   return get(workflowStatusFilters)[normalizedStatus as WorkflowStatus] ?? true;
 }

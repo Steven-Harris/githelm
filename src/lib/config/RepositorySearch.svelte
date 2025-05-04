@@ -118,7 +118,10 @@
 
 <div class="mb-4">
   <div class="flex items-center mb-1">
-    <label for="repository-input" class="block text-sm font-medium text-[#c9d1d9]">Repository</label>
+    <label for="repository-input" class="block text-sm font-medium text-[#c9d1d9]">
+      Repository
+      <span class="text-red-700">*</span>
+    </label>
     {#if !orgName}
       <span class="tooltip ml-2">
         <span class="text-[#8b949e] text-xs">ⓘ</span>

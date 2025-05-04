@@ -124,7 +124,8 @@
       </div>
       <button
         type="submit"
-        class="px-4 py-2 bg-[rgba(35,134,54,0.6)] hover:bg-[rgba(46,160,67,0.6)] text-white font-medium rounded-md border border-[rgba(48,54,61,0.8)] backdrop-blur-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[rgba(35,134,54,0.6)]"
+        class="bg-[#238636] text-white px-4 py-2 rounded-md border border-[#2ea043] transition-colors duration-200 
+        {newOrgName.trim() ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
         disabled={!newOrgName.trim()}
       >
         Add Organization

@@ -8,22 +8,12 @@
   import { manualTrigger, lastUpdatedStore } from "$lib/stores/last-updated.store";
   import { isLoading } from "$lib/stores/loading.store";
   import { eventBus } from "$lib/stores/event-bus.store";
-  import { derived } from "svelte/store";
-    import { timeAgo, timeAgoInSeconds } from "./utils/date-utils";
+  import { timeAgoInSeconds } from "./utils/date-utils";
 
   let { signedIn } = $props();
   
   // Get the actual store instance
   const lastUpdated = lastUpdatedStore();
-  
-  // Determine if we're on the config page
-  const isConfigPage = page.url.pathname === '/config';
-  
-  // Action functions
-  function resume() {
-    killSwitch.set(false);
-    manualTrigger.set(true);
-  }
   
   function manualRefresh() {
     manualTrigger.set(true);
@@ -53,7 +43,7 @@
       
       <div class="flex items-center">
         {#if signedIn}
-          {#if isConfigPage}
+          {#if page.url.pathname === '/config'}
             <!-- Save/Cancel buttons for config page -->
             <button 
               class="nav-button github-btn" 
