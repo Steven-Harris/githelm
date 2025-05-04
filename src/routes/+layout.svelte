@@ -10,37 +10,24 @@
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
-  import { onMount } from "svelte";
-  
-  let { children } = $props();
+  import { derived, readable } from "svelte/store";
 
-  let webManifest = $derived(pwaInfo ? pwaInfo.webManifest.linkTag : "");
-  
-  let signedIn = $state(false);
-  let loading = $state(false);
-  let isAuth = $state();
-  let subscriptions = [];
-  
-  onMount(() => {
-    subscriptions.push(isLoading.subscribe((state) => {
-      loading = state;
-    }));
+  interface Props {
+    children?: import('svelte').Snippet
+  }
 
-    subscriptions.push(firebase.user.subscribe((user) => {
-      signedIn = user !== null;
-    }));
-    
-    subscriptions.push(authState.subscribe((state) => {
-      isAuth = state;
-      if (state === 'authenticated') {
-        initAuthStateHandling();
-        loadRepositoryConfigs();
-      }
-    }));
-    
-    return () => {
-      subscriptions.forEach((unsubscribe) => unsubscribe());
-    };
+  const { children }: Props = $props();
+  
+  const pwaInfoStore = readable(pwaInfo);
+  let webManifest = derived(pwaInfoStore, ($pwaInfo) => $pwaInfo?.webManifest?.linkTag || '');
+
+  let signedIn = derived(firebase.user, ($user) => $user !== null);
+  let isAuth = derived(authState, ($authState) => {
+    if ($authState === 'authenticated') {
+      initAuthStateHandling();
+      loadRepositoryConfigs();
+    }
+    return $authState;
   });
   
   function login() {
@@ -63,7 +50,7 @@
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
   <Tabs />
   
-  {#if isAuth === 'authenticating'}
+  {#if $isAuth === 'authenticating'}
     <div class="my-4 mx-auto max-w-3xl bg-yellow-800/80 text-white p-3 rounded-md shadow-lg border border-yellow-700 backdrop-blur-sm text-center">
       <div class="flex items-center justify-center">
         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -75,7 +62,7 @@
     </div>
   {/if}
   
-  {#if isAuth === 'error'}
+  {#if $isAuth === 'error'}
     <div class="my-4 mx-auto max-w-3xl bg-red-800/80 text-white p-3 rounded-md shadow-lg border border-red-700 backdrop-blur-sm text-center">
       <div class="flex items-center justify-center">
         <svg class="h-5 w-5 mr-2 text-red-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -86,8 +73,8 @@
     </div>
   {/if}
     
-<!-- <Loading {loading} /> -->
-  {#if signedIn && isAuth === 'authenticated'}
+  <Loading loading={$isLoading} />
+  {#if signedIn && $isAuth === 'authenticated'}
     {@render children?.()}
   {:else }
     <div class="flex flex-col items-center justify-center pt-20">

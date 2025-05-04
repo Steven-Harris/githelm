@@ -18,19 +18,20 @@
     
     updateOrganizations();
     
-    const unsubscribe = eventBus.subscribe((event) => {
-      if (event === 'organizations-updated') {
-        updateOrganizations();
-        
-        if (selectedOrg && !organizations.some(org => org.name === selectedOrg)) {
-          onChange('');
-        }
-      }
-    });
-    
     loading = false;
-    
-    return unsubscribe;
+  });
+
+  $effect(() => {
+    if ($eventBus === 'organizations-updated') {
+      updateOrganizations();
+      eventBus.set('');
+
+      if (!selectedOrg || organizations.some(org => org.name === selectedOrg)) {
+        return;
+      }
+
+      onChange('');
+    }
   });
 </script>
 

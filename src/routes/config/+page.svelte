@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import OrganizationManager from "$lib/config/OrganizationManager.svelte";
   import ConfigList from "$lib/config/ConfigList.svelte";
@@ -17,39 +16,23 @@
   let saveInProgress = $state<boolean>(false);
   let errorMessage = $state<string | null>(null);
 
-  // Load configs on component mount
-  onMount(() => {
-    try {
-      loadConfigs();
-      
-      // Subscribe to the event bus for save actions from the Header button
-      const unsubscribe = eventBus.subscribe((event) => {
-        if (event === 'save-config') {
-          saveChanges();
-          // Reset the event bus after handling
-          eventBus.set('');
-        }
-      });
-      
-      return () => {
-        unsubscribe();
-      };
-    } catch (error) {
-      errorMessage = "Failed to load configurations";
-      console.error("Error loading configurations:", error);
-    } finally {
-      loading = false;
+  $effect(() => {
+    loadConfigs();
+    if ($eventBus === 'save-config') {
+      saveChanges();
+      eventBus.set('');
     }
   });
 
   async function loadConfigs(): Promise<void> {
     try {
       await loadRepositoryConfigs();
-      
       combinedConfigs = await getCombinedConfigs();
     } catch (error) {
       console.error("Error loading configurations:", error);
       throw error;
+    } finally {
+      loading = false;
     }
   }
   
@@ -65,7 +48,6 @@
     
     try {
       await updateRepositoryConfigs(combinedConfigs);
-      
       goto("/");
     } catch (error) {
       errorMessage = "Failed to save configurations";

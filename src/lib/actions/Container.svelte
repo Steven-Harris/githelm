@@ -6,32 +6,29 @@
   import { derived } from "svelte/store";
   import type { WorkflowRun } from "$integrations/github";
 
-  // Derive filtered workflow runs based on the status filters
   const filteredWorkflowRunsByRepo = derived(
     [allWorkflowRuns, workflowStatusFilters],
     ([$allWorkflowRuns, $statusFilters]) => {
       const filtered: Record<string, WorkflowRun[]> = {};
       
-      Object.entries($allWorkflowRuns).forEach(([repoKey, runs]) => {
-        filtered[repoKey] = runs.filter(run => {
-          const status = run.conclusion || run.status;
-          const normalizedStatus = status.toLowerCase();
-          
-          // Map completed to success for consistency
-          const filterStatus = normalizedStatus === 'completed' ? 'success' : normalizedStatus;
-          
-          // Check if this status type is enabled in filters
-          // Use type assertion to ensure TypeScript knows this is a valid WorkflowStatus
-          // or default to showing it if it's not a recognized status
-          return (Object.keys($statusFilters).includes(filterStatus) 
-                  ? $statusFilters[filterStatus as WorkflowStatus] 
-                  : true);
-        });
-      });
+      for (const [repoKey, runs] of Object.entries($allWorkflowRuns)) {
+        filtered[repoKey] = runs.filter(run => passesStatusFilter(run, $statusFilters));
+      }
       
       return filtered;
     }
   );
+  
+  function passesStatusFilter(run: WorkflowRun, statusFilters: Record<WorkflowStatus, boolean>): boolean {
+    const status = run.conclusion || run.status;
+    const normalizedStatus = status.toLowerCase();
+    
+    const filterStatus = normalizedStatus === 'completed' ? 'success' : normalizedStatus;
+    
+    return Object.keys(statusFilters).includes(filterStatus)
+      ? statusFilters[filterStatus as WorkflowStatus]
+      : true;
+  }
 </script>
 
 <section class="hero-section mb-6 glass-effect">

@@ -68,27 +68,13 @@ class FirebaseAuthClient {
     
     const githubToken = getGithubToken();
     
-    if (!githubToken) {
+    if (!githubToken || !(await this.validateGithubToken(githubToken).catch(() => false))) {
       authState.set('authenticating');
       try {
-        await this.refreshGithubToken();
+        await (githubToken ? this.reLogin() : this.refreshGithubToken());
       } catch (error) {
         authState.set('error');
         await this.signOut();
-        return;
-      }
-    } 
-    else {
-      try {
-        const isValid = await this.validateGithubToken(githubToken);
-        if (!isValid) {
-          authState.set('authenticating');
-          await this.reLogin();
-          return;
-        }
-      } catch (error) {
-        authState.set('authenticating');
-        await this.reLogin();
         return;
       }
     }
