@@ -12,10 +12,11 @@ describe('Date Utils', () => {
       const mockDate = new Date(2025, 4, 4, 12, 0, 0);
       global.Date = class extends Date {
         constructor(...args: any[]) {
-          if (args.length === 0) {
-            return mockDate;
-          }
-          return new originalDate(...args);
+            super();
+            if (args.length === 0) {
+              return mockDate;
+            }
+            return Reflect.construct(originalDate, args);
         }
         static now() {
           return mockDate.getTime();
