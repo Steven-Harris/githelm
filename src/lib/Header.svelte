@@ -9,32 +9,12 @@
   import { isLoading } from "$lib/stores/loading.store";
   import { eventBus } from "$lib/stores/event-bus.store";
   import { derived } from "svelte/store";
+    import { timeAgo, timeAgoInSeconds } from "./utils/date-utils";
 
   let { signedIn } = $props();
   
   // Get the actual store instance
   const lastUpdated = lastUpdatedStore();
-  
-  // Create a derived store to format the lastUpdated value
-  const formattedLastUpdated = derived(lastUpdated, (value) => {
-    if (value <= 0) return '';
-    
-    let remainingSeconds = value;
-    const units = [
-      { label: "d", mod: 86400 },
-      { label: "h", mod: 3600 },
-      { label: "m", mod: 60 },
-      { label: "s", mod: 1 },
-    ];
-
-    return units
-      .reduce((acc, { label, mod }) => {
-        const unitValue = Math.floor(remainingSeconds / mod);
-        remainingSeconds %= mod;
-        return unitValue > 0 ? `${acc} ${unitValue}${label}` : acc;
-      }, "")
-      .trim();
-  });
   
   // Determine if we're on the config page
   const isConfigPage = page.url.pathname === '/config';
@@ -96,7 +76,7 @@
             <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
               {#if $lastUpdated > 0}
                 <span class="mr-2">Updated:</span>
-                <span>{$formattedLastUpdated}</span>
+                <span>{timeAgoInSeconds($lastUpdated)}</span>
               {:else}
                 <span class="mr-2">Updating...</span>
               {/if}

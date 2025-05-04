@@ -45,7 +45,7 @@
                   {pr.title}
                 </a>
                 <div class="text-sm text-[#8b949e] mt-1">
-                  #{pr.number} opened {timeAgo(pr.createdAt)} by 
+                  #{pr.number} opened {pr.createdAt} by 
                   <a 
                     href={`https://github.com/${pr.user.login}`} 
                     target="_blank" 
