@@ -264,6 +264,7 @@
               onAdd={addActionFilter}
               onRemove={removeActionFilter}
               onLoadOptions={loadWorkflows}
+              noOptionsAvailable={!isLoadingWorkflows && availableWorkflows.length === 0 && repoName !== ""}
             />
           </div>
         {/if}

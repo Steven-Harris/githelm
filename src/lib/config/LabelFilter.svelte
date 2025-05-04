@@ -1,5 +1,14 @@
 <script lang="ts">
-  let { filters = [], availableOptions = [], loading = false, title = "", onAdd, onRemove, onLoadOptions } = $props();
+  let { 
+    filters = [], 
+    availableOptions = [], 
+    loading = false, 
+    title = "", 
+    onAdd, 
+    onRemove, 
+    onLoadOptions,
+    noOptionsAvailable = false // New prop to indicate if the repo has no workflows
+  } = $props();
   
   let newFilter = $state<string>("");
   let showResults = $state<boolean>(false);
@@ -101,45 +110,56 @@
     <p class="text-xs text-[#8b949e] mb-2">No filters set. All {title.toLowerCase()} will be displayed.</p>
   {/if}
   
-  <div class="relative">
-    <input 
-      id="filter-input"
-      type="text" 
-      bind:value={newFilter}
-      oninput={handleInputChange}
-      onkeydown={handleInputKeydown}
-      onfocus={() => { if (newFilter.trim() && availableOptions.length > 0) showResults = true; }}
-      class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200"
-      placeholder={`Add ${title.toLowerCase()} filter`}
-      aria-label="New filter"
-    />
-    
-    {#if showResults && filteredOptions.length > 0}
-      <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto">
-        {#each filteredOptions as option, i}
-          <button 
-            type="button"
-            class="filter-option w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9]"
-            onclick={() => selectOption(option)}
-            onkeydown={(e) => handleOptionKeydown(e, option, i)}
-            tabindex="0"
-          >
-            <div class="font-medium">{option}</div>
-          </button>
-        {/each}
-      </div>
-    {/if}
-  </div>
+  <!-- Show no workflows message when appropriate -->
+  {#if noOptionsAvailable && title.toLowerCase() === "workflow"}
+    <div class="p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded mb-2">
+      <p class="text-sm text-[#f0883e]">No workflows found in this repository.</p>
+      <p class="text-xs text-[#8b949e] mt-1">
+        Create a workflow file in the repository's .github/workflows directory, then refresh here.
+      </p>
+    </div>
+  {:else}
+    <!-- Show input field only when workflows exist or for other filter types -->
+    <div class="relative">
+      <input 
+        id="filter-input"
+        type="text" 
+        bind:value={newFilter}
+        oninput={handleInputChange}
+        onkeydown={handleInputKeydown}
+        onfocus={() => { if (newFilter.trim() && availableOptions.length > 0) showResults = true; }}
+        class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200"
+        placeholder={`Add ${title.toLowerCase()} filter`}
+        aria-label="New filter"
+      />
+      
+      {#if showResults && filteredOptions.length > 0}
+        <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto">
+          {#each filteredOptions as option, i}
+            <button 
+              type="button"
+              class="filter-option w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9]"
+              onclick={() => selectOption(option)}
+              onkeydown={(e) => handleOptionKeydown(e, option, i)}
+              tabindex="0"
+            >
+              <div class="font-medium">{option}</div>
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
   
   {#if loading}
     <p class="text-xs text-[#8b949e] mt-1">Loading {title.toLowerCase()}...</p>
-  {:else if availableOptions.length === 0}
+  {:else}
     <button 
       type="button"
       class="text-xs text-[#58a6ff] mt-1 hover:underline"
       onclick={onLoadOptions}
     >
-      Load available {title.toLowerCase()} from repository
+      {noOptionsAvailable ? `Refresh ${title.toLowerCase()} list` : `Load available ${title.toLowerCase()} from repository`}
     </button>
   {/if}
 </div>
