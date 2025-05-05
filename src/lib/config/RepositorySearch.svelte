@@ -1,6 +1,8 @@
 <script lang="ts">
   import { searchRepositories } from "$integrations/github";
   import type { SearchRepositoryResult } from "$lib/stores/repository-service";
+  import { useDropdown } from "./useDropdown";
+  import { useKeyboardNavigation } from "./useKeyboardNavigation";
   
   interface ExistingRepo {
     org: string;
@@ -19,6 +21,7 @@
   let isLoading = $state<boolean>(false);
   let showResults = $state<boolean>(false);
   let searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
+  let containerRef = $state<HTMLDivElement | null>(null);
   
   async function handleInputChange(): Promise<void> {
     if (!orgName || !repoName.trim()) {
@@ -41,7 +44,7 @@
         searchResults = results.map(repo => ({
           ...repo,
           alreadyConfigured: existingRepos.some(
-            existing => existing.org === orgName && existing.repo === repo.name
+              (existing: { org: any; repo: string; }) => existing.org === orgName && existing.repo === repo.name
           )
         }));
       } catch (error) {
@@ -66,44 +69,19 @@
     }
   }
   
-  function handleInputKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape') {
-      showResults = false;
-    } else if (e.key === 'ArrowDown' && searchResults.length > 0) {
-      const firstResult = document.querySelector('.repo-result') as HTMLElement;
-      if (firstResult) {
-        firstResult.focus();
-      }
+  // New keyboard navigation handler for dropdown
+  function handleResultSelection(index: number): void {
+    const repo = searchResults[index];
+    if (repo && !repo.alreadyConfigured) {
+      selectRepository(repo.name);
     }
   }
   
-  function handleSearchResultKeydown(e: KeyboardEvent, repoName: string, index: number): void {
-    if (e.key === 'Enter') {
-      selectRepository(repoName);
-    } else if (e.key === 'Escape') {
-      showResults = false;
-      const repoInput = document.getElementById('repository-input') as HTMLElement;
-      if (repoInput) {
-        repoInput.focus();
-      }
-    } else if (e.key === 'ArrowDown') {
-      // Move focus to the next search result
-      const nextResult = document.querySelector(`.repo-result:nth-child(${index + 2})`) as HTMLElement;
-      if (nextResult) {
-        nextResult.focus();
-      }
-    } else if (e.key === 'ArrowUp') {
-      if (index === 0) {
-        const repoInput = document.getElementById('repository-input') as HTMLElement;
-        if (repoInput) {
-          repoInput.focus();
-        }
-      } else {
-        const prevResult = document.querySelector(`.repo-result:nth-child(${index})`) as HTMLElement;
-        if (prevResult) {
-          prevResult.focus();
-        }
-      }
+  function closeDropdown(): void {
+    showResults = false;
+    const inputElement = document.getElementById("repository-input");
+    if (inputElement) {
+      inputElement.focus();
     }
   }
   
@@ -118,16 +96,12 @@
 
 <div class="mb-4">
   <div class="flex items-center mb-1">
-    <label for="repository-input" class="block text-sm font-medium text-[#c9d1d9]">
+    <label for="repository-input" class="{disabled ? '' : 'block'} text-sm font-medium text-[#c9d1d9]">
       Repository
       {#if disabled}
         <span id="repository-input" class="text-sm font-medium text-white">- {repoName}</span>
       {:else}
         <span class="text-red-700">*</span>
-        <span class="tooltip ml-2">
-          <span class="text-[#8b949e] text-xs">ⓘ</span>
-          <span class="tooltip-text">Repository is already configured</span>
-        </span>
       {/if}
     </label>
     {#if !orgName}
@@ -139,22 +113,29 @@
   </div>
   
   {#if !disabled}
-    <div class="relative">
+    <div class="relative" bind:this={containerRef} use:useKeyboardNavigation={{
+      inputId: "repository-input",
+      itemSelector: ".repo-result",
+      onSelect: handleResultSelection,
+      onEscape: closeDropdown
+    }}>
       <input 
         id="repository-input"
         type="text" 
         bind:value={repoName}
         oninput={handleInputChange}
-        onkeydown={handleInputKeydown}
         onfocus={() => { if (repoName && orgName) showResults = true; }}
         class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName ? 'opacity-50 cursor-not-allowed' : ''}"
         placeholder="Type to search repositories..."
-        disabled={ !orgName}
+        disabled={!orgName}
         aria-required="true"
       />
       
       {#if showResults && orgName && searchResults.length > 0}
-        <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto backdrop-blur-sm">
+        <div 
+          use:useDropdown={{ isOpen: showResults }}
+          class="absolute w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg backdrop-blur-sm"
+        >
           {#if isLoading}
             <div class="p-3 text-[#8b949e]">Searching repositories...</div>
           {:else}
@@ -163,7 +144,6 @@
                 type="button"
                 class="repo-result w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9] {repo.alreadyConfigured ? 'opacity-60 cursor-not-allowed' : ''}"
                 onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)}
-                onkeydown={(e) => !repo.alreadyConfigured && handleSearchResultKeydown(e, repo.name, i)}
                 tabindex={repo.alreadyConfigured ? -1 : 0}
                 disabled={repo.alreadyConfigured}
               >
@@ -174,7 +154,7 @@
                   {/if}
                 </div>
                 {#if repo.description}
-                  <div class="text-sm text-[#8b949e]">{repo.description}</div>
+                  <div class="text-sm text-[#8b949e] truncate">{repo.description}</div>
                 {/if}
               </button>
             {/each}

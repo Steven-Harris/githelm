@@ -40,47 +40,28 @@
   let availableWorkflows = $state<string[]>([]);
   let isLoadingWorkflows = $state<boolean>(false);
   
-  onMount(() => {
-    const initialize = async () => {
-      try {
-        // If editing an existing config
-        if (config) {
-          selectedOrg = config.org;
-          repoName = config.repo;
-          
-          if (config.pullRequests) {
-            monitorPRs = true;
-            prFilters = Array.isArray(config.pullRequests) ? [...config.pullRequests] : [];
-            
-            await loadLabels();
-          }
-          
-          if (config.actions) {
-            monitorActions = true;
-            actionFilters = Array.isArray(config.actions) ? [...config.actions] : [];
-            
-            await loadWorkflows();
-          }
-        }
-      } catch (error) {
-        console.error("Error loading form data:", error);
+  // Initialize form from existing config
+  $effect(() => {
+    if (config) {
+      selectedOrg = config.org;
+      repoName = config.repo;
+      
+      if (config.pullRequests) {
+        monitorPRs = true;
+        prFilters = Array.isArray(config.pullRequests) ? [...config.pullRequests] : [];
+        loadLabels();
       }
-    };
-
-    initialize();
-
-    // Listen for save events from the header button
-    const unsubscribe = eventBus.subscribe((event) => {
-      if (event === 'save-config') {
-        handleSubmit();
-        // Reset the event bus after handling
-        eventBus.set('');
+      
+      if (config.actions) {
+        monitorActions = true;
+        actionFilters = Array.isArray(config.actions) ? [...config.actions] : [];
+        loadWorkflows();
       }
-    });
-
-    return () => {
-      unsubscribe();
-    };
+    }
+    if ($eventBus === 'save-config') {
+      handleSubmit();
+      eventBus.set('');
+    }
   });
   
   async function loadLabels(): Promise<void> {
