@@ -25,6 +25,16 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
+      - name: Cache Build
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules/.vite
+            .svelte-kit
+          key: pr-build-${{ runner.os }}-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            pr-build-${{ runner.os }}-
+
       - name: Create Sentry environment file
         run: |
           echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
