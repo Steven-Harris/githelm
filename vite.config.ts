@@ -14,14 +14,6 @@ const config: UserConfig = defineConfig({
     // Improve build performance
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          'github-apis': ['graphql']
-        }
-      }
-    }
   },
 
   // Optimize development server and caching
@@ -36,7 +28,7 @@ const config: UserConfig = defineConfig({
 
   // Enhanced dependency optimization
   optimizeDeps: {
-    include: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'graphql'],
+    include: ['graphql'],
     exclude: [],
     esbuildOptions: {
       target: 'es2020'
@@ -82,13 +74,17 @@ const config: UserConfig = defineConfig({
           purpose: 'maskable',
         }],
       },
+      // Updated glob patterns for SvelteKit's static adapter output structure
       injectManifest: {
-        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}']
+        globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}']
       },
       workbox: {
-        globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+        // Updated glob patterns to match the actual output structure
+        globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
         clientsClaim: true,
-        skipWaiting: false
+        skipWaiting: false,
+        // Don't add globIgnores that might conflict with the build
+        globIgnores: []
       },
       devOptions: {
         enabled: false,
