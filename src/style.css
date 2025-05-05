@@ -1,17 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
-  --primary-accent-color: #3b82f6;
-  --secondary-accent-color: #38bdf8;
-  --tertiary-accent-color: #EAB308;
-  --tertiary-accent-hover-color: #A16207;
-  --primary-color: #1f2937;
-  --secondary-color: #374151;
-  --active-highlight-color: #2d3748;
-  --primary-text-color: white;
-  --secondary-text-color: black;
+  /* GitHub-inspired spacey glass theme colors */
+  --primary-accent-color: #2ea043;
+  --primary-accent-hover-color: #3fb950;
+  --secondary-accent-color: #58a6ff;
+  --secondary-accent-hover-color: #79c0ff;
+  --tertiary-accent-color: #bc8cff;
+  --tertiary-accent-hover-color: #d2a8ff;
+  --primary-color: #0d1117;
+  --primary-color-rgb: 13, 17, 23; /* RGB components of GitHub dark mode bg */
+  --secondary-color: #161b22;
+  --active-highlight-color: #1f6feb;
+  --primary-text-color: #f0f6fc;
+  --secondary-text-color: #c9d1d9;
+  --border-color: rgba(99, 102, 106, 0.25);
+  --subtle-bg-color: rgba(255, 255, 255, 0.05);
+  
+  /* New glassmorphism styles */
+  --hero-gradient-start: #0d1117;
+  --hero-gradient-end: #161b22;
+  --hero-card-bg: rgba(22, 27, 34, 0.3);
+  --hero-card-border: rgba(99, 102, 106, 0.25);
+  --hero-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --hero-section-spacing: 2rem;
+  --hero-section-bg: rgba(22, 27, 34, 0.2);
 }
 
 /* Global Styles */
@@ -21,28 +34,112 @@ body {
   margin: 0;
   display: flex;
   flex-direction: column;
+  background: var(--primary-color);
+  color: var(--primary-text-color);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body {
+  background: linear-gradient(to bottom, var(--primary-color), #151b27);
   display: flex;
   flex-direction: column;
 }
 
-main {
-  flex: 1;
-  overflow: auto;
+/* Add glass effect to containers */
+.glass-container {
+  background: var(--subtle-bg-color);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
 }
 
-header,
-#tabs,
-#pull-request-header,
-#actions-header {
-  position: sticky;
+/* Hero section styling with glassmorphism */
+.hero-section {
+  position: relative;
+  margin-bottom: var(--hero-section-spacing);
+  padding: 20px;
+  overflow: hidden;
+  background-color: var(--hero-section-bg);
+  border-radius: 10px;
+  box-shadow: var(--hero-card-shadow);
+  border: 1px solid var(--hero-card-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
   top: 0;
-  background-color: var(--primary-color);
-  /* Tailwind bg-gray-900 */
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(135deg, rgba(46, 160, 67, 0.05), rgba(56, 139, 253, 0.1));
+  opacity: 0.3;
+  z-index: -1;
+  border-radius: 10px 10px 0 0;
 }
 
+.hero-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  background-image: linear-gradient(90deg, var(--primary-text-color), var(--secondary-accent-color));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.hero-card {
+  background: var(--hero-card-bg);
+  border: 1px solid var(--hero-card-border);
+  border-radius: 8px;
+  box-shadow: var(--hero-card-shadow);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  color: var(--primary-text-color);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.hero-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/*
+.hero-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  border-color: rgba(99, 102, 106, 0.4);
+}*/
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hero-title {
+    font-size: 1.5rem;
+  }
+}
+
+/* Rest of existing styles */
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -53,38 +150,10 @@ header,
   }
 }
 
-
-/* Component Styles */
-#content {
-  margin-top: 1rem;
-}
-
-.nav-button {
-  background-color: var(--secondary-color);
-  border-radius: 0.5rem;
-  transition: background-color 300ms, color 300ms;
-  font-size: 0.875rem;
-  width: 10rem;
-  height: 3rem;
-}
-
-.nav-button:hover {
-  background-color: var(--secondary-accent-color);
-  color: var(--primary-color);
-}
-
-.glow {
-  box-shadow: 0 0 8px var(--secondary-accent-color);
-}
-
 .spinner {
   width: 10rem;
   height: 10rem;
   animation: spin 1.5s linear infinite;
-}
-
-.content {
-  height: calc(100vh - 10rem);
 }
 
 .tab-button {
@@ -110,6 +179,30 @@ header,
   text-decoration: underline;
 }
 
+/* Fade-in animation for lists */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+/* Staggered animation delay for list items */
+.stagger-item {
+  opacity: 0;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0.1s; }
+.stagger-item:nth-child(2) { animation-delay: 0.15s; }
+.stagger-item:nth-child(3) { animation-delay: 0.2s; }
+.stagger-item:nth-child(4) { animation-delay: 0.25s; }
+.stagger-item:nth-child(5) { animation-delay: 0.3s; }
+.stagger-item:nth-child(n+6) { animation-delay: 0.35s; }
+
+/* Reviews-related styles */
 .reviews-container {
   display: flex;
   align-items: center;
@@ -141,6 +234,20 @@ header,
   font-size: 0.875rem;
 }
 
+.chip {
+  display: inline-block;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  margin-right: 0.25rem;
+  background-color: var(--tertiary-accent-color);
+  color: var(--secondary-text-color);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  max-height: 4rem;
+}
+
+/* Toast notification styles */
 #pwa-toast {
   visibility: hidden;
   position: fixed;
@@ -206,36 +313,5 @@ button#pwa-refresh {
     word-wrap: break-word;
     overflow-x: hidden;
   }
-
-  .nav-button {
-    box-shadow: none;
-    background-color: transparent;
-    transition: none;
-    width: 7rem;
-    height: 3rem;
-    margin-left: 1rem;
-    ;
-    margin-right: 1rem;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .nav-button::before {
-    content: '';
-    width: 1.5rem;
-    height: 1.5rem;
-    background-size: cover;
-  }
 }
 
-.chip {
-  display: inline-block;
-  padding: 0.5rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-  margin-right: 0.25rem;
-  background-color: var(--tertiary-accent-color);
-  color: var(--secondary-text-color);
-  border-radius: 0.25rem;
-  cursor: pointer;
-}

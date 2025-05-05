@@ -12,6 +12,9 @@ pnpm-debug.log*
 # Vite build output
 dist/
 
+# Svelte build output
+.svelte-kit/
+
 # Firebase 
 .firebase/
 
@@ -34,3 +37,6 @@ dist/
 
 # Windows files
 Thumbs.d
+/old
+# Sentry Config File
+.env.*

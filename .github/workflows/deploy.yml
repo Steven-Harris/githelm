@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper version info
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -23,12 +25,30 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
+      - name: Cache Build
+        uses: actions/cache@v3
+        with:
+          path: |
+            node_modules/.vite
+            .svelte-kit
+          key: pr-build-${{ runner.os }}-${{ github.event.pull_request.head.sha }}
+          restore-keys: |
+            pr-build-${{ runner.os }}-
+
+      - name: Create Sentry environment file
+        run: |
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+        
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
        
-      - name: Build project
+      - name: Build project with Sentry
         run: pnpm run build
-
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          
       - name: Deploy to main
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
