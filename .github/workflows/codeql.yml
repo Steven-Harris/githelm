@@ -1,12 +1,6 @@
 name: "🩺 CodeQL"
 
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths-ignore:
-      - '**/*.yml'
-      - '**/*.md'
-      - '**/*.txt'
   schedule:
     - cron: '45 2 * * 1'
 
