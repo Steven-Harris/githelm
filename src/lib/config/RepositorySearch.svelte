@@ -120,7 +120,15 @@
   <div class="flex items-center mb-1">
     <label for="repository-input" class="block text-sm font-medium text-[#c9d1d9]">
       Repository
-      <span class="text-red-700">*</span>
+      {#if disabled}
+        <span id="repository-input" class="text-sm font-medium text-white">- {repoName}</span>
+      {:else}
+        <span class="text-red-700">*</span>
+        <span class="tooltip ml-2">
+          <span class="text-[#8b949e] text-xs">ⓘ</span>
+          <span class="tooltip-text">Repository is already configured</span>
+        </span>
+      {/if}
     </label>
     {#if !orgName}
       <span class="tooltip ml-2">
@@ -130,49 +138,51 @@
     {/if}
   </div>
   
-  <div class="relative">
-    <input 
-      id="repository-input"
-      type="text" 
-      bind:value={repoName}
-      oninput={handleInputChange}
-      onkeydown={handleInputKeydown}
-      onfocus={() => { if (repoName && orgName) showResults = true; }}
-      class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName ? 'opacity-50 cursor-not-allowed' : ''}"
-      placeholder="Type to search repositories..."
-      disabled={disabled || !orgName}
-      aria-required="true"
-    />
-    
-    {#if showResults && orgName && searchResults.length > 0}
-      <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto backdrop-blur-sm">
-        {#if isLoading}
-          <div class="p-3 text-[#8b949e]">Searching repositories...</div>
-        {:else}
-          {#each searchResults as repo, i}
-            <button 
-              type="button"
-              class="repo-result w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9] {repo.alreadyConfigured ? 'opacity-60 cursor-not-allowed' : ''}"
-              onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)}
-              onkeydown={(e) => !repo.alreadyConfigured && handleSearchResultKeydown(e, repo.name, i)}
-              tabindex={repo.alreadyConfigured ? -1 : 0}
-              disabled={repo.alreadyConfigured}
-            >
-              <div class="flex justify-between items-center">
-                <div class="font-medium">{repo.name}</div>
-                {#if repo.alreadyConfigured}
-                  <span class="text-xs bg-[rgba(48,54,61,0.8)] px-2 py-0.5 rounded-full text-[#8b949e] border border-[#30363d]">Already configured</span>
+  {#if !disabled}
+    <div class="relative">
+      <input 
+        id="repository-input"
+        type="text" 
+        bind:value={repoName}
+        oninput={handleInputChange}
+        onkeydown={handleInputKeydown}
+        onfocus={() => { if (repoName && orgName) showResults = true; }}
+        class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName ? 'opacity-50 cursor-not-allowed' : ''}"
+        placeholder="Type to search repositories..."
+        disabled={ !orgName}
+        aria-required="true"
+      />
+      
+      {#if showResults && orgName && searchResults.length > 0}
+        <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto backdrop-blur-sm">
+          {#if isLoading}
+            <div class="p-3 text-[#8b949e]">Searching repositories...</div>
+          {:else}
+            {#each searchResults as repo, i}
+              <button 
+                type="button"
+                class="repo-result w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9] {repo.alreadyConfigured ? 'opacity-60 cursor-not-allowed' : ''}"
+                onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)}
+                onkeydown={(e) => !repo.alreadyConfigured && handleSearchResultKeydown(e, repo.name, i)}
+                tabindex={repo.alreadyConfigured ? -1 : 0}
+                disabled={repo.alreadyConfigured}
+              >
+                <div class="flex justify-between items-center">
+                  <div class="font-medium">{repo.name}</div>
+                  {#if repo.alreadyConfigured}
+                    <span class="text-xs bg-[rgba(48,54,61,0.8)] px-2 py-0.5 rounded-full text-[#8b949e] border border-[#30363d]">Already configured</span>
+                  {/if}
+                </div>
+                {#if repo.description}
+                  <div class="text-sm text-[#8b949e]">{repo.description}</div>
                 {/if}
-              </div>
-              {#if repo.description}
-                <div class="text-sm text-[#8b949e]">{repo.description}</div>
-              {/if}
-            </button>
-          {/each}
-        {/if}
-      </div>
-    {/if}
-  </div>
+              </button>
+            {/each}
+          {/if}
+        </div>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <style>

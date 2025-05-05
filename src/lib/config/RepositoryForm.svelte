@@ -200,7 +200,7 @@
   }
 </script>
 
-<div class="p-4 rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)]">
+<div class="p-4 rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)] relative">
   <h3 class="text-lg font-semibold mb-4 text-[#c9d1d9]">
     {config ? 'Edit' : 'Add'} Repository Configuration
   </h3>
@@ -211,13 +211,15 @@
     onChange={handleOrgChange} 
   />
   
-  <RepositorySearch 
-    orgName={selectedOrg}
-    repoName={repoName}
-    disabled={config !== null}
-    existingRepos={existingRepos}
-    onChange={handleRepoChange}
-  />
+  <div class="static">
+    <RepositorySearch 
+      orgName={selectedOrg}
+      repoName={repoName}
+      disabled={config !== null}
+      existingRepos={existingRepos}
+      onChange={handleRepoChange}
+    />
+  </div>
   
   {#if selectedOrg && repoName}
     <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
