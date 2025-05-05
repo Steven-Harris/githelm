@@ -24,12 +24,17 @@
   }
   
   function saveConfig() {
-    // Trigger save event for config components
     eventBus.set('save-config');
   }
   
   function cancelConfig() {
+    killSwitch.set(false);
     goto('/');
+  }
+
+  function navigateToConfig() {
+    killSwitch.set(true);
+    goto('/config');
   }
 </script>
 
@@ -71,10 +76,9 @@
                 <span class="mr-2">Updating...</span>
               {/if}
             </div>
-            <!-- Configure button for main page -->
             <button 
               class="nav-button" 
-              onclick={() => goto('/config')} 
+              onclick={navigateToConfig} 
               aria-label="configure repositories"
               title="Configure repositories"
             >

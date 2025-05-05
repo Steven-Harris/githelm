@@ -11,6 +11,8 @@ import { getStorageObject, setStorageObject } from "$integrations/storage";
 import createPollingStore from "./polling.store";
 import { eventBus } from "./event-bus.store";
 import { writable, get, derived } from "svelte/store";
+import { page } from "$app/state";
+import { killSwitch } from "./kill-switch.store";
 
 // Type definitions for repository service
 export type { SearchRepositoryResult } from "$integrations/github";

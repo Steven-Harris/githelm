@@ -88,16 +88,27 @@
       }
     }
   }
+
+  // Helper function to display workflow names without extension but still keep full name for selection
+  function getDisplayName(option: string): string {
+    if (title.toLowerCase() === "workflow") {
+      // Return the name without extension for display purposes only
+      return option.replace(/\.(ya?ml)$/, '');
+    }
+    return option;
+  }
 </script>
 
 <div>
-  <h5 class="text-sm font-medium mb-2 text-[#c9d1d9]">{title} Filters (optional)</h5>
+  <h5 class="text-sm font-medium mb-2 text-[#c9d1d9]">
+    {title} Filters {title.toLowerCase() === "workflow" ? "(required)" : "(optional)"}
+  </h5>
   
   {#if filters.length > 0}
     <div class="flex flex-wrap gap-2 mb-2">
       {#each filters as filter}
         <span class="chip">
-          {filter}
+          {title.toLowerCase() === "workflow" ? filter.replace(/\.(ya?ml)$/, '') : filter}
           <button 
             type="button" 
             onclick={() => onRemove(filter)} 
@@ -107,7 +118,11 @@
       {/each}
     </div>
   {:else}
-    <p class="text-xs text-[#8b949e] mb-2">No filters set. All {title.toLowerCase()} will be displayed.</p>
+    {#if title.toLowerCase() === "workflow"}
+      <p class="text-xs text-[#f97583] mb-2">At least one workflow must be selected.</p>
+    {:else}
+      <p class="text-xs text-[#8b949e] mb-2">No filters set. All {title.toLowerCase()} will be displayed.</p>
+    {/if}
   {/if}
   
   <!-- Show no workflows message when appropriate -->
@@ -143,7 +158,7 @@
               onkeydown={(e) => handleOptionKeydown(e, option, i)}
               tabindex="0"
             >
-              <div class="font-medium">{option}</div>
+              <div class="font-medium">{getDisplayName(option)}</div>
             </button>
           {/each}
         </div>

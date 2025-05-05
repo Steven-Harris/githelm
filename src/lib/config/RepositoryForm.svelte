@@ -125,6 +125,12 @@
       return;
     }
     
+    // Validate workflow filters if actions monitoring is enabled
+    if (monitorActions && actionFilters.length === 0) {
+      alert("Please select at least one workflow filter for GitHub Actions monitoring.");
+      return;
+    }
+    
     const result: SaveEventData = {
       pullRequests: monitorPRs ? { 
         org: selectedOrg, 

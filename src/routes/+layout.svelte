@@ -45,10 +45,17 @@
   {@html webManifest}
 </svelte:head>
 
-<Header {signedIn}/>
+<Header signedIn={signedIn && $authState === "authenticated"}/>
 
 <main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
   <Tabs />
+
+  <code>
+    Logged In: {signedIn ? 'true' : 'false'} <br>
+    Auth State: {$authState} <br>
+    Loading State: {$isLoading} <br>
+
+  </code>
   
   {#if $isAuth === 'authenticating'}
     <div class="my-4 mx-auto max-w-3xl bg-yellow-800/80 text-white p-3 rounded-md shadow-lg border border-yellow-700 backdrop-blur-sm text-center">

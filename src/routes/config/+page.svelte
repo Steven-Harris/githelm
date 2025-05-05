@@ -9,6 +9,7 @@
     getCombinedConfigs,
     type CombinedConfig
   } from "$lib/stores/repository-service";
+    import { killSwitch } from "$stores/kill-switch.store";
 
   // State with proper types
   let combinedConfigs = $state<CombinedConfig[]>([]);
@@ -48,6 +49,7 @@
     
     try {
       await updateRepositoryConfigs(combinedConfigs);
+      killSwitch.set(false);
       goto("/");
     } catch (error) {
       errorMessage = "Failed to save configurations";
