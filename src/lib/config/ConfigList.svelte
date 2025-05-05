@@ -54,20 +54,26 @@
     let updatedConfigs = [...configs];
     
     if (typeof index === 'number') {
-      updatedConfigs.splice(index, 1);
-      
+      // Edit existing configuration - preserve its original position
       if (pullRequests || actions) {
-        updatedConfigs.push({
+        const updatedConfig = {
           org: pullRequests?.org || actions?.org || "",
           repo: pullRequests?.repo || actions?.repo || "",
           pullRequests: pullRequests?.filters || [],
           actions: actions?.filters || []
-        });
+        };
+        
+        // Replace the config at the original index instead of removing and adding at the end
+        updatedConfigs[index] = updatedConfig;
+      } else {
+        // If no configuration data was provided, remove the config
+        updatedConfigs.splice(index, 1);
       }
       
       configs = updatedConfigs;
       editingIndex = -1;
     } else {
+      // Add new configuration
       if (pullRequests || actions) {
         updatedConfigs = [
           ...configs, 
