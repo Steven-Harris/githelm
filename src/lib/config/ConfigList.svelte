@@ -141,29 +141,34 @@
             onmousedown={handleMouseDown}
             data-index={i}
           >
-            <div class="flex justify-between items-center">
-              <span class="flex items-center">
-                <span class="{$isMobile ? 'mr-1' : 'mr-2'} text-gray-400 opacity-70 drag-handle">☰</span>
-                <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''}">
+            <div class="flex justify-between items-center w-full overflow-hidden">
+              <div class="flex items-center min-w-0 flex-shrink flex-1">
+                <span class="{$isMobile ? 'mr-1' : 'mr-2'} text-gray-400 opacity-70 drag-handle flex-shrink-0">☰</span>
+                <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''} truncate">
                   {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                 </strong>
+              </div>
+              
+              <div class="flex items-center {$isMobile ? 'ml-2' : 'ml-3'} flex-shrink-0">
                 <button 
-                  class="{$isMobile ? 'ml-1' : 'ml-2'} text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer"
+                  class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}"
                   type="button" 
                   aria-label="edit {config.org}/{config.repo}" 
                   title="Edit repository configuration" 
                   onclick={() => startEditing(i)}
                 >
-                  <img src={editSVG} alt="edit" width={$isMobile ? "13" : "15"} height={$isMobile ? "13" : "15"} />
+                  <img src={editSVG} alt="edit" width={$isMobile ? "16" : "15"} height={$isMobile ? "16" : "15"} />
                 </button>
-              </span>
-              <button 
-                class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag cursor-pointer" 
-                title="Remove repository" 
-                onclick={() => removeConfig(i)}
-              >
-                <img src={deleteSVG} alt="Delete" width={$isMobile ? "12" : "14"} height={$isMobile ? "12" : "14"} />
-              </button>
+                
+                <button 
+                  class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}" 
+                  title="Remove repository" 
+                  aria-label="delete {config.org}/{config.repo}"
+                  onclick={() => removeConfig(i)}
+                >
+                  <img src={deleteSVG} alt="Delete" width={$isMobile ? "16" : "14"} height={$isMobile ? "16" : "14"} />
+                </button>
+              </div>
             </div>
             
             <div class="{$isMobile ? 'mt-1' : 'mt-2'} {$isMobile ? 'text-xs' : 'text-sm'} flex flex-wrap gap-2">
@@ -303,6 +308,15 @@
     :global(.chip) {
       padding: 1px 6px;
       font-size: 0.7rem;
+    }
+    
+    /* Add touch area styles for mobile buttons */
+    .config-item button {
+      min-height: 32px;
+      min-width: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 </style>

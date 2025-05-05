@@ -57,13 +57,7 @@
               aria-label="save configuration"
               title="Save configuration"
             >
-              {#if $isMobile}
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              {:else}
-                <span>Save</span>
-              {/if}
+              <span>Save</span>
             </button>
 
             <button 
@@ -72,14 +66,7 @@
               aria-label="cancel configuration"
               title="Cancel configuration"
             >
-              {#if $isMobile}
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              {:else}
-                <span>Cancel</span>
-              {/if}
+              <span>Cancel</span>
             </button>
           {:else}
             <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
@@ -192,18 +179,9 @@
     border-color: rgba(240, 246, 252, 0.2);
   }
 
-  .primary {
-    background-color: var(--primary-accent-color);
-    border-color: transparent;
-  }
-  
-  .primary:hover {
-    background-color: var(--primary-accent-hover-color);
-  }
-
   @media (max-width: 768px) {
     .nav-button {
-      width: 2.5rem;
+      width: 4rem;
       height: 2.5rem;
       padding: 0.5rem;
     }
