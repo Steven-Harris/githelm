@@ -147,18 +147,31 @@
                 <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''} truncate">
                   {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                 </strong>
+                {#if !$isMobile}
+                  <button 
+                    class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center ml-2"
+                    type="button" 
+                    aria-label="edit {config.org}/{config.repo}" 
+                    title="Edit repository configuration" 
+                    onclick={() => startEditing(i)}
+                  >
+                    <img src={editSVG} alt="edit" width={$isMobile ? "16" : "15"} height={$isMobile ? "16" : "15"} />
+                  </button>
+                {/if}
               </div>
               
               <div class="flex items-center {$isMobile ? 'ml-2' : 'ml-3'} flex-shrink-0">
-                <button 
-                  class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}"
-                  type="button" 
-                  aria-label="edit {config.org}/{config.repo}" 
-                  title="Edit repository configuration" 
-                  onclick={() => startEditing(i)}
-                >
-                  <img src={editSVG} alt="edit" width={$isMobile ? "16" : "15"} height={$isMobile ? "16" : "15"} />
-                </button>
+                {#if $isMobile}
+                  <button 
+                    class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center w-8 h-8"
+                    type="button" 
+                    aria-label="edit {config.org}/{config.repo}" 
+                    title="Edit repository configuration" 
+                    onclick={() => startEditing(i)}
+                  >
+                    <img src={editSVG} alt="edit" width={$isMobile ? "16" : "15"} height={$isMobile ? "16" : "15"} />
+                  </button>
+                {/if}
                 
                 <button 
                   class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}" 

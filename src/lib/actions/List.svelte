@@ -12,12 +12,11 @@
         <a 
           href={`https://github.com/${org}/${repo}/actions`} 
           target="_blank"
-          class="link text-[#58a6ff] hover:underline flex items-center gap-1"
+          class="link hover:underline flex items-center gap-1"
+          title={`${org}/${repo}`}
         >
           <img src={githubSVG} alt="GitHub" width="16" height="16" />
-          <span>
-            {org}/{repo}
-          </span>
+          <span class="text-[#58a6ff]">{repo}</span>
         </a>
       </h3>
       <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
