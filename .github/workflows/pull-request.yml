@@ -9,16 +9,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests 🧪
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run unit tests
+        run: pnpm run test
+      
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      
+      - name: Run E2E tests
+        run: pnpm run test:e2e
+      
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     name: Deploy Preview to Firebase Hosting 🚀
-    if: github.actor == 'dependabot[bot]' || github.actor == 'steven-harris'
+    if: ${{ success() && (github.actor == 'dependabot[bot]' || github.actor == 'steven-harris') }}
     environment: dev
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for proper version infoa
+          fetch-depth: 0  # Fetch all history for proper version info
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
