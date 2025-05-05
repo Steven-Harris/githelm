@@ -11,7 +11,6 @@
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
   import { derived, readable } from "svelte/store";
-    import { page } from "$app/state";
 
   interface Props {
     children?: import('svelte').Snippet
