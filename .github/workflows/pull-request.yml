@@ -100,7 +100,7 @@ jobs:
         run: pnpm install --frozen-lockfile
        
       - name: Build project with Sentry
-        run: pnpm run build:sentry
+        run: pnpm run build
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           GITHUB_SHA: ${{ github.sha }}
