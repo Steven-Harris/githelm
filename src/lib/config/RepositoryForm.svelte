@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { eventBus } from "$lib/stores/event-bus.store";
   import { fetchRepositoryLabels, fetchRepositoryWorkflows } from "$integrations/github";
+  import { isMobile } from "$lib/stores/mobile.store";
   
   // Import our new components
   import OrganizationSelector from "./OrganizationSelector.svelte";
@@ -187,8 +187,8 @@
   }
 </script>
 
-<div class="p-4 rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)] relative">
-  <h3 class="text-lg font-semibold mb-4 text-[#c9d1d9]">
+<div class="{$isMobile ? 'p-3' : 'p-4'} rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)] relative">
+  <h3 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold {$isMobile ? 'mb-3' : 'mb-4'} text-[#c9d1d9]">
     {config ? 'Edit' : 'Add'} Repository Configuration
   </h3>
   
@@ -209,9 +209,9 @@
   </div>
   
   {#if selectedOrg && repoName}
-    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="{$isMobile ? 'mb-3 space-y-3' : 'mb-4 grid grid-cols-1 md:grid-cols-2 gap-4'}">
       <!-- Pull Requests Section -->
-      <div class="bg-[rgba(22,27,34,0.5)] p-4 rounded-md border border-[#30363d]">
+      <div class="bg-[rgba(22,27,34,0.5)] {$isMobile ? 'p-3' : 'p-4'} rounded-md border border-[#30363d]">
         <MonitoringToggle 
           title="Monitor Pull Requests" 
           enabled={monitorPRs} 
@@ -220,7 +220,7 @@
         />
         
         {#if monitorPRs}
-          <div class="mt-3 border-t border-[#30363d] pt-3">
+          <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
             <LabelFilter
               title="Label"
               filters={prFilters}
@@ -235,7 +235,7 @@
       </div>
       
       <!-- GitHub Actions Section -->
-      <div class="bg-[rgba(22,27,34,0.5)] p-4 rounded-md border border-[#30363d]">
+      <div class="bg-[rgba(22,27,34,0.5)] {$isMobile ? 'p-3' : 'p-4'} rounded-md border border-[#30363d]">
         <MonitoringToggle 
           title="Monitor GitHub Actions" 
           enabled={monitorActions} 
@@ -244,7 +244,7 @@
         />
         
         {#if monitorActions}
-          <div class="mt-3 border-t border-[#30363d] pt-3">
+          <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
             <LabelFilter
               title="Workflow"
               filters={actionFilters}
@@ -264,7 +264,7 @@
   <div class="flex justify-end gap-2">
     {#if onCancel}
       <button 
-        class="bg-[rgba(110,118,129,0.4)] text-[#c9d1d9] px-4 py-2 rounded-md hover:bg-[rgba(110,118,129,0.5)] border border-[#30363d] transition-colors duration-200"
+        class="bg-[rgba(110,118,129,0.4)] text-[#c9d1d9] {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md hover:bg-[rgba(110,118,129,0.5)] border border-[#30363d] transition-colors duration-200"
         type="button"
         aria-label="Cancel"
         title="Cancel changes"
@@ -274,7 +274,7 @@
       </button>
     {/if}
     <button 
-      class="bg-[#238636] text-white px-4 py-2 rounded-md border border-[#2ea043] transition-colors duration-200 
+      class="bg-[#238636] text-white {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md border border-[#2ea043] transition-colors duration-200 
       {selectedOrg && repoName ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
       disabled={!selectedOrg || !repoName || (!monitorPRs && !monitorActions)}
       type="submit"
@@ -286,3 +286,22 @@
     </button>
   </div>
 </div>
+
+<style>
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    :global(.glass-container h5) {
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    :global(.glass-container .chip) {
+      font-size: 0.7rem !important;
+      padding: 1px 6px !important;
+    }
+    
+    :global(.monitoring-toggle-label) {
+      font-size: 0.9rem;
+    }
+  }
+</style>

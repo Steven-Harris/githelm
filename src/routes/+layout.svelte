@@ -11,6 +11,7 @@
   import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
   import { derived, readable } from "svelte/store";
+    import { page } from "$app/state";
 
   interface Props {
     children?: import('svelte').Snippet
@@ -47,7 +48,7 @@
 
 <Header signedIn={signedIn && $authState === "authenticated"}/>
 
-<main class="flex-1 overflow-auto px-5 bg-gray-900 pb-12">
+<main class="flex-1 overflow-auto md:px-5 bg-gray-900 pb-12">
   <Tabs />
 
   <code>

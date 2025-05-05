@@ -4,6 +4,7 @@
   import { updateRepositoryConfigs } from "$lib/stores/repository-service";
   import deleteSVG from "$assets/delete.svg";
   import { useDraggable } from "./useDraggable";
+  import { isMobile } from "$lib/stores/mobile.store";
   
   interface RepoConfig {
     org: string;
@@ -133,7 +134,7 @@
           />
         {:else}
           <div
-            class="config-item p-3 px-4 glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
+            class="config-item {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
             draggable="true"
             role="button"
             tabindex="0"
@@ -142,18 +143,18 @@
           >
             <div class="flex justify-between items-center">
               <span class="flex items-center">
-                <span class="mr-2 text-gray-400 opacity-70 drag-handle">☰</span>
-                <strong class="text-[#e6edf3]">
+                <span class="{$isMobile ? 'mr-1' : 'mr-2'} text-gray-400 opacity-70 drag-handle">☰</span>
+                <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''}">
                   {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                 </strong>
                 <button 
-                  class="ml-2 text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer"
+                  class="{$isMobile ? 'ml-1' : 'ml-2'} text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer"
                   type="button" 
                   aria-label="edit {config.org}/{config.repo}" 
                   title="Edit repository configuration" 
                   onclick={() => startEditing(i)}
                 >
-                  <img src={editSVG} alt="edit" width="15" height="15" />
+                  <img src={editSVG} alt="edit" width={$isMobile ? "13" : "15"} height={$isMobile ? "13" : "15"} />
                 </button>
               </span>
               <button 
@@ -161,14 +162,14 @@
                 title="Remove repository" 
                 onclick={() => removeConfig(i)}
               >
-                <img src={deleteSVG} alt="Delete"  width="14" height="14" />
+                <img src={deleteSVG} alt="Delete" width={$isMobile ? "12" : "14"} height={$isMobile ? "12" : "14"} />
               </button>
             </div>
             
-            <div class="mt-2 text-sm flex flex-wrap gap-2">
+            <div class="{$isMobile ? 'mt-1' : 'mt-2'} {$isMobile ? 'text-xs' : 'text-sm'} flex flex-wrap gap-2">
               {#if config.pullRequests?.length > 0}
                 <div class="flex items-center">
-                  <span class="text-[#58a6ff] font-medium mr-1">PRs:</span>
+                  <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
                   <div class="flex flex-wrap gap-1">
                     {#each config.pullRequests as filter}
                       <span class="chip">{filter}</span>
@@ -183,10 +184,10 @@
               
               {#if config.actions?.length > 0}
                 <div class="flex items-center">
-                  <span class="text-[#3fb950] font-medium mr-1">Actions:</span>
+                  <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
                   <div class="flex flex-wrap gap-1">
                     {#each config.actions as filter}
-                      <span class="chip">{filter}</span>
+                      <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
                     {/each}
                   </div>
                 </div>
@@ -206,7 +207,7 @@
   
   {#if editingIndex === -1}
     <button
-      class="flex items-center p-3 px-4 glass-container hover:border-[#388bfd44] w-full mb-4 transition-all duration-200"
+      class="flex items-center {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] w-full mb-4 transition-all duration-200"
       onclick={() => editingIndex = -2}
     >
       <span class="text-xl mr-1 text-[#3fb950]">+</span>
@@ -295,5 +296,13 @@
     will-change: transform;
     opacity: 0.7 !important;
     z-index: 9999 !important;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    :global(.chip) {
+      padding: 1px 6px;
+      font-size: 0.7rem;
+    }
   }
 </style>
