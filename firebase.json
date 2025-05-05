@@ -1,7 +1,6 @@
 {
   "hosting": [
     {
-      "target": "main",
       "public": "dist",
       "ignore": [
         "**/.*",
