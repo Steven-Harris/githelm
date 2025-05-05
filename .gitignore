@@ -38,3 +38,5 @@ dist/
 # Windows files
 Thumbs.d
 /old
+# Sentry Config File
+.env.*

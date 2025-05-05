@@ -1,6 +1,6 @@
 {
   "name": "githelm",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.10.0",
@@ -30,6 +30,10 @@
   },
   "homepage": "https://githelm.com",
   "dependencies": {
+    "@sentry/browser": "^9.15.0",
+    "@sentry/svelte": "^9.15.0",
+    "@sentry/sveltekit": "^9.15.0",
+    "@sentry/vite-plugin": "^3.3.1",
     "firebase": "^11.6.0",
     "graphql": "^16.10.0",
     "tailwindcss": "^4.1.4"

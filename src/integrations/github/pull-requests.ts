@@ -1,6 +1,7 @@
 import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
 import { getStorageObject } from '../storage';
+import { captureException } from '../sentry';
 import { 
   type PullRequest, 
   type PullRequests,
@@ -77,6 +78,14 @@ export async function fetchPullRequestsWithGraphQL(
       return transformGraphQLPullRequests(data);
     } catch (error) {
       console.error('Error fetching pull requests with GraphQL:', error);
+      captureException(error, {
+        context: 'GitHub Pull Requests',
+        function: 'fetchPullRequestsWithGraphQL',
+        org,
+        repo,
+        filters
+      });
+      // Fallback to REST API
       return fetchPullRequests(org, repo, filters);
     }
   });
@@ -212,6 +221,13 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
       return squashReviewsByAuthor(reviews);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      captureException(error, {
+        context: 'GitHub Pull Requests',
+        function: 'fetchReviews',
+        org,
+        repo,
+        prNumber
+      });
       return [];
     }
   });
@@ -219,14 +235,25 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
 
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
-    const queries = filters.length === 0
-      ? [`repo:${org}/${repo}+is:pr+is:open`]
-      : filters.map(filter => `repo:${org}/${repo}+is:pr+is:open+label:${filter}`);
+    try {
+      const queries = filters.length === 0
+        ? [`repo:${org}/${repo}+is:pr+is:open`]
+        : filters.map(filter => `repo:${org}/${repo}+is:pr+is:open+label:${filter}`);
 
-    const results = await Promise.all(
-      queries.map(query => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`))
-    );
-    return results.flatMap(result => result.items);
+      const results = await Promise.all(
+        queries.map(query => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`))
+      );
+      return results.flatMap(result => result.items);
+    } catch (error) {
+      captureException(error, {
+        context: 'GitHub Pull Requests',
+        function: 'fetchPullRequests',
+        org,
+        repo,
+        filters
+      });
+      throw error;
+    }
   });
 }
 
@@ -302,12 +329,27 @@ export async function fetchMultipleRepositoriesPullRequests(
     return transformMultiRepositoryPullRequests(data, configs);
   } catch (error) {
     console.error('Error fetching pull requests with GraphQL:', error);
+    captureException(error, {
+      context: 'GitHub Pull Requests',
+      function: 'fetchMultipleRepositoriesPullRequests',
+      configCount: configs.length,
+      repositories: configs.map(c => `${c.org}/${c.repo}`)
+    });
+    
+    // Fallback to REST API for each repository
     const results: Record<string, PullRequest[]> = {};
     for (const config of configs) {
       try {
         results[`${config.org}/${config.repo}`] = await fetchPullRequests(config.org, config.repo, config.filters);
       } catch (e) {
         console.error(`Failed to fetch pull requests for ${config.org}/${config.repo}:`, e);
+        captureException(e, {
+          context: 'GitHub Pull Requests',
+          function: 'fetchMultipleRepositoriesPullRequests - fallback',
+          org: config.org,
+          repo: config.repo,
+          filters: config.filters
+        });
         results[`${config.org}/${config.repo}`] = [];
       }
     }
@@ -407,6 +449,12 @@ export async function searchRepositoryLabels(owner: string, repo: string): Promi
     return data.repository.labels.nodes.map((label: any) => label.name);
   } catch (error) {
     console.error('Error fetching repository labels:', error);
+    captureException(error, {
+      context: 'GitHub Pull Requests',
+      function: 'searchRepositoryLabels',
+      owner,
+      repo
+    });
     return [];
   }
 }

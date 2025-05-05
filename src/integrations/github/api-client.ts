@@ -1,6 +1,7 @@
 import { killSwitch } from '$lib/stores/kill-switch.store';
 import { startRequest, endRequest } from '$lib/stores/loading.store';
 import { setLastUpdated, setStorageObject } from '../storage';
+import { captureException } from '../sentry';
 import { getTokenSafely, getCurrentAuthState, queueApiCallIfNeeded, MAX_RETRIES, RETRY_DELAY_BASE_MS } from './auth';
 
 export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
@@ -53,6 +54,14 @@ export async function postData(url: string, body: any, skipLoadingIndicator = fa
       },
       body: JSON.stringify(body)
     });
+  } catch (error) {
+    captureException(error, { 
+      function: 'postData', 
+      url,
+      context: 'GitHub API client',
+      requestType: 'POST'
+    });
+    throw error;
   } finally {
     if (!skipLoadingIndicator) {
       endRequest();
@@ -118,7 +127,15 @@ async function executeRequest<T>(
       const rateLimit = response.headers.get('X-RateLimit-Remaining');
       if (rateLimit && parseInt(rateLimit) === 0) {
         killSwitch.set(true);
-        throw new Error('Rate limit exceeded');
+        const rateLimitError = new Error('Rate limit exceeded');
+        captureException(rateLimitError, { 
+          context: 'Rate limiting',
+          url,
+          method,
+          rateLimit,
+          resetAt: response.headers.get('X-RateLimit-Reset')
+        });
+        throw rateLimitError;
       }
       
       // Handle other errors
@@ -130,15 +147,37 @@ async function executeRequest<T>(
         error.message?.includes('API rate limit exceeded')
       )) {
         killSwitch.set(true);
-        throw new Error('Rate limit exceeded');
+        const graphQLRateLimitError = new Error('GraphQL rate limit exceeded');
+        captureException(graphQLRateLimitError, { 
+          context: 'GraphQL rate limiting',
+          url,
+          method,
+          errors: responseBody?.errors
+        });
+        throw graphQLRateLimitError;
       }
       
       if (responseBody?.errors) {
         console.error('API errors:', responseBody.errors);
-        throw new Error(`API returned errors: ${JSON.stringify(responseBody.errors)}`);
+        const apiError = new Error(`API returned errors: ${JSON.stringify(responseBody.errors)}`);
+        captureException(apiError, { 
+          context: 'GitHub API error',
+          url,
+          method,
+          statusCode: response.status,
+          errors: responseBody.errors
+        });
+        throw apiError;
       }
       
-      throw new Error(`Request failed: ${response.status}`);
+      const requestError = new Error(`Request failed: ${response.status}`);
+      captureException(requestError, { 
+        context: 'GitHub API request failure',
+        url,
+        method,
+        statusCode: response.status
+      });
+      throw requestError;
     }
     
     // Process successful response
@@ -154,6 +193,13 @@ async function executeRequest<T>(
     return result.data || result;
   } catch (error) {
     console.error(`Error executing request to ${url}:`, error);
+    captureException(error, { 
+      function: 'executeRequest', 
+      url,
+      method,
+      retryCount,
+      context: 'GitHub API client'
+    });
     throw error;
   } finally {
     // Always end tracking if we started it, even if there's an error

@@ -5,6 +5,7 @@ import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, s
 import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
+import { setUserInfo, clearUserInfo, captureException } from '../sentry';
 import { type AuthState } from './types';
 
 const firebaseConfig = {
@@ -43,10 +44,14 @@ class FirebaseAuthClient {
       if (!user) {
         authState.set('unauthenticated');
         this.user.set(null);
+        clearUserInfo(); // Clear Sentry user info on logout
         return;
       }
       
       this.user.set(user);
+      // Set Sentry user info for error tracking
+      setUserInfo(user.uid, user.email || undefined);
+      
       const tokenResult = await user.getIdTokenResult();
       
       if (new Date(tokenResult.expirationTime) < new Date()) {
@@ -91,6 +96,7 @@ class FirebaseAuthClient {
       authState.set('authenticated');
     } catch (error) {
       authState.set('error');
+      captureException(error, { action: 'refreshTokenPeriodically' }); // Track token refresh errors
       await this.signOut();
     }
   }
@@ -148,6 +154,7 @@ class FirebaseAuthClient {
       
       if (!result.user) {
         console.error('No credential or user returned from auth');
+        captureException(new Error('No credential or user returned from auth')); // Track auth errors
         authState.set('error');
         return;
       }
@@ -155,6 +162,7 @@ class FirebaseAuthClient {
       const additionalUserInfo = (result as any)._tokenResponse;
       if (!additionalUserInfo?.oauthAccessToken) {
         console.error('No GitHub token found in auth response');
+        captureException(new Error('No GitHub token found in auth response')); // Track auth errors
         authState.set('error');
         return;
       }
@@ -163,6 +171,7 @@ class FirebaseAuthClient {
       authState.set('authenticated');
     } catch (error) {
       console.error('Error signing in:', error);
+      captureException(error, { action: 'signIn' }); // Track sign-in errors
       authState.set('error');
     } finally {
       this.authInProgress = false;
@@ -193,6 +202,7 @@ class FirebaseAuthClient {
     await signOut(this.auth);
     clearSiteData();
     this.user.set(null);
+    clearUserInfo(); // Clear Sentry user info on logout
     authState.set('unauthenticated');
     
     if (this.interval) {
