@@ -41,9 +41,22 @@ function getSentryEnvironment() {
 
 // Configure release name
 function getReleaseVersion() {
-  // From GitHub Actions
+  // From GitHub Actions with branch info
   if (process.env.GITHUB_SHA) {
-    return `githelm@${process.env.GITHUB_SHA.substring(0, 8)}`;
+    let releaseName = `githelm@${process.env.GITHUB_SHA.substring(0, 8)}`;
+    
+    // Add branch name if available
+    if (process.env.GITHUB_REF) {
+      const branchName = process.env.GITHUB_REF.replace('refs/heads/', '').replace('refs/pull/', 'pr-');
+      releaseName = `githelm@${branchName}-${process.env.GITHUB_SHA.substring(0, 8)}`;
+    }
+    
+    // For pull requests, add PR number
+    if (process.env.PR_NUMBER) {
+      releaseName = `githelm@pr-${process.env.PR_NUMBER}-${process.env.GITHUB_SHA.substring(0, 8)}`;
+    }
+    
+    return releaseName;
   }
   
   // From package version

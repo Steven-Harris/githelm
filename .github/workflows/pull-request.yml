@@ -107,6 +107,7 @@ jobs:
           SENTRY_ENVIRONMENT: preview
           PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF: ${{ github.head_ref || github.ref }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
 
