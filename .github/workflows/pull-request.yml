@@ -5,7 +5,7 @@ on:
       - main
 
 concurrency:
-  group: pull-request
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -112,6 +112,13 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
           projectId: githelm
-          target: preview
-          channelId: ${{ github.head_ref }}
-          expires: 7d
+          channelId: pr-${{ github.event.pull_request.number }}
+          expires: 1d
+        env:
+          FIREBASE_CLI_PREVIEWS: hostingchannels # Enable hosting channels feature
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: githelm-build-${{ github.sha }} # Unique name for the artifact
+          path: dist/ # Path to the directory to upload
