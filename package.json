@@ -18,7 +18,7 @@
     "test:e2e:report": "playwright show-report",
     "build": "vite build",
     "serve": "vite preview",
-    "postinstall": "pnpm run sync",
+    "postinstall": "pnpm svelte-kit sync",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json"
   },
   "repository": {
