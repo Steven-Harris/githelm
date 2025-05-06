@@ -34,7 +34,7 @@
     "@sentry/browser": "^9.15.0",
     "@sentry/svelte": "^9.15.0",
     "@sentry/sveltekit": "^9.15.0",
-    "@sentry/vite-plugin": "^3.3.1",
+    "@sentry/vite-plugin": "^3.4.0",
     "firebase": "^11.6.0",
     "graphql": "^16.10.0",
     "tailwindcss": "^4.1.4"
@@ -55,7 +55,7 @@
     "firebase-tools": "^14.2.2",
     "jsdom": "^26.1.0",
     "msw": "^2.7.5",
-    "sharp": "0.32.6",
+    "sharp": "0.34.1",
     "sharp-ico": "0.1.5",
     "svelte": "^5.27.0",
     "svelte-check": "^4.1.6",
