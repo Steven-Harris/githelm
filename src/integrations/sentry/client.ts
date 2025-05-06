@@ -1,30 +1,95 @@
 import * as Sentry from '@sentry/browser';
 import type { Breadcrumb } from '@sentry/browser';
 
-// Initialize Sentry
-// Make sure to include your Sentry DSN from your Sentry dashboard
+/**
+ * Initialize Sentry based on environment settings
+ * - Doesn't initialize in development mode
+ * - Sets appropriate environment tags for preview vs production
+ */
 export function initSentry() {
+  // Skip Sentry initialization in development mode
+  if (import.meta.env.DEV) {
+    console.info('Sentry disabled in development mode');
+    setupNoOpFunctions();
+    return;
+  }
+
+  // Get environment information
+  const dsn = import.meta.env.VITE_SENTRY_DSN;
+  const version = import.meta.env.VITE_APP_VERSION || '2.0.0';
+  const environment = getEnvironmentName();
+  const release = `githelm@${version}`;
+
+  // Only initialize if we have a DSN
+  if (!dsn) {
+    console.warn('Sentry DSN not provided, monitoring disabled');
+    setupNoOpFunctions();
+    return;
+  }
+
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN || '',
-    environment: import.meta.env.MODE || 'development',
-    release: `githelm@${import.meta.env.VITE_APP_VERSION || '2.0.0'}`,
+    dsn,
+    environment,
+    release,
     integrations: [
       // The integrations will be automatically added by Sentry SDK
     ],
-    // Performance monitoring
-    tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.2, // Higher sampling in development
+    // Performance monitoring - adjust based on environment
+    tracesSampleRate: environment === 'production' ? 0.2 : 0.5,
     // Session replay for better error context (optional)
     replaysSessionSampleRate: 0.1, // Sample 10% of sessions
     replaysOnErrorSampleRate: 1.0, // Sample all sessions with errors
-    // Adjust this if you don't want to collect personally identifiable information
+    
     beforeSend(event) {
-      // You can modify or filter events before they're sent to Sentry
+      // Don't send events in development mode as an extra safeguard
+      if (import.meta.env.DEV) {
+        return null;
+      }
       return event;
     },
   });
 
   // Setup global error handlers
   setupGlobalErrorHandlers();
+  
+  console.info(`Sentry initialized in ${environment} environment`);
+}
+
+/**
+ * Determine the environment name based on deployment context
+ */
+function getEnvironmentName(): string {
+  // Check for explicit environment variable
+  if (import.meta.env.VITE_SENTRY_ENVIRONMENT) {
+    return import.meta.env.VITE_SENTRY_ENVIRONMENT;
+  }
+  
+  // Check if this is a PR preview deployment
+  if (import.meta.env.VITE_IS_PR_PREVIEW === 'true') {
+    return 'preview';
+  }
+  
+  // Default to the Vite mode or production
+  return import.meta.env.MODE || 'production';
+}
+
+/**
+ * Set up no-op functions when Sentry is disabled
+ */
+function setupNoOpFunctions() {
+  const noop = () => {};
+  
+  // Replace Sentry functions with no-ops
+  (Sentry as any).captureException = noop;
+  (Sentry as any).captureMessage = noop;
+  (Sentry as any).setUser = noop;
+  (Sentry as any).setContext = noop;
+  (Sentry as any).addBreadcrumb = noop;
+  
+  // Set up global wrapper that does nothing
+  if (typeof window !== 'undefined') {
+    window.wrapWithSentry = (fn) => fn;
+  }
 }
 
 // Setup global unhandled error and promise rejection handlers

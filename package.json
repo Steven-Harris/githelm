@@ -18,6 +18,7 @@
     "test:e2e:report": "playwright show-report",
     "build": "vite build",
     "serve": "vite preview",
+    "postinstall": "pnpm svelte-kit sync",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json"
   },
   "repository": {
@@ -51,6 +52,7 @@
     "@vite-pwa/sveltekit": "^0.6.8",
     "@vitest/coverage-v8": "^3.1.2",
     "@vitest/ui": "^3.1.2",
+    "firebase-tools": "^14.2.2",
     "jsdom": "^26.1.0",
     "msw": "^2.7.5",
     "sharp": "0.32.6",
@@ -71,10 +73,11 @@
       "@firebase/util",
       "@sentry/cli",
       "esbuild",
+      "msw",
       "protobufjs",
+      "re2",
       "sharp",
-      "svelte-preprocess",
-      "msw"
+      "svelte-preprocess"
     ]
   }
 }

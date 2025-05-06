@@ -5,7 +5,7 @@ on:
       - main
 
 concurrency:
-  group: pull-request
+  group: pr-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -100,11 +100,16 @@ jobs:
         run: pnpm install --frozen-lockfile
        
       - name: Build project with Sentry
-        run: pnpm run build
+        run: VITE_GENERATE_SOURCEMAP=true pnpm run build
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ENVIRONMENT: preview
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF: ${{ github.head_ref || github.ref }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
 
       - name: Deploy to Firebase Hosting Preview Channel
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -112,6 +117,7 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
           projectId: githelm
-          target: preview
-          channelId: ${{ github.head_ref }}
-          expires: 7d
+          channelId: ${{ github.event.pull_request.number }}
+          expires: 1d
+        env:
+          FIREBASE_CLI_PREVIEWS: hostingchannels # Enable hosting channels feature

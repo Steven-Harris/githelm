@@ -46,8 +46,12 @@ jobs:
         run: pnpm run build
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ENVIRONMENT: production
           GITHUB_SHA: ${{ github.sha }}
+          GITHUB_REF: ${{ github.ref }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
           
       - name: Deploy to main
         uses: FirebaseExtended/action-hosting-deploy@v0
