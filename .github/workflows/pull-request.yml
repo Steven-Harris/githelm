@@ -100,7 +100,7 @@ jobs:
         run: pnpm install --frozen-lockfile
        
       - name: Build project with Sentry
-        run: pnpm run build
+        run: VITE_GENERATE_SOURCEMAP=true pnpm run build
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

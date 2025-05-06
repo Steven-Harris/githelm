@@ -172,8 +172,8 @@ const config: UserConfig = defineConfig({
         
         // Configure source maps uploading
         sourcemaps: {
-          // Specify the directory containing source maps
-          assets: "./dist/**",
+          // Specify the directory containing source maps with more specific pattern
+          assets: ["./dist/**/*.js", "./dist/**/*.map"],
           // Delete source maps after upload to reduce bundle size
           filesToDeleteAfterUpload: "./dist/**/*.map",
         },
