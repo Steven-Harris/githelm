@@ -20,11 +20,13 @@ jobs:
       matrix:
         include:
         - language: javascript-typescript
-          build-mode: none
+          build-mode: autobuild
         
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for proper analysis
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -32,6 +34,7 @@ jobs:
       with:
         languages: ${{ matrix.language }}
         build-mode: ${{ matrix.build-mode }}
+        queries: security-extended,security-and-quality
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
@@ -49,8 +52,20 @@ jobs:
       
     - name: Build project
       run: pnpm run build
+      env:
+        NODE_ENV: production
 
+    # Upload the build artifacts to make them available for review
+    # - name: Upload build artifact
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: build-artifact
+    #     path: dist/
+    #     retention-days: 7
+      
+    # This will automatically upload the results to GitHub code scanning
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+        upload: 'failure-only'
