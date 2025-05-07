@@ -73,7 +73,7 @@
     </div>
   {/if}
     
-  <Loading loading={$isLoading} />
+  <!-- <Loading loading={$isLoading} /> -->
   {#if signedIn && $isAuth === 'authenticated'}
     {@render children?.()}
   {:else }
