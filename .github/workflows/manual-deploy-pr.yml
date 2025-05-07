@@ -1,0 +1,85 @@
+name: 🚀 Manual Preview Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull Request Number to deploy'
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Manual PR Preview Deployment
+    environment: dev
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper version info
+      
+      # Check out the PR code specifically
+      - name: Fetch PR branch
+        run: |
+          gh pr checkout ${{ github.event.inputs.pr_number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Create Sentry environment file
+        run: |
+          echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+        
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Get PR metadata
+        id: pr_data
+        run: |
+          PR_DATA=$(gh pr view ${{ github.event.inputs.pr_number }} --json headRefName,headRepository,headRepositoryOwner,headSha)
+          HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
+          HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headSha')
+          echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+          echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+       
+      - name: Build project with Sentry
+        run: VITE_GENERATE_SOURCEMAP=true pnpm run build
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ENVIRONMENT: manual-preview
+          PR_NUMBER: ${{ github.event.inputs.pr_number }}
+          GITHUB_SHA: ${{ steps.pr_data.outputs.head_sha }}
+          GITHUB_REF: ${{ steps.pr_data.outputs.head_ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: 'workflow_dispatch'
+
+      - name: Deploy to Firebase Hosting Preview Channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
+          projectId: githelm
+          channelId: manual-pr-${{ github.event.inputs.pr_number }}
+        env:
+          FIREBASE_CLI_PREVIEWS: hostingchannels
+
+      - name: Comment on PR with preview URL
+        run: |
+          PREVIEW_URL=$(cat ./.firebase/hosting.*.cache | grep -o "https://[^ ]*" | head -1)
+          gh pr comment ${{ github.event.inputs.pr_number }} -b "🚀 Manual preview deployment is ready! Preview URL: $PREVIEW_URL (expires in ${{ github.event.inputs.expiry }})"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

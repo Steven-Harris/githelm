@@ -63,7 +63,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     name: Deploy Preview to Firebase Hosting 🚀
-    if: ${{ success() && (github.actor == 'dependabot[bot]' || github.actor == 'steven-harris') }}
+    if: ${{ success() && (github.actor == 'steven-harris') }}
     environment: dev
     steps:
       - name: Checkout repo
