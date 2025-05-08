@@ -43,7 +43,7 @@
       <WorkflowStatusFilter />
     </div>
     
-    {#if $isLoading && $actionsConfigs.length > 0 && firstLoad}
+    {#if $isLoading && firstLoad}
       <div class="flex items-center justify-center p-8 text-center hero-card">
         Loading actions...
       </div>
