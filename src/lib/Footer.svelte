@@ -8,7 +8,6 @@
         <a href="https://www.flaticon.com" title="rudder edit icons" class="flex-1 hover:underline text-right" target="_blank" rel="noopener">Icons created by Flat Icons </a>
       </div>
     </div>
-  </div>
 </footer>
 
 <style>

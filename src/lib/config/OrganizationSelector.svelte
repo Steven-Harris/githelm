@@ -1,19 +1,24 @@
 <script lang="ts">
-  import { configService } from '$integrations/firebase';
-  import type { Organization } from '$integrations/firebase';
-  import { eventBus } from '$lib/stores/event-bus.store';
-  import { onMount } from 'svelte';
-
-  let { selectedOrg = '', disabled = false, onChange } = $props();
-
+  import { configService } from "$integrations/firebase";
+  import type { Organization } from "$integrations/firebase";
+  import { eventBus } from "$lib/stores/event-bus.store";
+  import { onMount } from "svelte";
+  
+  let { selectedOrg = "", disabled = false, onChange } = $props();
+  
   let organizations = $state<Organization[]>([]);
-
+  let loading = $state(false);
+  
   function updateOrganizations() {
     organizations = configService.getLocalOrganizations();
   }
-
+  
   onMount(() => {
+    loading = true;
+    
     updateOrganizations();
+    
+    loading = false;
   });
 
   $effect(() => {
@@ -21,7 +26,7 @@
       updateOrganizations();
       eventBus.set('');
 
-      if (!selectedOrg || organizations.some((org) => org.name === selectedOrg)) {
+      if (!selectedOrg || organizations.some(org => org.name === selectedOrg)) {
         return;
       }
 
@@ -31,20 +36,20 @@
 </script>
 
 <div class="mb-4">
-  <label for="organization-select" class="{!disabled ? 'block' : ''} text-sm font-medium text-[#c9d1d9] mb-2">
-    Organization
+  <label for="organization-select" class="{!disabled ? 'block': ''} text-sm font-medium text-[#c9d1d9] mb-2">
+    Organization 
     {#if !disabled}
-      <span class="text-red-700">*</span>
+    <span class="text-red-700">*</span>
     {:else}
-      <span id="organization-select" class="text-sm font-medium text-white mb-2">
-        - {selectedOrg}
-      </span>
+    <span id="organization-select" class="text-sm font-medium text-white  mb-2">
+    - {selectedOrg}
+    </span>
     {/if}
   </label>
   {#if !disabled}
     {#if organizations.length > 0}
       <div class="relative">
-        <select
+        <select 
           id="organization-select"
           bind:value={selectedOrg}
           onchange={(e) => onChange(e.currentTarget.value)}
@@ -52,7 +57,7 @@
           aria-required="true"
         >
           <option value="" class="bg-[#161b22] text-[#f0f6fc]">Select an organization</option>
-          {#each organizations as org, i (i)}
+          {#each organizations as org}
             <option value={org.name} class="bg-[#161b22] text-[#f0f6fc]">{org.name}</option>
           {/each}
         </select>
@@ -66,13 +71,11 @@
       <div class="p-4 rounded-md bg-[#261D15] border border-[#F2B8584D] text-[#F0E3CA]">
         <div class="flex items-center">
           <svg class="w-5 h-5 mr-2 text-[#F0E3CA]" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path
-              fill-rule="evenodd"
-              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-              clip-rule="evenodd"
-            ></path>
+            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
           </svg>
-          <p class="text-sm">Please add an organization in the Organizations section above before configuring repositories.</p>
+          <p class="text-sm">
+            Please add an organization in the Organizations section above before configuring repositories.
+          </p>
         </div>
       </div>
     {/if}

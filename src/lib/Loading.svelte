@@ -1,5 +1,5 @@
 <script>
-  import helm from '$assets/helm.svg';
+  import helm from "$assets/helm.svg";
 
   let { loading } = $props();
 </script>

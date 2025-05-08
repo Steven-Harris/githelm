@@ -6,8 +6,8 @@ import { captureException } from '$integrations/sentry';
 const MAX_RETRIES = 2;
 const RETRY_DELAY_BASE_MS = 1000;
 
-let authStateSubscription: () => void | null = null;
-const tokenRefreshPromise: Promise<string> | null = null;
+let authStateSubscription: Function | null = null;
+let tokenRefreshPromise: Promise<string> | null = null;
 let isRefreshingToken = false;
 
 let apiQueue: Array<() => Promise<any>> = [];
@@ -17,9 +17,9 @@ export function initAuthStateHandling(): void {
   if (authStateSubscription) {
     authStateSubscription();
   }
-
+  
   if (firebase.authState) {
-    authStateSubscription = firebase.authState.subscribe((state) => {
+    authStateSubscription = firebase.authState.subscribe(state => {
       if (state === 'authenticated' && apiQueue.length > 0) {
         processApiQueue();
       }
@@ -29,12 +29,12 @@ export function initAuthStateHandling(): void {
 
 async function processApiQueue(): Promise<void> {
   if (isProcessingQueue) return;
-
+  
   isProcessingQueue = true;
-
+  
   const currentQueue = [...apiQueue];
   apiQueue = [];
-
+  
   for (const apiCall of currentQueue) {
     try {
       await apiCall();
@@ -42,18 +42,18 @@ async function processApiQueue(): Promise<void> {
       captureException(error, {
         context: 'GitHub API Queue',
         function: 'processApiQueue',
-        error: error.message,
+        error: error.message
       });
     }
   }
-
+  
   isProcessingQueue = false;
 }
 
 export function getCurrentAuthState(): string {
   try {
     return get(firebase.authState) || 'initializing';
-  } catch {
+  } catch (e) {
     return 'initializing';
   }
 }
@@ -80,15 +80,11 @@ export async function getTokenSafely(): Promise<string> {
 
   if (currentAuthState === 'authenticating' || currentAuthState === 'initializing') {
     return new Promise((resolve, reject) => {
-      const unsubscribe = firebase.authState.subscribe((state) => {
+      const unsubscribe = firebase.authState.subscribe(state => {
         unsubscribe();
         if (state === 'authenticated') {
           const token = getGithubToken();
-          if (token) {
-            resolve(token);
-          } else {
-            reject(new Error('No token available after authentication'));
-          }
+          token ? resolve(token) : reject(new Error('No token available after authentication'));
         } else {
           reject(new Error(`Authentication failed with state: ${state}`));
         }
@@ -120,16 +116,16 @@ export async function refreshTokenSafely(): Promise<string> {
     return newToken;
   } finally {
     isRefreshingToken = false;
-    // _tokenRefreshPromise = null;
+    tokenRefreshPromise = null;
   }
 }
 
 export async function getHeadersAsync(): Promise<Record<string, string>> {
   const token = await getTokenSafely();
   return {
-    Authorization: `Bearer ${token}`,
-    Accept: 'application/vnd.github.v3+json',
-    'X-GitHub-Api-Version': '2022-11-28',
+    'Authorization': `Bearer ${token}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'X-GitHub-Api-Version': '2022-11-28'
   };
 }
 
