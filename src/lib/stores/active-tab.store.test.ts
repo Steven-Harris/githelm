@@ -19,34 +19,34 @@ describe('Active Tab Store', () => {
 
   it('should notify subscribers when value changes', () => {
     let notifiedValue = '';
-    
-    const unsubscribe = activeTab.subscribe(value => {
+
+    const unsubscribe = activeTab.subscribe((value) => {
       notifiedValue = value;
     });
-    
+
     activeTab.set('actions');
     expect(notifiedValue).toBe('actions');
-    
+
     unsubscribe();
   });
 
   it('should handle multiple subscribers correctly', () => {
     let value1 = '';
     let value2 = '';
-    
-    const unsubscribe1 = activeTab.subscribe(value => {
+
+    const unsubscribe1 = activeTab.subscribe((value) => {
       value1 = value;
     });
-    
-    const unsubscribe2 = activeTab.subscribe(value => {
+
+    const unsubscribe2 = activeTab.subscribe((value) => {
       value2 = value;
     });
-    
+
     activeTab.set('actions');
-    
+
     expect(value1).toBe('actions');
     expect(value2).toBe('actions');
-    
+
     unsubscribe1();
     unsubscribe2();
   });

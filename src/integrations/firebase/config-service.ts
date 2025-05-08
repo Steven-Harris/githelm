@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, setDoc} from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { get } from 'svelte/store';
 import { firebase } from './client';
 import { captureException } from '../sentry';
@@ -16,7 +16,7 @@ export class ConfigService {
       }
 
       const db = firebase.getDb();
-      const docRef = doc(collection(db, "configs"), user.uid);
+      const docRef = doc(collection(db, 'configs'), user.uid);
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
@@ -25,17 +25,17 @@ export class ConfigService {
 
       const data = docSnap.data() as Configs;
       const configs = this.mapConfigs(data);
-      
+
       if (localOrganizations.length === 0 && !hasUnsavedOrganizations) {
         localOrganizations = [...configs.organizations];
       }
-      
+
       return configs;
     } catch (error) {
       captureException(error, {
         context: 'Firebase Config Service',
         function: 'getConfigs',
-        userId: get(firebase.user)?.uid
+        userId: get(firebase.user)?.uid,
       });
       throw error;
     }
@@ -54,22 +54,22 @@ export class ConfigService {
       }
 
       const db = firebase.getDb();
-      const docRef = doc(collection(db, "configs"), user.uid);
-      await setDoc(docRef, { 
-        pullRequests: this.mapRepoConfigs(configs.pullRequests || []), 
+      const docRef = doc(collection(db, 'configs'), user.uid);
+      await setDoc(docRef, {
+        pullRequests: this.mapRepoConfigs(configs.pullRequests || []),
         actions: this.mapRepoConfigs(configs.actions || []),
-        organizations: configs.organizations || [] 
+        organizations: configs.organizations || [],
       });
     } catch (error) {
       captureException(error, {
         context: 'Firebase Config Service',
         function: 'saveConfigs',
-        userId: get(firebase.user)?.uid
+        userId: get(firebase.user)?.uid,
       });
       throw error;
     }
   }
-  
+
   public async saveOrganizations(organizations: Organization[]) {
     try {
       const configs = await this.getConfigs();
@@ -79,39 +79,39 @@ export class ConfigService {
       captureException(error, {
         context: 'Firebase Config Service',
         function: 'saveOrganizations',
-        userId: get(firebase.user)?.uid
+        userId: get(firebase.user)?.uid,
       });
       throw error;
     }
   }
-  
+
   public getLocalOrganizations(): Organization[] {
     return localOrganizations;
   }
-  
+
   public updateLocalOrganizations(organizations: Organization[]) {
     localOrganizations = [...organizations];
     hasUnsavedOrganizations = true;
     return localOrganizations;
   }
-  
+
   public hasUnsavedOrganizationChanges(): boolean {
     return hasUnsavedOrganizations;
   }
-  
+
   private mapConfigs(configs: Configs): Configs {
     return {
       pullRequests: this.mapRepoConfigs(configs.pullRequests),
       actions: this.mapRepoConfigs(configs.actions),
-      organizations: configs.organizations || []
+      organizations: configs.organizations || [],
     };
   }
-  
+
   private mapRepoConfigs(configs: RepoConfig[]): RepoConfig[] {
-    return configs.map(config => ({
+    return configs.map((config) => ({
       org: config.org,
       repo: config.repo,
-      filters: config.filters || []
+      filters: config.filters || [],
     }));
   }
 }

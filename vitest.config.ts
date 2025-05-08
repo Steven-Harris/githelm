@@ -13,27 +13,22 @@ export default mergeConfig(
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],
-        exclude: [
-          '**/*.d.ts',
-          '**/node_modules/**',
-          'src/app.html',
-          'src/assets/**'
-        ]
+        exclude: ['**/*.d.ts', '**/node_modules/**', 'src/app.html', 'src/assets/**'],
       },
       deps: {
         optimizer: {
           web: {
-            include: ['firebase']
-          }
-        }
-      }
+            include: ['firebase'],
+          },
+        },
+      },
     },
     resolve: {
       alias: {
         $lib: resolve('./src/lib'),
         $assets: resolve('./src/assets'),
-        $integrations: resolve('./src/integrations')
-      }
-    }
+        $integrations: resolve('./src/integrations'),
+      },
+    },
   })
 );

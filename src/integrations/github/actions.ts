@@ -1,19 +1,19 @@
-import { fetchData, postData } from './api-client';
+import { fetchData } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
 import { captureException } from '../sentry';
-import type { Workflow, WorkflowRun, WorkflowJobs, Job, Step, PendingDeployments } from './types';
+import type { Workflow, WorkflowRun, WorkflowJobs, Job, Step } from './types';
 
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      return Promise.all(actions.map(action => fetchSingleWorkflow(org, repo, action)));
+      return Promise.all(actions.map((action) => fetchSingleWorkflow(org, repo, action)));
     } catch (error) {
       captureException(error, {
         context: 'GitHub Actions',
         function: 'fetchActions',
         org,
         repo,
-        actionsCount: actions.length
+        actionsCount: actions.length,
       });
       throw error;
     }
@@ -22,18 +22,14 @@ export async function fetchActions(org: string, repo: string, actions: string[])
 
 async function fetchSingleWorkflow(org: string, repo: string, action: string): Promise<Workflow> {
   try {
-    const data = await fetchData<Workflow>(
-      `https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`
-    );
-    
-    const processedWorkflowRuns = await Promise.all(
-      data.workflow_runs.map(run => processWorkflowRun(org, repo, run))
-    );
-    
+    const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+
+    const processedWorkflowRuns = await Promise.all(data.workflow_runs.map((run) => processWorkflowRun(org, repo, run)));
+
     return {
       name: action,
       total_count: data.total_count,
-      workflow_runs: processedWorkflowRuns
+      workflow_runs: processedWorkflowRuns,
     };
   } catch (error) {
     captureException(error, {
@@ -41,7 +37,7 @@ async function fetchSingleWorkflow(org: string, repo: string, action: string): P
       function: 'fetchSingleWorkflow',
       org,
       repo,
-      action
+      action,
     });
     throw error;
   }
@@ -50,16 +46,16 @@ async function fetchSingleWorkflow(org: string, repo: string, action: string): P
 async function processWorkflowRun(org: string, repo: string, run: WorkflowRun): Promise<WorkflowRun> {
   try {
     const jobs = await fetchWorkflowJobs(org, repo, run.id.toString());
-    
+
     return {
       ...run,
       workflow_jobs: {
         total_count: jobs.length,
-        jobs: jobs.map(job => ({
+        jobs: jobs.map((job) => ({
           ...job,
-          steps: filterSuccessfulSteps(job.steps)
-        }))
-      }
+          steps: filterSuccessfulSteps(job.steps),
+        })),
+      },
     };
   } catch (error) {
     captureException(error, {
@@ -68,32 +64,32 @@ async function processWorkflowRun(org: string, repo: string, run: WorkflowRun): 
       org,
       repo,
       runId: run.id,
-      workflowName: run.name
+      workflowName: run.name,
     });
-    
+
     // Return the run without jobs data in case of error
     return {
       ...run,
       workflow_jobs: {
         total_count: 0,
-        jobs: []
-      }
+        jobs: [],
+      },
     };
   }
 }
 
 export function filterSuccessfulSteps(steps: Step[]): Step[] {
-  return steps.filter(step => {
+  return steps.filter((step) => {
     if (step.status !== 'completed') {
       return false;
     }
-    
+
     if (step.conclusion === 'success') {
       return true;
     } else if (step.conclusion === 'skipped') {
       return false;
     }
-    
+
     return true;
   });
 }
@@ -114,18 +110,18 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
           function: 'fetchWorkflowJobs - cache parsing',
           org,
           repo,
-          runId
+          runId,
         });
       }
     }
 
     try {
       const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
-      
+
       let allSuccess = true;
 
       // Filter jobs based on status and conclusion
-      workflows.jobs = workflows.jobs.filter(job => {
+      workflows.jobs = workflows.jobs.filter((job) => {
         if (job.status === 'completed') {
           if (job.conclusion === 'success') {
             return true;
@@ -137,7 +133,7 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
         }
         return false;
       });
-      
+
       // Only cache successful runs
       if (allSuccess) {
         try {
@@ -148,7 +144,7 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
             function: 'fetchWorkflowJobs - cache storage',
             org,
             repo,
-            runId
+            runId,
           });
           // Continue execution even if caching fails
         }
@@ -161,25 +157,23 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
         function: 'fetchWorkflowJobs',
         org,
         repo,
-        runId
+        runId,
       });
       return [];
     }
   });
 }
 
-export async function fetchMultipleWorkflowJobs(
-  workflowRuns: Array<{org: string, repo: string, runId: string}>
-): Promise<Record<string, Job[]>> {
+export async function fetchMultipleWorkflowJobs(workflowRuns: Array<{ org: string; repo: string; runId: string }>): Promise<Record<string, Job[]>> {
   return queueApiCallIfNeeded(async () => {
     const results: Record<string, Job[]> = {};
-    
+
     try {
       // Check localStorage cache first for all runs
-      const cachedRuns = workflowRuns.filter(run => {
+      const cachedRuns = workflowRuns.filter((run) => {
         const key = `${run.org}/${run.repo}:${run.runId}`;
         const cachedData = localStorage.getItem(key);
-        
+
         if (cachedData !== null && cachedData !== undefined) {
           try {
             results[key] = JSON.parse(cachedData) as Job[];
@@ -188,22 +182,22 @@ export async function fetchMultipleWorkflowJobs(
             captureException(e, {
               context: 'GitHub Actions',
               function: 'fetchMultipleWorkflowJobs - cache parsing',
-              runKey: key
+              runKey: key,
             });
             return true; // Need to fetch if JSON parsing fails
           }
         }
-        
+
         return true; // Need to fetch this run
       });
-      
+
       // If we have runs that need fetching
       if (cachedRuns.length > 0) {
         // Use batched requests with limited concurrency to avoid rate limits
-        const batchSize = 3;  // Conservative batch size to avoid API rate limits
+        const batchSize = 3; // Conservative batch size to avoid API rate limits
         for (let i = 0; i < cachedRuns.length; i += batchSize) {
           const batch = cachedRuns.slice(i, i + batchSize);
-          
+
           // Wait for each batch to complete
           await Promise.all(
             batch.map(async (run) => {
@@ -217,26 +211,26 @@ export async function fetchMultipleWorkflowJobs(
                   function: 'fetchMultipleWorkflowJobs - batch processing',
                   org: run.org,
                   repo: run.repo,
-                  runId: run.runId
+                  runId: run.runId,
                 });
                 results[`${run.org}/${run.repo}:${run.runId}`] = [];
               }
             })
           );
-          
+
           // Add a delay between batches to avoid hitting rate limits
           if (i + batchSize < cachedRuns.length) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
       }
-      
+
       return results;
     } catch (error) {
       captureException(error, {
         context: 'GitHub Actions',
         function: 'fetchMultipleWorkflowJobs',
-        runsCount: workflowRuns.length
+        runsCount: workflowRuns.length,
       });
       return results; // Return partial results in case of error
     }

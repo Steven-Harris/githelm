@@ -10,10 +10,10 @@ const config = {
       assets: 'dist',
       fallback: undefined,
       precompress: false,
-      strict: true
+      strict: true,
     }),
     serviceWorker: {
-      register: false
+      register: false,
     },
     alias: {
       '$assets/*': './src/assets/*',

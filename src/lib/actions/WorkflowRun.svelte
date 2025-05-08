@@ -1,33 +1,33 @@
 <script lang="ts">
-  import { type Job } from "$integrations/github";
-  import { timeAgo } from "$lib/utils/date-utils";
+  import { type Job } from '$integrations/github';
+  import { timeAgo } from '$lib/utils/date-utils';
 
   let { run, jobs = [] } = $props();
 
   const jobColor = (job: Job) => {
-    if (job.status === "completed" && job.conclusion === "success") {
-      return "bg-sky-600 border-sky-800 text-white";
-    } else if (job.conclusion === "failure") {
-      return "bg-red-200 border-red-600";
-    } else if (job.status === "waiting") {
-      return "bg-yellow-500 border-yellow-800";
-    } else if (job.status === "in_progress") {
-      return "bg-sky-300 border-sky-800";
+    if (job.status === 'completed' && job.conclusion === 'success') {
+      return 'bg-sky-600 border-sky-800 text-white';
+    } else if (job.conclusion === 'failure') {
+      return 'bg-red-200 border-red-600';
+    } else if (job.status === 'waiting') {
+      return 'bg-yellow-500 border-yellow-800';
+    } else if (job.status === 'in_progress') {
+      return 'bg-sky-300 border-sky-800';
     } else {
-      return "bg-gray-300 border-gray-300";
+      return 'bg-gray-300 border-gray-300';
     }
   };
 
   // Helper function to get the status class for the workflow status icon
   function getStatusClass(status: string): string {
-    if (status === "success" || status === "completed") {
-      return "success";
-    } else if (status === "failure" || status === "failed") {
-      return "failure";
-    } else if (status === "in_progress" || status === "queued") {
-      return "in_progress";
+    if (status === 'success' || status === 'completed') {
+      return 'success';
+    } else if (status === 'failure' || status === 'failed') {
+      return 'failure';
+    } else if (status === 'in_progress' || status === 'queued') {
+      return 'in_progress';
     } else {
-      return "pending";
+      return 'pending';
     }
   }
 
@@ -38,25 +38,20 @@
 
   // Format the status string for display
   function formatStatus(status: string): string {
-    if (status === "completed") return "Success";
-    if (status === "in_progress") return "In progress";
-    if (status === "queued") return "Queued";
-    if (status === "waiting") return "Waiting";
-    
+    if (status === 'completed') return 'Success';
+    if (status === 'in_progress') return 'In progress';
+    if (status === 'queued') return 'Queued';
+    if (status === 'waiting') return 'Waiting';
+
     // Capitalize first letter
     return status.charAt(0).toUpperCase() + status.slice(1);
   }
-
 </script>
 
 <div class="workflow-run">
   <div class="flex justify-between">
     <div class="flex-1 min-w-0">
-      <a
-        href={run.html_url}
-        target="_blank"
-        class="text-[#58a6ff] hover:text-[#79c0ff] text-sm font-medium hover:underline block truncate"
-      >
+      <a href={run.html_url} target="_blank" class="text-[#58a6ff] hover:text-[#79c0ff] text-sm font-medium hover:underline block truncate">
         {run.name}
         <span class="text-sm text-[#8b949e] ml-1">
           {run.display_title}
@@ -72,9 +67,11 @@
     <div class="text-right flex flex-col items-end">
       <div class="text-sm text-[#8b949e] flex items-center gap-1">
         <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
-          <path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"></path>
+          <path
+            d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"
+          ></path>
         </svg>
-        Run #{run.run_number} 
+        Run #{run.run_number}
         {#if run.created_at}
           <span class="text-[#8b949e] ml-1">
             {timeAgo(run.created_at)}
@@ -84,7 +81,9 @@
       {#if run.head_branch}
         <div class="mt-1 px-2 py-0.5 rounded-full bg-[#21262d] text-xs text-[#c9d1d9] border border-[#30363d] flex items-center gap-1">
           <svg aria-hidden="true" height="12" viewBox="0 0 16 16" version="1.1" width="12" class="fill-current">
-            <path d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"></path>
+            <path
+              d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"
+            ></path>
           </svg>
           {run.head_branch}
         </div>
@@ -94,7 +93,7 @@
 
   {#if jobs?.length}
     <div class="mt-3 flex flex-wrap gap-2">
-      {#each jobs as job}
+      {#each jobs as job, i (i)}
         <div class={`px-2 py-0.5 rounded text-xs ${jobColor(job)}`}>
           {job.name}
         </div>
@@ -114,7 +113,7 @@
   }
 
   .workflow-status-icon.success::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -127,7 +126,7 @@
   }
 
   .workflow-status-icon.failure::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -140,7 +139,7 @@
   }
 
   .workflow-status-icon.pending::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -153,7 +152,7 @@
   }
 
   .workflow-status-icon.in_progress::after {
-    content: "";
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;

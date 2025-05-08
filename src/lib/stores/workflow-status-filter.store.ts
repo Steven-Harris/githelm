@@ -9,7 +9,7 @@ const defaultFilters: Record<WorkflowStatus, boolean> = {
   failure: true,
   in_progress: true,
   queued: true,
-  pending: true
+  pending: true,
 };
 
 const loadFilters = (): Record<WorkflowStatus, boolean> => {
@@ -27,9 +27,9 @@ workflowStatusFilters.subscribe((value) => {
 });
 
 export function toggleWorkflowStatusFilter(status: WorkflowStatus): void {
-  workflowStatusFilters.update(filters => ({
+  workflowStatusFilters.update((filters) => ({
     ...filters,
-    [status]: !filters[status]
+    [status]: !filters[status],
   }));
 }
 
@@ -39,8 +39,8 @@ export function resetWorkflowStatusFilters(): void {
 
 export function shouldShowWorkflowRun(status: string): boolean {
   let normalizedStatus = status.toLowerCase();
-  
+
   if (normalizedStatus === 'completed') normalizedStatus = 'success';
-  
+
   return get(workflowStatusFilters)[normalizedStatus as WorkflowStatus] ?? true;
 }
