@@ -1,8 +1,8 @@
-import { getStorageObject, setStorageObject } from "$integrations/storage";
-import { readable } from "svelte/store";
-import { killSwitch } from "./kill-switch.store";
-import { manualTrigger } from "./last-updated.store";
-import { captureException } from "$integrations/sentry";
+import { getStorageObject, setStorageObject } from '$integrations/storage';
+import { readable } from 'svelte/store';
+import { killSwitch } from './kill-switch.store';
+import { manualTrigger } from './last-updated.store';
+import { captureException } from '$integrations/sentry';
 
 type ValueSetter<T> = (value: T) => void;
 type AsyncCallback<T> = () => Promise<T>;
@@ -14,8 +14,8 @@ const ongoingRequests = new Set<string>();
 
 function createPollingStore<T>(key: string, callback: AsyncCallback<T>) {
   const storage = getStorageObject<T>(key);
-  const initialData = storage.data || {} as T;
-  return readable<T>(initialData, set => startPolling(key, callback, set));
+  const initialData = storage.data || ({} as T);
+  return readable<T>(initialData, (set) => startPolling(key, callback, set));
 }
 
 function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
@@ -29,7 +29,7 @@ function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSett
     clearInterval(interval);
   };
 
-  const unsubscribeManualTrigger = manualTrigger.subscribe(trigger => {
+  const unsubscribeManualTrigger = manualTrigger.subscribe((trigger) => {
     if (!trigger) {
       return;
     }
@@ -39,7 +39,7 @@ function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSett
     startInterval();
   });
 
-  const unsubscribeKillSwitch = killSwitch.subscribe(active => {
+  const unsubscribeKillSwitch = killSwitch.subscribe((active) => {
     kill = active;
     if (active) {
       stopInterval();
@@ -80,7 +80,7 @@ async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueS
   } catch {
     captureException(new Error(`Error fetching data for key: ${key}`), {
       contexts: key,
-      action: "fetchData"
+      action: 'fetchData',
     });
     setTimeout(() => fetchData(key, callback, set), RANDOM_RETRY_INTERVAL());
   } finally {

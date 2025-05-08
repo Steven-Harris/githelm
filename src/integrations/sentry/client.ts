@@ -39,7 +39,7 @@ export function initSentry() {
     // Session replay for better error context (optional)
     replaysSessionSampleRate: 0.1, // Sample 10% of sessions
     replaysOnErrorSampleRate: 1.0, // Sample all sessions with errors
-    
+
     beforeSend(event) {
       // Don't send events in development mode as an extra safeguard
       if (import.meta.env.DEV) {
@@ -51,7 +51,7 @@ export function initSentry() {
 
   // Setup global error handlers
   setupGlobalErrorHandlers();
-  
+
   console.info(`Sentry initialized in ${environment} environment`);
 }
 
@@ -63,12 +63,12 @@ function getEnvironmentName(): string {
   if (import.meta.env.VITE_SENTRY_ENVIRONMENT) {
     return import.meta.env.VITE_SENTRY_ENVIRONMENT;
   }
-  
+
   // Check if this is a PR preview deployment
   if (import.meta.env.VITE_IS_PR_PREVIEW === 'true') {
     return 'preview';
   }
-  
+
   // Default to the Vite mode or production
   return import.meta.env.MODE || 'production';
 }
@@ -77,7 +77,6 @@ function getEnvironmentName(): string {
  * Set up no-op functions when Sentry is disabled
  */
 function setupNoOpFunctions() {
-  
   // Set up global wrapper that does nothing
   if (typeof window !== 'undefined') {
     window.wrapWithSentry = (fn) => fn;
@@ -98,10 +97,10 @@ function setupGlobalErrorHandlers() {
             message: event.message,
             filename: event.filename,
             lineno: event.lineno,
-            colno: event.colno
-          }
-        }
-      }
+            colno: event.colno,
+          },
+        },
+      },
     });
   });
 
@@ -112,12 +111,10 @@ function setupGlobalErrorHandlers() {
         source: {
           name: 'unhandledrejection',
           errorDetails: {
-            reason: typeof event.reason === 'object' 
-              ? JSON.stringify(event.reason)
-              : String(event.reason)
-          }
-        }
-      }
+            reason: typeof event.reason === 'object' ? JSON.stringify(event.reason) : String(event.reason),
+          },
+        },
+      },
     });
   });
 
@@ -126,10 +123,7 @@ function setupGlobalErrorHandlers() {
 }
 
 // Utility function to wrap any function with Sentry error capturing
-export function wrapWithSentry<T extends (...args: any[]) => any>(
-  fn: T, 
-  context?: Record<string, unknown>
-): (...args: Parameters<T>) => ReturnType<T> {
+export function wrapWithSentry<T extends (...args: any[]) => any>(fn: T, context?: Record<string, unknown>): (...args: Parameters<T>) => ReturnType<T> {
   return (...args: Parameters<T>): ReturnType<T> => {
     try {
       return fn(...args);
@@ -137,7 +131,7 @@ export function wrapWithSentry<T extends (...args: any[]) => any>(
       captureException(error, {
         ...context,
         arguments: safeStringify(args),
-        functionName: fn.name || 'anonymous'
+        functionName: fn.name || 'anonymous',
       });
       throw error;
     }
@@ -154,10 +148,7 @@ function safeStringify(value: unknown): string {
 }
 
 // Helper function to wrap async functions with Sentry error capturing
-export function wrapAsyncWithSentry<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  context?: Record<string, unknown>
-): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
+export function wrapAsyncWithSentry<T extends (...args: any[]) => Promise<any>>(fn: T, context?: Record<string, unknown>): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>>> {
   return async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
     try {
       return await fn(...args);
@@ -165,7 +156,7 @@ export function wrapAsyncWithSentry<T extends (...args: any[]) => Promise<any>>(
       captureException(error, {
         ...context,
         arguments: safeStringify(args),
-        functionName: fn.name || 'anonymous'
+        functionName: fn.name || 'anonymous',
       });
       throw error;
     }
@@ -174,10 +165,10 @@ export function wrapAsyncWithSentry<T extends (...args: any[]) => Promise<any>>(
 
 // Capture an exception with Sentry
 export function captureException(error: unknown, context?: Record<string, unknown>) {
-  Sentry.captureException(error, { 
-    contexts: { 
-      details: context || {} 
-    } 
+  Sentry.captureException(error, {
+    contexts: {
+      details: context || {},
+    },
   });
 }
 
@@ -200,12 +191,7 @@ export function setContext(name: string, context: Record<string, unknown>) {
 }
 
 // Add breadcrumb for tracking user actions
-export function addBreadcrumb(
-  message: string, 
-  category: string, 
-  data?: Record<string, unknown>,
-  level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info'
-) {
+export function addBreadcrumb(message: string, category: string, data?: Record<string, unknown>, level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info') {
   Sentry.addBreadcrumb({
     message,
     category,

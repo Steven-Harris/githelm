@@ -5,25 +5,25 @@ describe('Date Utils', () => {
   describe('timeAgo', () => {
     // Mock Date.now for consistent testing
     let originalDate: typeof Date;
-    
+
     beforeAll(() => {
       originalDate = global.Date;
       // Mock to May 4, 2025 12:00:00 UTC
       const mockDate = new Date(2025, 4, 4, 12, 0, 0);
       global.Date = class extends Date {
         constructor(...args: any[]) {
-            super();
-            if (args.length === 0) {
-              return mockDate;
-            }
-            return Reflect.construct(originalDate, args);
+          super();
+          if (args.length === 0) {
+            return mockDate;
+          }
+          return Reflect.construct(originalDate, args);
         }
         static now() {
           return mockDate.getTime();
         }
       } as DateConstructor;
     });
-    
+
     afterAll(() => {
       global.Date = originalDate;
     });
