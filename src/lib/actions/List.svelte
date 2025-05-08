@@ -16,7 +16,7 @@
           title={`${org}/${repo}`}
         >
           <img src={githubSVG} alt="GitHub" width="16" height="16" />
-          <span class="text-[#58a6ff]">{repo}</span>
+          <span class="text-[#58a6ff] pl-1">{repo}</span>
         </a>
       </h3>
       <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">

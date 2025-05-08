@@ -17,7 +17,7 @@
           title={`${org}/${repo}`}
         >
           <img src={githubSVG} alt="GitHub" width="16" height="16" />
-          <span class="text-[#58a6ff]">{repo}</span>
+          <span class="text-[#58a6ff] pl-1">{repo}</span>
         </a>
       </h3>
       <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
@@ -34,6 +34,8 @@
           <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + (index * 0.05)}s">
             <div class="flex justify-between items-start">
               <div class="flex-1 min-w-0">
+                <div class="flex items">
+                <img src={pr.user.avatar_url} class="avatar mt-1 mr-2" alt={`Avatar of ${pr.user.login}`} />
                 <a 
                   href={pr.html_url} 
                   target="_blank" 
@@ -41,6 +43,7 @@
                 >
                   {pr.title}
                 </a>
+                </div> 
                 <div class="text-sm text-[#8b949e] mt-1">
                   #{pr.number} opened {pr.createdAt} by 
                   <a 
