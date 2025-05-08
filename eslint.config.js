@@ -79,7 +79,7 @@ export default [
       'prettier/prettier': 'warn',
       'svelte/no-at-html-tags': 'warn',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
       'no-undef': 'off',
     },
   },

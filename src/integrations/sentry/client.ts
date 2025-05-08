@@ -9,7 +9,6 @@ import type { Breadcrumb } from '@sentry/browser';
 export function initSentry() {
   // Skip Sentry initialization in development mode
   if (import.meta.env.DEV) {
-    console.info('Sentry disabled in development mode');
     setupNoOpFunctions();
     return;
   }
@@ -22,7 +21,6 @@ export function initSentry() {
 
   // Only initialize if we have a DSN
   if (!dsn) {
-    console.warn('Sentry DSN not provided, monitoring disabled');
     setupNoOpFunctions();
     return;
   }
@@ -142,7 +140,7 @@ export function wrapWithSentry<T extends (...args: any[]) => any>(fn: T, context
 function safeStringify(value: unknown): string {
   try {
     return JSON.stringify(value);
-  } catch (error) {
+  } catch {
     return String(value);
   }
 }

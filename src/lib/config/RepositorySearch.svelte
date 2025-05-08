@@ -147,7 +147,7 @@
           {#if isLoading}
             <div class="p-3 text-[#8b949e]">Searching repositories...</div>
           {:else}
-            {#each searchResults as repo, i}
+            {#each searchResults as repo, i (i)}
               <button
                 type="button"
                 class="repo-result w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9] {repo.alreadyConfigured

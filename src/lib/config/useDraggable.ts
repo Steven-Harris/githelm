@@ -81,19 +81,6 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
     state.ghostElement.style.transform = `rotate(${rotationAmount}deg) scale(1.02)`;
   }
 
-  // Handle clicks that might happen during drag operations
-  function handleClickDuringDrag(event: MouseEvent): void {
-    // If we detect a click during what was supposed to be a drag,
-    // we need to clean up any remaining state
-    if (state.isDragging) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    // Clean up state after handling the click
-    state.isDragging = false;
-    removeGhostElement();
-  }
-
   function calculateRotation(event: MouseEvent): number {
     // Calculate a small rotation based on horizontal mouse movement direction
     const moveX = event.clientX - state.lastMousePosition.x;
@@ -228,7 +215,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
     state.dragOverIndex = null;
   }
 
-  function handleDragEnd(event: DragEvent): void {
+  function handleDragEnd(_): void {
     // Reset drag state
     state.isDragging = false;
     state.draggedIndex = null;

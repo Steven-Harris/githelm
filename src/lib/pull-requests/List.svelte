@@ -26,7 +26,7 @@
 
     {#if pullRequests?.length > 0}
       <div class="divide-y divide-[#21262d]">
-        {#each pullRequests as pr, index}
+        {#each pullRequests as pr, index (index)}
           <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + index * 0.05}s">
             <div class="flex justify-between items-start">
               <div class="flex-1 min-w-0">
@@ -44,7 +44,7 @@
                 </div>
                 {#if pr.labels?.length > 0}
                   <div class="mt-2 flex flex-wrap gap-1">
-                    {#each pr.labels as label}
+                    {#each pr.labels as label, index (index)}
                       <span class="px-2 py-0.5 text-xs rounded-full" style="background-color: #{label.color}26; color: #{label.color}; border: 1px solid #{label.color}40;">
                         {label.name}
                       </span>

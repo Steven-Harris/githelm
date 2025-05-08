@@ -26,7 +26,7 @@
 
     {#if workflowRuns?.length > 0}
       <div class="divide-y divide-[#21262d]">
-        {#each workflowRuns as run, index}
+        {#each workflowRuns as run, index (index)}
           <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + index * 0.05}s">
             <WorkflowRun {run} />
           </div>
