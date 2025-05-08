@@ -124,19 +124,32 @@ const config: UserConfig = defineConfig({
         description: 'A repository monitoring application to manage pull requests and actions',
         theme_color: '#111827',
         background_color: '#111827',
-        icons: [{
-          src: 'pwa-64x64.png',
-          sizes: '64x64',
-          type: 'image/png',
-        }, {
-          src: 'pwa-192x192.png',
-          sizes: '192x192',
-          type: 'image/png',
-        }, {
-          src: 'pwa-512x512.png',
-          sizes: '512x512',
-          purpose: 'maskable',
-        }],
+        icons: [
+          {
+            src: 'pwa-64x64.png',
+            sizes: '64x64',
+            type: 'image/png',
+            purpose: 'any'
+          }, 
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          }, 
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ],
       },
       // Updated glob patterns for SvelteKit's static adapter output structure
       injectManifest: {

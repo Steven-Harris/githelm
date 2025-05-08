@@ -3,14 +3,11 @@
   import { initAuthStateHandling } from "$integrations/github";
   import Footer from "$lib/Footer.svelte";
   import Header from "$lib/Header.svelte";
-  import Loading from "$lib/Loading.svelte";
   import Tabs from "$lib/Tabs.svelte";
   import { loadRepositoryConfigs } from "$lib/stores/repository-service";
-  import { isLoading } from "$lib/stores/loading.store";
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
-  import { pwaInfo } from "virtual:pwa-info";
   import "../style.css";
-  import { derived, readable } from "svelte/store";
+  import { derived } from "svelte/store";
 
   interface Props {
     children?: import('svelte').Snippet
@@ -18,9 +15,6 @@
 
   const { children }: Props = $props();
   
-  const pwaInfoStore = readable(pwaInfo);
-  let webManifest = derived(pwaInfoStore, ($pwaInfo) => $pwaInfo?.webManifest?.linkTag || '');
-
   let signedIn = derived(firebase.user, ($user) => $user !== null);
   let isAuth = derived(authState, ($authState) => {
     if ($authState === 'authenticated') {
@@ -42,7 +36,6 @@
   {#each pwaAssetsHead.links as link}
     <link {...link} />
   {/each}
-  {@html webManifest}
 </svelte:head>
 
 <Header signedIn={signedIn && $authState === "authenticated"}/>
