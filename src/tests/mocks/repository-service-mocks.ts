@@ -1,9 +1,5 @@
 import { vi } from 'vitest';
-import type { 
-  PullRequest, 
-  WorkflowRun,
-  Job
-} from '$integrations/github';
+import type { PullRequest, WorkflowRun, Job } from '$integrations/github';
 
 // Mock pull requests data
 export const mockPullRequests: Record<string, PullRequest[]> = {
@@ -14,14 +10,12 @@ export const mockPullRequests: Record<string, PullRequest[]> = {
       createdAt: '2025-05-03T10:00:00Z',
       user: {
         login: 'testuser',
-        avatar_url: 'https://github.com/testuser.png'
+        avatar_url: 'https://github.com/testuser.png',
       },
       html_url: 'https://github.com/test-org/test-repo/pull/123',
       isDraft: false,
-      labels: [
-        { name: 'enhancement', color: '0366d6', description: 'New feature or enhancement' }
-      ],
-      reviews: []
+      labels: [{ name: 'enhancement', color: '0366d6', description: 'New feature or enhancement' }],
+      reviews: [],
     },
     {
       title: 'Fix critical bug',
@@ -29,25 +23,23 @@ export const mockPullRequests: Record<string, PullRequest[]> = {
       createdAt: '2025-05-02T15:30:00Z',
       user: {
         login: 'anotheruser',
-        avatar_url: 'https://github.com/anotheruser.png'
+        avatar_url: 'https://github.com/anotheruser.png',
       },
       html_url: 'https://github.com/test-org/test-repo/pull/124',
       isDraft: false,
-      labels: [
-        { name: 'bug', color: 'd73a4a', description: 'Bug fix' }
-      ],
+      labels: [{ name: 'bug', color: 'd73a4a', description: 'Bug fix' }],
       reviews: [
         {
           user: {
             login: 'reviewer1',
-            avatar_url: 'https://github.com/reviewer1.png'
+            avatar_url: 'https://github.com/reviewer1.png',
           },
           state: 'APPROVED',
-          submitted_at: '2025-05-03T12:00:00Z'
-        }
-      ]
-    }
-  ]
+          submitted_at: '2025-05-03T12:00:00Z',
+        },
+      ],
+    },
+  ],
 };
 
 // Mock workflow runs data
@@ -66,7 +58,7 @@ export const mockWorkflowRuns: Record<string, WorkflowRun[]> = {
       run_number: 42,
       head_branch: 'main',
       path: '.github/workflows/ci.yml',
-      jobs: []
+      jobs: [],
     },
     {
       id: 1002,
@@ -81,9 +73,9 @@ export const mockWorkflowRuns: Record<string, WorkflowRun[]> = {
       run_number: 43,
       head_branch: 'feature',
       path: '.github/workflows/deploy.yml',
-      jobs: []
-    }
-  ]
+      jobs: [],
+    },
+  ],
 };
 
 // Mock workflow jobs
@@ -101,16 +93,16 @@ export const mockJobs: Record<number, Job[]> = {
           name: 'Checkout repository',
           status: 'completed',
           conclusion: 'success',
-          number: 1
+          number: 1,
         },
         {
           name: 'Install dependencies',
           status: 'completed',
           conclusion: 'success',
-          number: 2
-        }
-      ]
-    }
+          number: 2,
+        },
+      ],
+    },
   ],
   1002: [
     {
@@ -125,17 +117,17 @@ export const mockJobs: Record<number, Job[]> = {
           name: 'Checkout repository',
           status: 'completed',
           conclusion: 'success',
-          number: 1
+          number: 1,
         },
         {
           name: 'Deploy to production',
           status: 'completed',
           conclusion: 'failure',
-          number: 2
-        }
-      ]
-    }
-  ]
+          number: 2,
+        },
+      ],
+    },
+  ],
 };
 
 // Mock configuration data
@@ -144,20 +136,20 @@ export const mockConfigs = [
     org: 'test-org',
     repo: 'test-repo',
     pullRequests: ['enhancement', 'bug'],
-    actions: ['ci.yml', 'deploy.yml']
+    actions: ['ci.yml', 'deploy.yml'],
   },
   {
     org: 'another-org',
     repo: 'another-repo',
     pullRequests: ['ready-for-review'],
-    actions: []
-  }
+    actions: [],
+  },
 ];
 
 // Mock functions for external dependencies
 export const mockFirebaseConfigService = {
   getConfigurations: vi.fn().mockResolvedValue(mockConfigs),
-  saveConfigurations: vi.fn().mockResolvedValue(true)
+  saveConfigurations: vi.fn().mockResolvedValue(true),
 };
 
 export const mockGithubApi = {
@@ -165,11 +157,11 @@ export const mockGithubApi = {
   fetchActions: vi.fn().mockResolvedValue(mockWorkflowRuns['test-org/test-repo']),
   fetchMultipleWorkflowJobs: vi.fn().mockImplementation((runs) => {
     const result: Record<number, Job[]> = {};
-    runs.forEach(run => {
+    runs.forEach((run) => {
       result[run.id] = mockJobs[run.id] || [];
     });
     return Promise.resolve(result);
-  })
+  }),
 };
 
 export const mockStorage = {
@@ -177,24 +169,24 @@ export const mockStorage = {
     if (key === 'pull-requests-cache') {
       return {
         data: mockPullRequests,
-        lastUpdated: Date.now() - 30000 // 30 seconds ago
+        lastUpdated: Date.now() - 30000, // 30 seconds ago
       };
     }
     if (key === 'workflow-runs-cache') {
       return {
         data: mockWorkflowRuns,
-        lastUpdated: Date.now() - 30000 // 30 seconds ago
+        lastUpdated: Date.now() - 30000, // 30 seconds ago
       };
     }
     return null;
   }),
-  setStorageObject: vi.fn()
+  setStorageObject: vi.fn(),
 };
 
 export const mockPollingStore = {
   start: vi.fn(),
   stop: vi.fn(),
-  subscribe: vi.fn()
+  subscribe: vi.fn(),
 };
 
 // Mock for the polling store factory function

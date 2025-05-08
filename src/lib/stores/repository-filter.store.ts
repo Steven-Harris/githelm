@@ -6,7 +6,7 @@ export type RepositoryFilterType = 'with_prs' | 'without_prs';
 // Define default values for filters
 const defaultFilters: Record<RepositoryFilterType, boolean> = {
   with_prs: true,
-  without_prs: true
+  without_prs: true,
 };
 
 const loadFilters = (): Record<RepositoryFilterType, boolean> => {
@@ -24,9 +24,9 @@ repositoryFilters.subscribe((value) => {
 });
 
 export function toggleRepositoryFilter(filter: RepositoryFilterType): void {
-  repositoryFilters.update(filters => ({
+  repositoryFilters.update((filters) => ({
     ...filters,
-    [filter]: !filters[filter]
+    [filter]: !filters[filter],
   }));
 }
 

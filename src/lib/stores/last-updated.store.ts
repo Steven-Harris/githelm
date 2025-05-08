@@ -1,5 +1,5 @@
-import { getLastUpdated } from "$integrations/storage";
-import { readable, writable } from "svelte/store";
+import { getLastUpdated } from '$integrations/storage';
+import { readable, writable } from 'svelte/store';
 
 export const manualTrigger = writable(false);
 
@@ -23,8 +23,8 @@ function resetTimer(timer: any, set: (value: number) => void) {
 }
 
 export function lastUpdatedStore() {
-  return readable<number>(0, set => {
-    let timer = watchTimeElapsed(set);
+  return readable<number>(0, (set) => {
+    const timer = watchTimeElapsed(set);
 
     return () => {
       resetTimer(timer, set);
