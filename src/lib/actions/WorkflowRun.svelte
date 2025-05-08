@@ -93,7 +93,7 @@
 
   {#if jobs?.length}
     <div class="mt-3 flex flex-wrap gap-2">
-      {#each jobs as job}
+      {#each jobs as job, i (i)}
         <div class={`px-2 py-0.5 rounded text-xs ${jobColor(job)}`}>
           {job.name}
         </div>

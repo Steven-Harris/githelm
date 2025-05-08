@@ -69,7 +69,7 @@
       </div>
 
       <div class="py-1">
-        {#each Object.entries($repositoryFilters) as [filter, enabled]}
+        {#each Object.entries($repositoryFilters) as [filter, enabled], index (index)}
           <label class="flex items-center px-3 py-1.5 hover:bg-[#21262d] cursor-pointer">
             <input type="checkbox" class="mr-2" checked={enabled} onchange={() => toggleRepositoryFilter(filter as RepositoryFilterType)} />
             <span class="text-xs text-[#c9d1d9]">{filterNames[filter as RepositoryFilterType]}</span>

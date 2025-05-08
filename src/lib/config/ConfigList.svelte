@@ -117,7 +117,7 @@
 <div class="mt-4">
   {#if configs.length > 0}
     <div class="space-y-3 mb-4" bind:this={configListElement} use:useDraggable={{ onReorder: handleReorder }}>
-      {#each configs as config, i}
+      {#each configs as config, i (i)}
         {#if editingIndex === i}
           <RepositoryForm {config} onSave={(data: any) => handleSave(data, i)} onCancel={handleCancel} />
         {:else}
@@ -177,7 +177,7 @@
                 <div class="flex items-center">
                   <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
                   <div class="flex flex-wrap gap-1">
-                    {#each config.pullRequests as filter}
+                    {#each config.pullRequests as filter, i (i)}
                       <span class="chip">{filter}</span>
                     {/each}
                   </div>
@@ -192,7 +192,7 @@
                 <div class="flex items-center">
                   <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
                   <div class="flex flex-wrap gap-1">
-                    {#each config.actions as filter}
+                    {#each config.actions as filter, i (i)}
                       <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
                     {/each}
                   </div>

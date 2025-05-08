@@ -104,7 +104,7 @@
 
   {#if filters.length > 0}
     <div class="flex flex-wrap gap-2 mb-2">
-      {#each filters as filter}
+      {#each filters as filter, i (i)}
         <span class="chip">
           {title.toLowerCase() === 'workflow' ? filter.replace(/\.(ya?ml)$/, '') : filter}
           <button type="button" onclick={() => onRemove(filter)} aria-label="Remove {filter} filter">×</button>
@@ -144,7 +144,7 @@
 
       {#if showResults && filteredOptions.length > 0}
         <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto">
-          {#each filteredOptions as option, i}
+          {#each filteredOptions as option, i (i)}
             <button
               type="button"
               class="filter-option w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9]"

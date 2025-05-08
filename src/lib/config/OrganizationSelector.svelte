@@ -7,18 +7,13 @@
   let { selectedOrg = '', disabled = false, onChange } = $props();
 
   let organizations = $state<Organization[]>([]);
-  let loading = $state(false);
 
   function updateOrganizations() {
     organizations = configService.getLocalOrganizations();
   }
 
   onMount(() => {
-    loading = true;
-
     updateOrganizations();
-
-    loading = false;
   });
 
   $effect(() => {
@@ -57,7 +52,7 @@
           aria-required="true"
         >
           <option value="" class="bg-[#161b22] text-[#f0f6fc]">Select an organization</option>
-          {#each organizations as org}
+          {#each organizations as org, i (i)}
             <option value={org.name} class="bg-[#161b22] text-[#f0f6fc]">{org.name}</option>
           {/each}
         </select>

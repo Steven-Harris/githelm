@@ -75,7 +75,7 @@
 
 <div>
   {#if loading}
-    <div class="text-center py-3">
+    <div class="text-center py-3 flex flex-col items-center">
       <div class="animate-spin mx-auto w-5 h-5">
         <svg class="w-full h-full text-[#58a6ff] fill-current" viewBox="0 0 16 16">
           <path d="M8 16a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
@@ -88,7 +88,7 @@
     <div class="mb-4">
       {#if organizations.length > 0}
         <div class="space-y-2">
-          {#each organizations as org, i}
+          {#each organizations as org, i (i)}
             <div class="p-2 px-4 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md flex justify-between items-center backdrop-blur-sm">
               <span class="text-[#c9d1d9]">{org.name}</span>
               <div class="flex gap-2">

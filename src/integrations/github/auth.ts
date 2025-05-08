@@ -7,7 +7,7 @@ const MAX_RETRIES = 2;
 const RETRY_DELAY_BASE_MS = 1000;
 
 let authStateSubscription: () => void | null = null;
-let tokenRefreshPromise: Promise<string> | null = null;
+const tokenRefreshPromise: Promise<string> | null = null;
 let isRefreshingToken = false;
 
 let apiQueue: Array<() => Promise<any>> = [];
@@ -53,7 +53,7 @@ async function processApiQueue(): Promise<void> {
 export function getCurrentAuthState(): string {
   try {
     return get(firebase.authState) || 'initializing';
-  } catch (_) {
+  } catch {
     return 'initializing';
   }
 }
