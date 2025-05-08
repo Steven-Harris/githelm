@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { page } from '$app/state';
-  import { activeTab } from '$stores/active-tab.store';
-  import { isMobile } from '$stores/mobile.store';
-  const pullRequestsTab = 'pull-requests';
+  import { page } from "$app/state";
+  import { activeTab } from "$stores/active-tab.store";
+  import { isMobile } from "$stores/mobile.store";
+  const pullRequestsTab = "pull-requests";
 
-  const actionsTab = 'actions';
+  const actionsTab = "actions";
   function switchTab(tab: string) {
     activeTab.set(tab);
   }
 
   function pullRequestsTabActive() {
-    return $activeTab === pullRequestsTab ? 'active' : '';
+    return $activeTab === pullRequestsTab ? "active" : "";
   }
 
   function actionTabActive() {
-    return $activeTab === actionsTab ? 'active' : '';
+    return $activeTab === actionsTab ? "active" : "";
   }
 </script>
 

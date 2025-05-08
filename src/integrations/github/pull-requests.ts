@@ -2,12 +2,23 @@ import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
 import { getStorageObject } from '../storage';
 import { captureException } from '../sentry';
-import { type PullRequest, type PullRequests, type RepoInfo, type Review } from './types';
+import { 
+  type PullRequest, 
+  type PullRequests,
+  type RepoInfo,
+  type Review
+} from './types';
 
-export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
+export async function fetchPullRequestsWithGraphQL(
+  org: string, 
+  repo: string, 
+  filters: string[] = []
+): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
-    const labelsFilter = filters.length > 0 ? `labels: ${JSON.stringify(filters)}` : '';
-
+    const labelsFilter = filters.length > 0 
+      ? `labels: ${JSON.stringify(filters)}` 
+      : '';
+    
     const query = `
       query GetPullRequests($owner: String!, $repo: String!) {
         repository(owner: $owner, name: $repo) {
@@ -59,9 +70,9 @@ export async function fetchPullRequestsWithGraphQL(org: string, repo: string, fi
         }
       }
     `;
-
+    
     const variables = { owner: org, repo: repo };
-
+    
     try {
       const data = await executeGraphQLQuery(query, variables);
       return transformGraphQLPullRequests(data);
@@ -71,7 +82,7 @@ export async function fetchPullRequestsWithGraphQL(org: string, repo: string, fi
         function: 'fetchPullRequestsWithGraphQL',
         org,
         repo,
-        filters,
+        filters
       });
       // Fallback to REST API
       return fetchPullRequests(org, repo, filters);
@@ -83,15 +94,15 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
   if (!data?.repository?.pullRequests?.edges) {
     return [];
   }
-
+  
   return data.repository.pullRequests.edges.map((edge: any) => {
     const node = edge.node;
-
+    
     const labels = node.labels.edges.map((labelEdge: any) => ({
       name: labelEdge.node.name,
-      color: labelEdge.node.color,
+      color: labelEdge.node.color
     }));
-
+    
     return {
       id: parseInt(node.id.split('_').pop()),
       number: node.number,
@@ -112,30 +123,30 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
         html_url: '',
         gists_url: '',
         type: '',
-        user_view_type: '',
+        user_view_type: ''
       },
       labels: labels,
       reactions: {
         url: '',
         total_count: 0,
-        '+1': 0,
-        '-1': 0,
+        "+1": 0,
+        "-1": 0,
         laugh: 0,
         hooray: 0,
         confused: 0,
         heart: 0,
         rocket: 0,
-        eyes: 0,
+        eyes: 0
       },
       state_reason: null,
-      reviews: transformGraphQLReviews(node.reviews.edges),
+      reviews: transformGraphQLReviews(node.reviews.edges)
     };
   });
 }
 
 function transformGraphQLReviews(reviewEdges: any[]): Review[] {
   if (!reviewEdges) return [];
-
+  
   const reviews = reviewEdges.map((edge: any) => {
     const node = edge.node;
     return {
@@ -150,7 +161,7 @@ function transformGraphQLReviews(reviewEdges: any[]): Review[] {
         html_url: '',
         gists_url: '',
         type: '',
-        user_view_type: '',
+        user_view_type: ''
       },
       body: node.bodyText || '',
       state: node.state,
@@ -161,34 +172,34 @@ function transformGraphQLReviews(reviewEdges: any[]): Review[] {
       commit_id: '',
       _links: {
         html: {
-          href: node.url,
+          href: node.url
         },
         pull_request: {
-          href: '',
-        },
-      },
+          href: ''
+        }
+      }
     };
   });
-
+  
   return squashReviewsByAuthor(reviews);
 }
 
 export function squashReviewsByAuthor(reviews: Review[]): Review[] {
   if (!reviews || reviews.length === 0) return [];
-
+  
   const reviewsByAuthor = new Map<string, Review>();
-
-  reviews.forEach((review) => {
+  
+  reviews.forEach(review => {
     const authorLogin = review.user?.login || '';
-
+    
     if (!authorLogin) return;
-
+    
     const existingReview = reviewsByAuthor.get(authorLogin);
     if (!existingReview || new Date(review.submitted_at) > new Date(existingReview.submitted_at)) {
       reviewsByAuthor.set(authorLogin, review);
     }
   });
-
+  
   return Array.from(reviewsByAuthor.values());
 }
 
@@ -196,15 +207,15 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
   return queueApiCallIfNeeded(async () => {
     try {
       const pullRequestsCache = getStorageObject<PullRequest[]>(`graphql-${JSON.stringify({ owner: org, repo: repo })}`);
-
+      
       if (pullRequestsCache.data && Array.isArray(pullRequestsCache.data)) {
-        const pr = pullRequestsCache.data.find((pr) => pr.number === prNumber);
-
+        const pr = pullRequestsCache.data.find(pr => pr.number === prNumber);
+        
         if (pr && pr.reviews) {
           return pr.reviews;
         }
       }
-
+      
       const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
       return squashReviewsByAuthor(reviews);
     } catch (error) {
@@ -213,7 +224,7 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
         function: 'fetchReviews',
         org,
         repo,
-        prNumber,
+        prNumber
       });
       return [];
     }
@@ -223,35 +234,42 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
 export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const queries = filters.length === 0 ? [`repo:${org}/${repo}+is:pr+is:open`] : filters.map((filter) => `repo:${org}/${repo}+is:pr+is:open+label:${filter}`);
+      const queries = filters.length === 0
+        ? [`repo:${org}/${repo}+is:pr+is:open`]
+        : filters.map(filter => `repo:${org}/${repo}+is:pr+is:open+label:${filter}`);
 
-      const results = await Promise.all(queries.map((query) => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`)));
-      return results.flatMap((result) => result.items);
+      const results = await Promise.all(
+        queries.map(query => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`))
+      );
+      return results.flatMap(result => result.items);
     } catch (error) {
       captureException(error, {
         context: 'GitHub Pull Requests',
         function: 'fetchPullRequests',
         org,
         repo,
-        filters,
+        filters
       });
       throw error;
     }
   });
 }
 
-export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[]): Promise<Record<string, PullRequest[]>> {
+export async function fetchMultipleRepositoriesPullRequests(
+  configs: RepoInfo[]
+): Promise<Record<string, PullRequest[]>> {
   if (!configs || configs.length === 0) {
     return {};
   }
 
   const query = `
     query FetchMultipleRepositoriesPullRequests {
-      ${configs
-        .map((config, index) => {
-          const labelsFilter = config.filters.length > 0 ? `labels: ${JSON.stringify(config.filters)}` : '';
-
-          return `
+      ${configs.map((config, index) => {
+        const labelsFilter = config.filters.length > 0 
+          ? `labels: ${JSON.stringify(config.filters)}` 
+          : '';
+        
+        return `
           repo${index}: repository(owner: "${config.org}", name: "${config.repo}") {
             pullRequests(first: 20, states: OPEN ${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
               edges {
@@ -300,8 +318,7 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
             }
           }
         `;
-        })
-        .join('\n')}
+      }).join('\n')}
     }
   `;
 
@@ -313,9 +330,9 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
       context: 'GitHub Pull Requests',
       function: 'fetchMultipleRepositoriesPullRequests',
       configCount: configs.length,
-      repositories: configs.map((c) => `${c.org}/${c.repo}`),
+      repositories: configs.map(c => `${c.org}/${c.repo}`)
     });
-
+    
     // Fallback to REST API for each repository
     const results: Record<string, PullRequest[]> = {};
     for (const config of configs) {
@@ -327,7 +344,7 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
           function: 'fetchMultipleRepositoriesPullRequests - fallback',
           org: config.org,
           repo: config.repo,
-          filters: config.filters,
+          filters: config.filters
         });
         results[`${config.org}/${config.repo}`] = [];
       }
@@ -336,26 +353,29 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
   }
 }
 
-function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): Record<string, PullRequest[]> {
+function transformMultiRepositoryPullRequests(
+  data: any, 
+  configs: RepoInfo[]
+): Record<string, PullRequest[]> {
   const results: Record<string, PullRequest[]> = {};
-
+  
   configs.forEach((config, index) => {
     const repoKey = `${config.org}/${config.repo}`;
     const repoData = data[`repo${index}`];
-
+    
     if (!repoData?.pullRequests?.edges) {
       results[repoKey] = [];
       return;
     }
-
+    
     results[repoKey] = repoData.pullRequests.edges.map((edge: any) => {
       const node = edge.node;
-
+      
       const labels = node.labels.edges.map((labelEdge: any) => ({
         name: labelEdge.node.name,
-        color: labelEdge.node.color,
+        color: labelEdge.node.color
       }));
-
+      
       return {
         id: parseInt(node.id.split('_').pop()),
         number: node.number,
@@ -376,33 +396,33 @@ function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): R
           html_url: '',
           gists_url: '',
           type: '',
-          user_view_type: '',
+          user_view_type: ''
         },
         labels: labels,
         reactions: {
           url: '',
           total_count: 0,
-          '+1': 0,
-          '-1': 0,
+          "+1": 0,
+          "-1": 0,
           laugh: 0,
           hooray: 0,
           confused: 0,
           heart: 0,
           rocket: 0,
-          eyes: 0,
+          eyes: 0
         },
         state_reason: null,
-        reviews: transformGraphQLReviews(node.reviews.edges),
+        reviews: transformGraphQLReviews(node.reviews.edges)
       };
     });
   });
-
+  
   return results;
 }
 
 export async function searchRepositoryLabels(owner: string, repo: string): Promise<string[]> {
   if (!owner || !repo) return [];
-
+  
   const query = `
     query SearchRepoLabels($owner: String!, $repo: String!) {
       repository(owner: $owner, name: $repo) {
@@ -414,21 +434,21 @@ export async function searchRepositoryLabels(owner: string, repo: string): Promi
       }
     }
   `;
-
+  
   try {
     const data = await executeGraphQLQuery(query, { owner, repo });
-
+    
     if (!data?.repository?.labels?.nodes) {
       return [];
     }
-
+    
     return data.repository.labels.nodes.map((label: any) => label.name);
   } catch (error) {
     captureException(error, {
       context: 'GitHub Pull Requests',
       function: 'searchRepositoryLabels',
       owner,
-      repo,
+      repo
     });
     return [];
   }

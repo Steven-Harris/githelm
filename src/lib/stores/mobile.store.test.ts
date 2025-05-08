@@ -16,7 +16,7 @@ describe('Mobile Store', () => {
     mockMediaQueryList = {
       matches: false,
       addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
+      removeEventListener: vi.fn()
     };
 
     // Mock window.matchMedia
@@ -35,10 +35,10 @@ describe('Mobile Store', () => {
   it('should create a store with correct initial value based on media query', async () => {
     // Set mock to return desktop first
     mockMediaQueryList.matches = false;
-
+    
     // Import the module
     const { isMobile } = await import('./mobile.store');
-
+    
     // The initial value should match our mock
     expect(get(isMobile)).toBe(false);
   });
@@ -46,7 +46,7 @@ describe('Mobile Store', () => {
   it('should use the readable store factory', async () => {
     // Import the module
     const mobileStoreModule = await import('./mobile.store');
-
+    
     // Verify that the exported isMobile has a subscribe method (readable store)
     expect(typeof mobileStoreModule.isMobile.subscribe).toBe('function');
   });

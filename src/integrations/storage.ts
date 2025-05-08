@@ -37,7 +37,7 @@ export function setGithubToken(token: string | undefined): void {
 export function getStorageObject<T = {} | []>(key: string): StorageObject<T> {
   const item = getItem(key);
   if (!item) {
-    return { lastUpdated: 0, data: typeof {} === 'object' ? ({} as T) : ([] as T) };
+    return { lastUpdated: 0, data: typeof {} === 'object' ? {} as T : [] as T };
   }
   return JSON.parse(item);
 }
@@ -46,7 +46,7 @@ export function setStorageObject<T>(key: string, value: T): number {
   const lastUpdated = Date.now();
   const obj = { lastUpdated, data: value };
   setItem(key, JSON.stringify(obj));
-  return lastUpdated;
+  return lastUpdated
 }
 
 function getItem(key: string): string | null {
