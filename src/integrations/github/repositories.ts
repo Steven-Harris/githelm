@@ -1,3 +1,4 @@
+import { captureException } from '$integrations/sentry';
 import { fetchData } from './api-client';
 
 export interface SearchRepositoryResult {
@@ -20,7 +21,13 @@ export async function searchRepositories(
       description: repo.description
     }));
   } catch (error) {
-    console.error("Error searching repositories:", error);
+    captureException(error, {
+      function: 'searchRepositories',
+      org,
+      searchTerm,
+      context: 'GitHub API client'
+    });
+    
     return [];
   }
 }
@@ -30,7 +37,13 @@ export async function fetchRepositoryLabels(owner: string, repo: string): Promis
     const labels = await fetchData<{name: string}[]>(`https://api.github.com/repos/${owner}/${repo}/labels?per_page=100`, 0, true);
     return labels.map(label => label.name);
   } catch (error) {
-    console.error(`Error fetching labels for ${owner}/${repo}:`, error);
+    captureException(error, {
+      function: 'fetchRepositoryLabels',
+      owner,
+      repo,
+      context: 'GitHub API client'
+    });
+    
     return [];
   }
 }
@@ -44,7 +57,13 @@ export async function fetchRepositoryWorkflows(owner: string, repo: string): Pro
       return parts[parts.length - 1];
     });
   } catch (error) {
-    console.error(`Error fetching workflows for ${owner}/${repo}:`, error);
+    captureException(error, {
+      function: 'fetchRepositoryWorkflows',
+      owner,
+      repo,
+      context: 'GitHub API client'
+    });
+    
     return [];
   }
 }

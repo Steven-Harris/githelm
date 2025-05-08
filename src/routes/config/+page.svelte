@@ -11,6 +11,7 @@
   } from "$lib/stores/repository-service";
   import { killSwitch } from "$stores/kill-switch.store";
   import { isMobile } from "$lib/stores/mobile.store";
+  import { captureException } from "$integrations/sentry";
 
   // State with proper types
   let combinedConfigs = $state<CombinedConfig[]>([]);
@@ -31,7 +32,7 @@
       await loadRepositoryConfigs();
       combinedConfigs = await getCombinedConfigs();
     } catch (error) {
-      console.error("Error loading configurations:", error);
+      captureException(error);
       throw error;
     } finally {
       loading = false;
@@ -53,8 +54,7 @@
       killSwitch.set(false);
       goto("/");
     } catch (error) {
-      errorMessage = "Failed to save configurations";
-      console.error("Error saving configurations:", error);
+      captureException(error);
     } finally {
       saveInProgress = false;
     }

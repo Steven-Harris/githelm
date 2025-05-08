@@ -4,6 +4,7 @@
   import type { Organization } from "$integrations/firebase";
   import { eventBus } from "$lib/stores/event-bus.store";
   import deleteSVG from "$assets/delete.svg";
+  import { captureException } from "$integrations/sentry";
 
   let organizations: Organization[] = $state([]);
   let newOrgName = $state("");
@@ -21,7 +22,7 @@
         organizations = configs.organizations || [];
       }
     } catch (error) {
-      console.error("Error loading organizations:", error);
+      captureException(error);
     } finally {
       loading = false;
     }
@@ -46,7 +47,7 @@
       
       eventBus.set('organizations-updated');
     } catch (error) {
-      console.error("Error adding organization:", error);
+      captureException(error);
     }
   }
   
@@ -67,7 +68,7 @@
       // Notify others about the change
       eventBus.set('organizations-updated');
     } catch (error) {
-      console.error("Error deleting organization:", error);
+      captureException(error);
     }
   }
 </script>

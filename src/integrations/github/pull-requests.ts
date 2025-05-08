@@ -77,7 +77,6 @@ export async function fetchPullRequestsWithGraphQL(
       const data = await executeGraphQLQuery(query, variables);
       return transformGraphQLPullRequests(data);
     } catch (error) {
-      console.error('Error fetching pull requests with GraphQL:', error);
       captureException(error, {
         context: 'GitHub Pull Requests',
         function: 'fetchPullRequestsWithGraphQL',
@@ -220,7 +219,6 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
       const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
       return squashReviewsByAuthor(reviews);
     } catch (error) {
-      console.error('Error fetching reviews:', error);
       captureException(error, {
         context: 'GitHub Pull Requests',
         function: 'fetchReviews',
@@ -328,7 +326,6 @@ export async function fetchMultipleRepositoriesPullRequests(
     const data = await executeGraphQLQuery(query);
     return transformMultiRepositoryPullRequests(data, configs);
   } catch (error) {
-    console.error('Error fetching pull requests with GraphQL:', error);
     captureException(error, {
       context: 'GitHub Pull Requests',
       function: 'fetchMultipleRepositoriesPullRequests',
@@ -342,7 +339,6 @@ export async function fetchMultipleRepositoriesPullRequests(
       try {
         results[`${config.org}/${config.repo}`] = await fetchPullRequests(config.org, config.repo, config.filters);
       } catch (e) {
-        console.error(`Failed to fetch pull requests for ${config.org}/${config.repo}:`, e);
         captureException(e, {
           context: 'GitHub Pull Requests',
           function: 'fetchMultipleRepositoriesPullRequests - fallback',
@@ -448,7 +444,6 @@ export async function searchRepositoryLabels(owner: string, repo: string): Promi
     
     return data.repository.labels.nodes.map((label: any) => label.name);
   } catch (error) {
-    console.error('Error fetching repository labels:', error);
     captureException(error, {
       context: 'GitHub Pull Requests',
       function: 'searchRepositoryLabels',

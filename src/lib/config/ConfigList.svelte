@@ -5,6 +5,7 @@
   import deleteSVG from "$assets/delete.svg";
   import { useDraggable } from "./useDraggable";
   import { isMobile } from "$lib/stores/mobile.store";
+  import { captureException } from "$integrations/sentry";
   
   interface RepoConfig {
     org: string;
@@ -46,7 +47,7 @@
     updateRepositoryConfigs(updatedConfigs)
       .then(() => onUpdate(updatedConfigs))
       .catch((error) => {
-        console.error("Error updating repository configs:", error);
+        captureException(error);
       });
   }
   

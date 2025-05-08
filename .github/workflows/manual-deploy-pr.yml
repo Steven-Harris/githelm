@@ -60,7 +60,7 @@ jobs:
         env:
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ENVIRONMENT: manual-preview
+          SENTRY_ENVIRONMENT: development
           PR_NUMBER: ${{ github.event.inputs.pr_number }}
           GITHUB_SHA: ${{ steps.pr_data.outputs.head_sha }}
           GITHUB_REF: ${{ steps.pr_data.outputs.head_ref }}

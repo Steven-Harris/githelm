@@ -1,5 +1,6 @@
 <script lang="ts">
   import { searchRepositories } from "$integrations/github";
+    import { captureException } from "$integrations/sentry";
   import type { SearchRepositoryResult } from "$lib/stores/repository-service";
   import { useDropdown } from "./useDropdown";
   import { useKeyboardNavigation } from "./useKeyboardNavigation";
@@ -48,7 +49,7 @@
           )
         }));
       } catch (error) {
-        console.error("Error searching repositories:", error);
+        captureException(error);
         searchResults = [];
       } finally {
         isLoading = false;

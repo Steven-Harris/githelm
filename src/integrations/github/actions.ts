@@ -109,7 +109,6 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
         const parsedRun = JSON.parse(run) as Job[];
         return parsedRun;
       } catch (e) {
-        console.error('Error parsing cached workflow jobs:', e);
         captureException(e, {
           context: 'GitHub Actions',
           function: 'fetchWorkflowJobs - cache parsing',
@@ -144,7 +143,6 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
         try {
           localStorage.setItem(key, JSON.stringify(workflows.jobs));
         } catch (cacheError) {
-          console.error('Error caching workflow jobs:', cacheError);
           captureException(cacheError, {
             context: 'GitHub Actions',
             function: 'fetchWorkflowJobs - cache storage',
@@ -158,7 +156,6 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
 
       return workflows.jobs;
     } catch (error) {
-      console.error(`Error fetching workflow jobs for ${org}/${repo} run ${runId}:`, error);
       captureException(error, {
         context: 'GitHub Actions',
         function: 'fetchWorkflowJobs',
@@ -188,7 +185,6 @@ export async function fetchMultipleWorkflowJobs(
             results[key] = JSON.parse(cachedData) as Job[];
             return false; // Don't need to fetch this run
           } catch (e) {
-            console.error('Error parsing cached workflow jobs:', e);
             captureException(e, {
               context: 'GitHub Actions',
               function: 'fetchMultipleWorkflowJobs - cache parsing',
@@ -216,7 +212,6 @@ export async function fetchMultipleWorkflowJobs(
                 const jobs = await fetchWorkflowJobs(run.org, run.repo, run.runId);
                 results[key] = jobs;
               } catch (error) {
-                console.error(`Error fetching jobs for ${run.org}/${run.repo} run ${run.runId}:`, error);
                 captureException(error, {
                   context: 'GitHub Actions',
                   function: 'fetchMultipleWorkflowJobs - batch processing',
@@ -238,7 +233,6 @@ export async function fetchMultipleWorkflowJobs(
       
       return results;
     } catch (error) {
-      console.error('Error in fetchMultipleWorkflowJobs:', error);
       captureException(error, {
         context: 'GitHub Actions',
         function: 'fetchMultipleWorkflowJobs',

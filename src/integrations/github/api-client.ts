@@ -3,6 +3,7 @@ import { startRequest, endRequest } from '$lib/stores/loading.store';
 import { setLastUpdated, setStorageObject } from '../storage';
 import { captureException } from '../sentry';
 import { getTokenSafely, getCurrentAuthState, queueApiCallIfNeeded, MAX_RETRIES, RETRY_DELAY_BASE_MS } from './auth';
+import { firebase } from '$integrations/firebase';
 
 export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
@@ -122,6 +123,11 @@ async function executeRequest<T>(
         await new Promise(resolve => setTimeout(resolve, delay));
         return executeRequest<T>(url, { ...options, retryCount: retryCount + 1 });
       }
+
+      if (response.status === 401) {
+        firebase.reLogin();
+        return 
+      }
       
       // Handle rate limiting
       const rateLimit = response.headers.get('X-RateLimit-Remaining');
@@ -133,6 +139,7 @@ async function executeRequest<T>(
           url,
           method,
           rateLimit,
+          statusCode: response.status,
           resetAt: response.headers.get('X-RateLimit-Reset')
         });
         throw rateLimitError;
@@ -158,7 +165,6 @@ async function executeRequest<T>(
       }
       
       if (responseBody?.errors) {
-        console.error('API errors:', responseBody.errors);
         const apiError = new Error(`API returned errors: ${JSON.stringify(responseBody.errors)}`);
         captureException(apiError, { 
           context: 'GitHub API error',
@@ -192,7 +198,6 @@ async function executeRequest<T>(
     
     return result.data || result;
   } catch (error) {
-    console.error(`Error executing request to ${url}:`, error);
     captureException(error, { 
       function: 'executeRequest', 
       url,

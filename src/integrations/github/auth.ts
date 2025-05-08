@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { firebase } from '../firebase';
 import { getGithubToken } from '../storage';
+import { captureException } from '$integrations/sentry';
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY_BASE_MS = 1000;
@@ -38,7 +39,11 @@ async function processApiQueue(): Promise<void> {
     try {
       await apiCall();
     } catch (error) {
-      console.error('Error processing queued API call:', error);
+      captureException(error, {
+        context: 'GitHub API Queue',
+        function: 'processApiQueue',
+        error: error.message
+      });
     }
   }
   
@@ -49,7 +54,6 @@ export function getCurrentAuthState(): string {
   try {
     return get(firebase.authState) || 'initializing';
   } catch (e) {
-    console.error('Error getting auth state:', e);
     return 'initializing';
   }
 }
@@ -106,6 +110,7 @@ export async function refreshTokenSafely(): Promise<string> {
     await firebase.refreshGithubToken();
     const newToken = getGithubToken();
     if (!newToken) {
+      firebase.reLogin();
       throw new Error('Failed to refresh GitHub token');
     }
     return newToken;

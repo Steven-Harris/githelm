@@ -73,6 +73,9 @@
               {#if $lastUpdated > 0}
                 <span class="mr-2">Updated:</span>
                 <span>{timeAgoInSeconds($lastUpdated)}</span>
+                <span class="ml-1">ago</span>
+              {:else if $killSwitch}
+                <span class="mr-2">Updating paused</span>
               {:else}
                 <span class="mr-2">Updating...</span>
               {/if}

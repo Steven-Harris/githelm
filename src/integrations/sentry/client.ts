@@ -77,14 +77,6 @@ function getEnvironmentName(): string {
  * Set up no-op functions when Sentry is disabled
  */
 function setupNoOpFunctions() {
-  const noop = () => {};
-  
-  // Replace Sentry functions with no-ops
-  (Sentry as any).captureException = noop;
-  (Sentry as any).captureMessage = noop;
-  (Sentry as any).setUser = noop;
-  (Sentry as any).setContext = noop;
-  (Sentry as any).addBreadcrumb = noop;
   
   // Set up global wrapper that does nothing
   if (typeof window !== 'undefined') {

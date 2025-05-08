@@ -8,6 +8,7 @@
   import RepositorySearch from "./RepositorySearch.svelte";
   import LabelFilter from "./LabelFilter.svelte";
   import MonitoringToggle from "./MonitoringToggle.svelte";
+  import { captureException } from "$integrations/sentry";
   
   interface SaveEventData {
     pullRequests?: {
@@ -72,7 +73,7 @@
     try {
       availablePRLabels = await fetchRepositoryLabels(selectedOrg, repoName);
     } catch (error) {
-      console.error("Error loading labels:", error);
+      captureException(error);
       availablePRLabels = [];
     } finally {
       isLoadingLabels = false;
@@ -87,7 +88,7 @@
     try {
       availableWorkflows = await fetchRepositoryWorkflows(selectedOrg, repoName);
     } catch (error) {
-      console.error("Error loading workflows:", error);
+      captureException(error);
       availableWorkflows = [];
     } finally {
       isLoadingWorkflows = false;

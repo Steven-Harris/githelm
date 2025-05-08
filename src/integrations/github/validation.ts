@@ -1,4 +1,5 @@
 // This function is seperate to solve a circular dependency issue
+import { captureException } from '../sentry/client';
 
 export async function isGithubTokenValid(githubToken: string): Promise<boolean> {
   if (!githubToken) {
@@ -22,7 +23,11 @@ export async function isGithubTokenValid(githubToken: string): Promise<boolean> 
     // If we get here, token is valid
     return response.ok;
   } catch (error) {
-    console.error('Error validating GitHub token:', error);
+    captureException(error, {
+      function: 'isGithubTokenValid',
+      context: 'GitHub token validation'
+    });
+    
     return false;
   }
 }

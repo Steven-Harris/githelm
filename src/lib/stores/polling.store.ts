@@ -2,6 +2,7 @@ import { getStorageObject, setStorageObject } from "$integrations/storage";
 import { readable } from "svelte/store";
 import { killSwitch } from "./kill-switch.store";
 import { manualTrigger } from "./last-updated.store";
+import { captureException } from "$integrations/sentry";
 
 type ValueSetter<T> = (value: T) => void;
 type AsyncCallback<T> = () => Promise<T>;
@@ -77,6 +78,10 @@ async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueS
     setStorageObject(key, data);
     set(data);
   } catch {
+    captureException(new Error(`Error fetching data for key: ${key}`), {
+      contexts: key,
+      action: "fetchData"
+    });
     setTimeout(() => fetchData(key, callback, set), RANDOM_RETRY_INTERVAL());
   } finally {
     ongoingRequests.delete(key);

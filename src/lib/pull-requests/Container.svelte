@@ -4,14 +4,18 @@
   import { pullRequestConfigs, getRepoKey, allPullRequests } from "$lib/stores/repository-service";
   import { repositoryFilters } from "$lib/stores/repository-filter.store";
   import type { RepoConfig } from "$integrations/firebase";
+    import { isLoading } from "$stores/loading.store";
   
   // Process repositories at render time to preserve original order
   let filteredRepos = $state<RepoConfig[]>([]);
-  
+  let firstLoad = $state<boolean>(true);
+
   $effect(() => {
     filteredRepos = $pullRequestConfigs.filter(repo => {
       const repoKey = getRepoKey(repo);
       const hasPRs = ($allPullRequests[repoKey] || []).length > 0;
+
+      firstLoad = false;
       
       // Only include if the corresponding filter is enabled
       return (hasPRs && $repositoryFilters.with_prs) || 
@@ -28,8 +32,12 @@
         <RepositoryFilter />
       {/if}
     </div>
-    
-    {#if $pullRequestConfigs.length === 0}
+
+    {#if $isLoading && filteredRepos.length == 0 || firstLoad}
+      <div class="flex items-center justify-center p-8 text-center hero-card">
+        Loading pull requests...
+      </div>
+    {:else if $pullRequestConfigs.length === 0}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
         <div class="text-lg text-[#8b949e] mb-4">
           No repositories configured for pull requests monitoring

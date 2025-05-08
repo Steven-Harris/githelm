@@ -11,8 +11,7 @@ import { getStorageObject, setStorageObject } from "$integrations/storage";
 import createPollingStore from "./polling.store";
 import { eventBus } from "./event-bus.store";
 import { writable, get, derived } from "svelte/store";
-import { page } from "$app/state";
-import { killSwitch } from "./kill-switch.store";
+import { captureException } from "$integrations/sentry";
 
 // Type definitions for repository service
 export type { SearchRepositoryResult } from "$integrations/github";
@@ -97,7 +96,11 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
         
         return Promise.resolve();
     } catch (error) {
-        console.error("Error saving repository config:", error);
+        captureException(error, {
+            action: 'saveRepositoryConfig',
+            context: 'Repository configuration management'
+        });
+        
         return Promise.reject(error);
     }
 }
@@ -205,7 +208,10 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
         
         return Promise.resolve();
     } catch (error) {
-        console.error("Error updating repository configs:", error);
+        captureException(error, {
+            action: 'updateRepositoryConfigs',
+            context: 'Repository configuration management'
+        });
         return Promise.reject(error);
     }
 }
@@ -307,7 +313,10 @@ export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promis
             }, {} as Record<string, PullRequest[]>)
         );
     } catch (error) {
-        console.error("Error refreshing pull request data:", error);
+        captureException(error, {
+            action: 'refreshPullRequestsData',
+            context: 'Repository configuration management'
+        });
     }
 }
 
@@ -351,7 +360,12 @@ export async function refreshActionsData(repoConfigs: RepoConfig[]): Promise<voi
             orderedRuns[key] = runs;
             fetchJobsForWorkflowRuns(config.org, config.repo, runs);
         } catch (error) {
-            console.error(`Error fetching actions data for ${key}:`, error);
+            captureException(error, {
+                function: 'refreshActionsData',
+                org: config.org,
+                repo: config.repo,
+                context: 'GitHub API client'
+            });
             const currentRuns = get(allWorkflowRuns);
             if (currentRuns[key]) orderedRuns[key] = currentRuns[key];
         }
@@ -367,7 +381,12 @@ function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]
             allWorkflowJobs.update(curr => ({ ...curr, ...jobs }));
         })
         .catch(error => {
-            console.error(`Error fetching jobs for ${org}/${repo}:`, error);
+            captureException(error, {
+                function: 'fetchJobsForWorkflowRuns',
+                org,
+                repo,
+                context: 'GitHub API client'
+            });
         });
 }
 

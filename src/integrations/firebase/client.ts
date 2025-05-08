@@ -80,6 +80,7 @@ class FirebaseAuthClient {
       } catch (error) {
         authState.set('error');
         await this.signOut();
+        captureException(error, { action: 'startTokenRefresh' }); 
         return;
       }
     }
@@ -96,7 +97,7 @@ class FirebaseAuthClient {
       authState.set('authenticated');
     } catch (error) {
       authState.set('error');
-      captureException(error, { action: 'refreshTokenPeriodically' }); // Track token refresh errors
+      captureException(error, { action: 'refreshTokenPeriodically' });
       await this.signOut();
     }
   }
@@ -108,6 +109,7 @@ class FirebaseAuthClient {
       });
       return response.status === 200;
     } catch {
+      captureException(new Error('Failed to validate GitHub token'), { action: 'validateGithubToken' });
       return false;
     }
   }
@@ -128,6 +130,7 @@ class FirebaseAuthClient {
     try {
       await this.reLogin();
     } catch (error) {
+      captureException(error, { action: 'refreshGithubToken' });
       throw error;
     } finally {
       this.authInProgress = false;
@@ -153,7 +156,6 @@ class FirebaseAuthClient {
       }
       
       if (!result.user) {
-        console.error('No credential or user returned from auth');
         captureException(new Error('No credential or user returned from auth')); // Track auth errors
         authState.set('error');
         return;
@@ -161,7 +163,6 @@ class FirebaseAuthClient {
       
       const additionalUserInfo = (result as any)._tokenResponse;
       if (!additionalUserInfo?.oauthAccessToken) {
-        console.error('No GitHub token found in auth response');
         captureException(new Error('No GitHub token found in auth response')); // Track auth errors
         authState.set('error');
         return;
@@ -170,8 +171,7 @@ class FirebaseAuthClient {
       setGithubToken(additionalUserInfo.oauthAccessToken);
       authState.set('authenticated');
     } catch (error) {
-      console.error('Error signing in:', error);
-      captureException(error, { action: 'signIn' }); // Track sign-in errors
+      captureException(error, { action: 'signIn' });
       authState.set('error');
     } finally {
       this.authInProgress = false;
@@ -191,7 +191,7 @@ class FirebaseAuthClient {
       setGithubToken(undefined);
       await this.signIn();
     } catch (error) {
-      console.error('Error during relogin:', error);
+      captureException(error, { action: 'reLogin' });
       authState.set('error');
     } finally {
       this.authInProgress = false;
