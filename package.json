@@ -31,7 +31,7 @@
   },
   "homepage": "https://githelm.com",
   "dependencies": {
-    "@sentry/browser": "^9.17.0",
+    "@sentry/browser": "^9.22.0",
     "@sentry/svelte": "^9.15.0",
     "@sentry/sveltekit": "^9.15.0",
     "@sentry/vite-plugin": "^3.4.0",
@@ -55,7 +55,7 @@
     "firebase-tools": "^14.2.2",
     "jsdom": "^26.1.0",
     "msw": "^2.7.5",
-    "sharp": "0.34.1",
+    "sharp": "0.34.2",
     "sharp-ico": "0.1.5",
     "svelte": "^5.27.0",
     "svelte-check": "^4.1.6",
