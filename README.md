@@ -18,6 +18,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 - **Testing**: Vitest for unit testing, Playwright for E2E testing
 
 ## Using the Site
+
 ### Features
 
 - **Monitor Pull Requests**: Configure and monitor pull requests across multiple repositories.
@@ -35,6 +36,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 #### Authentication
 
 1. **Login**:
+
    - Click the "Login with GitHub" button.
    - Authenticate with your GitHub account.
    - Authorize any organization you wish to monitor.
@@ -46,6 +48,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 #### Setting Up Repositories
 
 1. **Add a Repository**:
+
    - Navigate to the "Pull Requests" or "Actions" section (or tabs if you're on mobile).
    - Click the "Edit" button to enter the configuration mode.
    - Select from your configured organizations or enter a new one.
@@ -55,10 +58,12 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
    - Click the "Add" button to add the repository to the configuration.
 
 2. **Manage Organizations**:
+
    - Add and save organizations you frequently work with.
    - Organizations are stored in Firestore for persistent access.
 
 3. **Reorder Configurations**:
+
    - Drag and drop repository configurations to reorder them.
    - Visual feedback shows the moving configuration with lowered opacity.
 
@@ -69,6 +74,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 #### Adding Filters
 
 1. **Add a Filter**:
+
    - In the configuration mode, search and select filters from available options.
    - Click the "Add Filter" button to add the filter.
 
@@ -78,6 +84,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 ### Viewing Pull Requests and Actions
 
 1. **Pull Requests**:
+
    - Navigate to the "Pull Requests" tab to view monitored pull requests.
    - Filter pull requests by repository using the repository filter.
    - View pull request titles, statuses, and review information.
@@ -108,11 +115,13 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 ### Core Components
 
 1. **Authentication System**
+
    - Firebase authentication with GitHub provider
    - GitHub token management and auto-refresh
    - Auth state management with persistent local storage
 
 2. **Data Fetching and Caching**
+
    - Polling mechanism to periodically fetch updates (60-second intervals)
    - Intelligent caching to prevent redundant API calls
    - Rate limit detection and handling
@@ -127,10 +136,12 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 ## Future Improvements
 
 ### Coming Soon
+
 - Adjustable UI layouts
 - Integration of PR check statuses
 
 ### Long-term Vision
+
 - In-app PR viewing
 - Inline code diff review
 - PR comment capabilities from within the app

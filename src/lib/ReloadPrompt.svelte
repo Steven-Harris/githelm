@@ -1,31 +1,34 @@
 <script lang="ts">
-  import { useRegisterSW } from "virtual:pwa-register/svelte";
+  import { useRegisterSW } from 'virtual:pwa-register/svelte';
 
   const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
     immediate: true,
     onRegisteredSW(swUrl, r) {
       r &&
-        setInterval(async () => {
-          if (r.installing || !navigator) return;
+        setInterval(
+          async () => {
+            if (r.installing || !navigator) return;
 
-          if ("connection" in navigator && !navigator.onLine) return;
+            if ('connection' in navigator && !navigator.onLine) return;
 
-          const resp = await fetch(swUrl, {
-            cache: "no-store",
-            headers: {
-              cache: "no-store",
-              "cache-control": "no-cache",
-            },
-          });
+            const resp = await fetch(swUrl, {
+              cache: 'no-store',
+              headers: {
+                cache: 'no-store',
+                'cache-control': 'no-cache',
+              },
+            });
 
-          if (resp?.status === 200) await r.update();
-        }, 60 * 60 * 1000); // Check for updates once per hour
+            if (resp?.status === 200) await r.update();
+          },
+          60 * 60 * 1000
+        ); // Check for updates once per hour
     },
     onRegisterError(error) {
-      console.error("Service worker registration error", error);
+      console.error('Service worker registration error', error);
     },
   });
-  
+
   const close = () => {
     offlineReady.set(false);
     needRefresh.set(false);
@@ -49,9 +52,7 @@
     </div>
     <div class="buttons">
       {#if $needRefresh}
-        <button onclick={update} class="update-button">
-          Update
-        </button>
+        <button onclick={update} class="update-button"> Update </button>
       {/if}
       <button onclick={close} class="close-button">
         {$offlineReady ? 'Close' : 'Dismiss'}
@@ -76,17 +77,17 @@
     color: white;
     font-weight: 500;
   }
-  
+
   .pwa-toast .message {
     margin-bottom: 12px;
     font-size: 16px;
   }
-  
+
   .buttons {
     display: flex;
     gap: 8px;
   }
-  
+
   .pwa-toast button {
     border: none;
     outline: none;
@@ -96,22 +97,22 @@
     cursor: pointer;
     transition: background-color 0.2s;
   }
-  
+
   .update-button {
     background-color: #3b82f6;
     color: white;
   }
-  
+
   .update-button:hover {
     background-color: #2563eb;
   }
-  
+
   .close-button {
     background-color: transparent;
     color: #d1d5db;
     border: 1px solid #4b5563;
   }
-  
+
   .close-button:hover {
     background-color: #374151;
   }

@@ -1,33 +1,33 @@
 <script lang="ts">
-  import { goto } from "$app/navigation";
-  import { page } from "$app/state";
-  import helmSVG from "$assets/helm.svg";
-  import refreshSVG from "$assets/refresh.svg";
-  import { firebase } from "$integrations/firebase";
-  import { killSwitch } from "$lib/stores/kill-switch.store";
-  import { manualTrigger, lastUpdatedStore } from "$lib/stores/last-updated.store";
-  import { isLoading } from "$lib/stores/loading.store";
-  import { eventBus } from "$lib/stores/event-bus.store";
-  import { isMobile } from "$lib/stores/mobile.store";
-  import { timeAgoInSeconds } from "./utils/date-utils";
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import helmSVG from '$assets/helm.svg';
+  import refreshSVG from '$assets/refresh.svg';
+  import { firebase } from '$integrations/firebase';
+  import { killSwitch } from '$lib/stores/kill-switch.store';
+  import { manualTrigger, lastUpdatedStore } from '$lib/stores/last-updated.store';
+  import { isLoading } from '$lib/stores/loading.store';
+  import { eventBus } from '$lib/stores/event-bus.store';
+  import { isMobile } from '$lib/stores/mobile.store';
+  import { timeAgoInSeconds } from './utils/date-utils';
 
   let { signedIn } = $props();
-  
+
   // Get the actual store instance
   const lastUpdated = lastUpdatedStore();
-  
+
   function manualRefresh() {
     manualTrigger.set(true);
   }
-  
+
   function logout() {
     firebase.signOut();
   }
-  
+
   function saveConfig() {
     eventBus.set('save-config');
   }
-  
+
   function cancelConfig() {
     killSwitch.set(false);
     goto('/');
@@ -46,26 +46,16 @@
         <img src={helmSVG} alt="GitHelm logo" class="w-10 h-10 mr-2" />
         <h1 class="text-2xl font-bold text-[#f0f6fc]">GitHelm</h1>
       </div>
-      
+
       <div class="flex items-center">
         {#if signedIn}
           {#if page.url.pathname === '/config'}
             <!-- Save/Cancel buttons for config page -->
-            <button 
-              class="nav-button github-btn" 
-              onclick={saveConfig} 
-              aria-label="save configuration"
-              title="Save configuration"
-            >
+            <button class="nav-button github-btn" onclick={saveConfig} aria-label="save configuration" title="Save configuration">
               <span>Save</span>
             </button>
 
-            <button 
-              class="nav-button ml-2" 
-              onclick={cancelConfig} 
-              aria-label="cancel configuration"
-              title="Cancel configuration"
-            >
+            <button class="nav-button ml-2" onclick={cancelConfig} aria-label="cancel configuration" title="Cancel configuration">
               <span>Cancel</span>
             </button>
           {:else}
@@ -80,15 +70,23 @@
                 <span class="mr-2">Updating...</span>
               {/if}
             </div>
-            <button 
-              class="nav-button tooltip-container" 
-              onclick={navigateToConfig} 
-              aria-label="configure repositories"
-              title="Configure repositories"
-            >
+            <button class="nav-button tooltip-container" onclick={navigateToConfig} aria-label="configure repositories" title="Configure repositories">
               {#if $isMobile}
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings">
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-settings"
+                >
+                  <path
+                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                  ></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
                 <span class="tooltip">Configure</span>
@@ -97,13 +95,7 @@
               {/if}
             </button>
 
-            <button 
-              class="nav-button ml-2 tooltip-container" 
-              onclick={manualRefresh}
-              disabled={$isLoading || $killSwitch}
-              aria-label="refresh data"
-              title="Refresh data"
-            >
+            <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
               {#if $isLoading}
                 <div class="animate-spin">
                   <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
@@ -117,10 +109,21 @@
                 <span class="tooltip">{$isLoading ? 'Loading...' : 'Refresh'}</span>
               {/if}
             </button>
-            
+
             <button class="nav-button ml-2 tooltip-container" onclick={logout}>
               {#if $isMobile}
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-log-out"
+                >
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                   <polyline points="16 17 21 12 16 7"></polyline>
                   <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -161,7 +164,7 @@
     background-color: rgba(48, 54, 61, 0.8);
     border-color: #8b949e;
   }
-  
+
   .nav-button:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.4);
@@ -176,7 +179,7 @@
     background-color: var(--primary-accent-color);
     border-color: rgba(240, 246, 252, 0.1);
   }
-  
+
   .github-btn:hover {
     background-color: var(--primary-accent-hover-color);
     border-color: rgba(240, 246, 252, 0.2);
@@ -189,12 +192,12 @@
       padding: 0.5rem;
     }
   }
-  
+
   /* Tooltip styles */
   .tooltip-container {
     position: relative;
   }
-  
+
   .tooltip {
     visibility: hidden;
     position: absolute;
@@ -215,15 +218,15 @@
     opacity: 0;
     transition: opacity 0.3s;
   }
-  
+
   .tooltip-container:hover .tooltip {
     visibility: visible;
     opacity: 1;
   }
-  
+
   /* Add a little arrow to the tooltip */
   .tooltip::after {
-    content: "";
+    content: '';
     position: absolute;
     bottom: 100%;
     left: 50%;
