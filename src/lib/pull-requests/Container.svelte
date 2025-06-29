@@ -32,8 +32,10 @@
       {/if}
     </div>
 
-    {#if ($isLoading && filteredRepos.length == 0) || firstLoad}
-      <div class="flex items-center justify-center p-8 text-center hero-card">Loading pull requests...</div>
+    {#if $isLoading && firstLoad}
+      <div class="flex items-center justify-center p-8 text-center hero-card">
+        Loading pull requests...
+      </div>
     {:else if $pullRequestConfigs.length === 0}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
         <div class="text-lg text-[#8b949e] mb-4">No repositories configured for pull requests monitoring</div>

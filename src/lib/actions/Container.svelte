@@ -37,6 +37,11 @@
       <h2 class="hero-title">Actions</h2>
       <WorkflowStatusFilter />
     </div>
+    
+    {#if $isLoading && firstLoad}
+      <div class="flex items-center justify-center p-8 text-center hero-card">
+        Loading actions...
+      </div>
 
     {#if $isLoading && $actionsConfigs.length > 0 && firstLoad}
       <div class="flex items-center justify-center p-8 text-center hero-card">Loading actions...</div>
