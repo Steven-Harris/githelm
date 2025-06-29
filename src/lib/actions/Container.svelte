@@ -42,9 +42,6 @@
       <div class="flex items-center justify-center p-8 text-center hero-card">
         Loading actions...
       </div>
-
-    {#if $isLoading && $actionsConfigs.length > 0 && firstLoad}
-      <div class="flex items-center justify-center p-8 text-center hero-card">Loading actions...</div>
     {:else if $actionsConfigs.length === 0}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
         <div class="text-lg text-[#8b949e] mb-4">No repositories configured for actions monitoring</div>

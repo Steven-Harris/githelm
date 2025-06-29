@@ -6,6 +6,7 @@
   import Tabs from "$lib/Tabs.svelte";
   import { loadRepositoryConfigs } from "$lib/stores/repository-service";
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
+  import { pwaInfo } from 'virtual:pwa-info';
   import "../style.css";
   import { derived } from "svelte/store";
 
@@ -36,6 +37,9 @@
   {#each pwaAssetsHead.links as link}
     <link {...link} />
   {/each}
+  {#if pwaInfo}
+    <link rel="manifest" href="{pwaInfo.webManifest.href}" />
+  {/if}
 </svelte:head>
 
 <Header signedIn={signedIn && $authState === 'authenticated'} />

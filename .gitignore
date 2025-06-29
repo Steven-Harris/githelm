@@ -11,6 +11,7 @@ pnpm-debug.log*
 
 # Vite build output
 dist/
+dev-dist/
 
 # Svelte build output
 .svelte-kit/

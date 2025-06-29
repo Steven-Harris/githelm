@@ -126,15 +126,24 @@ const config: UserConfig = defineConfig({
             src: 'pwa-64x64.png',
             sizes: '64x64',
             type: 'image/png',
+            purpose: 'any',
           },
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any',
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'maskable-icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
             purpose: 'maskable',
           },
         ],
@@ -147,12 +156,10 @@ const config: UserConfig = defineConfig({
         // Updated glob patterns to match the actual output structure
         globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
         clientsClaim: true,
-        skipWaiting: false,
-        // Don't add globIgnores that might conflict with the build
-        globIgnores: [],
+        skipWaiting: true, // Changed to true to ensure immediate activation
       },
       devOptions: {
-        enabled: false,
+        enabled: true, // Enable PWA in development for testing
         suppressWarnings: process.env.SUPPRESS_WARNING === 'true',
         type: 'module',
         navigateFallback: '/',
