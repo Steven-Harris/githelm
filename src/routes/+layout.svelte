@@ -37,7 +37,7 @@
   {#each pwaAssetsHead.links as link}
     <link {...link} />
   {/each}
-  {#if pwaInfo}
+  {#if pwaInfo?.webManifest?.href}
     <link rel="manifest" href="{pwaInfo.webManifest.href}" />
   {/if}
 </svelte:head>
