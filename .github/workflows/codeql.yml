@@ -20,7 +20,7 @@ jobs:
       matrix:
         include:
         - language: javascript-typescript
-          build-mode: autobuild
+          build-mode: none
         
     steps:
     - name: Checkout repository
@@ -36,24 +36,27 @@ jobs:
         build-mode: ${{ matrix.build-mode }}
         queries: security-extended,security-and-quality
     
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        run_install: false
-      
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'pnpm'
+    # For JavaScript/TypeScript with build-mode: none, we don't need to build
+    # CodeQL will analyze the source code directly
+    # 
+    # - name: Install pnpm
+    #   uses: pnpm/action-setup@v4
+    #   with:
+    #     run_install: false
+    #   
+    # - name: Set up Node.js
+    #   uses: actions/setup-node@v4
+    #   with:
+    #     node-version: '20'
+    #     cache: 'pnpm'
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-      
-    - name: Build project
-      run: pnpm run build
-      env:
-        NODE_ENV: production
+    # - name: Install dependencies
+    #   run: pnpm install --frozen-lockfile
+    #   
+    # - name: Build project
+    #   run: pnpm run build
+    #   env:
+    #     NODE_ENV: production
 
     # Upload the build artifacts to make them available for review
     # - name: Upload build artifact
