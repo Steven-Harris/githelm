@@ -148,18 +148,23 @@ const config: UserConfig = defineConfig({
           },
         ],
       },
-      // Updated glob patterns for SvelteKit's static adapter output structure
-      injectManifest: {
-        globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
-      },
+      // Configure workbox to properly handle SvelteKit's output structure
       workbox: {
-        // Updated glob patterns to match the actual output structure
-        globPatterns: ['**/*.{js,css,ico,png,svg,webp,woff,woff2}'],
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,svg,webp,woff,woff2}',
+        ],
+        globIgnores: [
+          'node_modules/**/*',
+          'dev-dist/**'
+        ],
         clientsClaim: true,
-        skipWaiting: true, // Changed to true to ensure immediate activation
+        skipWaiting: true,
+        // Handle SvelteKit's routing
+        navigateFallback: '/',
+        navigateFallbackDenylist: [/^\/_app\//, /^\/api\//],
       },
       devOptions: {
-        enabled: true, // Enable PWA in development for testing
+        enabled: false, // Enable PWA in development for testing
         suppressWarnings: process.env.SUPPRESS_WARNING === 'true',
         type: 'module',
         navigateFallback: '/',
