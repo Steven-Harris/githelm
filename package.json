@@ -34,6 +34,10 @@
     "url": "https://github.com/Steven-Harris/githelm/issues"
   },
   "homepage": "https://githelm.com",
+  "engines": {
+    "node": ">=20.19.0 || >=22.12.0",
+    "pnpm": ">=9.0.0"
+  },
   "dependencies": {
     "@sentry/browser": "^9.33.0",
     "@sentry/svelte": "^9.33.0",
@@ -79,7 +83,7 @@
     "typescript-eslint": "^8.35.0",
     "vite": "^7.0.0",
     "vite-plugin-compression": "^0.5.1",
-    "vite-plugin-pwa": "^1.0.0",
+    "vite-plugin-pwa": "^1.0.1",
     "vitest": "^3.2.4",
     "workbox-window": "^7.3.0"
   },

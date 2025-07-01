@@ -72,6 +72,7 @@ const config: UserConfig = defineConfig({
     // Improve build performance
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
+    target: 'baseline-widely-available',
   },
 
   // Optimize development server and caching
