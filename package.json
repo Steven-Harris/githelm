@@ -98,6 +98,9 @@
       "re2",
       "sharp",
       "svelte-preprocess"
-    ]
+    ],
+    "overrides": {
+      "cookie": ">=0.7.0"
+    }
   }
 }
