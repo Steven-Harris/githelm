@@ -95,7 +95,6 @@ class FirebaseAuthClient {
       authState.set('authenticated');
     } catch (error) {
       authState.set('error');
-      captureException(error, { action: 'refreshTokenPeriodically' });
       await this.signOut();
     }
   }
