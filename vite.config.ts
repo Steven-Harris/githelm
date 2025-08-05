@@ -1,4 +1,4 @@
-import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { sentrySvelteKit } from '@sentry/sveltekit';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
@@ -107,6 +107,26 @@ const config: UserConfig = defineConfig({
 
   plugins: [
     tailwindcss(),
+    // Sentry SvelteKit plugin must come before sveltekit()
+    ...(shouldEnableSentry()
+      ? [
+          sentrySvelteKit({
+            sourceMapsUploadOptions: {
+              org: 'steven-harris-development',
+              project: 'githelm',
+              authToken: process.env.SENTRY_AUTH_TOKEN,
+              release: {
+                name: getReleaseVersion(),
+              },
+            },
+            // Auto-instrument load functions for better tracing
+            autoInstrument: {
+              load: true,
+              serverLoad: true,
+            },
+          }),
+        ]
+      : []),
     sveltekit(),
     SvelteKitPWA({
       srcDir: './src',
@@ -174,50 +194,6 @@ const config: UserConfig = defineConfig({
         includeVersionFile: true,
       },
     }),
-
-    // Only add the Sentry plugin when needed
-    ...(shouldEnableSentry()
-      ? [
-          sentryVitePlugin({
-            org: 'steven-harris-development',
-            project: 'githelm',
-
-            // Auth token is loaded from environment variables
-            authToken: process.env.SENTRY_AUTH_TOKEN,
-
-            // Configure source maps uploading
-            sourcemaps: {
-              // Specify the directory containing source maps with more specific pattern
-              assets: ['./dist/**/*.js', './dist/**/*.map'],
-              // Delete source maps after upload to reduce bundle size
-              filesToDeleteAfterUpload: './dist/**/*.map',
-            },
-
-            // Release information
-            release: {
-              // Use consistent release naming
-              name: getReleaseVersion(),
-              // Add GitHub repository information for better error resolution
-              ...(process.env.GITHUB_REPOSITORY
-                ? {
-                    vcs: {
-                      repository: process.env.GITHUB_REPOSITORY,
-                      commit: process.env.GITHUB_SHA,
-                    },
-                  }
-                : {}),
-              // Set commits configuration
-              setCommits: {
-                auto: true,
-              },
-            },
-
-            // Disable telemetry and enable debugging in development
-            telemetry: false,
-            debug: process.env.NODE_ENV === 'development',
-          }),
-        ]
-      : []),
   ],
 });
 
