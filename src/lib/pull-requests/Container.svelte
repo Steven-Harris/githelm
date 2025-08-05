@@ -10,16 +10,23 @@
   let filteredRepos = $state<RepoConfig[]>([]);
   let firstLoad = $state<boolean>(true);
 
+  // Filter repositories based on whether they have pull requests and the current filters
   $effect(() => {
     filteredRepos = $pullRequestConfigs.filter((repo) => {
       const repoKey = getRepoKey(repo);
-      const hasPRs = ($allPullRequests[repoKey] || []).length > 0;
-
-      firstLoad = false;
-
+      const pullRequests = $allPullRequests[repoKey] || [];
+      const hasPRs = pullRequests.length > 0;
+      
       // Only include if the corresponding filter is enabled
       return (hasPRs && $repositoryFilters.with_prs) || (!hasPRs && $repositoryFilters.without_prs);
     });
+  });
+
+  // Track first load state
+  $effect(() => {
+    if (!$isLoading) {
+      firstLoad = false;
+    }
   });
 </script>
 
