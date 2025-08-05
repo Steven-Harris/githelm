@@ -6,7 +6,18 @@ import type { Workflow, WorkflowRun, WorkflowJobs, Job, Step } from './types';
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      return Promise.all(actions.map((action) => fetchSingleWorkflow(org, repo, action)));
+      // Process workflows sequentially instead of in parallel to reduce rate limiting
+      const results: Workflow[] = [];
+      for (const action of actions) {
+        const workflow = await fetchSingleWorkflow(org, repo, action);
+        results.push(workflow);
+        
+        // Add small delay between workflow requests
+        if (actions.indexOf(action) < actions.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+      }
+      return results;
     } catch (error) {
       // Don't report rate limit errors to Sentry - they're expected behavior
       if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
@@ -245,37 +256,40 @@ export async function fetchMultipleWorkflowJobs(workflowRuns: Array<{ org: strin
 
       // If we have runs that need fetching
       if (cachedRuns.length > 0) {
-        // Use batched requests with limited concurrency to avoid rate limits
-        const batchSize = 3; // Conservative batch size to avoid API rate limits
+        // Use very conservative batching to avoid rate limits
+        const batchSize = 2; // Reduced from 3 to be more conservative
         for (let i = 0; i < cachedRuns.length; i += batchSize) {
           const batch = cachedRuns.slice(i, i + batchSize);
 
-          // Wait for each batch to complete
-          await Promise.all(
-            batch.map(async (run) => {
-              try {
-                const key = `${run.org}/${run.repo}:${run.runId}`;
-                const jobs = await fetchWorkflowJobs(run.org, run.repo, run.runId);
-                results[key] = jobs;
-              } catch (error) {
-                // Don't report rate limit errors to Sentry - they're expected behavior
-                if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
-                  captureException(error, {
-                    context: 'GitHub Actions',
-                    function: 'fetchMultipleWorkflowJobs - batch processing',
-                    org: run.org,
-                    repo: run.repo,
-                    runId: run.runId,
-                  });
-                }
-                results[`${run.org}/${run.repo}:${run.runId}`] = [];
+          // Process items in batch sequentially instead of parallel to reduce load
+          for (const run of batch) {
+            try {
+              const key = `${run.org}/${run.repo}:${run.runId}`;
+              const jobs = await fetchWorkflowJobs(run.org, run.repo, run.runId);
+              results[key] = jobs;
+              
+              // Add small delay between individual requests
+              if (batch.indexOf(run) < batch.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
               }
-            })
-          );
+            } catch (error) {
+              // Don't report rate limit errors to Sentry - they're expected behavior
+              if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+                captureException(error, {
+                  context: 'GitHub Actions',
+                  function: 'fetchMultipleWorkflowJobs - batch processing',
+                  org: run.org,
+                  repo: run.repo,
+                  runId: run.runId,
+                });
+              }
+              results[`${run.org}/${run.repo}:${run.runId}`] = [];
+            }
+          }
 
-          // Add a delay between batches to avoid hitting rate limits
+          // Increased delay between batches to be more conservative
           if (i + batchSize < cachedRuns.length) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // Increased from 1000ms to 2000ms
           }
         }
       }
