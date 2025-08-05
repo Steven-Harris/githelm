@@ -85,12 +85,15 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
   }
 
   return data.repository.pullRequests.edges.map((edge: any) => {
-    const node = edge.node;
+    const node = edge?.node;
+    if (!node) {
+      return null;
+    }
 
-    const labels = node.labels.edges.map((labelEdge: any) => ({
-      name: labelEdge.node.name,
-      color: labelEdge.node.color,
-    }));
+    const labels = node.labels?.edges?.map((labelEdge: any) => ({
+      name: labelEdge?.node?.name || '',
+      color: labelEdge?.node?.color || '',
+    })) || [];
 
     return {
       id: parseInt(node.id.split('_').pop()),
@@ -128,9 +131,9 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
         eyes: 0,
       },
       state_reason: null,
-      reviews: transformGraphQLReviews(node.reviews.edges),
+      reviews: transformGraphQLReviews(node.reviews?.edges || []),
     };
-  });
+  }).filter(Boolean); // Remove any null entries
 }
 
 function transformGraphQLReviews(reviewEdges: any[]): Review[] {
@@ -349,12 +352,15 @@ function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): R
     }
 
     results[repoKey] = repoData.pullRequests.edges.map((edge: any) => {
-      const node = edge.node;
+      const node = edge?.node;
+      if (!node) {
+        return null;
+      }
 
-      const labels = node.labels.edges.map((labelEdge: any) => ({
-        name: labelEdge.node.name,
-        color: labelEdge.node.color,
-      }));
+      const labels = node.labels?.edges?.map((labelEdge: any) => ({
+        name: labelEdge?.node?.name || '',
+        color: labelEdge?.node?.color || '',
+      })) || [];
 
       return {
         id: parseInt(node.id.split('_').pop()),
@@ -392,9 +398,9 @@ function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): R
           eyes: 0,
         },
         state_reason: null,
-        reviews: transformGraphQLReviews(node.reviews.edges),
+        reviews: transformGraphQLReviews(node.reviews?.edges || []),
       };
-    });
+    }).filter(Boolean); // Remove any null entries
   });
 
   return results;

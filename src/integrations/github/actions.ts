@@ -24,14 +24,40 @@ async function fetchSingleWorkflow(org: string, repo: string, action: string): P
   try {
     const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
 
+    // Validate that the response has the expected structure
+    if (!data) {
+      throw new Error('No data returned from GitHub API');
+    }
+
+    if (!data.workflow_runs || !Array.isArray(data.workflow_runs)) {
+      console.warn(`Invalid workflow_runs data for ${org}/${repo}/${action}:`, data);
+      // Return a default workflow structure if the API response is invalid
+      return {
+        name: action,
+        total_count: 0,
+        workflow_runs: [],
+      };
+    }
+
     const processedWorkflowRuns = await Promise.all(data.workflow_runs.map((run) => processWorkflowRun(org, repo, run)));
 
     return {
       name: action,
-      total_count: data.total_count,
+      total_count: data.total_count || 0,
       workflow_runs: processedWorkflowRuns,
     };
   } catch (error) {
+    // Don't report network errors to Sentry, but log them
+    if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      console.warn(`Network error fetching workflow ${org}/${repo}/${action}:`, error.message);
+      // Return empty workflow instead of throwing
+      return {
+        name: action,
+        total_count: 0,
+        workflow_runs: [],
+      };
+    }
+
     captureException(error, {
       context: 'GitHub Actions',
       function: 'fetchSingleWorkflow',
@@ -118,6 +144,17 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
     try {
       const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
 
+      // Validate that the response has the expected structure
+      if (!workflows) {
+        console.warn(`No workflow jobs data returned for ${org}/${repo} run ${runId}`);
+        return [];
+      }
+
+      if (!workflows.jobs || !Array.isArray(workflows.jobs)) {
+        console.warn(`Invalid jobs data for ${org}/${repo} run ${runId}:`, workflows);
+        return [];
+      }
+
       let allSuccess = true;
 
       // Filter jobs based on status and conclusion
@@ -152,6 +189,12 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
 
       return workflows.jobs;
     } catch (error) {
+      // Don't report network errors to Sentry, but log them
+      if (error instanceof Error && error.message.includes('Failed to fetch')) {
+        console.warn(`Network error fetching workflow jobs for ${org}/${repo} run ${runId}:`, error.message);
+        return [];
+      }
+
       captureException(error, {
         context: 'GitHub Actions',
         function: 'fetchWorkflowJobs',
