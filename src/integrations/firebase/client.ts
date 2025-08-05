@@ -94,6 +94,14 @@ class FirebaseAuthClient {
       await this.refreshGithubToken();
       authState.set('authenticated');
     } catch (error) {
+      // Log the error for debugging but don't always report to Sentry
+      console.warn('Token refresh failed:', error);
+      
+      // Only report to Sentry if it's not a network error
+      if (error instanceof Error && !error.message.includes('Failed to fetch')) {
+        captureException(error, { action: 'refreshTokenPeriodically' });
+      }
+      
       authState.set('error');
       await this.signOut();
     }
@@ -105,9 +113,19 @@ class FirebaseAuthClient {
         headers: { Authorization: `token ${token}` },
       });
       return response.status === 200;
-    } catch {
-      captureException(new Error('Failed to validate GitHub token'), {
+    } catch (error) {
+      // Don't report network errors to Sentry as they're expected and not actionable
+      // Only log if it's not a typical network/fetch error
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        // Network error - this is expected and should be handled gracefully
+        console.warn('GitHub API request failed due to network issues:', error.message);
+        return false;
+      }
+      
+      // Report unexpected errors that aren't network-related
+      captureException(error, {
         action: 'validateGithubToken',
+        context: 'Unexpected error during token validation',
       });
       return false;
     }

@@ -47,6 +47,26 @@ export async function postData(url: string, body: any, skipLoadingIndicator = fa
       body: JSON.stringify(body),
     });
   } catch (error) {
+    // Handle network errors gracefully - don't report to Sentry as they're expected
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.warn(`GitHub API network error for POST ${url}:`, error.message);
+      throw error; // Re-throw but don't report to Sentry
+    }
+    
+    // Handle other network-related errors that shouldn't be reported
+    if (error instanceof Error) {
+      const networkErrorKeywords = ['fetch', 'network', 'connection', 'timeout', 'ECONNREFUSED', 'ENOTFOUND'];
+      const isNetworkError = networkErrorKeywords.some(keyword => 
+        error.message.toLowerCase().includes(keyword.toLowerCase())
+      );
+      
+      if (isNetworkError) {
+        console.warn(`GitHub API network error for POST ${url}:`, error.message);
+        throw error; // Re-throw but don't report to Sentry
+      }
+    }
+    
+    // Report non-network errors to Sentry
     captureException(error, {
       function: 'postData',
       url,
@@ -177,6 +197,26 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
 
     return result.data || result;
   } catch (error) {
+    // Handle network errors gracefully - don't report to Sentry as they're expected
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.warn(`GitHub API network error for ${url}:`, error.message);
+      throw error; // Re-throw but don't report to Sentry
+    }
+    
+    // Handle other network-related errors that shouldn't be reported
+    if (error instanceof Error) {
+      const networkErrorKeywords = ['fetch', 'network', 'connection', 'timeout', 'ECONNREFUSED', 'ENOTFOUND'];
+      const isNetworkError = networkErrorKeywords.some(keyword => 
+        error.message.toLowerCase().includes(keyword.toLowerCase())
+      );
+      
+      if (isNetworkError) {
+        console.warn(`GitHub API network error for ${url}:`, error.message);
+        throw error; // Re-throw but don't report to Sentry
+      }
+    }
+    
+    // Report non-network errors to Sentry
     captureException(error, {
       function: 'executeRequest',
       url,
