@@ -22,12 +22,15 @@ export async function searchRepositories(org: string, searchTerm: string): Promi
       description: repo?.description || null,
     }));
   } catch (error) {
-    captureException(error, {
-      function: 'searchRepositories',
-      org,
-      searchTerm,
-      context: 'GitHub API client',
-    });
+    // Don't report rate limit errors to Sentry - they're expected behavior
+    if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+      captureException(error, {
+        function: 'searchRepositories',
+        org,
+        searchTerm,
+        context: 'GitHub API client',
+      });
+    }
 
     return [];
   }
@@ -43,12 +46,15 @@ export async function fetchRepositoryLabels(owner: string, repo: string): Promis
     
     return labels.map((label) => label?.name || '').filter(Boolean);
   } catch (error) {
-    captureException(error, {
-      function: 'fetchRepositoryLabels',
-      owner,
-      repo,
-      context: 'GitHub API client',
-    });
+    // Don't report rate limit errors to Sentry - they're expected behavior
+    if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+      captureException(error, {
+        function: 'fetchRepositoryLabels',
+        owner,
+        repo,
+        context: 'GitHub API client',
+      });
+    }
 
     return [];
   }
@@ -69,12 +75,15 @@ export async function fetchRepositoryWorkflows(owner: string, repo: string): Pro
       return parts[parts.length - 1];
     }).filter(Boolean);
   } catch (error) {
-    captureException(error, {
-      function: 'fetchRepositoryWorkflows',
-      owner,
-      repo,
-      context: 'GitHub API client',
-    });
+    // Don't report rate limit errors to Sentry - they're expected behavior
+    if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+      captureException(error, {
+        function: 'fetchRepositoryWorkflows',
+        owner,
+        repo,
+        context: 'GitHub API client',
+      });
+    }
 
     return [];
   }

@@ -135,15 +135,14 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
       const rateLimit = response.headers.get('X-RateLimit-Remaining');
       if (rateLimit && parseInt(rateLimit) === 0) {
         killSwitch.set(true);
-        const rateLimitError = new Error('Rate limit exceeded');
-        captureException(rateLimitError, {
-          context: 'Rate limiting',
+        // Rate limiting is expected behavior, not an error - don't report to Sentry
+        console.warn('GitHub API rate limit exceeded', {
           url,
           method,
           rateLimit,
-          statusCode: response.status,
           resetAt: response.headers.get('X-RateLimit-Reset'),
         });
+        const rateLimitError = new Error('Rate limit exceeded');
         throw rateLimitError;
       }
 
