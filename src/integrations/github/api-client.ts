@@ -7,6 +7,22 @@ import { firebase } from '$integrations/firebase';
 
 export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
+// Request throttling to prevent rate limiting
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 300; // Minimum 300ms between requests
+
+async function throttleRequest(): Promise<void> {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const delayNeeded = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    await new Promise(resolve => setTimeout(resolve, delayNeeded));
+  }
+  
+  lastRequestTime = Date.now();
+}
+
 interface RequestOptions {
   method?: string;
   body?: any;
@@ -47,6 +63,26 @@ export async function postData(url: string, body: any, skipLoadingIndicator = fa
       body: JSON.stringify(body),
     });
   } catch (error) {
+    // Handle network errors gracefully - don't report to Sentry as they're expected
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.warn(`GitHub API network error for POST ${url}:`, error.message);
+      throw error; // Re-throw but don't report to Sentry
+    }
+    
+    // Handle other network-related errors that shouldn't be reported
+    if (error instanceof Error) {
+      const networkErrorKeywords = ['fetch', 'network', 'connection', 'timeout', 'ECONNREFUSED', 'ENOTFOUND'];
+      const isNetworkError = networkErrorKeywords.some(keyword => 
+        error.message.toLowerCase().includes(keyword.toLowerCase())
+      );
+      
+      if (isNetworkError) {
+        console.warn(`GitHub API network error for POST ${url}:`, error.message);
+        throw error; // Re-throw but don't report to Sentry
+      }
+    }
+    
+    // Report non-network errors to Sentry
     captureException(error, {
       function: 'postData',
       url,
@@ -63,6 +99,9 @@ export async function postData(url: string, body: any, skipLoadingIndicator = fa
 
 async function executeRequest<T>(url: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, cacheKey, retryCount = 0, skipLoadingIndicator = false } = options;
+
+  // Throttle requests to prevent rate limiting
+  await throttleRequest();
 
   // Check authentication state
   const currentAuthState = getCurrentAuthState();
@@ -111,20 +150,41 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
         return;
       }
 
-      // Handle rate limiting
+      // Handle rate limiting with smart backoff
       const rateLimit = response.headers.get('X-RateLimit-Remaining');
+      const rateLimitReset = response.headers.get('X-RateLimit-Reset');
+      
       if (rateLimit && parseInt(rateLimit) === 0) {
         killSwitch.set(true);
-        const rateLimitError = new Error('Rate limit exceeded');
-        captureException(rateLimitError, {
-          context: 'Rate limiting',
+        
+        // Calculate time until rate limit resets
+        const resetTime = rateLimitReset ? parseInt(rateLimitReset) * 1000 : Date.now() + 60000; // Default to 1 minute
+        const timeUntilReset = Math.max(0, resetTime - Date.now());
+        
+        console.warn('GitHub API rate limit exceeded', {
           url,
           method,
           rateLimit,
-          statusCode: response.status,
-          resetAt: response.headers.get('X-RateLimit-Reset'),
+          resetAt: new Date(resetTime).toISOString(),
+          timeUntilReset: `${Math.ceil(timeUntilReset / 1000)}s`,
         });
+        
+        // Auto-resume after rate limit resets (with some buffer)
+        setTimeout(() => {
+          console.log('Rate limit should be reset, re-enabling API calls');
+          killSwitch.set(false);
+        }, timeUntilReset + 5000); // Add 5 second buffer
+        
+        const rateLimitError = new Error('Rate limit exceeded');
         throw rateLimitError;
+      }
+      
+      // Warn when approaching rate limit
+      if (rateLimit && parseInt(rateLimit) < 100) {
+        console.warn('GitHub API rate limit getting low', {
+          remaining: rateLimit,
+          resetAt: rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toISOString() : 'unknown',
+        });
       }
 
       // Handle other errors
@@ -177,6 +237,26 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
 
     return result.data || result;
   } catch (error) {
+    // Handle network errors gracefully - don't report to Sentry as they're expected
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.warn(`GitHub API network error for ${url}:`, error.message);
+      throw error; // Re-throw but don't report to Sentry
+    }
+    
+    // Handle other network-related errors that shouldn't be reported
+    if (error instanceof Error) {
+      const networkErrorKeywords = ['fetch', 'network', 'connection', 'timeout', 'ECONNREFUSED', 'ENOTFOUND'];
+      const isNetworkError = networkErrorKeywords.some(keyword => 
+        error.message.toLowerCase().includes(keyword.toLowerCase())
+      );
+      
+      if (isNetworkError) {
+        console.warn(`GitHub API network error for ${url}:`, error.message);
+        throw error; // Re-throw but don't report to Sentry
+      }
+    }
+    
+    // Report non-network errors to Sentry
     captureException(error, {
       function: 'executeRequest',
       url,

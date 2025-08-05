@@ -85,12 +85,15 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
   }
 
   return data.repository.pullRequests.edges.map((edge: any) => {
-    const node = edge.node;
+    const node = edge?.node;
+    if (!node) {
+      return null;
+    }
 
-    const labels = node.labels.edges.map((labelEdge: any) => ({
-      name: labelEdge.node.name,
-      color: labelEdge.node.color,
-    }));
+    const labels = node.labels?.edges?.map((labelEdge: any) => ({
+      name: labelEdge?.node?.name || '',
+      color: labelEdge?.node?.color || '',
+    })) || [];
 
     return {
       id: parseInt(node.id.split('_').pop()),
@@ -128,9 +131,9 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
         eyes: 0,
       },
       state_reason: null,
-      reviews: transformGraphQLReviews(node.reviews.edges),
+      reviews: transformGraphQLReviews(node.reviews?.edges || []),
     };
-  });
+  }).filter(Boolean); // Remove any null entries
 }
 
 function transformGraphQLReviews(reviewEdges: any[]): Review[] {
@@ -228,6 +231,11 @@ export async function fetchPullRequests(org: string, repo: string, filters: stri
       const results = await Promise.all(queries.map((query) => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`)));
       return results.flatMap((result) => result.items);
     } catch (error) {
+      // Don't report rate limit errors to Sentry - they're expected behavior
+      if (error instanceof Error && error.message === 'Rate limit exceeded') {
+        return [];
+      }
+      
       captureException(error, {
         context: 'GitHub Pull Requests',
         function: 'fetchPullRequests',
@@ -309,12 +317,15 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
     const data = await executeGraphQLQuery(query);
     return transformMultiRepositoryPullRequests(data, configs);
   } catch (error) {
-    captureException(error, {
-      context: 'GitHub Pull Requests',
-      function: 'fetchMultipleRepositoriesPullRequests',
-      configCount: configs.length,
-      repositories: configs.map((c) => `${c.org}/${c.repo}`),
-    });
+    // Don't report rate limit errors to Sentry - they're expected behavior
+    if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+      captureException(error, {
+        context: 'GitHub Pull Requests',
+        function: 'fetchMultipleRepositoriesPullRequests',
+        configCount: configs.length,
+        repositories: configs.map((c) => `${c.org}/${c.repo}`),
+      });
+    }
 
     // Fallback to REST API for each repository
     const results: Record<string, PullRequest[]> = {};
@@ -322,13 +333,16 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
       try {
         results[`${config.org}/${config.repo}`] = await fetchPullRequests(config.org, config.repo, config.filters);
       } catch (e) {
-        captureException(e, {
-          context: 'GitHub Pull Requests',
-          function: 'fetchMultipleRepositoriesPullRequests - fallback',
-          org: config.org,
-          repo: config.repo,
-          filters: config.filters,
-        });
+        // Don't report rate limit errors to Sentry - they're expected behavior
+        if (!(e instanceof Error && e.message === 'Rate limit exceeded')) {
+          captureException(e, {
+            context: 'GitHub Pull Requests',
+            function: 'fetchMultipleRepositoriesPullRequests - fallback',
+            org: config.org,
+            repo: config.repo,
+            filters: config.filters,
+          });
+        }
         results[`${config.org}/${config.repo}`] = [];
       }
     }
@@ -349,12 +363,15 @@ function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): R
     }
 
     results[repoKey] = repoData.pullRequests.edges.map((edge: any) => {
-      const node = edge.node;
+      const node = edge?.node;
+      if (!node) {
+        return null;
+      }
 
-      const labels = node.labels.edges.map((labelEdge: any) => ({
-        name: labelEdge.node.name,
-        color: labelEdge.node.color,
-      }));
+      const labels = node.labels?.edges?.map((labelEdge: any) => ({
+        name: labelEdge?.node?.name || '',
+        color: labelEdge?.node?.color || '',
+      })) || [];
 
       return {
         id: parseInt(node.id.split('_').pop()),
@@ -392,9 +409,9 @@ function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): R
           eyes: 0,
         },
         state_reason: null,
-        reviews: transformGraphQLReviews(node.reviews.edges),
+        reviews: transformGraphQLReviews(node.reviews?.edges || []),
       };
-    });
+    }).filter(Boolean); // Remove any null entries
   });
 
   return results;

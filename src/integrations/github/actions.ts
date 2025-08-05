@@ -6,15 +6,29 @@ import type { Workflow, WorkflowRun, WorkflowJobs, Job, Step } from './types';
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      return Promise.all(actions.map((action) => fetchSingleWorkflow(org, repo, action)));
+      // Process workflows sequentially instead of in parallel to reduce rate limiting
+      const results: Workflow[] = [];
+      for (const action of actions) {
+        const workflow = await fetchSingleWorkflow(org, repo, action);
+        results.push(workflow);
+        
+        // Add small delay between workflow requests
+        if (actions.indexOf(action) < actions.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+      }
+      return results;
     } catch (error) {
-      captureException(error, {
-        context: 'GitHub Actions',
-        function: 'fetchActions',
-        org,
-        repo,
-        actionsCount: actions.length,
-      });
+      // Don't report rate limit errors to Sentry - they're expected behavior
+      if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+        captureException(error, {
+          context: 'GitHub Actions',
+          function: 'fetchActions',
+          org,
+          repo,
+          actionsCount: actions.length,
+        });
+      }
       throw error;
     }
   });
@@ -24,21 +38,50 @@ async function fetchSingleWorkflow(org: string, repo: string, action: string): P
   try {
     const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
 
+    // Validate that the response has the expected structure
+    if (!data) {
+      throw new Error('No data returned from GitHub API');
+    }
+
+    if (!data.workflow_runs || !Array.isArray(data.workflow_runs)) {
+      console.warn(`Invalid workflow_runs data for ${org}/${repo}/${action}:`, data);
+      // Return a default workflow structure if the API response is invalid
+      return {
+        name: action,
+        total_count: 0,
+        workflow_runs: [],
+      };
+    }
+
     const processedWorkflowRuns = await Promise.all(data.workflow_runs.map((run) => processWorkflowRun(org, repo, run)));
 
     return {
       name: action,
-      total_count: data.total_count,
+      total_count: data.total_count || 0,
       workflow_runs: processedWorkflowRuns,
     };
   } catch (error) {
-    captureException(error, {
-      context: 'GitHub Actions',
-      function: 'fetchSingleWorkflow',
-      org,
-      repo,
-      action,
-    });
+    // Don't report network errors to Sentry, but log them
+    if (error instanceof Error && error.message.includes('Failed to fetch')) {
+      console.warn(`Network error fetching workflow ${org}/${repo}/${action}:`, error.message);
+      // Return empty workflow instead of throwing
+      return {
+        name: action,
+        total_count: 0,
+        workflow_runs: [],
+      };
+    }
+
+    // Don't report rate limit errors to Sentry - they're expected behavior
+    if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+      captureException(error, {
+        context: 'GitHub Actions',
+        function: 'fetchSingleWorkflow',
+        org,
+        repo,
+        action,
+      });
+    }
     throw error;
   }
 }
@@ -58,14 +101,17 @@ async function processWorkflowRun(org: string, repo: string, run: WorkflowRun): 
       },
     };
   } catch (error) {
-    captureException(error, {
-      context: 'GitHub Actions',
-      function: 'processWorkflowRun',
-      org,
-      repo,
-      runId: run.id,
-      workflowName: run.name,
-    });
+    // Don't report rate limit errors to Sentry - they're expected behavior
+    if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+      captureException(error, {
+        context: 'GitHub Actions',
+        function: 'processWorkflowRun',
+        org,
+        repo,
+        runId: run.id,
+        workflowName: run.name,
+      });
+    }
 
     // Return the run without jobs data in case of error
     return {
@@ -118,6 +164,17 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
     try {
       const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
 
+      // Validate that the response has the expected structure
+      if (!workflows) {
+        console.warn(`No workflow jobs data returned for ${org}/${repo} run ${runId}`);
+        return [];
+      }
+
+      if (!workflows.jobs || !Array.isArray(workflows.jobs)) {
+        console.warn(`Invalid jobs data for ${org}/${repo} run ${runId}:`, workflows);
+        return [];
+      }
+
       let allSuccess = true;
 
       // Filter jobs based on status and conclusion
@@ -152,6 +209,12 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
 
       return workflows.jobs;
     } catch (error) {
+      // Don't report network errors or rate limit errors to Sentry, but log them
+      if (error instanceof Error && (error.message.includes('Failed to fetch') || error.message === 'Rate limit exceeded')) {
+        console.warn(`Network/rate limit error fetching workflow jobs for ${org}/${repo} run ${runId}:`, error.message);
+        return [];
+      }
+
       captureException(error, {
         context: 'GitHub Actions',
         function: 'fetchWorkflowJobs',
@@ -193,19 +256,25 @@ export async function fetchMultipleWorkflowJobs(workflowRuns: Array<{ org: strin
 
       // If we have runs that need fetching
       if (cachedRuns.length > 0) {
-        // Use batched requests with limited concurrency to avoid rate limits
-        const batchSize = 3; // Conservative batch size to avoid API rate limits
+        // Use very conservative batching to avoid rate limits
+        const batchSize = 2; // Reduced from 3 to be more conservative
         for (let i = 0; i < cachedRuns.length; i += batchSize) {
           const batch = cachedRuns.slice(i, i + batchSize);
 
-          // Wait for each batch to complete
-          await Promise.all(
-            batch.map(async (run) => {
-              try {
-                const key = `${run.org}/${run.repo}:${run.runId}`;
-                const jobs = await fetchWorkflowJobs(run.org, run.repo, run.runId);
-                results[key] = jobs;
-              } catch (error) {
+          // Process items in batch sequentially instead of parallel to reduce load
+          for (const run of batch) {
+            try {
+              const key = `${run.org}/${run.repo}:${run.runId}`;
+              const jobs = await fetchWorkflowJobs(run.org, run.repo, run.runId);
+              results[key] = jobs;
+              
+              // Add small delay between individual requests
+              if (batch.indexOf(run) < batch.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+              }
+            } catch (error) {
+              // Don't report rate limit errors to Sentry - they're expected behavior
+              if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
                 captureException(error, {
                   context: 'GitHub Actions',
                   function: 'fetchMultipleWorkflowJobs - batch processing',
@@ -213,25 +282,28 @@ export async function fetchMultipleWorkflowJobs(workflowRuns: Array<{ org: strin
                   repo: run.repo,
                   runId: run.runId,
                 });
-                results[`${run.org}/${run.repo}:${run.runId}`] = [];
               }
-            })
-          );
+              results[`${run.org}/${run.repo}:${run.runId}`] = [];
+            }
+          }
 
-          // Add a delay between batches to avoid hitting rate limits
+          // Increased delay between batches to be more conservative
           if (i + batchSize < cachedRuns.length) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 2000)); // Increased from 1000ms to 2000ms
           }
         }
       }
 
       return results;
     } catch (error) {
-      captureException(error, {
-        context: 'GitHub Actions',
-        function: 'fetchMultipleWorkflowJobs',
-        runsCount: workflowRuns.length,
-      });
+      // Don't report rate limit errors to Sentry - they're expected behavior
+      if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+        captureException(error, {
+          context: 'GitHub Actions',
+          function: 'fetchMultipleWorkflowJobs',
+          runsCount: workflowRuns.length,
+        });
+      }
       return results; // Return partial results in case of error
     }
   });
