@@ -2,7 +2,7 @@ import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
 import { get } from 'svelte/store';
 import { firebase } from './client';
 import { captureException } from '../sentry';
-import { type Configs, type RepoConfig, type Organization } from './types';
+import { type Configs, type RepoConfig, type Organization, type UserPreferences } from './types';
 
 let localOrganizations: Organization[] = [];
 let hasUnsavedOrganizations = false;
@@ -20,7 +20,7 @@ export class ConfigService {
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
-        return { pullRequests: [], actions: [], organizations: [] };
+        return { pullRequests: [], actions: [], organizations: [], preferences: undefined };
       }
 
       const data = docSnap.data() as Configs;
@@ -35,6 +35,35 @@ export class ConfigService {
       captureException(error, {
         context: 'Firebase Config Service',
         function: 'getConfigs',
+        userId: get(firebase.user)?.uid,
+      });
+      throw error;
+    }
+  }
+
+  public async getPreferences(): Promise<UserPreferences | undefined> {
+    try {
+      const configs = await this.getConfigs();
+      return configs.preferences;
+    } catch (error) {
+      captureException(error, {
+        context: 'Firebase Config Service',
+        function: 'getPreferences',
+        userId: get(firebase.user)?.uid,
+      });
+      throw error;
+    }
+  }
+
+  public async savePreferences(preferences: UserPreferences): Promise<void> {
+    try {
+      const configs = await this.getConfigs();
+      configs.preferences = preferences;
+      await this.saveConfigs(configs);
+    } catch (error) {
+      captureException(error, {
+        context: 'Firebase Config Service',
+        function: 'savePreferences',
         userId: get(firebase.user)?.uid,
       });
       throw error;
@@ -59,6 +88,7 @@ export class ConfigService {
         pullRequests: this.mapRepoConfigs(configs.pullRequests || []),
         actions: this.mapRepoConfigs(configs.actions || []),
         organizations: configs.organizations || [],
+        preferences: configs.preferences,
       });
     } catch (error) {
       captureException(error, {
@@ -104,6 +134,7 @@ export class ConfigService {
       pullRequests: this.mapRepoConfigs(configs.pullRequests),
       actions: this.mapRepoConfigs(configs.actions),
       organizations: configs.organizations || [],
+      preferences: configs.preferences,
     };
   }
 
