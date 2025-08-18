@@ -10,7 +10,7 @@ jobs:
     environment: prd
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Fetch all history for proper version info
 

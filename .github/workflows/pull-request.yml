@@ -14,7 +14,7 @@ jobs:
     name: Run Tests 🧪
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -67,7 +67,7 @@ jobs:
     environment: dev
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Fetch all history for proper version info
 
