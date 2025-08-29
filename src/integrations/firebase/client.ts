@@ -48,7 +48,14 @@ class FirebaseAuthClient {
         return;
       }
 
-      // Set authenticating state while we verify the token
+      // Don't interfere if we're in the middle of signing in
+      if (this.authInProgress) {
+        this.user.set(user);
+        setUserInfo(user.uid, user.email || undefined);
+        return;
+      }
+
+      // Set authenticating state while we verify the token for existing sessions
       authState.set('authenticating');
       this.user.set(user);
       
@@ -66,7 +73,7 @@ class FirebaseAuthClient {
           return;
         }
 
-        // Verify GitHub token is still valid
+        // Verify GitHub token is still valid (only for existing sessions)
         const githubToken = getGithubToken();
         if (!githubToken) {
           console.warn('No GitHub token found, need to re-authenticate');
@@ -209,6 +216,8 @@ class FirebaseAuthClient {
 
       if (credential?.accessToken) {
         setGithubToken(credential.accessToken);
+        // Start token refresh and set authenticated
+        await this.startTokenRefresh(result.user);
         authState.set('authenticated');
         return;
       }
@@ -227,6 +236,8 @@ class FirebaseAuthClient {
       }
 
       setGithubToken(additionalUserInfo.oauthAccessToken);
+      // Start token refresh and set authenticated
+      await this.startTokenRefresh(result.user);
       authState.set('authenticated');
     } catch (error) {
       captureException(error, { action: 'signIn' });

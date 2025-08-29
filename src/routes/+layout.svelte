@@ -70,30 +70,8 @@
   {#if shouldShowContent}
     <!-- Only show content when fully authenticated -->
     {@render children?.()}
-  {:else if isAuthLoading}
-    <!-- Show loading state during auth verification -->
-    <div class="flex flex-col items-center justify-center pt-20">
-      <div class="hero-section max-w-md w-full p-8 text-center">
-        <h1 class="hero-title text-2xl mb-4">GitHelm</h1>
-        <p class="text-[#c9d1d9] mb-6">Monitor your GitHub Pull Requests and Actions</p>
-        
-        <div class="flex items-center justify-center p-6">
-          <svg class="animate-spin h-8 w-8 text-[#58a6ff] mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span class="text-lg text-[#c9d1d9]">
-            {#if $isAuth === 'initializing'}
-              Initializing...
-            {:else if $isAuth === 'authenticating'}
-              Verifying authentication...
-            {/if}
-          </span>
-        </div>
-      </div>
-    </div>
   {:else}
-    <!-- Show login screen when unauthenticated -->
+    <!-- Show login screen for all non-authenticated states -->
     <div class="flex flex-col items-center justify-center pt-20">
       <div class="hero-section max-w-md w-full p-8 text-center">
         <h1 class="hero-title text-2xl mb-4">Welcome to GitHelm</h1>
@@ -108,7 +86,13 @@
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Logging in...</span>
+            <span>
+              {#if $isAuth === 'initializing'}
+                Initializing...
+              {:else}
+                Logging in...
+              {/if}
+            </span>
           {:else}
             <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path

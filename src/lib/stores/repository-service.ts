@@ -258,6 +258,15 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     allPullRequests.set({});
     return;
   }
+
+  // Initialize empty entries for all repos immediately to trigger placeholder display
+  const initialPRs: Record<string, PullRequest[]> = {};
+  repoConfigs.forEach(config => {
+    const key = getRepoKey(config);
+    initialPRs[key] = [];
+  });
+  allPullRequests.set(initialPRs);
+
   unsubscribe('pull-requests-polling');
   const params = repoConfigs.map((config) => ({
     org: config.org,
@@ -317,6 +326,15 @@ export function initializeActionsPolling(repoConfigs: RepoConfig[]): void {
     allWorkflowRuns.set({});
     return;
   }
+
+  // Initialize empty entries for all repos immediately to trigger placeholder display
+  const initialRuns: Record<string, WorkflowRun[]> = {};
+  repoConfigs.forEach(config => {
+    const key = getRepoKey(config);
+    initialRuns[key] = [];
+  });
+  allWorkflowRuns.set(initialRuns);
+
   for (const config of repoConfigs) {
     const key = getRepoKey(config);
     const storeKey = `actions-${key}`;
