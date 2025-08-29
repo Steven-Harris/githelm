@@ -42,7 +42,7 @@
   {/if}
 </svelte:head>
 
-<Header signedIn={signedIn && $authState === 'authenticated'} />
+<Header signedIn={$signedIn && $authState === 'authenticated'} />
 
 <main class="flex-1 overflow-auto md:px-5 bg-gray-900 pb-12">
   <Tabs />
@@ -59,7 +59,7 @@
   {/if}
 
   <!-- <Loading loading={$isLoading} /> -->
-  {#if signedIn && $isAuth === 'authenticated'}
+  {#if $signedIn && $isAuth === 'authenticated'}
     {@render children?.()}
   {:else}
     <div class="flex flex-col items-center justify-center pt-20">
