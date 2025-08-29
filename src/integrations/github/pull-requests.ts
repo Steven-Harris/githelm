@@ -66,15 +66,18 @@ export async function fetchPullRequestsWithGraphQL(org: string, repo: string, fi
       const data = await executeGraphQLQuery(query, variables);
       return transformGraphQLPullRequests(data);
     } catch (error) {
-      captureException(error, {
-        context: 'GitHub Pull Requests',
-        function: 'fetchPullRequestsWithGraphQL',
-        org,
-        repo,
-        filters,
-      });
-      // Fallback to REST API
-      return fetchPullRequests(org, repo, filters);
+      // Don't report rate limit errors to Sentry - they're expected behavior
+      if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
+        captureException(error, {
+          context: 'GitHub Pull Requests',
+          function: 'fetchPullRequestsWithGraphQL',
+          org,
+          repo,
+          filters,
+        });
+      }
+      // Return empty array instead of fallback to maintain GraphQL-only approach
+      return [];
     }
   });
 }
@@ -223,30 +226,7 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
   });
 }
 
-export async function fetchPullRequests(org: string, repo: string, filters: string[]): Promise<PullRequest[]> {
-  return queueApiCallIfNeeded(async () => {
-    try {
-      const queries = filters.length === 0 ? [`repo:${org}/${repo}+is:pr+is:open`] : filters.map((filter) => `repo:${org}/${repo}+is:pr+is:open+label:${filter}`);
-
-      const results = await Promise.all(queries.map((query) => fetchData<PullRequests>(`https://api.github.com/search/issues?q=${query}`)));
-      return results.flatMap((result) => result.items);
-    } catch (error) {
-      // Don't report rate limit errors to Sentry - they're expected behavior
-      if (error instanceof Error && error.message === 'Rate limit exceeded') {
-        return [];
-      }
-      
-      captureException(error, {
-        context: 'GitHub Pull Requests',
-        function: 'fetchPullRequests',
-        org,
-        repo,
-        filters,
-      });
-      throw error;
-    }
-  });
-}
+// Removed fetchPullRequests REST API function - using GraphQL only
 
 export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[]): Promise<Record<string, PullRequest[]>> {
   if (!configs || configs.length === 0) {
@@ -327,25 +307,11 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
       });
     }
 
-    // Fallback to REST API for each repository
+    // Return empty results for all repositories to maintain GraphQL-only approach
     const results: Record<string, PullRequest[]> = {};
-    for (const config of configs) {
-      try {
-        results[`${config.org}/${config.repo}`] = await fetchPullRequests(config.org, config.repo, config.filters);
-      } catch (e) {
-        // Don't report rate limit errors to Sentry - they're expected behavior
-        if (!(e instanceof Error && e.message === 'Rate limit exceeded')) {
-          captureException(e, {
-            context: 'GitHub Pull Requests',
-            function: 'fetchMultipleRepositoriesPullRequests - fallback',
-            org: config.org,
-            repo: config.repo,
-            filters: config.filters,
-          });
-        }
-        results[`${config.org}/${config.repo}`] = [];
-      }
-    }
+    configs.forEach((config) => {
+      results[`${config.org}/${config.repo}`] = [];
+    });
     return results;
   }
 }

@@ -4,7 +4,7 @@
   import Footer from "$lib/Footer.svelte";
   import Header from "$lib/Header.svelte";
   import Tabs from "$lib/Tabs.svelte";
-  import { loadRepositoryConfigs } from "$lib/stores/repository-service";
+  import { loadRepositoryConfigs, clearAllStores } from "$lib/stores/repository-service";
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
   import { pwaInfo } from 'virtual:pwa-info';
   import "../style.css";
@@ -21,9 +21,18 @@
     if ($authState === 'authenticated') {
       initAuthStateHandling();
       loadRepositoryConfigs();
+    } else if ($authState === 'unauthenticated') {
+      // Clear all stores when unauthenticated to prevent showing stale data
+      clearAllStores();
     }
     return $authState;
   });
+
+  // Helper to determine if we should show the main content
+  let shouldShowContent = $derived($signedIn && $isAuth === 'authenticated');
+  
+  // Helper to determine if we should show loading state
+  let isAuthLoading = $derived($isAuth === 'initializing' || $isAuth === 'authenticating');
 
   function login() {
     firebase.signIn();
@@ -58,24 +67,32 @@
     </div>
   {/if}
 
-  <!-- <Loading loading={$isLoading} /> -->
-  {#if signedIn && $isAuth === 'authenticated'}
+  {#if shouldShowContent}
+    <!-- Only show content when fully authenticated -->
     {@render children?.()}
   {:else}
+    <!-- Show login screen for all non-authenticated states -->
     <div class="flex flex-col items-center justify-center pt-20">
       <div class="hero-section max-w-md w-full p-8 text-center">
         <h1 class="hero-title text-2xl mb-4">Welcome to GitHelm</h1>
         <p class="text-[#c9d1d9] mb-6">Sign in with your GitHub account to monitor pull requests and actions across your repositories.</p>
         <button
-          class="flex items-center justify-center mx-auto bg-[#2ea043] hover:bg-[#3fb950] text-white font-medium px-6 py-3 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl transform hover:translate-y-[-1px] active:translate-y-[1px]"
+          class="flex items-center justify-center mx-auto bg-[#2ea043] hover:bg-[#3fb950] text-white font-medium px-6 py-3 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl transform hover:translate-y-[-1px] active:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
           onclick={login}
+          disabled={isAuthLoading}
         >
-          {#if $isAuth === 'authenticating'}
+          {#if isAuthLoading}
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span>Logging in...</span>
+            <span>
+              {#if $isAuth === 'initializing'}
+                Initializing...
+              {:else}
+                Logging in...
+              {/if}
+            </span>
           {:else}
             <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path

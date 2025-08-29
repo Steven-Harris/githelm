@@ -3,13 +3,48 @@ import { queueApiCallIfNeeded } from './auth';
 import { captureException } from '../sentry';
 import type { Workflow, WorkflowRun, WorkflowJobs, Job, Step } from './types';
 
+// Helper function to check if we need to fetch new workflow runs
+export async function checkForNewWorkflowRuns(org: string, repo: string, action: string): Promise<boolean> {
+  try {
+    const cacheKey = `workflow-${org}/${repo}/${action}`;
+    const cachedWorkflow = localStorage.getItem(cacheKey);
+    
+    if (!cachedWorkflow) {
+      return true; // No cache, need to fetch
+    }
+    
+    const cached = JSON.parse(cachedWorkflow) as Workflow;
+    if (!cached.workflow_runs || cached.workflow_runs.length === 0) {
+      return true; // No runs in cache, need to fetch
+    }
+    
+    // Get the latest run ID from cache
+    const latestCachedRunId = cached.workflow_runs[0].id;
+    
+    // Fetch just the latest run to compare
+    const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+    
+    if (!data?.workflow_runs || data.workflow_runs.length === 0) {
+      return false; // No runs available, no need to update
+    }
+    
+    const latestRunId = data.workflow_runs[0].id;
+    
+    // If the latest run ID is different, we have new runs
+    return latestRunId !== latestCachedRunId;
+  } catch (error) {
+    console.warn(`Error checking for new workflow runs for ${org}/${repo}/${action}:`, error);
+    return true; // On error, assume we need to fetch
+  }
+}
+
 export async function fetchActions(org: string, repo: string, actions: string[]): Promise<Workflow[]> {
   return queueApiCallIfNeeded(async () => {
     try {
       // Process workflows sequentially instead of in parallel to reduce rate limiting
       const results: Workflow[] = [];
       for (const action of actions) {
-        const workflow = await fetchSingleWorkflow(org, repo, action);
+        const workflow = await fetchSingleWorkflowOptimized(org, repo, action);
         results.push(workflow);
         
         // Add small delay between workflow requests
@@ -32,6 +67,65 @@ export async function fetchActions(org: string, repo: string, actions: string[])
       throw error;
     }
   });
+}
+
+// Smart workflow fetching that avoids unnecessary requests for completed actions
+async function fetchSingleWorkflowOptimized(org: string, repo: string, action: string): Promise<Workflow> {
+  const cacheKey = `workflow-${org}/${repo}/${action}`;
+  const lastFetchKey = `workflow-last-fetch-${org}/${repo}/${action}`;
+  
+  try {
+    // Check if we have cached data and when we last fetched
+    const cachedWorkflow = localStorage.getItem(cacheKey);
+    const lastFetch = localStorage.getItem(lastFetchKey);
+    const now = Date.now();
+    const fiveMinutesAgo = now - (5 * 60 * 1000);
+    
+    // If we have cached data and it's recent, check if the latest run is completed
+    if (cachedWorkflow && lastFetch && parseInt(lastFetch) > fiveMinutesAgo) {
+      try {
+        const cached = JSON.parse(cachedWorkflow) as Workflow;
+        
+        // If we have workflow runs and the latest one is completed, we can use cache longer
+        if (cached.workflow_runs && cached.workflow_runs.length > 0) {
+          const latestRun = cached.workflow_runs[0];
+          
+          // If latest run is completed and we fetched recently, return cached data
+          if (latestRun.status === 'completed' && parseInt(lastFetch) > (now - (30 * 60 * 1000))) {
+            return cached;
+          }
+        }
+      } catch (e) {
+        // If cache parsing fails, continue to fetch fresh data
+        console.warn('Failed to parse cached workflow data:', e);
+      }
+    }
+    
+    // Fetch fresh data
+    const workflow = await fetchSingleWorkflow(org, repo, action);
+    
+    // Cache the result and update last fetch time
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(workflow));
+      localStorage.setItem(lastFetchKey, now.toString());
+    } catch (cacheError) {
+      console.warn('Failed to cache workflow data:', cacheError);
+    }
+    
+    return workflow;
+  } catch (error) {
+    // If there's an error and we have cached data, return it
+    const cachedWorkflow = localStorage.getItem(cacheKey);
+    if (cachedWorkflow) {
+      try {
+        return JSON.parse(cachedWorkflow) as Workflow;
+      } catch (e) {
+        console.warn('Failed to parse cached workflow data as fallback:', e);
+      }
+    }
+    
+    throw error;
+  }
 }
 
 async function fetchSingleWorkflow(org: string, repo: string, action: string): Promise<Workflow> {
@@ -148,8 +242,21 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
     const run = localStorage.getItem(key);
     if (run !== null && run !== undefined) {
       try {
-        const parsedRun = JSON.parse(run) as Job[];
-        return parsedRun;
+        const parsed = JSON.parse(run);
+        
+        // Handle both old format (Job[]) and new format (with metadata)
+        if (Array.isArray(parsed)) {
+          // Old format - return as is
+          return parsed as Job[];
+        } else if (parsed.jobs && Array.isArray(parsed.jobs)) {
+          // New format with metadata
+          if (parsed.completed) {
+            // This is a completed run, we can safely return cached data
+            return parsed.jobs as Job[];
+          }
+        }
+        
+        // If we can't determine the format or it's not completed, fall through to fetch
       } catch (e) {
         captureException(e, {
           context: 'GitHub Actions',
@@ -191,10 +298,18 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
         return false;
       });
 
-      // Only cache successful runs
-      if (allSuccess) {
+      // Cache runs that are completed (regardless of success/failure)
+      const allCompleted = workflows.jobs.every(job => job.status === 'completed');
+      if (allCompleted) {
         try {
-          localStorage.setItem(key, JSON.stringify(workflows.jobs));
+          // Store completion metadata along with jobs
+          const cacheData = {
+            jobs: workflows.jobs,
+            completed: true,
+            cached_at: Date.now(),
+            all_success: allSuccess
+          };
+          localStorage.setItem(key, JSON.stringify(cacheData));
         } catch (cacheError) {
           captureException(cacheError, {
             context: 'GitHub Actions',
@@ -239,8 +354,24 @@ export async function fetchMultipleWorkflowJobs(workflowRuns: Array<{ org: strin
 
         if (cachedData !== null && cachedData !== undefined) {
           try {
-            results[key] = JSON.parse(cachedData) as Job[];
-            return false; // Don't need to fetch this run
+            const parsed = JSON.parse(cachedData);
+            
+            // Handle both old format (Job[]) and new format (with metadata)
+            if (Array.isArray(parsed)) {
+              // Old format - return as is
+              results[key] = parsed as Job[];
+              return false; // Don't need to fetch this run
+            } else if (parsed.jobs && Array.isArray(parsed.jobs)) {
+              // New format with metadata
+              if (parsed.completed) {
+                // This is a completed run, we can safely use cached data
+                results[key] = parsed.jobs as Job[];
+                return false; // Don't need to fetch this run
+              }
+            }
+            
+            // If we can't determine completion status, we need to fetch
+            return true;
           } catch (e) {
             captureException(e, {
               context: 'GitHub Actions',
