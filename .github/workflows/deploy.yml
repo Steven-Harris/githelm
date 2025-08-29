@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Deploy to Firebase Hosting 🚀
     environment: prd
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
