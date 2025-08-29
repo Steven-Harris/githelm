@@ -1,24 +1,39 @@
 <script lang="ts">
   import List from './List.svelte';
+  import LoadingPlaceholder from './LoadingPlaceholder.svelte';
+  import PlaceholderHint from './PlaceholderHint.svelte';
   import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
   import { actionsConfigs, getRepoKey, allWorkflowRuns } from '$lib/stores/repository-service';
   import { workflowStatusFilters, type WorkflowStatus } from '$lib/stores/workflow-status-filter.store';
   import { derived } from 'svelte/store';
   import type { WorkflowRun } from '$integrations/github';
-  import { isLoading } from '$stores/loading.store';
 
-  let firstLoad = $state<boolean>(true);
-
-  const filteredWorkflowRunsByRepo = derived([allWorkflowRuns, workflowStatusFilters], ([$allWorkflowRuns, $statusFilters]) => {
+  const filteredWorkflowRunsByRepo = derived([allWorkflowRuns, workflowStatusFilters, actionsConfigs], ([$allWorkflowRuns, $statusFilters, $configs]) => {
     const filtered: Record<string, WorkflowRun[]> = {};
 
     for (const [repoKey, runs] of Object.entries($allWorkflowRuns)) {
       filtered[repoKey] = runs.filter((run) => passesStatusFilter(run, $statusFilters));
     }
 
-    firstLoad = false;
-
     return filtered;
+  });
+
+  // Create a derived store to track loading states
+  const loadingStates = derived([allWorkflowRuns, actionsConfigs], ([$allWorkflowRuns, $configs]) => {
+    const states: Record<string, 'loading' | 'loaded' | 'empty'> = {};
+    
+    // Initialize loading states for all configured repos
+    $configs.forEach(config => {
+      const repoKey = getRepoKey(config);
+      states[repoKey] = 'loading';
+    });
+
+    // Update states based on data availability
+    for (const [repoKey, runs] of Object.entries($allWorkflowRuns)) {
+      states[repoKey] = runs.length > 0 ? 'loaded' : 'empty';
+    }
+
+    return states;
   });
 
   function passesStatusFilter(run: WorkflowRun, statusFilters: Record<WorkflowStatus, boolean>): boolean {
@@ -29,6 +44,56 @@
 
     return Object.keys(statusFilters).includes(filterStatus) ? statusFilters[filterStatus as WorkflowStatus] : true;
   }
+
+  function isRepoLoaded(repoKey: string): boolean {
+    return $loadingStates[repoKey] === 'loaded' || $loadingStates[repoKey] === 'empty';
+  }
+
+  // Determine if a repository should show a placeholder based on current filters
+  function shouldShowPlaceholder(repoKey: string): boolean {
+    // If it's loaded, we'll show real data or empty state
+    if (isRepoLoaded(repoKey)) {
+      return false;
+    }
+    
+    // Only show placeholder if we're actually in a loading state
+    if ($loadingStates[repoKey] !== 'loading') {
+      return false;
+    }
+    
+    // For loading repos, we need to predict if they might have content that matches current filters
+    // Since we don't know the actual data yet, we'll be optimistic and show placeholders
+    // The key insight: if ALL filters are disabled, don't show any placeholders
+    const hasAnyFilterEnabled = Object.values($workflowStatusFilters).some(Boolean);
+    return hasAnyFilterEnabled;
+  }
+
+  // Get a hint about what we're looking for based on current filters
+  function getFilterHint(): string {
+    // Map status keys to human-readable labels
+    const statusLabels: Record<string, string> = {
+      in_progress: 'in progress',
+      queued: 'queued',
+      success: 'success',
+      failure: 'failure',
+      cancelled: 'cancelled',
+      // Add more mappings as needed
+    };
+
+    const enabledFilters = Object.entries($workflowStatusFilters)
+      .filter(([_, enabled]) => enabled)
+      .map(([status, _]) => statusLabels[status] || status);
+
+    if (enabledFilters.length === 0) {
+      return 'workflow runs';
+    } else if (enabledFilters.length === 1) {
+      return `${enabledFilters[0]} workflow runs`;
+    } else if (enabledFilters.length === Object.keys($workflowStatusFilters).length) {
+      return 'workflow runs';
+    } else {
+      return `${enabledFilters.slice(0, -1).join(', ')} and ${enabledFilters.slice(-1)} workflow runs`;
+    }
+  }
 </script>
 
 <section class="hero-section mb-6 glass-effect">
@@ -38,11 +103,7 @@
       <WorkflowStatusFilter />
     </div>
     
-    {#if $isLoading && firstLoad}
-      <div class="flex items-center justify-center p-8 text-center hero-card">
-        Loading actions...
-      </div>
-    {:else if $actionsConfigs.length === 0}
+    {#if $actionsConfigs.length === 0}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
         <div class="text-lg text-[#8b949e] mb-4">No repositories configured for actions monitoring</div>
         <div class="text-sm text-[#8b949e]">Add repositories in the configuration section to monitor GitHub Actions</div>
@@ -52,18 +113,29 @@
         {#each $actionsConfigs as repo (repo.org + '/' + repo.repo)}
           {@const repoKey = getRepoKey(repo)}
           {@const filteredRuns = $filteredWorkflowRunsByRepo[repoKey] || []}
+          {@const hasLoadedData = isRepoLoaded(repoKey)}
+          {@const showPlaceholder = shouldShowPlaceholder(repoKey)}
 
-          {#if filteredRuns.length > 0}
+          {#if hasLoadedData}
+            <!-- Show real data when loaded, but only if it matches filters -->
+            {#if filteredRuns.length > 0}
+              <div class="stagger-item">
+                <List org={repo.org} repo={repo.repo} workflowRuns={filteredRuns} />
+              </div>
+            {/if}
+            <!-- Note: Don't show empty state for individual repos, let the overall filter message handle it -->
+          {:else if showPlaceholder}
+            <!-- Show smart loading placeholder until data loads, but only if filters suggest we might show content -->
             <div class="stagger-item">
-              <List org={repo.org} repo={repo.repo} workflowRuns={filteredRuns} />
+              <PlaceholderHint org={repo.org} repo={repo.repo} filterHint={getFilterHint()} />
             </div>
           {/if}
         {/each}
       </div>
 
-      <!-- Show message if all repos are filtered out -->
-      {#if Object.values($filteredWorkflowRunsByRepo).every((runs) => runs.length === 0) && $actionsConfigs.length > 0}
-        <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
+      <!-- Show message if all loaded repos are filtered out -->
+      {#if Object.values($loadingStates).some(state => state === 'loaded' || state === 'empty') && Object.values($filteredWorkflowRunsByRepo).every((runs) => runs.length === 0)}
+        <div class="flex flex-col items-center justify-center p-8 text-center hero-card mt-4">
           <div class="text-lg text-[#8b949e] mb-4">No workflow runs match your current filters</div>
           <div class="text-sm text-[#8b949e]">Try adjusting your workflow status filters above</div>
         </div>
