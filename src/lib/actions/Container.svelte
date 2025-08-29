@@ -8,31 +8,32 @@
   import { derived } from 'svelte/store';
   import type { WorkflowRun } from '$integrations/github';
 
-  // Track which repositories have attempted to load (even if they have no data)
-  let loadingStates = $state<Record<string, 'loading' | 'loaded' | 'empty'>>({}); 
-
-  const filteredWorkflowRunsByRepo = derived([allWorkflowRuns, workflowStatusFilters], ([$allWorkflowRuns, $statusFilters]) => {
+  const filteredWorkflowRunsByRepo = derived([allWorkflowRuns, workflowStatusFilters, actionsConfigs], ([$allWorkflowRuns, $statusFilters, $configs]) => {
     const filtered: Record<string, WorkflowRun[]> = {};
-
-    // Initialize loading states for all configured repos
-    $actionsConfigs.forEach(config => {
-      const repoKey = getRepoKey(config);
-      if (!loadingStates[repoKey]) {
-        loadingStates[repoKey] = 'loading';
-      }
-    });
 
     for (const [repoKey, runs] of Object.entries($allWorkflowRuns)) {
       filtered[repoKey] = runs.filter((run) => passesStatusFilter(run, $statusFilters));
-      
-      // Update loading state based on data availability
-      // A repo is considered "loaded" if it has been fetched (regardless of whether it has data)
-      if (repoKey in $allWorkflowRuns) {
-        loadingStates[repoKey] = runs.length > 0 ? 'loaded' : 'empty';
-      }
     }
 
     return filtered;
+  });
+
+  // Create a derived store to track loading states
+  const loadingStates = derived([allWorkflowRuns, actionsConfigs], ([$allWorkflowRuns, $configs]) => {
+    const states: Record<string, 'loading' | 'loaded' | 'empty'> = {};
+    
+    // Initialize loading states for all configured repos
+    $configs.forEach(config => {
+      const repoKey = getRepoKey(config);
+      states[repoKey] = 'loading';
+    });
+
+    // Update states based on data availability
+    for (const [repoKey, runs] of Object.entries($allWorkflowRuns)) {
+      states[repoKey] = runs.length > 0 ? 'loaded' : 'empty';
+    }
+
+    return states;
   });
 
   function passesStatusFilter(run: WorkflowRun, statusFilters: Record<WorkflowStatus, boolean>): boolean {
@@ -45,13 +46,18 @@
   }
 
   function isRepoLoaded(repoKey: string): boolean {
-    return loadingStates[repoKey] === 'loaded' || loadingStates[repoKey] === 'empty';
+    return $loadingStates[repoKey] === 'loaded' || $loadingStates[repoKey] === 'empty';
   }
 
   // Determine if a repository should show a placeholder based on current filters
   function shouldShowPlaceholder(repoKey: string): boolean {
     // If it's loaded, we'll show real data or empty state
     if (isRepoLoaded(repoKey)) {
+      return false;
+    }
+    
+    // Only show placeholder if we're actually in a loading state
+    if ($loadingStates[repoKey] !== 'loading') {
       return false;
     }
     
@@ -64,10 +70,20 @@
 
   // Get a hint about what we're looking for based on current filters
   function getFilterHint(): string {
+    // Map status keys to human-readable labels
+    const statusLabels: Record<string, string> = {
+      in_progress: 'in progress',
+      queued: 'queued',
+      success: 'success',
+      failure: 'failure',
+      cancelled: 'cancelled',
+      // Add more mappings as needed
+    };
+
     const enabledFilters = Object.entries($workflowStatusFilters)
       .filter(([_, enabled]) => enabled)
-      .map(([status, _]) => status);
-    
+      .map(([status, _]) => statusLabels[status] || status);
+
     if (enabledFilters.length === 0) {
       return 'workflow runs';
     } else if (enabledFilters.length === 1) {
@@ -118,7 +134,7 @@
       </div>
 
       <!-- Show message if all loaded repos are filtered out -->
-      {#if Object.values(loadingStates).some(state => state === 'loaded' || state === 'empty') && Object.values($filteredWorkflowRunsByRepo).every((runs) => runs.length === 0)}
+      {#if Object.values($loadingStates).some(state => state === 'loaded' || state === 'empty') && Object.values($filteredWorkflowRunsByRepo).every((runs) => runs.length === 0)}
         <div class="flex flex-col items-center justify-center p-8 text-center hero-card mt-4">
           <div class="text-lg text-[#8b949e] mb-4">No workflow runs match your current filters</div>
           <div class="text-sm text-[#8b949e]">Try adjusting your workflow status filters above</div>
