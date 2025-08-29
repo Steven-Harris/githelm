@@ -1,8 +1,15 @@
 <script lang="ts">
   import WorkflowRun from './WorkflowRun.svelte';
   import githubSVG from '$assets/github-logo.svg';
+  import { repositoryCollapseStore } from '$lib/stores/repository-collapse.store';
 
   let { org, repo, workflowRuns = [] } = $props();
+  
+  const repoKey = `${org}/${repo}`;
+  
+  function toggleCollapse() {
+    repositoryCollapseStore.toggle(repoKey);
+  }
 </script>
 
 <div>
@@ -14,28 +21,49 @@
           <span class="text-[#58a6ff] pl-1">{repo}</span>
         </a>
       </h3>
-      <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
-        <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
-          <path
-            d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"
-          ></path>
-        </svg>
-        <span class="text-[#8b949e]">{workflowRuns.length} {workflowRuns.length === 1 ? 'run' : 'runs'}</span>
-      </span>
+      <div class="flex items-center gap-3">
+        <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
+          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
+            <path
+              d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"
+            ></path>
+          </svg>
+          <span class="text-[#8b949e]">{workflowRuns.length} {workflowRuns.length === 1 ? 'run' : 'runs'}</span>
+        </span>
+        <button 
+          onclick={toggleCollapse}
+          class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
+          title={repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore) ? 'Expand repository' : 'Collapse repository'}
+        >
+          {#if repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore)}
+            <!-- Expand icon (chevron right) -->
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z"/>
+            </svg>
+          {:else}
+            <!-- Collapse icon (chevron down) -->
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            </svg>
+          {/if}
+        </button>
+      </div>
     </div>
 
-    {#if workflowRuns?.length > 0}
-      <div class="divide-y divide-[#21262d]">
-        {#each workflowRuns as run, index (index)}
-          <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + index * 0.05}s">
-            <WorkflowRun {run} />
-          </div>
-        {/each}
-      </div>
-    {:else}
-      <div class="p-4 bg-[#0d1117] text-center">
-        <div class="text-sm text-[#8b949e]">No recent workflow runs</div>
-      </div>
+    {#if !repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore)}
+      {#if workflowRuns?.length > 0}
+        <div class="divide-y divide-[#21262d]">
+          {#each workflowRuns as run, index (index)}
+            <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + index * 0.05}s">
+              <WorkflowRun {run} />
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <div class="p-4 bg-[#0d1117] text-center">
+          <div class="text-sm text-[#8b949e]">No recent workflow runs</div>
+        </div>
+      {/if}
     {/if}
   </div>
 </div>
