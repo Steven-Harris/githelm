@@ -7,20 +7,37 @@ import { firebase } from '$integrations/firebase';
 
 export const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql';
 
-// Request throttling to prevent rate limiting
+// Adaptive request throttling to prevent rate limiting
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 300; // Minimum 300ms between requests
+let currentRateLimit = 5000; // Start with a safe assumption
+let adaptiveInterval = 300; // Start with 300ms, will adjust based on rate limit
 
 async function throttleRequest(): Promise<void> {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
   
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const delayNeeded = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+  // Adjust interval based on current rate limit status
+  if (currentRateLimit < 100) {
+    adaptiveInterval = 2000; // 2 seconds when very low
+  } else if (currentRateLimit < 500) {
+    adaptiveInterval = 1000; // 1 second when low
+  } else if (currentRateLimit < 1000) {
+    adaptiveInterval = 500; // 500ms when moderate
+  } else {
+    adaptiveInterval = 300; // 300ms when healthy
+  }
+  
+  if (timeSinceLastRequest < adaptiveInterval) {
+    const delayNeeded = adaptiveInterval - timeSinceLastRequest;
     await new Promise(resolve => setTimeout(resolve, delayNeeded));
   }
   
   lastRequestTime = Date.now();
+}
+
+// Function to update rate limit awareness
+function updateRateLimitStatus(remaining: number): void {
+  currentRateLimit = remaining;
 }
 
 interface RequestOptions {
@@ -154,6 +171,11 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
       const rateLimit = response.headers.get('X-RateLimit-Remaining');
       const rateLimitReset = response.headers.get('X-RateLimit-Reset');
       
+      // Update our rate limit awareness
+      if (rateLimit) {
+        updateRateLimitStatus(parseInt(rateLimit));
+      }
+      
       if (rateLimit && parseInt(rateLimit) === 0) {
         killSwitch.set(true);
         
@@ -179,12 +201,24 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
         throw rateLimitError;
       }
       
-      // Warn when approaching rate limit
-      if (rateLimit && parseInt(rateLimit) < 100) {
-        console.warn('GitHub API rate limit getting low', {
+      // Proactively slow down when approaching rate limit
+      if (rateLimit && parseInt(rateLimit) < 200) {
+        console.warn('GitHub API rate limit getting low, slowing down requests', {
           remaining: rateLimit,
           resetAt: rateLimitReset ? new Date(parseInt(rateLimitReset) * 1000).toISOString() : 'unknown',
         });
+        
+        // If very low, temporarily enable kill switch to prevent further requests
+        if (parseInt(rateLimit) < 50) {
+          console.warn('GitHub API rate limit critically low, temporarily pausing requests');
+          killSwitch.set(true);
+          
+          // Re-enable after a short delay
+          setTimeout(() => {
+            console.log('Resuming GitHub API requests after rate limit cooldown');
+            killSwitch.set(false);
+          }, 60000); // Wait 1 minute before resuming
+        }
       }
 
       // Handle other errors

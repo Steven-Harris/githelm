@@ -43,23 +43,55 @@ class FirebaseAuthClient {
         authState.set('unauthenticated');
         this.user.set(null);
         clearUserInfo(); // Clear Sentry user info on logout
+        // Clear all cached data when user is not authenticated
+        this.clearCachedData();
         return;
       }
 
+      // Set authenticating state while we verify the token
+      authState.set('authenticating');
       this.user.set(user);
+      
       // Set Sentry user info for error tracking
       setUserInfo(user.uid, user.email || undefined);
 
-      const tokenResult = await user.getIdTokenResult();
+      try {
+        const tokenResult = await user.getIdTokenResult();
 
-      if (new Date(tokenResult.expirationTime) < new Date()) {
+        // Check if token is expired
+        if (new Date(tokenResult.expirationTime) < new Date()) {
+          console.warn('Firebase token is expired, signing out');
+          authState.set('unauthenticated');
+          await this.signOut();
+          return;
+        }
+
+        // Verify GitHub token is still valid
+        const githubToken = getGithubToken();
+        if (!githubToken) {
+          console.warn('No GitHub token found, need to re-authenticate');
+          authState.set('unauthenticated');
+          await this.signOut();
+          return;
+        }
+
+        // Validate GitHub token with a simple API call
+        const isValidGithubToken = await this.validateGithubToken(githubToken);
+        if (!isValidGithubToken) {
+          console.warn('GitHub token is invalid, need to re-authenticate');
+          authState.set('unauthenticated');
+          await this.signOut();
+          return;
+        }
+
+        // All checks passed, start token refresh and set as authenticated
+        await this.startTokenRefresh(user);
+        authState.set('authenticated');
+      } catch (error) {
+        console.error('Error during auth verification:', error);
         authState.set('unauthenticated');
         await this.signOut();
-        return;
       }
-
-      await this.startTokenRefresh(user);
-      authState.set('authenticated');
     });
   }
 
@@ -109,16 +141,25 @@ class FirebaseAuthClient {
 
   private async validateGithubToken(token: string): Promise<boolean> {
     try {
+      // Add timeout to prevent hanging on network issues
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch('https://api.github.com/user', {
         headers: { Authorization: `token ${token}` },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
       return response.status === 200;
     } catch (error) {
       // Don't report network errors to Sentry as they're expected and not actionable
-      // Only log if it's not a typical network/fetch error
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        // Network error - this is expected and should be handled gracefully
-        console.warn('GitHub API request failed due to network issues:', error.message);
+      if (error instanceof Error && (
+        error.name === 'AbortError' ||
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('timeout')
+      )) {
+        console.warn('GitHub API request failed due to network/timeout issues:', error.message);
         return false;
       }
       
@@ -218,6 +259,7 @@ class FirebaseAuthClient {
   public async signOut() {
     await signOut(this.auth);
     clearSiteData();
+    this.clearCachedData(); // Clear all cached data on sign out
     this.user.set(null);
     clearUserInfo(); // Clear Sentry user info on logout
     authState.set('unauthenticated');
@@ -230,6 +272,34 @@ class FirebaseAuthClient {
 
   public getDb() {
     return this.db;
+  }
+
+  private clearCachedData(): void {
+    try {
+      // Clear all GitHub-related cached data
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('pull-requests-') ||
+          key.startsWith('actions-') ||
+          key.startsWith('workflow-') ||
+          key.includes('github') ||
+          key.includes('repo')
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        console.debug(`Cleared cached data: ${key}`);
+      });
+      
+      console.log(`Cleared ${keysToRemove.length} cached data entries`);
+    } catch (error) {
+      console.warn('Error clearing cached data:', error);
+    }
   }
 }
 

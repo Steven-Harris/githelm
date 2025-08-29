@@ -1,5 +1,5 @@
 import { type RepoConfig, configService } from '$integrations/firebase';
-import { fetchMultipleRepositoriesPullRequests, fetchActions, fetchMultipleWorkflowJobs, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
+import { fetchMultipleRepositoriesPullRequests, fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
 import { getStorageObject, setStorageObject } from '$integrations/storage';
 import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
@@ -321,7 +321,7 @@ export function initializeActionsPolling(repoConfigs: RepoConfig[]): void {
     const key = getRepoKey(config);
     const storeKey = `actions-${key}`;
     unsubscribe(storeKey);
-    const store = createPollingStore(storeKey, () => fetchActions(config.org, config.repo, config.filters || []));
+    const store = createPollingStore(storeKey, () => fetchActionsSmartly(config));
     pollingUnsubscribers.set(
       storeKey,
       store.subscribe((workflows) => {
@@ -385,4 +385,73 @@ function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]
 export function getJobsForRun(org: string, repo: string, runId: number): Job[] {
   const key = `${org}/${repo}:${runId}`;
   return get(allWorkflowJobs)[key] || [];
+}
+
+// Clear all stores when user is unauthenticated
+export function clearAllStores(): void {
+  try {
+    allPullRequests.set({});
+    allWorkflowRuns.set({});
+    allWorkflowJobs.set({});
+    pullRequestConfigs.set([]);
+    actionsConfigs.set([]);
+    
+    // Unsubscribe from all polling
+    Array.from(pollingUnsubscribers.keys()).forEach(unsubscribe);
+    
+    console.log('Cleared all repository stores');
+  } catch (error) {
+    console.warn('Error clearing repository stores:', error);
+  }
+}
+
+// Smart actions fetching that avoids unnecessary API calls
+async function fetchActionsSmartly(config: RepoConfig): Promise<any> {
+  try {
+    const actions = config.filters || [];
+    
+    // Check if any actions need updating by looking for new workflow runs
+    const needsUpdate = await Promise.all(
+      actions.map(action => checkForNewWorkflowRuns(config.org, config.repo, action))
+    );
+    
+    // If no actions need updating, return cached data
+    if (!needsUpdate.some(Boolean)) {
+      const cacheKey = `actions-cache-${config.org}/${config.repo}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (e) {
+          console.warn('Failed to parse cached actions data:', e);
+        }
+      }
+    }
+    
+    // Fetch fresh data
+    const workflows = await fetchActions(config.org, config.repo, actions);
+    
+    // Cache the result
+    try {
+      const cacheKey = `actions-cache-${config.org}/${config.repo}`;
+      localStorage.setItem(cacheKey, JSON.stringify(workflows));
+    } catch (cacheError) {
+      console.warn('Failed to cache actions data:', cacheError);
+    }
+    
+    return workflows;
+  } catch (error) {
+    // On error, try to return cached data
+    const cacheKey = `actions-cache-${config.org}/${config.repo}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        console.warn('Failed to parse cached actions data as fallback:', e);
+      }
+    }
+    
+    throw error;
+  }
 }
