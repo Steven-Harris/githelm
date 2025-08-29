@@ -110,9 +110,16 @@ class FirebaseAuthClient {
   private async validateGithubToken(token: string): Promise<boolean> {
     try {
       const response = await fetch('https://api.github.com/user', {
-        headers: { Authorization: `token ${token}` },
+        // GitHub REST API (as of Sept-2024) requires the version header.
+        // We also include the standard Accept header for v3 and use the
+        // recommended "Bearer" auth scheme instead of the legacy "token".
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
       });
-      return response.status === 200;
+      return response.ok;
     } catch (error) {
       // Don't report network errors to Sentry as they're expected and not actionable
       // Only log if it's not a typical network/fetch error
