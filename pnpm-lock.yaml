@@ -2834,8 +2834,8 @@ packages:
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
-  browserslist@4.25.3:
-    resolution: {integrity: sha512-cDGv1kkDI4/0e5yON9yM5G/0A5u8sf5TnmdX5C9qHzI9PPu++sQ9zjm1k9NiOrf3riY4OkK0zSGqfvJyJsgCBQ==}
+  browserslist@4.25.4:
+    resolution: {integrity: sha512-4jYpcjabC606xJ3kw2QwGEZKX0Aw7sgQdZCvIK9dhVSPh76BKo+C+btT1RRofH7B+8iNpEbgGNVWiLki5q93yg==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
 
@@ -3256,8 +3256,8 @@ packages:
     resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
     engines: {node: '>=8'}
 
-  devalue@5.1.1:
-    resolution: {integrity: sha512-maua5KUiapvEwiEAe+XnlZ3Rh0GD+qI1J/nb9vrJc3muPXvcF/8gXYTWF76+5DAqHyDUtOIImEuo0YKE9mshVw==}
+  devalue@5.3.2:
+    resolution: {integrity: sha512-UDsjUbpQn9kvm68slnrs+mfxwFkIflOhkanmyabZ8zOYk8SMEIbJ3TK+88g70hSIeytu4y18f0z/hYHMTrXIWw==}
 
   discontinuous-range@1.0.0:
     resolution: {integrity: sha512-c68LpLbO+7kP/b1Hr1qs8/BJ09F5khZGTxqxZuhzxpmwJKOgRFHJWIb9/KmqnqHhLdO55aOxFH/EGBvUQbL/RQ==}
@@ -3300,8 +3300,8 @@ packages:
   electron-to-chromium@1.5.203:
     resolution: {integrity: sha512-uz4i0vLhfm6dLZWbz/iH88KNDV+ivj5+2SA+utpgjKaj9Q0iDLuwk6Idhe9BTxciHudyx6IvTvijhkPvFGUQ0g==}
 
-  electron-to-chromium@1.5.208:
-    resolution: {integrity: sha512-ozZyibehoe7tOhNaf16lKmljVf+3npZcJIEbJRVftVsmAg5TeA1mGS9dVCZzOwr2xT7xK15V0p7+GZqSPgkuPg==}
+  electron-to-chromium@1.5.211:
+    resolution: {integrity: sha512-IGBvimJkotaLzFnwIVgW9/UD/AOJ2tByUmeOrtqBfACSbAw5b1G0XpvdaieKyc7ULmbwXVx+4e4Be8pOPBrYkw==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -8823,7 +8823,7 @@ snapshots:
       '@types/cookie': 0.6.0
       acorn: 8.15.0
       cookie: 1.0.2
-      devalue: 5.1.1
+      devalue: 5.3.2
       esm-env: 1.2.2
       kleur: 4.1.5
       magic-string: 0.30.18
@@ -9511,12 +9511,12 @@ snapshots:
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.2)
 
-  browserslist@4.25.3:
+  browserslist@4.25.4:
     dependencies:
       caniuse-lite: 1.0.30001737
-      electron-to-chromium: 1.5.208
+      electron-to-chromium: 1.5.211
       node-releases: 2.0.19
-      update-browserslist-db: 1.1.3(browserslist@4.25.3)
+      update-browserslist-db: 1.1.3(browserslist@4.25.4)
 
   buffer-crc32@1.0.0: {}
 
@@ -9788,7 +9788,7 @@ snapshots:
 
   core-js-compat@3.45.1:
     dependencies:
-      browserslist: 4.25.3
+      browserslist: 4.25.4
 
   core-util-is@1.0.3: {}
 
@@ -9928,7 +9928,7 @@ snapshots:
 
   detect-libc@2.0.4: {}
 
-  devalue@5.1.1: {}
+  devalue@5.3.2: {}
 
   discontinuous-range@1.0.0: {}
 
@@ -9969,7 +9969,7 @@ snapshots:
 
   electron-to-chromium@1.5.203: {}
 
-  electron-to-chromium@1.5.208: {}
+  electron-to-chromium@1.5.211: {}
 
   emoji-regex@8.0.0: {}
 
@@ -13258,9 +13258,9 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  update-browserslist-db@1.1.3(browserslist@4.25.3):
+  update-browserslist-db@1.1.3(browserslist@4.25.4):
     dependencies:
-      browserslist: 4.25.3
+      browserslist: 4.25.4
       escalade: 3.2.0
       picocolors: 1.1.1
 
