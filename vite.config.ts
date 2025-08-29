@@ -178,8 +178,8 @@ const config: UserConfig = defineConfig({
           'node_modules/**/*',
           'dev-dist/**'
         ],
-        clientsClaim: true,
-        skipWaiting: true,
+        clientsClaim: false,
+        skipWaiting: false,
         // Handle SvelteKit's routing
         navigateFallback: '/',
         navigateFallbackDenylist: [/^\/_app\//, /^\/api\//],
