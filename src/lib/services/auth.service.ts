@@ -1,7 +1,9 @@
 import { firebase, authState } from '$integrations/firebase';
 import { clearSiteData } from '$integrations/storage';
-import { clearUserInfo, captureException } from '$integrations/sentry';
+import { clearUserInfo } from '$integrations/sentry';
 import { repositoryFacade } from '$lib/stores/facades/repository.facade';
+import { errorService } from '$lib/error/error.service';
+import { loggerService } from '$lib/logging/logger.service';
 import { get } from 'svelte/store';
 import type { User } from 'firebase/auth';
 
@@ -39,8 +41,9 @@ export class AuthService {
   async signIn(): Promise<void> {
     try {
       await firebase.signIn();
+      loggerService.info('User signed in successfully', { action: 'signIn' });
     } catch (error) {
-      captureException(error, { action: 'signIn' });
+      errorService.handleError(error, { action: 'signIn' });
       throw error;
     }
   }
@@ -52,8 +55,9 @@ export class AuthService {
       clearUserInfo();
       
       await firebase.signOut();
+      loggerService.info('User signed out successfully', { action: 'signOut' });
     } catch (error) {
-      captureException(error, { action: 'signOut' });
+      errorService.handleError(error, { action: 'signOut' });
       throw error;
     }
   }
@@ -61,8 +65,9 @@ export class AuthService {
   async refreshToken(): Promise<void> {
     try {
       await firebase.refreshGithubToken();
+      loggerService.info('GitHub token refreshed successfully', { action: 'refreshToken' });
     } catch (error) {
-      captureException(error, { action: 'refreshToken' });
+      errorService.handleError(error, { action: 'refreshToken' });
       throw error;
     }
   }
