@@ -15,6 +15,10 @@
 
   // Get the actual store instance
   const lastUpdated = lastUpdatedStore();
+  const user = firebase.user;
+
+  let menuOpen = $state(false);
+  let menuRef = $state<HTMLElement | null>(null);
 
   function manualRefresh() {
     manualTrigger.set(true);
@@ -37,7 +41,29 @@
     killSwitch.set(true);
     goto('/config');
   }
+
+  function toggleMenu() {
+    menuOpen = !menuOpen;
+  }
+
+  function closeMenu() {
+    menuOpen = false;
+  }
+
+  function handleWindowClick(event: MouseEvent) {
+    if (menuOpen && menuRef && event.target instanceof Node && !menuRef.contains(event.target)) {
+      closeMenu();
+    }
+  }
+
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      closeMenu();
+    }
+  }
 </script>
+
+<svelte:window on:click={handleWindowClick} on:keydown={handleKeydown} />
 
 <header class="sticky top-0 z-50 glass-nav-header w-full">
   <div class="backdrop-blur-md bg-opacity-75 bg-[#0d1117] border-b border-[#30363d] shadow-sm">
@@ -58,6 +84,22 @@
             <button class="nav-button ml-2" onclick={cancelConfig} aria-label="cancel configuration" title="Cancel configuration">
               <span>Cancel</span>
             </button>
+            <!-- Profile dropdown -->
+            <div class="relative ml-2" bind:this={menuRef}>
+              <button class="avatar-button tooltip-container" onclick={toggleMenu} aria-label="user menu" title="User menu">
+                {#if $user?.photoURL}
+                  <img src={$user.photoURL} alt="profile" class="avatar-img" />
+                {:else}
+                  <div class="avatar-fallback">{$user?.displayName?.charAt(0) || 'U'}</div>
+                {/if}
+              </button>
+              {#if menuOpen}
+                <div class="menu" role="menu">
+                  <button class="menu-item" role="menuitem" onclick={() => { navigateToConfig(); closeMenu(); }}>Settings</button>
+                  <button class="menu-item" role="menuitem" onclick={() => { logout(); closeMenu(); }}>Logout</button>
+                </div>
+              {/if}
+            </div>
           {:else}
             <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
               {#if $lastUpdated > 0}
@@ -70,31 +112,6 @@
                 <span class="mr-2">Updating...</span>
               {/if}
             </div>
-            <button class="nav-button tooltip-container" onclick={navigateToConfig} aria-label="configure repositories" title="Configure repositories">
-              {#if $isMobile}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="lucide lucide-settings"
-                >
-                  <path
-                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-                  ></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <span class="tooltip">Configure</span>
-              {:else}
-                <span>Configure</span>
-              {/if}
-            </button>
-
             <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
               {#if $isLoading}
                 <div class="animate-spin">
@@ -110,29 +127,22 @@
               {/if}
             </button>
 
-            <button class="nav-button ml-2 tooltip-container" onclick={logout}>
-              {#if $isMobile}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="lucide lucide-log-out"
-                >
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                  <polyline points="16 17 21 12 16 7"></polyline>
-                  <line x1="21" y1="12" x2="9" y2="12"></line>
-                </svg>
-                <span class="tooltip">Logout</span>
-              {:else}
-                <span>Logout</span>
+            <!-- Profile dropdown -->
+            <div class="relative ml-2" bind:this={menuRef}>
+              <button class="avatar-button tooltip-container" onclick={toggleMenu} aria-label="user menu" title="User menu">
+                {#if $user?.photoURL}
+                  <img src={$user.photoURL} alt="profile" class="avatar-img" />
+                {:else}
+                  <div class="avatar-fallback">{$user?.displayName?.charAt(0) || 'U'}</div>
+                {/if}
+              </button>
+              {#if menuOpen}
+                <div class="menu" role="menu">
+                  <button class="menu-item" role="menuitem" onclick={() => { navigateToConfig(); closeMenu(); }}>Settings</button>
+                  <button class="menu-item" role="menuitem" onclick={() => { logout(); closeMenu(); }}>Logout</button>
+                </div>
               {/if}
-            </button>
+            </div>
           {/if}
         {/if}
       </div>
@@ -234,5 +244,72 @@
     border-width: 5px;
     border-style: solid;
     border-color: transparent transparent rgba(22, 27, 34, 0.95) transparent;
+  }
+
+  /* Avatar dropdown */
+  .avatar-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    background-color: rgba(33, 38, 45, 0.8);
+    border: 1px solid var(--border-color);
+    border-radius: 9999px;
+    transition: all 200ms ease;
+  }
+
+  .avatar-button:hover {
+    background-color: rgba(48, 54, 61, 0.8);
+    border-color: #8b949e;
+  }
+
+  .avatar-img {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+  }
+
+  .avatar-fallback {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-color: #30363d;
+    color: #c9d1d9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  .menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.5rem);
+    background-color: rgba(22, 27, 34, 0.98);
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    min-width: 12rem;
+    padding: 0.25rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+  }
+
+  .menu-item {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .menu-item:hover {
+    background-color: rgba(48, 54, 61, 0.8);
   }
 </style>
