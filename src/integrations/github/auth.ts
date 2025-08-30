@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { firebase } from '../firebase';
-import { getGithubToken } from '../storage';
+import { getGithubToken, getGithubTokenAsync } from '../storage';
 import { captureException } from '$integrations/sentry';
 
 const MAX_RETRIES = 2;
@@ -74,7 +74,7 @@ export async function getTokenSafely(): Promise<string> {
   const currentAuthState = getCurrentAuthState();
 
   if (currentAuthState === 'authenticated') {
-    const token = getGithubToken();
+    const token = await getGithubTokenAsync();
     return token || refreshTokenSafely();
   }
 
@@ -83,12 +83,15 @@ export async function getTokenSafely(): Promise<string> {
       const unsubscribe = firebase.authState.subscribe((state) => {
         unsubscribe();
         if (state === 'authenticated') {
-          const token = getGithubToken();
-          if (token) {
-            resolve(token);
-          } else {
-            reject(new Error('No token available after authentication'));
-          }
+          getGithubTokenAsync().then(token => {
+            if (token) {
+              resolve(token);
+            } else {
+              reject(new Error('No token available after authentication'));
+            }
+          }).catch(error => {
+            reject(new Error(`Failed to retrieve token: ${error.message}`));
+          });
         } else {
           reject(new Error(`Authentication failed with state: ${state}`));
         }
@@ -112,7 +115,7 @@ export async function refreshTokenSafely(): Promise<string> {
 
   try {
     await firebase.refreshGithubToken();
-    const newToken = getGithubToken();
+    const newToken = await getGithubTokenAsync();
     if (!newToken) {
       firebase.reLogin();
       throw new Error('Failed to refresh GitHub token');

@@ -417,7 +417,6 @@ export function clearAllStores(): void {
     // Unsubscribe from all polling
     Array.from(pollingUnsubscribers.keys()).forEach(unsubscribe);
     
-    console.log('Cleared all repository stores');
   } catch (error) {
     console.warn('Error clearing repository stores:', error);
   }

@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
-import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
+import { clearSiteData, getGithubToken, setGithubToken, getGithubTokenAsync, setGithubTokenAsync, setCurrentUserId, rotateEncryptionKey } from '../storage';
 import { setUserInfo, clearUserInfo, captureException } from '../sentry';
 import { type AuthState } from './types';
 
@@ -43,10 +43,16 @@ class FirebaseAuthClient {
         authState.set('unauthenticated');
         this.user.set(null);
         clearUserInfo(); // Clear Sentry user info on logout
+        // Security: Clear user ID and rotate encryption keys
+        setCurrentUserId(null);
+        rotateEncryptionKey();
         // Clear all cached data when user is not authenticated
         this.clearCachedData();
         return;
       }
+
+      // Security: Set user ID for encryption key derivation
+      setCurrentUserId(user.uid);
 
       // Don't interfere if we're in the middle of signing in
       if (this.authInProgress) {
@@ -74,7 +80,7 @@ class FirebaseAuthClient {
         }
 
         // Verify GitHub token is still valid (only for existing sessions)
-        const githubToken = getGithubToken();
+        const githubToken = await getGithubTokenAsync();
         if (!githubToken) {
           console.warn('No GitHub token found, need to re-authenticate');
           authState.set('unauthenticated');
@@ -108,7 +114,7 @@ class FirebaseAuthClient {
       this.interval = undefined;
     }
 
-    const githubToken = getGithubToken();
+    const githubToken = await getGithubTokenAsync();
 
     if (!githubToken || !(await this.validateGithubToken(githubToken).catch(() => false))) {
       authState.set('authenticating');
@@ -215,7 +221,7 @@ class FirebaseAuthClient {
       const credential = GithubAuthProvider.credentialFromResult(result);
 
       if (credential?.accessToken) {
-        setGithubToken(credential.accessToken);
+        await setGithubTokenAsync(credential.accessToken);
         // Start token refresh and set authenticated
         await this.startTokenRefresh(result.user);
         authState.set('authenticated');
@@ -235,7 +241,7 @@ class FirebaseAuthClient {
         return;
       }
 
-      setGithubToken(additionalUserInfo.oauthAccessToken);
+      await setGithubTokenAsync(additionalUserInfo.oauthAccessToken);
       // Start token refresh and set authenticated
       await this.startTokenRefresh(result.user);
       authState.set('authenticated');
@@ -257,7 +263,7 @@ class FirebaseAuthClient {
 
     try {
       await signOut(this.auth);
-      setGithubToken(undefined);
+      await setGithubTokenAsync(undefined);
       await this.signIn();
     } catch (error) {
       captureException(error, { action: 'reLogin' });
@@ -304,10 +310,8 @@ class FirebaseAuthClient {
       
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
-        console.debug(`Cleared cached data: ${key}`);
       });
       
-      console.log(`Cleared ${keysToRemove.length} cached data entries`);
     } catch (error) {
       console.warn('Error clearing cached data:', error);
     }
