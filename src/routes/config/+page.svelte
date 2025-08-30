@@ -1,58 +1,35 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-import OrganizationManager from '$lib/config/OrganizationManager.svelte';
-import ConfigList from '$lib/config/ConfigList.svelte';
-import { eventBus } from '$lib/stores/event-bus.store';
-import { configService } from '$lib/services/config.service';
-import { repositoryFacade } from '$lib/stores/facades/repository.facade';
-import { isMobile } from '$lib/stores/mobile.store';
-import { captureException } from '$integrations/sentry';
-import type { CombinedConfig } from '$lib/stores/config.store';
+  import OrganizationManager from '$lib/config/OrganizationManager.svelte';
+  import ConfigList from '$lib/config/ConfigList.svelte';
+  import { configPageService } from '$lib/services/config-page.service';
+  import { configService } from '$lib/services/config.service';
+  import { isMobile } from '$lib/stores/mobile.store';
 
-  // State with proper types
-  let combinedConfigs = $state<CombinedConfig[]>([]);
-  let loading = $state<boolean>(true);
-  let saveInProgress = $state<boolean>(false);
-  let errorMessage = $state<string | null>(null);
+  // Get all data from the service
+  const configurations = configPageService.getConfigurations();
+  const loadingState = configPageService.getLoadingState();
+  const saveState = configPageService.getSaveState();
+  const errorMessage = configPageService.getErrorMessage();
 
-  $effect(() => {
-    loadConfigs();
-    if ($eventBus === 'save-config') {
-      saveChanges();
-      eventBus.set('');
-    }
-  });
+  // Simple derived values for presentation
+  const isLoading = $derived($loadingState);
+  const isSaving = $derived($saveState.isSaving);
+  const hasError = $derived($errorMessage !== null);
 
-  async function loadConfigs(): Promise<void> {
-    try {
-      await repositoryFacade.loadAllConfigurations();
-      combinedConfigs = await repositoryFacade.getCombinedConfigurations();
-    } catch (error) {
-      captureException(error);
-      throw error;
-    } finally {
-      loading = false;
-    }
+  // Handle configuration updates
+  function handleConfigUpdate(configs: any[]): void {
+    configPageService.handleConfigUpdate(configs);
   }
 
-  function handleConfigUpdate(configs: CombinedConfig[]): void {
-    combinedConfigs = configs;
-  }
-
-  async function saveChanges(): Promise<void> {
-    if (saveInProgress) return;
-
-    saveInProgress = true;
-    errorMessage = null;
-
+  // Handle save operation
+  async function handleSave(): Promise<void> {
     try {
-      await repositoryFacade.updateConfigurations(combinedConfigs);
+      await configPageService.saveConfigurations($configurations);
       configService.disableKillSwitch();
       goto('/');
     } catch (error) {
-      captureException(error);
-    } finally {
-      saveInProgress = false;
+      // Error is handled by the service
     }
   }
 </script>
@@ -62,7 +39,7 @@ import type { CombinedConfig } from '$lib/stores/config.store';
     <div class="h-full">
       <h1 class={$isMobile ? 'text-xl mb-2' : 'hero-title'}>Configuration</h1>
 
-      {#if errorMessage}
+      {#if hasError}
         <div class="bg-[rgba(68,44,44,0.7)] text-[#ff7b72] p-3 rounded-md mb-3 border border-[#f85149] backdrop-blur-sm">
           <div class="flex items-center">
             <svg class="w-4 h-4 mr-2 text-[#f85149] fill-current" viewBox="0 0 16 16">
@@ -70,12 +47,12 @@ import type { CombinedConfig } from '$lib/stores/config.store';
                 d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm10.28-1.72-4.5 4.5a.75.75 0 0 1-1.06 0l-2.25-2.25a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6.75 9.19l3.97-3.97a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"
               ></path>
             </svg>
-            {errorMessage}
+            {$errorMessage}
           </div>
         </div>
       {/if}
 
-      {#if loading}
+      {#if isLoading}
         <div class="text-center py-8">
           <div class="animate-spin mx-auto w-8 h-8">
             <svg class="w-full h-full text-[#58a6ff] fill-current" viewBox="0 0 16 16">
@@ -100,7 +77,7 @@ import type { CombinedConfig } from '$lib/stores/config.store';
             <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Repository Configurations</h2>
           </div>
           <div class="card-body">
-            <ConfigList configs={combinedConfigs} onUpdate={handleConfigUpdate} />
+            <ConfigList configs={$configurations} onUpdate={handleConfigUpdate} />
           </div>
         </div>
       {/if}
