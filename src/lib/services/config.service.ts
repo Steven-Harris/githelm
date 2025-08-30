@@ -1,9 +1,9 @@
 import { captureException } from '$integrations/sentry';
 import { eventBus } from '$lib/stores/event-bus.store';
 import { killSwitch } from '$lib/stores/kill-switch.store';
-import { loadRepositoryConfigs, updateRepositoryConfigs, getCombinedConfigs } from '$lib/stores/repository-service';
+import { repositoryFacade } from '$lib/stores/facades/repository.facade';
 import { get } from 'svelte/store';
-import type { CombinedConfig } from '$lib/stores/repository-service';
+import type { CombinedConfig } from '$lib/stores/config.store';
 
 export interface ConfigValidationResult {
   isValid: boolean;
@@ -27,25 +27,18 @@ export class ConfigService {
     return ConfigService.instance;
   }
 
-  /**
-   * Load all configurations
-   */
   async loadConfigurations(): Promise<CombinedConfig[]> {
     try {
-      await loadRepositoryConfigs();
-      return await getCombinedConfigs();
+      await repositoryFacade.loadAllConfigurations();
+      return await repositoryFacade.getCombinedConfigurations();
     } catch (error) {
       captureException(error, { action: 'loadConfigurations' });
       throw error;
     }
   }
 
-  /**
-   * Save configurations
-   */
   async saveConfigurations(configs: CombinedConfig[]): Promise<SaveConfigResult> {
     try {
-      // Validate configurations before saving
       const validation = this.validateConfigurations(configs);
       if (!validation.isValid) {
         return {
@@ -54,9 +47,8 @@ export class ConfigService {
         };
       }
 
-      await updateRepositoryConfigs(configs);
+      await repositoryFacade.updateConfigurations(configs);
       
-      // Trigger config updated event
       eventBus.set('config-updated');
       
       return { success: true };
@@ -69,9 +61,6 @@ export class ConfigService {
     }
   }
 
-  /**
-   * Validate repository configuration
-   */
   validateRepositoryConfig(config: {
     org: string;
     repo: string;
@@ -102,9 +91,6 @@ export class ConfigService {
     };
   }
 
-  /**
-   * Validate multiple configurations
-   */
   validateConfigurations(configs: CombinedConfig[]): ConfigValidationResult {
     const errors: string[] = [];
 
@@ -113,14 +99,12 @@ export class ConfigService {
       return { isValid: false, errors };
     }
 
-    // Check for duplicate configurations
     const repoKeys = configs.map(config => `${config.org}/${config.repo}`);
     const uniqueKeys = new Set(repoKeys);
     if (uniqueKeys.size !== repoKeys.length) {
       errors.push('Duplicate repository configurations are not allowed');
     }
 
-    // Validate each configuration
     configs.forEach((config, index) => {
       const validation = this.validateRepositoryConfig(config);
       if (!validation.isValid) {
@@ -136,9 +120,6 @@ export class ConfigService {
     };
   }
 
-  /**
-   * Add new configuration
-   */
   async addConfiguration(config: CombinedConfig): Promise<SaveConfigResult> {
     try {
       const currentConfigs = await this.loadConfigurations();
@@ -153,9 +134,6 @@ export class ConfigService {
     }
   }
 
-  /**
-   * Update existing configuration
-   */
   async updateConfiguration(
     index: number,
     config: CombinedConfig
@@ -181,9 +159,6 @@ export class ConfigService {
     }
   }
 
-  /**
-   * Remove configuration
-   */
   async removeConfiguration(index: number): Promise<SaveConfigResult> {
     try {
       const currentConfigs = await this.loadConfigurations();
@@ -205,9 +180,6 @@ export class ConfigService {
     }
   }
 
-  /**
-   * Reorder configurations
-   */
   async reorderConfigurations(
     fromIndex: number,
     toIndex: number
@@ -237,34 +209,22 @@ export class ConfigService {
     }
   }
 
-  /**
-   * Enable kill switch (pause updates)
-   */
   enableKillSwitch(): void {
     killSwitch.set(true);
   }
 
-  /**
-   * Disable kill switch (resume updates)
-   */
   disableKillSwitch(): void {
     killSwitch.set(false);
   }
 
-  /**
-   * Check if kill switch is active
-   */
   isKillSwitchActive(): boolean {
     return get(killSwitch);
   }
 
-  /**
-   * Trigger configuration save event
-   */
   triggerSaveEvent(): void {
     eventBus.set('save-config');
   }
 }
 
-// Export singleton instance
+
 export const configService = ConfigService.getInstance();

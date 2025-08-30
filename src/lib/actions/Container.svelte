@@ -1,30 +1,38 @@
 <script lang="ts">
   import List from './List.svelte';
-  import LoadingPlaceholder from './LoadingPlaceholder.svelte';
-  import PlaceholderHint from './PlaceholderHint.svelte';
-  import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
-  import { actionsConfigs, getRepoKey, allWorkflowRuns } from '$lib/stores/repository-service';
-  import { workflowStatusFilters, type WorkflowStatus } from '$lib/stores/workflow-status-filter.store';
-  import { derived } from 'svelte/store';
-  import type { WorkflowRun } from '$integrations/github';
+import LoadingPlaceholder from './LoadingPlaceholder.svelte';
+import PlaceholderHint from './PlaceholderHint.svelte';
+import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
+import { repositoryFacade } from '$lib/stores/facades/repository.facade';
+import { filterService } from '$lib/services/filter.service';
+import { workflowStatusFilters, type WorkflowStatus } from '$lib/stores/workflow-status-filter.store';
+import { derived } from 'svelte/store';
+import type { WorkflowRun } from '$integrations/github';
 
-  const filteredWorkflowRunsByRepo = derived([allWorkflowRuns, workflowStatusFilters, actionsConfigs], ([$allWorkflowRuns, $statusFilters, $configs]) => {
+  const filteredWorkflowRunsByRepo = derived([
+    repositoryFacade.getWorkflowRunsStore(), 
+    workflowStatusFilters, 
+    repositoryFacade.getActionsConfigsStore()
+  ], ([$allWorkflowRuns, $statusFilters, $configs]) => {
     const filtered: Record<string, WorkflowRun[]> = {};
 
     for (const [repoKey, runs] of Object.entries($allWorkflowRuns)) {
-      filtered[repoKey] = runs.filter((run) => passesStatusFilter(run, $statusFilters));
+      filtered[repoKey] = filterService.filterWorkflowRunsByStatus(runs, $statusFilters);
     }
 
     return filtered;
   });
 
   // Create a derived store to track loading states
-  const loadingStates = derived([allWorkflowRuns, actionsConfigs], ([$allWorkflowRuns, $configs]) => {
+  const loadingStates = derived([
+    repositoryFacade.getWorkflowRunsStore(), 
+    repositoryFacade.getActionsConfigsStore()
+  ], ([$allWorkflowRuns, $configs]) => {
     const states: Record<string, 'loading' | 'loaded' | 'empty'> = {};
     
     // Initialize loading states for all configured repos
     $configs.forEach(config => {
-      const repoKey = getRepoKey(config);
+      const repoKey = repositoryFacade.getRepoKey(config);
       states[repoKey] = 'loading';
     });
 
@@ -36,14 +44,7 @@
     return states;
   });
 
-  function passesStatusFilter(run: WorkflowRun, statusFilters: Record<WorkflowStatus, boolean>): boolean {
-    const status = run.conclusion || run.status;
-    const normalizedStatus = status.toLowerCase();
 
-    const filterStatus = normalizedStatus === 'completed' ? 'success' : normalizedStatus;
-
-    return Object.keys(statusFilters).includes(filterStatus) ? statusFilters[filterStatus as WorkflowStatus] : true;
-  }
 
   function isRepoLoaded(repoKey: string): boolean {
     return $loadingStates[repoKey] === 'loaded' || $loadingStates[repoKey] === 'empty';
@@ -70,30 +71,11 @@
 
   // Get a hint about what we're looking for based on current filters
   function getFilterHint(): string {
-    // Map status keys to human-readable labels
-    const statusLabels: Record<string, string> = {
-      in_progress: 'in progress',
-      queued: 'queued',
-      success: 'success',
-      failure: 'failure',
-      cancelled: 'cancelled',
-      // Add more mappings as needed
-    };
-
-    const enabledFilters = Object.entries($workflowStatusFilters)
-      .filter(([_, enabled]) => enabled)
-      .map(([status, _]) => statusLabels[status] || status);
-
-    if (enabledFilters.length === 0) {
-      return 'workflow runs';
-    } else if (enabledFilters.length === 1) {
-      return `${enabledFilters[0]} workflow runs`;
-    } else if (enabledFilters.length === Object.keys($workflowStatusFilters).length) {
-      return 'workflow runs';
-    } else {
-      return `${enabledFilters.slice(0, -1).join(', ')} and ${enabledFilters.slice(-1)} workflow runs`;
-    }
+    return filterService.getFilterHint($workflowStatusFilters);
   }
+
+  // Create a derived store for actions configs
+  const actionsConfigs = derived(repositoryFacade.getActionsConfigsStore(), ($configs) => $configs);
 </script>
 
 <section class="hero-section mb-6 glass-effect">
@@ -111,7 +93,7 @@
     {:else}
       <div class="space-y-4">
         {#each $actionsConfigs as repo (repo.org + '/' + repo.repo)}
-          {@const repoKey = getRepoKey(repo)}
+          {@const repoKey = repositoryFacade.getRepoKey(repo)}
           {@const filteredRuns = $filteredWorkflowRunsByRepo[repoKey] || []}
           {@const hasLoadedData = isRepoLoaded(repoKey)}
           {@const showPlaceholder = shouldShowPlaceholder(repoKey)}

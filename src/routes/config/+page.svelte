@@ -1,12 +1,13 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import OrganizationManager from '$lib/config/OrganizationManager.svelte';
-  import ConfigList from '$lib/config/ConfigList.svelte';
-  import { eventBus } from '$lib/stores/event-bus.store';
-  import { loadRepositoryConfigs, updateRepositoryConfigs, getCombinedConfigs, type CombinedConfig } from '$lib/stores/repository-service';
-  import { killSwitch } from '$stores/kill-switch.store';
-  import { isMobile } from '$lib/stores/mobile.store';
-  import { captureException } from '$integrations/sentry';
+import OrganizationManager from '$lib/config/OrganizationManager.svelte';
+import ConfigList from '$lib/config/ConfigList.svelte';
+import { eventBus } from '$lib/stores/event-bus.store';
+import { configService } from '$lib/services/config.service';
+import { repositoryFacade } from '$lib/stores/facades/repository.facade';
+import { isMobile } from '$lib/stores/mobile.store';
+import { captureException } from '$integrations/sentry';
+import type { CombinedConfig } from '$lib/stores/config.store';
 
   // State with proper types
   let combinedConfigs = $state<CombinedConfig[]>([]);
@@ -24,8 +25,8 @@
 
   async function loadConfigs(): Promise<void> {
     try {
-      await loadRepositoryConfigs();
-      combinedConfigs = await getCombinedConfigs();
+      await repositoryFacade.loadAllConfigurations();
+      combinedConfigs = await repositoryFacade.getCombinedConfigurations();
     } catch (error) {
       captureException(error);
       throw error;
@@ -45,8 +46,8 @@
     errorMessage = null;
 
     try {
-      await updateRepositoryConfigs(combinedConfigs);
-      killSwitch.set(false);
+      await repositoryFacade.updateConfigurations(combinedConfigs);
+      configService.disableKillSwitch();
       goto('/');
     } catch (error) {
       captureException(error);

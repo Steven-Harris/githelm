@@ -1,14 +1,15 @@
 <script lang="ts">
   import { firebase, authState } from "$integrations/firebase";
-  import { initAuthStateHandling } from "$integrations/github";
-  import Footer from "$lib/Footer.svelte";
-  import Header from "$lib/Header.svelte";
-  import Tabs from "$lib/Tabs.svelte";
-  import { loadRepositoryConfigs, clearAllStores } from "$lib/stores/repository-service";
-  import { pwaAssetsHead } from "virtual:pwa-assets/head";
-  import { pwaInfo } from 'virtual:pwa-info';
-  import "../style.css";
-  import { derived } from "svelte/store";
+import { initAuthStateHandling } from "$integrations/github";
+import Footer from "$lib/Footer.svelte";
+import Header from "$lib/Header.svelte";
+import Tabs from "$lib/Tabs.svelte";
+import { repositoryFacade } from "$lib/stores/facades/repository.facade";
+import { authService } from "$lib/services/auth.service";
+import { pwaAssetsHead } from "virtual:pwa-assets/head";
+import { pwaInfo } from 'virtual:pwa-info';
+import "../style.css";
+import { derived } from "svelte/store";
 
   interface Props {
     children?: import('svelte').Snippet;
@@ -20,10 +21,10 @@
   let isAuth = derived(authState, ($authState) => {
     if ($authState === 'authenticated') {
       initAuthStateHandling();
-      loadRepositoryConfigs();
+      repositoryFacade.loadAllConfigurations();
     } else if ($authState === 'unauthenticated') {
       // Clear all stores when unauthenticated to prevent showing stale data
-      clearAllStores();
+      repositoryFacade.clearAllStores();
     }
     return $authState;
   });
@@ -35,7 +36,7 @@
   let isAuthLoading = $derived($isAuth === 'initializing' || $isAuth === 'authenticating');
 
   function login() {
-    firebase.signIn();
+    authService.signIn();
   }
 </script>
 

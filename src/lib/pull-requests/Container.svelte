@@ -1,10 +1,10 @@
 <script lang="ts">
   import List from './List.svelte';
-  import LoadingPlaceholder from './LoadingPlaceholder.svelte';
   import PlaceholderHint from './PlaceholderHint.svelte';
   import RepositoryFilter from './RepositoryFilter.svelte';
-  import { pullRequestConfigs, getRepoKey, allPullRequests } from '$lib/stores/repository-service';
+  import { repositoryFacade } from '$lib/stores/facades/repository.facade';
   import { repositoryFilters } from '$lib/stores/repository-filter.store';
+  import { derived } from 'svelte/store';
   import type { RepoConfig } from '$integrations/firebase';
 
   // Track loading states for each repository
@@ -13,9 +13,13 @@
   // Process repositories and determine their loading states
   let reposToShow = $state<Array<{repo: RepoConfig, isLoaded: boolean, hasPRs: boolean}>>([]);
 
+  // Create derived stores for the facade
+  const pullRequestConfigs = derived(repositoryFacade.getPullRequestConfigsStore(), ($configs) => $configs);
+  const allPullRequests = derived(repositoryFacade.getPullRequestsStore(), ($prs) => $prs);
+
   $effect(() => {
     reposToShow = $pullRequestConfigs.map(repo => {
-      const repoKey = getRepoKey(repo);
+      const repoKey = repositoryFacade.getRepoKey(repo);
       const pullRequests = $allPullRequests[repoKey] || [];
       const hasPRs = pullRequests.length > 0;
       
@@ -100,7 +104,7 @@
             {#if isLoaded}
               <!-- Show real data when loaded -->
               {#if hasPRs && $repositoryFilters.with_prs}
-                <List org={repo.org} repo={repo.repo} pullRequests={$allPullRequests[getRepoKey(repo)] || []} />
+                <List org={repo.org} repo={repo.repo} pullRequests={$allPullRequests[repositoryFacade.getRepoKey(repo)] || []} />
               {:else if !hasPRs && $repositoryFilters.without_prs}
                 <!-- Show empty state for this repo -->
                 <div class="hero-card">

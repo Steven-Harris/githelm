@@ -25,9 +25,6 @@ export class FilterService {
     return FilterService.instance;
   }
 
-  /**
-   * Filter workflow runs by status
-   */
   filterWorkflowRunsByStatus(
     runs: WorkflowRun[],
     statusFilters: Record<WorkflowStatus, boolean>
@@ -37,9 +34,6 @@ export class FilterService {
     return runs.filter((run) => this.passesStatusFilter(run, statusFilters));
   }
 
-  /**
-   * Check if a workflow run passes status filter
-   */
   private passesStatusFilter(
     run: WorkflowRun,
     statusFilters: Record<WorkflowStatus, boolean>
@@ -53,9 +47,6 @@ export class FilterService {
       : true;
   }
 
-  /**
-   * Filter pull requests by labels
-   */
   filterPullRequestsByLabels(
     pullRequests: any[],
     labelFilters: string[]
@@ -73,9 +64,6 @@ export class FilterService {
     });
   }
 
-  /**
-   * Filter repositories by name
-   */
   filterRepositoriesByName(
     repositories: any[],
     searchTerm: string
@@ -90,9 +78,6 @@ export class FilterService {
     );
   }
 
-  /**
-   * Get filter hint text based on current filters
-   */
   getFilterHint(statusFilters: Record<WorkflowStatus, boolean>): string {
     const statusLabels: Record<string, string> = {
       in_progress: 'in progress',
@@ -117,9 +102,6 @@ export class FilterService {
     }
   }
 
-  /**
-   * Check if any filters are enabled
-   */
   hasActiveFilters(filters: FilterCriteria): boolean {
     if (filters.statusFilters) {
       const hasStatusFilters = Object.values(filters.statusFilters).some(Boolean);
@@ -137,16 +119,12 @@ export class FilterService {
     return false;
   }
 
-  /**
-   * Get filtered data with metadata
-   */
-  getFilteredData<T>(
+  getFilteredData<T extends object>(
     data: T[],
     filters: FilterCriteria
   ): FilterResult<T> {
     let filteredData = [...data];
 
-    // Apply status filters for workflow runs
     if (filters.statusFilters && data.length > 0 && 'conclusion' in data[0]) {
       filteredData = this.filterWorkflowRunsByStatus(
         filteredData as WorkflowRun[],
@@ -154,7 +132,6 @@ export class FilterService {
       ) as T[];
     }
 
-    // Apply label filters for pull requests
     if (filters.labelFilters && data.length > 0 && 'labels' in data[0]) {
       filteredData = this.filterPullRequestsByLabels(
         filteredData as any[],
@@ -169,9 +146,6 @@ export class FilterService {
     };
   }
 
-  /**
-   * Clear all filters
-   */
   clearFilters(): FilterCriteria {
     return {
       statusFilters: undefined,
@@ -181,5 +155,4 @@ export class FilterService {
   }
 }
 
-// Export singleton instance
 export const filterService = FilterService.getInstance();

@@ -1,7 +1,7 @@
 <script lang="ts">
   import editSVG from '$assets/edit.svg';
   import RepositoryForm from './RepositoryForm.svelte';
-  import { updateRepositoryConfigs } from '$lib/stores/repository-service';
+  import { configService } from '$lib/services/config.service';
   import deleteSVG from '$assets/delete.svg';
   import { useDraggable } from './useDraggable';
   import { isMobile } from '$lib/stores/mobile.store';
@@ -44,8 +44,14 @@
   }
 
   function saveConfigs(updatedConfigs: RepoConfig[]): void {
-    updateRepositoryConfigs(updatedConfigs)
-      .then(() => onUpdate(updatedConfigs))
+    configService.saveConfigurations(updatedConfigs)
+      .then((result) => {
+        if (result.success) {
+          onUpdate(updatedConfigs);
+        } else {
+          console.error('Failed to save configurations:', result.error);
+        }
+      })
       .catch((error) => {
         captureException(error);
       });

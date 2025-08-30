@@ -1,7 +1,7 @@
 <script lang="ts">
   import { searchRepositories } from '$integrations/github';
   import { captureException } from '$integrations/sentry';
-  import type { SearchRepositoryResult } from '$lib/stores/repository-service';
+  import type { SearchRepositoryResult } from '$integrations/github';
   import { useDropdown } from './useDropdown';
   import { useKeyboardNavigation } from './useKeyboardNavigation';
 
