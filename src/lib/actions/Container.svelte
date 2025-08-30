@@ -5,7 +5,6 @@
   import { actionsContainerService } from '$lib/services/actions-container.service';
   import { repositoryFacade } from '$lib/stores/facades/repository.facade';
 
-  // Get all data from the service
   const filteredWorkflowRuns = actionsContainerService.getFilteredWorkflowRuns();
   const filterHint = actionsContainerService.getFilterHint();
   const emptyStateMessage = actionsContainerService.getEmptyStateMessage();
@@ -13,11 +12,9 @@
   const configuredRepositories = actionsContainerService.getConfiguredRepositories();
   const loadingStates = actionsContainerService.getLoadingStates();
 
-  // Simple derived values for presentation
   const showEmptyState = $derived($emptyStateMessage !== '');
   const showFilter = $derived($hasConfiguredRepositories);
 
-  // Helper function to check if placeholder should be shown
   function shouldShowPlaceholder(repoKey: string): boolean {
     return $loadingStates[repoKey] === 'loading';
   }
@@ -46,15 +43,12 @@
           {@const showPlaceholder = shouldShowPlaceholder(repoKey)}
 
           {#if hasLoadedData}
-            <!-- Show real data when loaded, but only if it matches filters -->
             {#if filteredRuns.length > 0}
               <div class="stagger-item">
                 <List org={repo.org} repo={repo.repo} workflowRuns={filteredRuns} />
               </div>
             {/if}
-            <!-- Note: Don't show empty state for individual repos, let the overall filter message handle it -->
           {:else if showPlaceholder}
-            <!-- Show smart loading placeholder until data loads, but only if filters suggest we might show content -->
             <div class="stagger-item">
               <PlaceholderHint org={repo.org} repo={repo.repo} filterHint={$filterHint} />
             </div>

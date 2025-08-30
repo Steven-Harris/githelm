@@ -2,7 +2,6 @@
   import { workflowStatusFilters, toggleWorkflowStatusFilter, resetWorkflowStatusFilters, type WorkflowStatus } from '$lib/stores/workflow-status-filter.store';
   import { onMount } from 'svelte';
 
-  // Define color classes for different statuses
   const statusColors = {
     success: 'bg-[#2ea043] border-[#238636]',
     failure: 'bg-[#f85149] border-[#da3633]',
@@ -19,11 +18,9 @@
     pending: 'Pending',
   };
 
-  // State for dropdown visibility
   let isDropdownOpen = $state(false);
   let activeFilterCount = $state(0);
 
-  // Close dropdown when clicking outside
   function handleClickOutside(event: MouseEvent) {
     const dropdown = document.getElementById('workflow-status-dropdown');
     if (dropdown && !dropdown.contains(event.target as Node)) {
@@ -31,7 +28,6 @@
     }
   }
 
-  // Calculate active filter count whenever workflowStatusFilters changes
   $effect(() => {
     activeFilterCount = Object.values($workflowStatusFilters).filter(Boolean).length;
   });

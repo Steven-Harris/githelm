@@ -62,7 +62,6 @@
     let updatedConfigs = [...configs];
 
     if (typeof index === 'number') {
-      // Edit existing configuration - preserve its original position
       if (pullRequests || actions) {
         const updatedConfig = {
           org: pullRequests?.org || actions?.org || '',
@@ -71,17 +70,14 @@
           actions: actions?.filters || [],
         };
 
-        // Replace the config at the original index instead of removing and adding at the end
         updatedConfigs[index] = updatedConfig;
       } else {
-        // If no configuration data was provided, remove the config
         updatedConfigs.splice(index, 1);
       }
 
       configs = updatedConfigs;
       editingIndex = -1;
     } else {
-      // Add new configuration
       if (pullRequests || actions) {
         updatedConfigs = [
           ...configs,
@@ -275,17 +271,14 @@
     opacity: 0.6;
   }
 
-  /* For buttons inside draggable area */
   .config-item button {
     pointer-events: all;
   }
 
-  /* Style for the drag handle */
   .drag-handle {
     cursor: grab;
   }
 
-  /* Override cursor for non-draggable elements */
   .config-item .no-drag {
     cursor: pointer !important;
   }
@@ -294,7 +287,6 @@
     cursor: grabbing;
   }
 
-  /* Ghost element styling moved to global scope */
   :global(.ghost-element) {
     transition: transform 0.05s ease-out;
     box-shadow:
@@ -309,14 +301,12 @@
     z-index: 9999 !important;
   }
 
-  /* Mobile optimizations */
   @media (max-width: 768px) {
     :global(.chip) {
       padding: 1px 6px;
       font-size: 0.7rem;
     }
 
-    /* Add touch area styles for mobile buttons */
     .config-item button {
       min-height: 32px;
       min-width: 32px;

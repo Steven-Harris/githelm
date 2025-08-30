@@ -5,7 +5,6 @@
 </script>
 
 <div class="hero-card">
-  <!-- Repository header with loading animation -->
   <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
     <h3 class="font-semibold">
       <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
@@ -21,33 +20,28 @@
     </div>
   </div>
 
-  <!-- Loading skeleton for pull requests -->
   <div class="divide-y divide-[#21262d]">
     {#each Array(2) as _, index}
       <div class="p-4 bg-[#0d1117]">
         <div class="flex justify-between items-start mb-3">
           <div class="flex-1 min-w-0">
-            <!-- PR title skeleton -->
             <div class="flex items-center mb-2">
               <div class="loading-pulse w-8 h-8 bg-[#30363d] rounded-full mr-2"></div>
               <div class="loading-pulse w-3/4 h-5 bg-[#30363d] rounded"></div>
             </div>
             
-            <!-- PR meta info skeleton -->
             <div class="flex items-center space-x-3 mb-2">
               <div class="loading-pulse w-12 h-3 bg-[#30363d] rounded"></div>
               <div class="loading-pulse w-20 h-3 bg-[#30363d] rounded"></div>
               <div class="loading-pulse w-16 h-3 bg-[#30363d] rounded"></div>
             </div>
             
-            <!-- Labels skeleton -->
             <div class="flex space-x-2">
               <div class="loading-pulse w-16 h-5 bg-[#30363d] rounded-full"></div>
               <div class="loading-pulse w-20 h-5 bg-[#30363d] rounded-full"></div>
             </div>
           </div>
           
-          <!-- Reviews skeleton -->
           <div class="flex space-x-1">
             <div class="loading-pulse w-6 h-6 bg-[#30363d] rounded-full"></div>
             <div class="loading-pulse w-6 h-6 bg-[#30363d] rounded-full"></div>
@@ -57,7 +51,6 @@
     {/each}
   </div>
 
-  <!-- Loading indicator at bottom -->
   <div class="p-3 bg-[#0d1117] border-t border-[#21262d] flex items-center justify-center">
     <svg class="animate-spin h-4 w-4 text-[#58a6ff] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

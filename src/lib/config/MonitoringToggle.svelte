@@ -11,7 +11,6 @@
 </div>
 
 <style>
-  /* Toggle switch styling */
   .switch {
     position: relative;
     display: inline-block;

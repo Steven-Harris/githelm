@@ -2,17 +2,14 @@
   import { repositoryFilters, toggleRepositoryFilter, resetRepositoryFilters, type RepositoryFilterType } from '$lib/stores/repository-filter.store';
   import { onMount } from 'svelte';
 
-  // Define filter names
   const filterNames = {
     with_prs: 'With Pull Requests',
     without_prs: 'Without Pull Requests',
   };
 
-  // State for dropdown visibility
   let isDropdownOpen = $state(false);
   let activeFilterCount = $state(0);
 
-  // Close dropdown when clicking outside
   function handleClickOutside(event: MouseEvent) {
     const dropdown = document.getElementById('repository-filter-dropdown');
     if (dropdown && !dropdown.contains(event.target as Node)) {
@@ -20,7 +17,6 @@
     }
   }
 
-  // Get count of active filters
   $effect(() => {
     activeFilterCount = Object.values($repositoryFilters).filter(Boolean).length;
   });

@@ -7,7 +7,7 @@
     onAdd,
     onRemove,
     onLoadOptions,
-    noOptionsAvailable = false, // New prop to indicate if the repo has no workflows
+    noOptionsAvailable = false,
   } = $props();
 
   let newFilter = $state<string>('');
@@ -87,10 +87,8 @@
     }
   }
 
-  // Helper function to display workflow names without extension but still keep full name for selection
   function getDisplayName(option: string): string {
     if (title.toLowerCase() === 'workflow') {
-      // Return the name without extension for display purposes only
       return option.replace(/\.(ya?ml)$/, '');
     }
     return option;
@@ -119,14 +117,12 @@
     </p>
   {/if}
 
-  <!-- Show no workflows message when appropriate -->
   {#if noOptionsAvailable && title.toLowerCase() === 'workflow'}
     <div class="p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded mb-2">
       <p class="text-sm text-[#f0883e]">No workflows found in this repository.</p>
       <p class="text-xs text-[#8b949e] mt-1">Create a workflow file in the repository's .github/workflows directory, then refresh here.</p>
     </div>
   {:else}
-    <!-- Show input field only when workflows exist or for other filter types -->
     <div class="relative">
       <input
         id="filter-input"

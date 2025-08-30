@@ -17,9 +17,6 @@ export interface Command {
   undo(): Promise<CommandResult>;
 }
 
-/**
- * Load Repository Configurations Command
- */
 export class LoadRepositoryConfigsCommand implements Command {
   constructor() {}
 
@@ -43,7 +40,7 @@ export class LoadRepositoryConfigsCommand implements Command {
   }
 
   canUndo(): boolean {
-    return false; // Cannot undo loading
+    return false;
   }
 
   async undo(): Promise<CommandResult> {
@@ -51,9 +48,6 @@ export class LoadRepositoryConfigsCommand implements Command {
   }
 }
 
-/**
- * Update Repository Configurations Command
- */
 export class UpdateRepositoryConfigsCommand implements Command {
   private previousConfigs: CombinedConfig[] = [];
   private newConfigs: CombinedConfig[];
@@ -64,10 +58,8 @@ export class UpdateRepositoryConfigsCommand implements Command {
 
   async execute(): Promise<CommandResult> {
     try {
-      // Store previous state for undo
       this.previousConfigs = await repositoryFacade.getCombinedConfigurations();
       
-      // Execute the update
       await repositoryFacade.updateConfigurations(this.newConfigs);
       
       loggerService.info('Repository configurations updated successfully', {
@@ -116,9 +108,6 @@ export class UpdateRepositoryConfigsCommand implements Command {
   }
 }
 
-/**
- * Refresh Pull Requests Data Command
- */
 export class RefreshPullRequestsCommand implements Command {
   private configs: RepoConfig[];
 
@@ -147,7 +136,7 @@ export class RefreshPullRequestsCommand implements Command {
   }
 
   canUndo(): boolean {
-    return false; // Cannot undo data refresh
+    return false;
   }
 
   async undo(): Promise<CommandResult> {
@@ -155,9 +144,6 @@ export class RefreshPullRequestsCommand implements Command {
   }
 }
 
-/**
- * Refresh Actions Data Command
- */
 export class RefreshActionsCommand implements Command {
   private configs: RepoConfig[];
 
@@ -186,7 +172,7 @@ export class RefreshActionsCommand implements Command {
   }
 
   canUndo(): boolean {
-    return false; // Cannot undo data refresh
+    return false;
   }
 
   async undo(): Promise<CommandResult> {
@@ -194,9 +180,6 @@ export class RefreshActionsCommand implements Command {
   }
 }
 
-/**
- * Clear All Stores Command
- */
 export class ClearAllStoresCommand implements Command {
   private previousState: any = null;
 
@@ -204,7 +187,6 @@ export class ClearAllStoresCommand implements Command {
 
   async execute(): Promise<CommandResult> {
     try {
-      // Store previous state for undo (if possible)
       this.previousState = {
         pullRequests: repositoryFacade.getPullRequestsStore(),
         workflowRuns: repositoryFacade.getWorkflowRunsStore(),
@@ -229,7 +211,7 @@ export class ClearAllStoresCommand implements Command {
   }
 
   canUndo(): boolean {
-    return false; // Cannot undo clearing stores
+    return false;
   }
 
   async undo(): Promise<CommandResult> {
@@ -237,9 +219,6 @@ export class ClearAllStoresCommand implements Command {
   }
 }
 
-/**
- * Command Executor - Manages command execution and history
- */
 export class CommandExecutor {
   private static instance: CommandExecutor;
   private commandHistory: Command[] = [];
@@ -254,9 +233,6 @@ export class CommandExecutor {
     return CommandExecutor.instance;
   }
 
-  /**
-   * Execute a command
-   */
   async executeCommand(command: Command): Promise<CommandResult> {
     try {
       const result = await command.execute();
@@ -278,9 +254,6 @@ export class CommandExecutor {
     }
   }
 
-  /**
-   * Undo last command
-   */
   async undoLastCommand(): Promise<CommandResult> {
     const lastCommand = this.commandHistory.pop();
     
@@ -306,9 +279,6 @@ export class CommandExecutor {
     }
   }
 
-  /**
-   * Add command to history
-   */
   private addToHistory(command: Command): void {
     this.commandHistory.push(command);
     
@@ -318,28 +288,18 @@ export class CommandExecutor {
     }
   }
 
-  /**
-   * Get command history
-   */
   getHistory(): Command[] {
     return [...this.commandHistory];
   }
 
-  /**
-   * Clear command history
-   */
   clearHistory(): void {
     this.commandHistory = [];
   }
 
-  /**
-   * Check if undo is available
-   */
   canUndo(): boolean {
     const lastCommand = this.commandHistory[this.commandHistory.length - 1];
     return lastCommand ? lastCommand.canUndo() : false;
   }
 }
 
-// Export singleton instance
 export const commandExecutor = CommandExecutor.getInstance();

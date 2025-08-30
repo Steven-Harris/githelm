@@ -4,14 +4,13 @@
   import helmSVG from '$assets/helm.svg';
   import refreshSVG from '$assets/refresh.svg';
   import { firebase } from '$integrations/firebase';
-import { authService } from '$lib/services/auth.service';
-import { configService } from '$lib/services/config.service';
-import { killSwitch } from '$lib/stores/kill-switch.store';
-import { manualTrigger, lastUpdatedStore } from '$lib/stores/last-updated.store';
-import { isLoading } from '$lib/stores/loading.store';
-import { eventBus } from '$lib/stores/event-bus.store';
-import { isMobile } from '$lib/stores/mobile.store';
-import { timeAgoInSeconds } from './utils/date-utils';
+  import { authService } from '$lib/services/auth.service';
+  import { configService } from '$lib/services/config.service';
+  import { killSwitch } from '$lib/stores/kill-switch.store';
+  import { manualTrigger, lastUpdatedStore } from '$lib/stores/last-updated.store';
+  import { isLoading } from '$lib/stores/loading.store';
+  import { isMobile } from '$lib/stores/mobile.store';
+  import { timeAgoInSeconds } from './utils/date-utils';
 
   let { signedIn } = $props();
 

@@ -2,8 +2,6 @@
   import { eventBus } from '$lib/stores/event-bus.store';
   import { fetchRepositoryLabels, fetchRepositoryWorkflows } from '$integrations/github';
   import { isMobile } from '$lib/stores/mobile.store';
-
-  // Import our new components
   import OrganizationSelector from './OrganizationSelector.svelte';
   import RepositorySearch from './RepositorySearch.svelte';
   import LabelFilter from './LabelFilter.svelte';
@@ -25,23 +23,19 @@
 
   let { config = null, onSave, onCancel, existingRepos = [] } = $props();
 
-  // Repository configuration state
   let selectedOrg = $state<string>('');
   let repoName = $state<string>('');
 
-  // PR configuration
   let monitorPRs = $state<boolean>(false);
   let prFilters = $state<string[]>([]);
   let availablePRLabels = $state<string[]>([]);
   let isLoadingLabels = $state<boolean>(false);
 
-  // Actions configuration
   let monitorActions = $state<boolean>(false);
   let actionFilters = $state<string[]>([]);
   let availableWorkflows = $state<string[]>([]);
   let isLoadingWorkflows = $state<boolean>(false);
 
-  // Initialize form from existing config
   $effect(() => {
     if (config) {
       selectedOrg = config.org;

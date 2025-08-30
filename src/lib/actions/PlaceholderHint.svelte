@@ -5,7 +5,6 @@
 </script>
 
 <div class="hero-card">
-  <!-- Repository header -->
   <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
     <h3 class="font-semibold">
       <a href={`https://github.com/${org}/${repo}/actions`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
@@ -23,7 +22,6 @@
     </div>
   </div>
 
-  <!-- Hint about what we're looking for -->
   <div class="p-4 bg-[#0d1117] text-center">
     <div class="flex items-center justify-center mb-2">
       <svg class="animate-spin h-4 w-4 text-[#58a6ff] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

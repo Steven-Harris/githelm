@@ -5,15 +5,12 @@
   import { pullRequestsContainerService } from '$lib/services/pull-requests-container.service';
   import { repositoryFacade } from '$lib/stores/facades/repository.facade';
 
-  // Get all data from the service
   const filteredRepositories = pullRequestsContainerService.getFilteredRepositories();
   const filterHint = pullRequestsContainerService.getFilterHint();
   const emptyStateMessage = pullRequestsContainerService.getEmptyStateMessage();
   const hasConfiguredRepositories = pullRequestsContainerService.hasConfiguredRepositories();
-  const pullRequestConfigs = pullRequestsContainerService.getProcessedRepositories();
   const allPullRequests = repositoryFacade.getPullRequestsStore();
 
-  // Simple derived values for presentation
   const showEmptyState = $derived($emptyStateMessage !== '');
   const showFilter = $derived($hasConfiguredRepositories);
 </script>
@@ -39,7 +36,6 @@
         {#each $filteredRepositories as { repo, isLoaded, hasPRs } (repo.org + '/' + repo.repo)}
           <div class="stagger-item">
             {#if isLoaded}
-              <!-- Show real data when loaded -->
               {#if hasPRs}
                 <List 
                   org={repo.org} 
@@ -47,7 +43,6 @@
                   pullRequests={$allPullRequests[repositoryFacade.getRepoKey(repo)] || []} 
                 />
               {:else}
-                <!-- Show empty state for this repo -->
                 <div class="hero-card">
                   <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
                     <h3 class="font-semibold">
@@ -62,7 +57,6 @@
                 </div>
               {/if}
             {:else}
-              <!-- Show smart loading placeholder until data loads -->
               <PlaceholderHint org={repo.org} repo={repo.repo} filterHint={$filterHint} />
             {/if}
           </div>

@@ -5,7 +5,6 @@
 </script>
 
 <div class="hero-card">
-  <!-- Repository header with loading animation -->
   <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
     <h3 class="font-semibold">
       <a href={`https://github.com/${org}/${repo}/actions`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
@@ -23,22 +22,18 @@
     </div>
   </div>
 
-  <!-- Loading skeleton for workflow runs -->
   <div class="divide-y divide-[#21262d]">
     {#each Array(3) as _, index}
       <div class="p-4 bg-[#0d1117]">
         <div class="flex items-center justify-between mb-3">
-          <!-- Workflow name skeleton -->
           <div class="flex items-center space-x-2">
             <div class="loading-pulse w-4 h-4 bg-[#30363d] rounded-full"></div>
             <div class="loading-pulse w-32 h-4 bg-[#30363d] rounded"></div>
           </div>
           
-          <!-- Status skeleton -->
           <div class="loading-pulse w-16 h-6 bg-[#30363d] rounded-full"></div>
         </div>
         
-        <!-- Branch and commit info skeleton -->
         <div class="flex items-center space-x-4 text-sm">
           <div class="loading-pulse w-20 h-3 bg-[#30363d] rounded"></div>
           <div class="loading-pulse w-24 h-3 bg-[#30363d] rounded"></div>
@@ -48,7 +43,6 @@
     {/each}
   </div>
 
-  <!-- Loading indicator at bottom -->
   <div class="p-3 bg-[#0d1117] border-t border-[#21262d] flex items-center justify-center">
     <svg class="animate-spin h-4 w-4 text-[#58a6ff] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
