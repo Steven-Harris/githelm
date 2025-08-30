@@ -30,9 +30,6 @@ class LoadingStateMachine {
     this.updateGlobalState();
   }
 
-  /**
-   * Start a loading task
-   */
   startTask(id: string, message: string = 'Loading...'): void {
     const task: LoadingTask = {
       id,
@@ -52,9 +49,6 @@ class LoadingStateMachine {
     this.logTaskEvent(id, 'started', message);
   }
 
-  /**
-   * Complete a loading task successfully
-   */
   completeTask(id: string, message?: string): void {
     this.tasks.update(tasks => {
       const task = tasks.get(id);
@@ -73,9 +67,6 @@ class LoadingStateMachine {
     this.logTaskEvent(id, 'completed', message);
   }
 
-  /**
-   * Fail a loading task
-   */
   failTask(id: string, error: string, message?: string): void {
     this.tasks.update(tasks => {
       const task = tasks.get(id);
@@ -95,9 +86,6 @@ class LoadingStateMachine {
     this.logTaskEvent(id, 'failed', error);
   }
 
-  /**
-   * Update task progress
-   */
   updateTaskProgress(id: string, progress: number): void {
     this.tasks.update(tasks => {
       const task = tasks.get(id);
@@ -109,9 +97,6 @@ class LoadingStateMachine {
     });
   }
 
-  /**
-   * Remove a task
-   */
   removeTask(id: string): void {
     this.tasks.update(tasks => {
       tasks.delete(id);
@@ -122,9 +107,6 @@ class LoadingStateMachine {
     this.logTaskEvent(id, 'removed');
   }
 
-  /**
-   * Clear all tasks
-   */
   clearAllTasks(): void {
     this.tasks.set(new Map());
     this.globalState.set(LoadingState.IDLE);
@@ -134,35 +116,23 @@ class LoadingStateMachine {
     });
   }
 
-  /**
-   * Get task by ID
-   */
   getTask(id: string): LoadingTask | undefined {
     let tasks: Map<string, LoadingTask>;
     this.tasks.subscribe(t => tasks = t)();
     return tasks!.get(id);
   }
 
-  /**
-   * Check if a task is loading
-   */
   isTaskLoading(id: string): boolean {
     const task = this.getTask(id);
     return task?.state === LoadingState.LOADING;
   }
 
-  /**
-   * Check if any task is loading
-   */
   isAnyTaskLoading(): boolean {
     let tasks: Map<string, LoadingTask>;
     this.tasks.subscribe(t => tasks = t)();
     return Array.from(tasks!.values()).some(task => task.state === LoadingState.LOADING);
   }
 
-  /**
-   * Get all active tasks
-   */
   getActiveTasks(): LoadingTask[] {
     let tasks: Map<string, LoadingTask>;
     this.tasks.subscribe(t => tasks = t)();
@@ -171,9 +141,6 @@ class LoadingStateMachine {
     );
   }
 
-  /**
-   * Get task statistics
-   */
   getTaskStats(): {
     total: number;
     loading: number;
@@ -194,9 +161,6 @@ class LoadingStateMachine {
     };
   }
 
-  /**
-   * Update global state based on active tasks
-   */
   private updateGlobalState(): void {
     this.tasks.update(tasks => {
       const activeTasks = Array.from(tasks.values());
@@ -220,9 +184,6 @@ class LoadingStateMachine {
     });
   }
 
-  /**
-   * Log task events
-   */
   private logTaskEvent(taskId: string, event: string, message?: string): void {
     loggerService.debug(`Loading task ${event}: ${taskId}`, {
       component: 'LoadingStateMachine',
@@ -231,7 +192,7 @@ class LoadingStateMachine {
     });
   }
 
-  // Public API
+
   getTasks() {
     return this.tasks;
   }
@@ -241,19 +202,15 @@ class LoadingStateMachine {
   }
 }
 
-// Create singleton instance
 const loadingStateMachine = new LoadingStateMachine();
 
-// Export stores
 export const loadingTasks = loadingStateMachine.getTasks();
 export const globalLoadingState = loadingStateMachine.getGlobalState();
 
-// Export derived stores
 export const isLoading = derived(globalLoadingState, ($state) => $state === LoadingState.LOADING);
 export const hasLoadingError = derived(globalLoadingState, ($state) => $state === LoadingState.ERROR);
 export const isLoadingSuccess = derived(globalLoadingState, ($state) => $state === LoadingState.SUCCESS);
 
-// Export methods
 export const {
   startTask,
   completeTask,
