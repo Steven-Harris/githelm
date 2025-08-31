@@ -48,8 +48,7 @@
   </svg>
   <span 
     class="text-[#8b949e] transition-colors duration-300"
-    class:text-green-300={isAnimating && changeDirection === 'increase'}
-    class:text-red-300={isAnimating && changeDirection === 'decrease'}
+    class:text-green-300={isAnimating}
   >
     {count} {count === 1 ? label : label + 's'}
   </span>
