@@ -60,7 +60,9 @@ export class HomePageService {
 
   getConfigLoadingState(): Readable<boolean> {
     return derived(eventBus, ($eventBus) => {
-      return $eventBus === 'loading-configurations';
+      const isLoading = $eventBus === 'loading-configurations';
+      console.log('HomePageService: Config loading state check:', { eventBus: $eventBus, isLoading });
+      return isLoading;
     });
   }
 

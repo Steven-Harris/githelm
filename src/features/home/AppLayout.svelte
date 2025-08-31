@@ -23,16 +23,27 @@
   let isLoadingConfigs = $state(false);
 
   $effect(() => {
+    console.log('AppLayout effect running:', {
+      isAuth: $authState.isAuth,
+      configsLoaded,
+      isLoadingConfigs,
+      shouldLoad: $authState.isAuth === 'authenticated' && !configsLoaded && !isLoadingConfigs
+    });
+    
     if ($authState.isAuth === 'authenticated' && !configsLoaded && !isLoadingConfigs) {
+      console.log('Starting configuration loading...');
       isLoadingConfigs = true;
       initAuthStateHandling();
       configPageService.loadConfigurations().then(() => {
+        console.log('Configuration loading completed successfully');
         configsLoaded = true;
         isLoadingConfigs = false;
-      }).catch(() => {
+      }).catch((error) => {
+        console.error('Configuration loading failed:', error);
         isLoadingConfigs = false;
       });
     } else if ($authState.isAuth === 'unauthenticated') {
+      console.log('User unauthenticated, clearing stores');
       repositoryFacade.clearAllStores();
       configsLoaded = false;
       isLoadingConfigs = false;
