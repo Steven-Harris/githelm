@@ -2,7 +2,6 @@
   import editSVG from '$assets/edit.svg';
   import RepositoryForm from './RepositoryForm.svelte';
   import { configService } from '$features/config/services/config.service';
-  import deleteSVG from '$assets/delete.svg';
   import { useDraggable } from './directives/useDraggable';
   import { isMobile } from '$shared/stores/mobile.store';
   import type { CombinedConfig } from '$features/config/stores/config.store';
@@ -25,31 +24,13 @@
       editingIndex = -1;
     }
 
-    try {
-      const result = await configService.saveConfigurations(updatedConfigs);
-      if (result.success) {
-        onUpdate(updatedConfigs);
-      } else {
-        console.error('Failed to save configurations:', result.error);
-      }
-    } catch (error) {
-      console.error('Error saving configurations:', error);
-    }
+    onUpdate(updatedConfigs);
   }
 
   async function handleReorder(fromIndex: number, toIndex: number): Promise<void> {
     const updatedConfigs = configService.reorderConfigs(configs, fromIndex, toIndex);
     
-    try {
-      const result = await configService.saveConfigurations(updatedConfigs);
-      if (result.success) {
-        onUpdate(updatedConfigs);
-      } else {
-        console.error('Failed to save configurations:', result.error);
-      }
-    } catch (error) {
-      console.error('Error saving configurations:', error);
-    }
+    onUpdate(updatedConfigs);
   }
 
   function handleMouseDown(event: MouseEvent): void {
@@ -67,7 +48,11 @@
     <div class="space-y-3 mb-4" bind:this={configListElement} use:useDraggable={{ onReorder: handleReorder }}>
       {#each configs as config, i (i)}
         {#if editingIndex === i}
-          <RepositoryForm {config} onSave={(data: any) => handleSave(data, i)} onCancel={() => (editingIndex = -1)} />
+          <RepositoryForm {config} onSave={(data: any) => handleSave(data, i)} onCancel={() => (editingIndex = -1)} onDelete={() => {
+            const updatedConfigs = configService.removeConfigAtIndex(configs, i);
+            onUpdate(updatedConfigs);
+            editingIndex = -1;
+          }} />
         {:else}
           <div
             class="config-item {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
@@ -80,88 +65,51 @@
             <div class="flex justify-between items-center w-full overflow-hidden">
               <div class="flex items-center min-w-0 flex-shrink flex-1">
                 <span class="{$isMobile ? 'mr-1' : 'mr-2'} text-gray-400 opacity-70 drag-handle flex-shrink-0">☰</span>
-                <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''} truncate">
-                  {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
-                </strong>
-                {#if !$isMobile}
-                  <button
-                    class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center ml-2"
-                    type="button"
-                    aria-label="edit {config.org}/{config.repo}"
-                    title="Edit repository configuration"
-                    onclick={() => (editingIndex = i)}
-                  >
-                    <img src={editSVG} alt="edit" width={$isMobile ? '16' : '15'} height={$isMobile ? '16' : '15'} />
-                  </button>
-                {/if}
+                <div class="flex flex-col min-w-0 flex-1">
+                  <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''} truncate">
+                    {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
+                  </strong>
+                  <div class="{$isMobile ? 'text-xs' : 'text-sm'} flex flex-wrap gap-2 mt-1">
+                      {#if config.pullRequests?.length > 0}
+                        <div class="flex items-center">
+                          <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
+                          <div class="flex flex-wrap gap-1">
+                            {#each config.pullRequests as filter, i (i)}
+                              <span class="chip">{filter}</span>
+                            {/each}
+                          </div>
+                        </div>
+                      {:else if config.pullRequests}
+                        <div class="flex items-center">
+                          <span class="text-[#58a6ff] font-medium">PRs: All Labels</span>
+                        </div>
+                      {/if}
+
+                      {#if config.actions && config.actions.length > 0}
+                        <div class="flex items-center">
+                          <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
+                          <div class="flex flex-wrap gap-1">
+                            {#each config.actions as filter, i (i)}
+                              <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
+                            {/each}
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                </div>
               </div>
 
               <div class="flex items-center {$isMobile ? 'ml-2' : 'ml-3'} flex-shrink-0">
-                {#if $isMobile}
-                  <button
-                    class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center w-8 h-8"
-                    type="button"
-                    aria-label="edit {config.org}/{config.repo}"
-                    title="Edit repository configuration"
-                    onclick={() => (editingIndex = i)}
-                  >
-                    <img src={editSVG} alt="edit" width={$isMobile ? '16' : '15'} height={$isMobile ? '16' : '15'} />
-                  </button>
-                {/if}
-
                 <button
-                  class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}"
-                  title="Remove repository"
-                  aria-label="delete {config.org}/{config.repo}"
-                  onclick={async () => {
-                    const updatedConfigs = configService.removeConfigAtIndex(configs, i);
-                    try {
-                      const result = await configService.saveConfigurations(updatedConfigs);
-                      if (result.success) {
-                        onUpdate(updatedConfigs);
-                      } else {
-                        console.error('Failed to save configurations:', result.error);
-                      }
-                    } catch (error) {
-                      console.error('Error saving configurations:', error);
-                    }
-                  }}
+                  class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}"
+                  type="button"
+                  aria-label="edit {config.org}/{config.repo}"
+                  title="Edit repository configuration"
+                  onclick={() => (editingIndex = i)}
                 >
-                  <img src={deleteSVG} alt="Delete" width={$isMobile ? '16' : '14'} height={$isMobile ? '16' : '14'} />
+                  <img src={editSVG} alt="edit" width={$isMobile ? '16' : '15'} height={$isMobile ? '16' : '15'} />
                 </button>
               </div>
-            </div>
-
-            <div class="{$isMobile ? 'mt-1' : 'mt-2'} {$isMobile ? 'text-xs' : 'text-sm'} flex flex-wrap gap-2">
-              {#if config.pullRequests?.length > 0}
-                <div class="flex items-center">
-                  <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
-                  <div class="flex flex-wrap gap-1">
-                    {#each config.pullRequests as filter, i (i)}
-                      <span class="chip">{filter}</span>
-                    {/each}
-                  </div>
-                </div>
-              {:else if config.pullRequests}
-                <div class="flex items-center">
-                  <span class="text-[#58a6ff] font-medium">PRs: All</span>
-                </div>
-              {/if}
-
-              {#if config.actions?.length > 0}
-                <div class="flex items-center">
-                  <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
-                  <div class="flex flex-wrap gap-1">
-                    {#each config.actions as filter, i (i)}
-                      <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
-                    {/each}
-                  </div>
-                </div>
-              {:else if config.actions}
-                <div class="flex items-center">
-                  <span class="text-[#3fb950] font-medium">Actions: All</span>
-                </div>
-              {/if}
             </div>
           </div>
         {/if}

@@ -64,12 +64,10 @@ async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set
   
   // Check if we have valid cached data
   if (storage.data && storage.lastUpdated && storage.lastUpdated + STALE_INTERVAL - 3000 > now) {
-    console.debug(`Using cached data for key: ${key}, age: ${Math.round((now - storage.lastUpdated) / 1000)}s`);
     set(storage.data);
     return;
   }
 
-  console.debug(`Cache stale or missing for key: ${key}, fetching fresh data`);
   await fetchData(key, callback, set);
 }
 
@@ -86,7 +84,6 @@ async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueS
     setStorageObject(key, data);
     set(data);
     
-    console.debug(`Successfully updated store for key: ${key}`);
   } catch (error) {
     console.warn(`Error fetching data for key: ${key}:`, error);
     
@@ -99,7 +96,6 @@ async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueS
     // Try to use cached data on error
     const storage = getStorageObject<T>(key);
     if (storage.data) {
-      console.debug(`Using cached data for key: ${key} due to fetch error`);
       set(storage.data);
     }
     

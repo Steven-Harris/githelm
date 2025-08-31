@@ -50,9 +50,6 @@ export class ConfigService {
 
       await repositoryFacade.updateConfigurations(configs);
       
-      // Trigger config update event to refresh UI
-      eventBus.set('config-updated');
-      
       return { success: true };
     } catch (error) {
       captureException(error, { action: 'saveConfigurations' });
@@ -81,13 +78,6 @@ export class ConfigService {
 
     if (!config.pullRequests && !config.actions) {
       errors.push('At least one monitoring type (Pull Requests or Actions) must be enabled');
-    }
-
-    // Only require action filters if actions monitoring is enabled AND the user has explicitly enabled it
-    // Allow empty action arrays (which means actions monitoring is disabled)
-    if (config.actions && config.actions.length === 0) {
-      // Don't require action filters - treat empty array as "actions monitoring disabled"
-      // This allows users to disable actions monitoring even if the config has an empty actions array
     }
 
     return {
@@ -226,8 +216,8 @@ export class ConfigService {
     return {
       org: event.pullRequests?.org || event.actions?.org || '',
       repo: event.pullRequests?.repo || event.actions?.repo || '',
-      pullRequests: event.pullRequests?.filters || [],
-      actions: event.actions?.filters || [],
+      pullRequests: event.pullRequests ? event.pullRequests.filters : null,
+      actions: event.actions ? event.actions.filters : null,
     };
   }
 

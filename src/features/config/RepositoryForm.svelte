@@ -1,45 +1,39 @@
 <script lang="ts">
   import { eventBus } from '$shared/stores/event-bus.store';
   import { isMobile } from '$shared/stores/mobile.store';
+  import { onMount } from 'svelte';
   import OrganizationSelector from './OrganizationSelector.svelte';
   import RepositorySearch from './RepositorySearch.svelte';
   import LabelFilter from './LabelFilter.svelte';
   import MonitoringToggle from './MonitoringToggle.svelte';
+  import deleteSVG from '$assets/delete.svg';
   import { repositoryFormService, type FormState, type SaveEventData } from '$features/config/services/repository-form.service';
   import type { CombinedConfig } from '$features/config/stores/config.store';
 
-  let { config = null, onSave, onCancel, existingRepos = [] } = $props<{
+  let { config = null, onSave, onCancel, onDelete, existingRepos = [] } = $props<{
     config?: CombinedConfig | null;
     onSave: (data: SaveEventData) => void;
     onCancel?: () => void;
+    onDelete?: () => void;
     existingRepos?: CombinedConfig[];
   }>();
 
   let formState = $state<FormState>(repositoryFormService.createInitialState());
+  let validationErrors = $state<string[]>([]);
+  let hasAttemptedSubmit = $state(false);
 
-  // Temporarily disabled to prevent infinite loop
-  // $effect(() => {
-  //   if (config) {
-  //     formState = repositoryFormService.loadStateFromConfig(config);
-  //     if (formState.monitorPRs) {
-  //       loadLabels();
-  //     }
-  //     if (formState.monitorActions) {
-  //       loadWorkflows();
-  //     }
-  //   }
-  // });
-  
-  // Manual initialization
-  if (config) {
-    formState = repositoryFormService.loadStateFromConfig(config);
-    if (formState.monitorPRs) {
-      loadLabels();
+  // Initial setup when component mounts
+  onMount(() => {
+    if (config) {
+      formState = repositoryFormService.loadStateFromConfig(config);
+      if (formState.monitorPRs) {
+        loadLabels();
+      }
+      if (formState.monitorActions) {
+        loadWorkflows();
+      }
     }
-    if (formState.monitorActions) {
-      loadWorkflows();
-    }
-  }
+  });
 
   $effect(() => {
     if ($eventBus === 'save-config') {
@@ -77,9 +71,16 @@
   }
 
   function handleSubmit(): void {
+    hasAttemptedSubmit = true;
     const validation = repositoryFormService.validateForm(formState);
+    validationErrors = validation.errors;
+    
+    // Check workflow validation separately
+    if (formState.monitorActions && formState.actionFilters.length === 0) {
+      return;
+    }
+    
     if (!validation.isValid) {
-      alert(validation.errors.join('\n'));
       return;
     }
 
@@ -140,6 +141,23 @@
   function removeActionFilter(filter: string): void {
     formState.actionFilters = repositoryFormService.removeActionFilter(formState.actionFilters, filter);
   }
+
+  function getButtonTooltip(): string {
+    if (!formState.selectedOrg) {
+      return 'Please select an organization first';
+    }
+    if (!formState.repoName) {
+      return 'Please select a repository first';
+    }
+    if (!formState.monitorPRs && !formState.monitorActions) {
+      return 'Please enable monitoring for Pull Requests or GitHub Actions';
+    }
+    return config ? 'Update repository configuration' : 'Add repository configuration';
+  }
+
+  function hasWorkflowValidationError(): boolean {
+    return hasAttemptedSubmit && formState.monitorActions && formState.actionFilters.length === 0;
+  }
 </script>
 
 <div class="{$isMobile ? 'p-3' : 'p-4'} rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)] relative">
@@ -152,6 +170,16 @@
   <div class="static">
     <RepositorySearch orgName={formState.selectedOrg} repoName={formState.repoName} disabled={config !== null} {existingRepos} onChange={handleRepoChange} />
   </div>
+
+  {#if validationErrors.length > 0 && hasAttemptedSubmit}
+    <div class="mb-4 p-3 bg-[rgba(248,81,73,0.1)] border border-[#f85149] rounded-md">
+      <ul class="text-sm text-[#f85149] space-y-1">
+        {#each validationErrors as error}
+          <li>• {error}</li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
 
   {#if formState.selectedOrg && formState.repoName}
     <div class={$isMobile ? 'mb-3 space-y-3' : 'mb-4 grid grid-cols-1 md:grid-cols-2 gap-4'}>
@@ -181,6 +209,7 @@
               onRemove={removeActionFilter}
               onLoadOptions={loadWorkflows}
               noOptionsAvailable={!formState.isLoadingWorkflows && formState.availableWorkflows.length === 0 && formState.repoName !== ''}
+              showValidationError={hasWorkflowValidationError()}
             />
           </div>
         {/if}
@@ -189,6 +218,17 @@
   {/if}
 
   <div class="flex justify-end gap-2">
+    {#if config && onDelete}
+      <button
+        class="bg-[rgba(248,81,73,0.1)] text-[#f85149] {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md hover:bg-[rgba(248,81,73,0.2)] border border-[#f85149] transition-colors duration-200"
+        type="button"
+        aria-label="Delete repository configuration"
+        title="Delete repository configuration"
+        onclick={onDelete}
+      >
+        Delete
+      </button>
+    {/if}
     {#if onCancel}
       <button
         class="bg-[rgba(110,118,129,0.4)] text-[#c9d1d9] {$isMobile
@@ -204,11 +244,11 @@
     {/if}
     <button
       class="bg-[#238636] text-white {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md border border-[#2ea043] transition-colors duration-200
-      {formState.selectedOrg && formState.repoName ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
+      {formState.selectedOrg && formState.repoName && (formState.monitorPRs || formState.monitorActions) ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
       disabled={!formState.selectedOrg || !formState.repoName || (!formState.monitorPRs && !formState.monitorActions)}
       type="submit"
       aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
-      title={config ? 'Update repository configuration' : 'Add repository configuration'}
+      title={getButtonTooltip()}
       onclick={handleSubmit}
     >
       {config ? 'Update' : 'Add Repository'}

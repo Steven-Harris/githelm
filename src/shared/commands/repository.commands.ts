@@ -1,6 +1,5 @@
 import { repositoryFacade } from '$shared/stores/facades/repository.facade';
 import { errorService } from '$shared/error/error.service';
-import { loggerService } from '$shared/logging/logger.service';
 import type { RepoConfig } from '$integrations/firebase';
 import type { CombinedConfig } from '$features/config/stores/config.store';
 
@@ -23,9 +22,6 @@ export class LoadRepositoryConfigsCommand implements Command {
   async execute(): Promise<CommandResult> {
     try {
       await repositoryFacade.loadAllConfigurations();
-      loggerService.info('Repository configurations loaded successfully', {
-        action: 'loadRepositoryConfigs',
-      });
       return { success: true };
     } catch (error) {
       const errorResult = errorService.handleError(error, {
@@ -62,10 +58,6 @@ export class UpdateRepositoryConfigsCommand implements Command {
       
       await repositoryFacade.updateConfigurations(this.newConfigs);
       
-      loggerService.info('Repository configurations updated successfully', {
-        action: 'updateRepositoryConfigs',
-        data: { configCount: this.newConfigs.length },
-      });
       
       return { success: true };
     } catch (error) {
@@ -91,9 +83,6 @@ export class UpdateRepositoryConfigsCommand implements Command {
 
     try {
       await repositoryFacade.updateConfigurations(this.previousConfigs);
-      loggerService.info('Repository configurations reverted successfully', {
-        action: 'undoUpdateRepositoryConfigs',
-      });
       return { success: true };
     } catch (error) {
       const errorResult = errorService.handleError(error, {
@@ -118,10 +107,6 @@ export class RefreshPullRequestsCommand implements Command {
   async execute(): Promise<CommandResult> {
     try {
       await repositoryFacade.refreshPullRequestsData(this.configs);
-      loggerService.info('Pull requests data refreshed successfully', {
-        action: 'refreshPullRequests',
-        data: { configCount: this.configs.length },
-      });
       return { success: true };
     } catch (error) {
       const errorResult = errorService.handleError(error, {
@@ -154,10 +139,6 @@ export class RefreshActionsCommand implements Command {
   async execute(): Promise<CommandResult> {
     try {
       await repositoryFacade.refreshActionsData(this.configs);
-      loggerService.info('Actions data refreshed successfully', {
-        action: 'refreshActions',
-        data: { configCount: this.configs.length },
-      });
       return { success: true };
     } catch (error) {
       const errorResult = errorService.handleError(error, {
@@ -194,9 +175,6 @@ export class ClearAllStoresCommand implements Command {
       };
       
       repositoryFacade.clearAllStores();
-      loggerService.info('All stores cleared successfully', {
-        action: 'clearAllStores',
-      });
       return { success: true };
     } catch (error) {
       const errorResult = errorService.handleError(error, {

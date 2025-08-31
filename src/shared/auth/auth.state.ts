@@ -1,6 +1,5 @@
 import { writable, derived } from 'svelte/store';
 import { firebase, authState as firebaseAuthState } from '$integrations/firebase';
-import { loggerService } from '$shared/logging/logger.service';
 
 export enum AuthState {
   INITIALIZING = 'initializing',
@@ -64,26 +63,17 @@ class AuthStateMachine {
   private transitionTo(newState: AuthState, contextUpdate: Partial<AuthStateContext> = {}): void {
     const currentState = this.getCurrentState();
     
-    if (this.canTransition(currentState, newState)) {
-      this.state.set(newState);
-      this.updateContext({
-        isLoading: newState === AuthState.INITIALIZING || newState === AuthState.AUTHENTICATING,
-        lastActivity: Date.now(),
-        ...contextUpdate,
-      });
-
-      loggerService.info(`Auth state transition: ${currentState} -> ${newState}`, {
-        component: 'AuthStateMachine',
-        action: 'stateTransition',
-        data: { from: currentState, to: newState },
-      });
-    } else {
-      loggerService.warn(`Invalid auth state transition: ${currentState} -> ${newState}`, {
-        component: 'AuthStateMachine',
-        action: 'invalidStateTransition',
-        data: { from: currentState, to: newState },
-      });
+    if (!this.canTransition(currentState, newState)) {
+      return;
     }
+
+    this.state.set(newState);
+    this.updateContext({
+      isLoading: newState === AuthState.INITIALIZING || newState === AuthState.AUTHENTICATING,
+      lastActivity: Date.now(),
+      ...contextUpdate,
+    });
+
   }
 
   private canTransition(from: AuthState, to: AuthState): boolean {

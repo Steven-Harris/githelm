@@ -3,7 +3,6 @@ import { clearSiteData } from '$shared/storage/storage';
 import { clearUserInfo } from '$integrations/sentry';
 import { repositoryFacade } from '$shared/stores/facades/repository.facade';
 import { errorService } from '$shared/error/error.service';
-import { loggerService } from '$shared/logging/logger.service';
 import { get } from 'svelte/store';
 import type { User } from 'firebase/auth';
 
@@ -41,7 +40,6 @@ export class AuthService {
   async signIn(): Promise<void> {
     try {
       await firebase.signIn();
-      loggerService.info('User signed in successfully', { action: 'signIn' });
     } catch (error) {
       errorService.handleError(error, { action: 'signIn' });
       throw error;
@@ -55,7 +53,6 @@ export class AuthService {
       clearUserInfo();
       
       await firebase.signOut();
-      loggerService.info('User signed out successfully', { action: 'signOut' });
     } catch (error) {
       errorService.handleError(error, { action: 'signOut' });
       throw error;
@@ -65,7 +62,6 @@ export class AuthService {
   async refreshToken(): Promise<void> {
     try {
       await firebase.refreshGithubToken();
-      loggerService.info('GitHub token refreshed successfully', { action: 'refreshToken' });
     } catch (error) {
       errorService.handleError(error, { action: 'refreshToken' });
       throw error;

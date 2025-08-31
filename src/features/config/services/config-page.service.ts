@@ -3,7 +3,6 @@ import { eventBus } from '$shared/stores/event-bus.store';
 import { configService } from '$features/config/services/config.service';
 import { repositoryFacade } from '$shared/stores/facades/repository.facade';
 import { errorService } from '$shared/error/error.service';
-import { loggerService } from '$shared/logging/logger.service';
 import { goto } from '$app/navigation';
 import type { CombinedConfig } from '$features/config/stores/config.store';
 
@@ -16,9 +15,7 @@ export interface SaveState {
 export class ConfigPageService {
   private static instance: ConfigPageService;
 
-  private constructor() {
-    this.initializeEventListeners();
-  }
+  private constructor() { }
 
   static getInstance(): ConfigPageService {
     if (!ConfigPageService.instance) {
@@ -59,7 +56,7 @@ export class ConfigPageService {
           }
 
           const combinedConfig = combined.get(key)!;
-          combinedConfig.actions = config.filters || [];
+          combinedConfig.actions = config.filters && config.filters.length > 0 ? config.filters : null;
         }
 
         return Array.from(combined.values());
@@ -102,10 +99,6 @@ export class ConfigPageService {
       // Clear loading state
       eventBus.set('');
       
-      loggerService.info('Configurations loaded successfully', {
-        component: 'ConfigPageService',
-        action: 'loadConfigurations',
-      });
     } catch (error) {
       // Clear loading state on error
       eventBus.set('');
@@ -113,12 +106,6 @@ export class ConfigPageService {
       const errorResult = errorService.handleError(error, {
         component: 'ConfigPageService',
         action: 'loadConfigurations',
-      });
-      
-      loggerService.error('Failed to load configurations', {
-        component: 'ConfigPageService',
-        action: 'loadConfigurations',
-        data: { error: errorResult.error },
       });
       
       throw error;
@@ -136,14 +123,9 @@ export class ConfigPageService {
         throw new Error(result.error || 'Failed to save configurations');
       }
       
-      // Clear save state and trigger config update event
-      eventBus.set('config-updated');
+      // Clear save state
+      eventBus.set('');
       
-      loggerService.info('Configurations saved successfully', {
-        component: 'ConfigPageService',
-        action: 'saveConfigurations',
-        data: { configCount: configs.length },
-      });
     } catch (error) {
       // Clear save state on error
       eventBus.set('');
@@ -151,12 +133,6 @@ export class ConfigPageService {
       const errorResult = errorService.handleError(error, {
         component: 'ConfigPageService',
         action: 'saveConfigurations',
-      });
-      
-      loggerService.error('Failed to save configurations', {
-        component: 'ConfigPageService',
-        action: 'saveConfigurations',
-        data: { error: errorResult.error },
       });
       
       throw error;
@@ -167,28 +143,11 @@ export class ConfigPageService {
     goto('/');
   }
 
-  handleConfigUpdate(configs: CombinedConfig[]): void {
-    loggerService.info('Configuration updated', {
-      component: 'ConfigPageService',
-      action: 'handleConfigUpdate',
-      data: { configCount: configs.length },
-    });
-  }
-
-  private initializeEventListeners(): void {
-    // Event listeners can be added here if needed in the future
-  }
-
   validateConfigurations(configs: CombinedConfig[]): boolean {
     try {
       const validation = configService.validateConfigurations(configs);
       return validation.isValid;
     } catch (error) {
-      loggerService.error('Configuration validation failed', {
-        component: 'ConfigPageService',
-        action: 'validateConfigurations',
-        data: { error },
-      });
       return false;
     }
   }

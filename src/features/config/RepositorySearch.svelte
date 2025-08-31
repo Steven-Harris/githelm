@@ -21,7 +21,7 @@
   let containerRef = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
-    if (orgName) {
+    if (!orgName) {
       repositorySearchService.resetSearchState((updates) => {
         Object.assign(searchState, updates);
       });
@@ -29,6 +29,7 @@
   });
 
   async function handleInputChange(): Promise<void> {
+    repoName = repoName.trim();
     if (!orgName || !repoName.trim()) {
       repositorySearchService.resetSearchState((updates) => {
         Object.assign(searchState, updates);
@@ -112,7 +113,10 @@
         bind:value={repoName}
         oninput={handleInputChange}
         onfocus={() => {
-          if (repoName && orgName) searchState.showResults = true;
+          if (repoName && orgName) {
+            searchState.showResults = true;
+            handleInputChange();
+          }
         }}
         class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName
           ? 'opacity-50 cursor-not-allowed'

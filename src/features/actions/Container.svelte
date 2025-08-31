@@ -1,6 +1,5 @@
 <script lang="ts">
-  import List from './List.svelte';
-  import PlaceholderHint from './PlaceholderHint.svelte';
+  import RepositoryCard from './RepositoryCard.svelte';
   import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
   import { actionsContainerService } from '$features/actions/services/actions-container.service';
   import { repositoryFacade } from '$shared/stores/facades/repository.facade';
@@ -14,10 +13,6 @@
 
   const showEmptyState = $derived($emptyStateMessage !== '');
   const showFilter = $derived($hasConfiguredRepositories);
-
-  function shouldShowPlaceholder(repoKey: string): boolean {
-    return $loadingStates[repoKey] === 'loading';
-  }
 </script>
 
 <section class="hero-section mb-6 glass-effect">
@@ -36,18 +31,19 @@
         {#each $configuredRepositories as repo (repo.org + '/' + repo.repo)}
           {@const repoKey = repositoryFacade.getRepoKey(repo)}
           {@const filteredRuns = $filteredWorkflowRuns[repoKey] || []}
-          {@const hasLoadedData = $loadingStates[repoKey] === 'loaded' || $loadingStates[repoKey] === 'empty'}
-          {@const showPlaceholder = shouldShowPlaceholder(repoKey)}
+          {@const isLoaded = $loadingStates[repoKey] === 'loaded' || $loadingStates[repoKey] === 'empty'}
+          {@const isLoading = $loadingStates[repoKey] === 'loading'}
+          {@const shouldShow = isLoading || filteredRuns.length > 0}
 
-          {#if hasLoadedData}
-            {#if filteredRuns.length > 0}
-              <div class="stagger-item">
-                <List org={repo.org} repo={repo.repo} workflowRuns={filteredRuns} />
-              </div>
-            {/if}
-          {:else if showPlaceholder}
+          {#if shouldShow}
             <div class="stagger-item">
-              <PlaceholderHint org={repo.org} repo={repo.repo} filterHint={$filterHint} />
+              <RepositoryCard 
+                org={repo.org} 
+                repo={repo.repo} 
+                isLoaded={isLoaded}
+                workflowRuns={filteredRuns}
+                filterHint={$filterHint}
+              />
             </div>
           {/if}
         {/each}
