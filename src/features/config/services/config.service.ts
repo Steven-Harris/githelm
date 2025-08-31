@@ -50,6 +50,7 @@ export class ConfigService {
 
       await repositoryFacade.updateConfigurations(configs);
       
+      // Trigger config update event to refresh UI
       eventBus.set('config-updated');
       
       return { success: true };
@@ -82,8 +83,11 @@ export class ConfigService {
       errors.push('At least one monitoring type (Pull Requests or Actions) must be enabled');
     }
 
+    // Only require action filters if actions monitoring is enabled AND the user has explicitly enabled it
+    // Allow empty action arrays (which means actions monitoring is disabled)
     if (config.actions && config.actions.length === 0) {
-      errors.push('At least one workflow filter must be selected for Actions monitoring');
+      // Don't require action filters - treat empty array as "actions monitoring disabled"
+      // This allows users to disable actions monitoring even if the config has an empty actions array
     }
 
     return {
@@ -294,9 +298,7 @@ export class ConfigService {
     return get(killSwitch);
   }
 
-  triggerSaveEvent(): void {
-    eventBus.set('save-config');
-  }
+
 
   navigateToDashboard(): void {
     this.disableKillSwitch();

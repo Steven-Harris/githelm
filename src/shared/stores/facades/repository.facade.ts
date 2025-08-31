@@ -31,6 +31,8 @@ import {
   pullRequestConfigs as configPullRequestConfigs,
   actionsConfigs as configActionsConfigs
 } from '$features/config/stores/config.store';
+import { configService } from '$integrations/firebase';
+import { setStorageObject } from '$shared/storage/storage';
 
 export class RepositoryFacade {
   private static instance: RepositoryFacade;
@@ -45,14 +47,25 @@ export class RepositoryFacade {
   }
 
   async loadAllConfigurations(): Promise<void> {
-    // First load the main repository configs
-    await loadRepositoryConfigs();
-    
-    // Then ensure the pull requests and actions stores are in sync
-    await Promise.all([
-      loadPullRequestConfigs(),
-      loadActionsConfigs()
-    ]);
+    // Load configurations from Firebase/localStorage without triggering data fetching
+    try {
+      const configs = await configService.getConfigs();
+      
+      // Update stores with configs
+      pullRequestConfigs.set(configs.pullRequests || []);
+      actionsConfigs.set(configs.actions || []);
+      
+      // Update local storage
+      setStorageObject('pull-requests-configs', configs.pullRequests || []);
+      setStorageObject('actions-configs', configs.actions || []);
+      
+      // Now call our modified loadRepositoryConfigs to initialize empty data
+      await loadRepositoryConfigs();
+      
+    } catch (error) {
+      console.error('❌ Failed to load configurations:', error);
+      throw error;
+    }
   }
 
   async getCombinedConfigurations(): Promise<CombinedConfig[]> {
@@ -104,11 +117,11 @@ export class RepositoryFacade {
   }
 
   getPullRequestConfigsStore() {
-    return pullRequestConfigs;
+    return configPullRequestConfigs;
   }
 
   getActionsConfigsStore() {
-    return actionsConfigs;
+    return configActionsConfigs;
   }
 
   getPullRequestReposStore() {

@@ -11,8 +11,8 @@
     });
   });
 
-  function addOrganization(): void {
-    organizationManagerService.addOrganization(
+  async function addOrganization(): Promise<void> {
+    await organizationManagerService.addOrganization(
       state.newOrgName,
       state.organizations,
       (updates) => {
@@ -21,8 +21,8 @@
     );
   }
 
-  function deleteOrganization(index: number): void {
-    organizationManagerService.deleteOrganization(
+  async function deleteOrganization(index: number): Promise<void> {
+    await organizationManagerService.deleteOrganization(
       index,
       state.organizations,
       (updates) => {

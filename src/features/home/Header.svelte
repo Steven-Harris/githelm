@@ -30,11 +30,7 @@
     authService.signOut();
   }
 
-  function saveConfig() {
-    configService.triggerSaveEvent();
-  }
-
-  function cancelConfig() {
+  function backToDashboard() {
     configService.navigateToDashboard();
   }
 
@@ -77,13 +73,9 @@
       <div class="flex items-center">
         {#if signedIn}
           {#if page.url.pathname === '/config'}
-            <!-- Save/Cancel buttons for config page -->
-            <button class="nav-button github-btn" onclick={saveConfig} aria-label="save configuration" title="Save configuration">
-              <span>Save</span>
-            </button>
-
-            <button class="nav-button ml-2" onclick={cancelConfig} aria-label="cancel configuration" title="Cancel configuration">
-              <span>Cancel</span>
+            <!-- Back to Dashboard button for config page -->
+            <button class="nav-button" onclick={backToDashboard} aria-label="back to dashboard" title="Back to Dashboard">
+              <span>Back to Dashboard</span>
             </button>
             <!-- Profile dropdown -->
             <div class="relative ml-2" bind:this={menuRef}>

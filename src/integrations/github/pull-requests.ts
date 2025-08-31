@@ -83,11 +83,12 @@ export async function fetchPullRequestsWithGraphQL(org: string, repo: string, fi
 }
 
 function transformGraphQLPullRequests(data: any): PullRequest[] {
+  
   if (!data?.repository?.pullRequests?.edges) {
     return [];
   }
 
-  return data.repository.pullRequests.edges.map((edge: any) => {
+  const transformed = data.repository.pullRequests.edges.map((edge: any) => {
     const node = edge?.node;
     if (!node) {
       return null;
@@ -137,6 +138,8 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
       reviews: transformGraphQLReviews(node.reviews?.edges || []),
     };
   }).filter(Boolean); // Remove any null entries
+  
+  return transformed;
 }
 
 function transformGraphQLReviews(reviewEdges: any[]): Review[] {
@@ -229,6 +232,7 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
 // Removed fetchPullRequests REST API function - using GraphQL only
 
 export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[]): Promise<Record<string, PullRequest[]>> {
+  
   if (!configs || configs.length === 0) {
     return {};
   }
@@ -317,12 +321,13 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
 }
 
 function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): Record<string, PullRequest[]> {
+  
   const results: Record<string, PullRequest[]> = {};
 
   configs.forEach((config, index) => {
     const repoKey = `${config.org}/${config.repo}`;
     const repoData = data[`repo${index}`];
-
+    
     if (!repoData?.pullRequests?.edges) {
       results[repoKey] = [];
       return;

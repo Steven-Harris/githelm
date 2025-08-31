@@ -5,6 +5,7 @@ import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
 import { writable, get, derived } from 'svelte/store';
 import { captureException } from '$integrations/sentry';
+import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
 
 // Type definitions for repository service
 export type { SearchRepositoryResult } from '$integrations/github';
@@ -63,7 +64,10 @@ function unsubscribe(key: string): void {
 
 // Subscribe to config-updated events to refresh configurations
 eventBus.subscribe(async (event) => {
-  if (event === 'config-updated') await refreshConfigurations();
+  if (event === 'config-updated') {
+    console.log('🔄 Repository service: Received config-updated event, refreshing configurations');
+    await refreshConfigurations();
+  }
 });
 
 // Repository configuration management functions
@@ -79,7 +83,8 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
 
     setStorageObject('pull-requests-configs', updatedConfigs);
     pullRequestConfigs.set(updatedConfigs);
-    eventBus.set('config-updated');
+    // Temporarily disabled to prevent infinite loop
+    // eventBus.set('config-updated');
 
     return Promise.resolve();
   } catch (error) {
@@ -188,7 +193,8 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
     actionsConfigs.set(actionConfigs);
 
     // Trigger config updated event
-    eventBus.set('config-updated');
+    // Temporarily disabled to prevent infinite loop
+    // eventBus.set('config-updated');
 
     return Promise.resolve();
   } catch (error) {
@@ -222,6 +228,7 @@ async function refreshActionConfigs(): Promise<void> {
 }
 
 export async function loadRepositoryConfigs(): Promise<void> {
+  // Load configurations only, without triggering data fetching
   const prStorage = getStorageObject<RepoConfig[]>('pull-requests-configs');
   if (prStorage.data?.length) {
     pullRequestConfigs.set(prStorage.data);
@@ -240,15 +247,27 @@ export async function loadRepositoryConfigs(): Promise<void> {
     setStorageObject('actions-configs', configs.actions);
     actionsConfigs.set(configs.actions);
   }
+  
+  // Initialize data fetching with a delay to avoid infinite loops
   const prConfigs = get(pullRequestConfigs);
+  console.log('🔄 Repository service: PR configs for data fetching:', prConfigs.length);
   if (prConfigs.length) {
-    await refreshPullRequestsData(prConfigs);
-    initializePullRequestsPolling({ repoConfigs: prConfigs });
+    // Use setTimeout to avoid immediate execution
+    setTimeout(() => {
+      console.log('🔄 Repository service: Starting PR data fetch...');
+      refreshPullRequestsData(prConfigs);
+      initializePullRequestsPolling({ repoConfigs: prConfigs });
+    }, 100);
   }
   const actionConfigs = get(actionsConfigs);
+  console.log('🔄 Repository service: Action configs for data fetching:', actionConfigs.length);
   if (actionConfigs.length) {
-    await refreshActionsData(actionConfigs);
-    initializeActionsPolling(actionConfigs);
+    // Use setTimeout to avoid immediate execution
+    setTimeout(() => {
+      console.log('🔄 Repository service: Starting Action data fetch...');
+      refreshActionsData(actionConfigs);
+      initializeActionsPolling(actionConfigs);
+    }, 200);
   }
 }
 
@@ -273,7 +292,15 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     repo: config.repo,
     filters: config.filters || [],
   }));
-  createPollingStore<Record<string, PullRequest[]>>('all-pull-requests', () => fetchMultipleRepositoriesPullRequests(params)).subscribe((data) => {
+  
+  // Use PullRequestRepository instead of direct function call
+  const pullRequestRepo = PullRequestRepository.getInstance();
+  const queries = repoConfigs.map((config) => ({
+    org: config.org,
+    repo: config.repo,
+    filters: { labels: config.filters || [] }
+  }));
+  createPollingStore<Record<string, PullRequest[]>>('all-pull-requests', () => pullRequestRepo.fetchPullRequestsForMultiple(queries)).subscribe((data) => {
     if (!data) return;
     allPullRequests.set(
       repoConfigs.reduce(
@@ -293,13 +320,14 @@ export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promis
     allPullRequests.set({});
     return;
   }
-  const params = repoConfigs.map((config) => ({
+  const queries = repoConfigs.map((config) => ({
     org: config.org,
     repo: config.repo,
-    filters: config.filters || [],
+    filters: { labels: config.filters || [] }
   }));
   try {
-    const data = await fetchMultipleRepositoriesPullRequests(params);
+    const pullRequestRepo = PullRequestRepository.getInstance();
+    const data = await pullRequestRepo.fetchPullRequestsForMultiple(queries);
     allPullRequests.set(
       repoConfigs.reduce(
         (acc, config) => {
