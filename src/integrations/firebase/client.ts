@@ -307,7 +307,6 @@ class FirebaseAuthClient {
         console.debug(`Cleared cached data: ${key}`);
       });
       
-      console.log(`Cleared ${keysToRemove.length} cached data entries`);
     } catch (error) {
       console.warn('Error clearing cached data:', error);
     }

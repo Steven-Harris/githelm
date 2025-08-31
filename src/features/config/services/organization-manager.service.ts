@@ -47,11 +47,11 @@ export class OrganizationManagerService {
     }
   }
 
-  addOrganization(
+  async addOrganization(
     newOrgName: string,
     organizations: Organization[],
     onStateUpdate: (updates: Partial<OrganizationManagerState>) => void
-  ): void {
+  ): Promise<void> {
     if (!newOrgName.trim()) return;
 
     const orgName = newOrgName.trim();
@@ -63,6 +63,11 @@ export class OrganizationManagerService {
 
     try {
       const updatedOrganizations = [...organizations, { name: orgName }];
+      
+      // Save to Firebase immediately
+      await configService.saveOrganizations(updatedOrganizations);
+      
+      // Update local state
       configService.updateLocalOrganizations(updatedOrganizations);
 
       onStateUpdate({ 
@@ -73,14 +78,15 @@ export class OrganizationManagerService {
       eventBus.set('organizations-updated');
     } catch (error) {
       captureException(error);
+      alert('Failed to save organization to Firebase. Please try again.');
     }
   }
 
-  deleteOrganization(
+  async deleteOrganization(
     index: number,
     organizations: Organization[],
     onStateUpdate: (updates: Partial<OrganizationManagerState>) => void
-  ): void {
+  ): Promise<void> {
     if (!confirm('Are you sure you want to delete this organization? This may affect your repository configurations.')) {
       return;
     }
@@ -90,7 +96,10 @@ export class OrganizationManagerService {
       const updatedOrgs = [...organizations];
       updatedOrgs.splice(index, 1);
 
-      // Update local orgs in the service (don't save to Firebase yet)
+      // Save to Firebase immediately
+      await configService.saveOrganizations(updatedOrgs);
+
+      // Update local orgs in the service
       configService.updateLocalOrganizations(updatedOrgs);
 
       onStateUpdate({ organizations: updatedOrgs });
@@ -99,6 +108,7 @@ export class OrganizationManagerService {
       eventBus.set('organizations-updated');
     } catch (error) {
       captureException(error);
+      alert('Failed to delete organization from Firebase. Please try again.');
     }
   }
 

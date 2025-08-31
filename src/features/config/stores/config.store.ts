@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { type RepoConfig, configService } from '$integrations/firebase';
 import { getStorageObject, setStorageObject } from '$shared/storage/storage';
 import { captureException } from '$integrations/sentry';
@@ -30,6 +30,54 @@ export async function loadRepositoryConfigs(): Promise<void> {
     // Update local storage.
     setStorageObject('pull-requests-configs', configs.pullRequests || []);
     setStorageObject('actions-configs', configs.actions || []);
+    
+    // Initialize empty data to mark repositories as loaded
+    const prConfigs = configs.pullRequests || [];
+    if (prConfigs.length) {
+      const initialPRs: Record<string, any[]> = {};
+      prConfigs.forEach(config => {
+        const key = getRepoKey(config);
+        initialPRs[key] = [];
+      });
+      const { allPullRequests } = await import('$features/pull-requests/stores/pull-requests.store');
+      allPullRequests.set(initialPRs);
+      
+              // Initialize data fetching with a delay
+        setTimeout(async () => {
+          const { refreshPullRequestsData, initializePullRequestsPolling } = await import('$shared/stores/repository-service');
+          await refreshPullRequestsData(prConfigs);
+          initializePullRequestsPolling({ repoConfigs: prConfigs });
+        }, 100);
+    }
+    
+    const actionConfigs = configs.actions || [];
+    if (actionConfigs.length) {
+      const initialActions: Record<string, any[]> = {};
+      actionConfigs.forEach(config => {
+        const key = getRepoKey(config);
+        initialActions[key] = [];
+      });
+      const { allWorkflowRuns } = await import('$shared/stores/repository-service');
+      allWorkflowRuns.set(initialActions);
+      
+      // Initialize data fetching with a delay
+      setTimeout(async () => {
+        try {
+          const { refreshActionsData, initializeActionsPolling } = await import('$shared/stores/repository-service');
+          
+          await refreshActionsData(actionConfigs);
+          
+          initializeActionsPolling(actionConfigs);
+        } catch (error) {
+          captureException(error, {
+            action: 'loadRepositoryConfigs',
+            context: 'Actions configuration loading',
+          });
+          throw error;
+        }
+      }, 200);
+    }
+    
   } catch (error) {
     captureException(error, {
       action: 'loadRepositoryConfigs',
@@ -129,7 +177,7 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
     pullRequestConfigs.set(prConfigs);
     actionsConfigs.set(actionConfigs);
 
-    // Trigger config updated event
+    // Trigger config updated event to refresh UI
     eventBus.set('config-updated');
 
     return Promise.resolve();
@@ -206,7 +254,6 @@ export function clearConfigStores(): void {
     pullRequestConfigs.set([]);
     actionsConfigs.set([]);
     
-    console.log('Cleared configuration stores');
   } catch (error) {
     console.warn('Error clearing configuration stores:', error);
   }

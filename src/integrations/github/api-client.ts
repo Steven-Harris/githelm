@@ -149,6 +149,9 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
       body: body ? JSON.stringify(body) : undefined,
     });
 
+        // Parse response body once
+    const responseBody = await response.json().catch(() => null);
+
     // Handle response status
     if (!response.ok) {
       if (response.status === 401 && retryCount < MAX_RETRIES) {
@@ -193,7 +196,6 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
         
         // Auto-resume after rate limit resets (with some buffer)
         setTimeout(() => {
-          console.log('Rate limit should be reset, re-enabling API calls');
           killSwitch.set(false);
         }, timeUntilReset + 5000); // Add 5 second buffer
         
@@ -215,14 +217,10 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
           
           // Re-enable after a short delay
           setTimeout(() => {
-            console.log('Resuming GitHub API requests after rate limit cooldown');
             killSwitch.set(false);
           }, 60000); // Wait 1 minute before resuming
         }
       }
-
-      // Handle other errors
-      const responseBody = await response.json().catch(() => null);
 
       // Check for GraphQL-specific rate limiting
       if (responseBody?.errors?.some((error: any) => error.type === 'RATE_LIMITED' || error.message?.includes('API rate limit exceeded'))) {
@@ -261,7 +259,7 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
 
     // Process successful response
     setLastUpdated();
-    const result = await response.json();
+    const result = responseBody; // Use the already parsed response body
 
     // Cache if needed
     if (cacheKey) {

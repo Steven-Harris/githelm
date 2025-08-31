@@ -17,17 +17,29 @@
 
   let formState = $state<FormState>(repositoryFormService.createInitialState());
 
-  $effect(() => {
-    if (config) {
-      formState = repositoryFormService.loadStateFromConfig(config);
-      if (formState.monitorPRs) {
-        loadLabels();
-      }
-      if (formState.monitorActions) {
-        loadWorkflows();
-      }
+  // Temporarily disabled to prevent infinite loop
+  // $effect(() => {
+  //   if (config) {
+  //     formState = repositoryFormService.loadStateFromConfig(config);
+  //     if (formState.monitorPRs) {
+  //       loadLabels();
+  //     }
+  //     if (formState.monitorActions) {
+  //       loadWorkflows();
+  //     }
+  //   }
+  // });
+  
+  // Manual initialization
+  if (config) {
+    formState = repositoryFormService.loadStateFromConfig(config);
+    if (formState.monitorPRs) {
+      loadLabels();
     }
-  });
+    if (formState.monitorActions) {
+      loadWorkflows();
+    }
+  }
 
   $effect(() => {
     if ($eventBus === 'save-config') {

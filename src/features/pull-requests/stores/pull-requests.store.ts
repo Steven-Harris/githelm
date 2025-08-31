@@ -4,6 +4,7 @@ import { fetchMultipleRepositoriesPullRequests, type PullRequest } from '$integr
 import { getStorageObject, setStorageObject } from '$shared/storage/storage';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from '$shared/stores/polling.store';
+import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
 
 export const allPullRequests = writable<Record<string, PullRequest[]>>({});
 export const pullRequestConfigs = writable<RepoConfig[]>([]);
@@ -89,7 +90,13 @@ export async function refreshPullRequestsData(configs: RepoConfig[]): Promise<vo
       return;
     }
 
-    const pullRequests = await fetchMultipleRepositoriesPullRequests(configs);
+    const pullRequestRepo = PullRequestRepository.getInstance();
+    const queries = configs.map((config) => ({
+      org: config.org,
+      repo: config.repo,
+      filters: { labels: config.filters || [] }
+    }));
+    const pullRequests = await pullRequestRepo.fetchPullRequestsForMultiple(queries);
     allPullRequests.set(pullRequests);
   } catch (error) {
     captureException(error, {
@@ -123,9 +130,14 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     }
     
     // Fetch fresh data
-    const pullRequests = await fetchMultipleRepositoriesPullRequests([config]);
-    const repoKey = getRepoKey(config);
-    const result = pullRequests[repoKey] || [];
+    const pullRequestRepo = PullRequestRepository.getInstance();
+    const query = {
+      org: config.org,
+      repo: config.repo,
+      filters: { labels: config.filters || [] }
+    };
+    const pullRequests = await pullRequestRepo.fetchPullRequests(query);
+    const result = pullRequests || [];
     
     // Cache the result.
     try {
@@ -160,7 +172,10 @@ export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<v
   try {
     setStorageObject('pull-requests-configs', configs);
     pullRequestConfigs.set(configs);
-    initializePullRequestsPolling(configs);
+    
+    // Use the bulk polling system instead of individual polling
+    const { initializePullRequestsPolling } = await import('$shared/stores/repository-service');
+    initializePullRequestsPolling({ repoConfigs: configs });
   } catch (error) {
     captureException(error, {
       action: 'updatePullRequestConfigs',
@@ -179,7 +194,6 @@ export function clearPullRequestStores(): void {
     allPullRequests.set({});
     pullRequestConfigs.set([]);
     
-    console.log('Cleared pull request stores');
   } catch (error) {
     console.warn('Error clearing pull request stores:', error);
   }

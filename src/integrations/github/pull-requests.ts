@@ -6,12 +6,12 @@ import { type PullRequest, type PullRequests, type RepoInfo, type Review } from 
 
 export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
-    const labelsFilter = filters.length > 0 ? `labels: ${JSON.stringify(filters)}` : '';
+    const labelsFilter = filters.length > 0 ? `, labels: ${JSON.stringify(filters)}` : '';
 
     const query = `
       query GetPullRequests($owner: String!, $repo: String!) {
         repository(owner: $owner, name: $repo) {
-          pullRequests(first: 20, states: OPEN ${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          pullRequests(first: 20, states: OPEN${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
             edges {
               node {
                 id
@@ -83,11 +83,12 @@ export async function fetchPullRequestsWithGraphQL(org: string, repo: string, fi
 }
 
 function transformGraphQLPullRequests(data: any): PullRequest[] {
+  
   if (!data?.repository?.pullRequests?.edges) {
     return [];
   }
 
-  return data.repository.pullRequests.edges.map((edge: any) => {
+  const transformed = data.repository.pullRequests.edges.map((edge: any) => {
     const node = edge?.node;
     if (!node) {
       return null;
@@ -137,6 +138,8 @@ function transformGraphQLPullRequests(data: any): PullRequest[] {
       reviews: transformGraphQLReviews(node.reviews?.edges || []),
     };
   }).filter(Boolean); // Remove any null entries
+  
+  return transformed;
 }
 
 function transformGraphQLReviews(reviewEdges: any[]): Review[] {
@@ -229,6 +232,7 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
 // Removed fetchPullRequests REST API function - using GraphQL only
 
 export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[]): Promise<Record<string, PullRequest[]>> {
+  
   if (!configs || configs.length === 0) {
     return {};
   }
@@ -237,11 +241,11 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
     query FetchMultipleRepositoriesPullRequests {
       ${configs
         .map((config, index) => {
-          const labelsFilter = config.filters.length > 0 ? `labels: ${JSON.stringify(config.filters)}` : '';
+          const labelsFilter = config.filters.length > 0 ? `, labels: ${JSON.stringify(config.filters)}` : '';
 
           return `
           repo${index}: repository(owner: "${config.org}", name: "${config.repo}") {
-            pullRequests(first: 20, states: OPEN ${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
+            pullRequests(first: 20, states: OPEN${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
               edges {
                 node {
                   id
@@ -322,7 +326,7 @@ function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): R
   configs.forEach((config, index) => {
     const repoKey = `${config.org}/${config.repo}`;
     const repoData = data[`repo${index}`];
-
+    
     if (!repoData?.pullRequests?.edges) {
       results[repoKey] = [];
       return;

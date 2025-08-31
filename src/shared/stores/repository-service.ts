@@ -5,6 +5,7 @@ import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
 import { writable, get, derived } from 'svelte/store';
 import { captureException } from '$integrations/sentry';
+import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
 
 // Type definitions for repository service
 export type { SearchRepositoryResult } from '$integrations/github';
@@ -63,7 +64,9 @@ function unsubscribe(key: string): void {
 
 // Subscribe to config-updated events to refresh configurations
 eventBus.subscribe(async (event) => {
-  if (event === 'config-updated') await refreshConfigurations();
+  if (event === 'config-updated') {
+    await refreshConfigurations();
+  }
 });
 
 // Repository configuration management functions
@@ -222,6 +225,7 @@ async function refreshActionConfigs(): Promise<void> {
 }
 
 export async function loadRepositoryConfigs(): Promise<void> {
+  // Load configurations only, without triggering data fetching
   const prStorage = getStorageObject<RepoConfig[]>('pull-requests-configs');
   if (prStorage.data?.length) {
     pullRequestConfigs.set(prStorage.data);
@@ -240,15 +244,23 @@ export async function loadRepositoryConfigs(): Promise<void> {
     setStorageObject('actions-configs', configs.actions);
     actionsConfigs.set(configs.actions);
   }
+  
+  // Initialize data fetching with a delay to avoid infinite loops
   const prConfigs = get(pullRequestConfigs);
   if (prConfigs.length) {
-    await refreshPullRequestsData(prConfigs);
-    initializePullRequestsPolling({ repoConfigs: prConfigs });
+    // Use setTimeout to avoid immediate execution
+    setTimeout(() => {
+      refreshPullRequestsData(prConfigs);
+      initializePullRequestsPolling({ repoConfigs: prConfigs });
+    }, 100);
   }
   const actionConfigs = get(actionsConfigs);
   if (actionConfigs.length) {
-    await refreshActionsData(actionConfigs);
-    initializeActionsPolling(actionConfigs);
+    // Use setTimeout to avoid immediate execution
+    setTimeout(() => {
+      refreshActionsData(actionConfigs);
+      initializeActionsPolling(actionConfigs);
+    }, 200);
   }
 }
 
@@ -273,19 +285,31 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     repo: config.repo,
     filters: config.filters || [],
   }));
-  createPollingStore<Record<string, PullRequest[]>>('all-pull-requests', () => fetchMultipleRepositoriesPullRequests(params)).subscribe((data) => {
+  
+  // Use PullRequestRepository instead of direct function call
+  const pullRequestRepo = PullRequestRepository.getInstance();
+  const queries = repoConfigs.map((config) => ({
+    org: config.org,
+    repo: config.repo,
+    filters: { labels: config.filters || [] }
+  }));
+  
+  const storeKey = 'all-pull-requests';
+  unsubscribe(storeKey);
+  
+  const store = createPollingStore<Record<string, PullRequest[]>>(storeKey, () => pullRequestRepo.fetchPullRequestsForMultiple(queries));
+  pollingUnsubscribers.set(storeKey, store.subscribe((data) => {
     if (!data) return;
-    allPullRequests.set(
-      repoConfigs.reduce(
-        (acc, config) => {
-          const key = getRepoKey(config);
-          if (data[key]) acc[key] = data[key];
-          return acc;
-        },
-        {} as Record<string, PullRequest[]>
-      )
+    const processedData = repoConfigs.reduce(
+      (acc, config) => {
+        const key = getRepoKey(config);
+        if (data[key]) acc[key] = data[key];
+        return acc;
+      },
+      {} as Record<string, PullRequest[]>
     );
-  });
+    allPullRequests.set(processedData);
+  }));
 }
 
 export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promise<void> {
@@ -293,23 +317,23 @@ export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promis
     allPullRequests.set({});
     return;
   }
-  const params = repoConfigs.map((config) => ({
+  const queries = repoConfigs.map((config) => ({
     org: config.org,
     repo: config.repo,
-    filters: config.filters || [],
+    filters: { labels: config.filters || [] }
   }));
   try {
-    const data = await fetchMultipleRepositoriesPullRequests(params);
-    allPullRequests.set(
-      repoConfigs.reduce(
-        (acc, config) => {
-          const key = getRepoKey(config);
-          if (data[key]) acc[key] = data[key];
-          return acc;
-        },
-        {} as Record<string, PullRequest[]>
-      )
+    const pullRequestRepo = PullRequestRepository.getInstance();
+    const data = await pullRequestRepo.fetchPullRequestsForMultiple(queries);
+    const processedData = repoConfigs.reduce(
+      (acc, config) => {
+        const key = getRepoKey(config);
+        if (data[key]) acc[key] = data[key];
+        return acc;
+      },
+      {} as Record<string, PullRequest[]>
     );
+    allPullRequests.set(processedData);
   } catch (error) {
     captureException(error, {
       action: 'refreshPullRequestsData',
@@ -414,7 +438,6 @@ export function clearAllStores(): void {
     // Unsubscribe from all polling
     Array.from(pollingUnsubscribers.keys()).forEach(unsubscribe);
     
-    console.log('Cleared all repository stores');
   } catch (error) {
     console.warn('Error clearing repository stores:', error);
   }
