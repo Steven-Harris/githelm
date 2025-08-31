@@ -77,7 +77,7 @@
           <div class="lg:col-span-1 min-w-0">
             <div class="hero-card">
               <div class="card-header">
-                <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Organization Management</h2>
+                <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Organizations</h2>
               </div>
               <div class="card-body">
                 <OrganizationManager />
@@ -88,7 +88,7 @@
           <div class="lg:col-span-2 min-w-0">
             <div class="hero-card h-full">
               <div class="card-header">
-                <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Repository Configurations</h2>
+                <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Repositories</h2>
               </div>
               <div class="card-body flex-1">
                 <ConfigList configs={$configurations} onUpdate={handleConfigUpdate} />

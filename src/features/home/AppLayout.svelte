@@ -20,16 +20,22 @@
   
   const authState = homePageService.getAuthState();
   let configsLoaded = $state(false);
+  let isLoadingConfigs = $state(false);
 
   $effect(() => {
-    if ($authState.isAuth === 'authenticated' && !configsLoaded) {
+    if ($authState.isAuth === 'authenticated' && !configsLoaded && !isLoadingConfigs) {
+      isLoadingConfigs = true;
       initAuthStateHandling();
       configPageService.loadConfigurations().then(() => {
         configsLoaded = true;
+        isLoadingConfigs = false;
+      }).catch(() => {
+        isLoadingConfigs = false;
       });
     } else if ($authState.isAuth === 'unauthenticated') {
       repositoryFacade.clearAllStores();
       configsLoaded = false;
+      isLoadingConfigs = false;
     }
   });
 </script>
