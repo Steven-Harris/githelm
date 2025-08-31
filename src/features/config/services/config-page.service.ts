@@ -190,9 +190,11 @@ export class ConfigPageService {
 
   getConfigStats(): Readable<{ total: number; pullRequests: number; actions: number }> {
     return derived(this.getConfigurations(), ($configs) => {
-      const total = $configs.length;
-      const pullRequests = $configs.filter(config => config.pullRequests && config.pullRequests.length > 0).length;
-      const actions = $configs.filter(config => config.actions && config.actions.length > 0).length;
+      // Ensure configs is always an array
+      const configs = Array.isArray($configs) ? $configs : [];
+      const total = configs.length;
+      const pullRequests = configs.filter(config => config.pullRequests && config.pullRequests.length > 0).length;
+      const actions = configs.filter(config => config.actions && config.actions.length > 0).length;
       
       return { total, pullRequests, actions };
     });

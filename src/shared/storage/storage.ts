@@ -37,7 +37,9 @@ export function setGithubToken(token: string | undefined): void {
 export function getStorageObject<T = {} | []>(key: string): StorageObject<T> {
   const item = getItem(key);
   if (!item) {
-    return { lastUpdated: 0, data: typeof {} === 'object' ? ({} as T) : ([] as T) };
+    // Return appropriate default based on the expected type
+    const defaultValue = key.includes('configs') ? [] : {};
+    return { lastUpdated: 0, data: defaultValue as T };
   }
   return JSON.parse(item);
 }

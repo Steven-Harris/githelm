@@ -97,7 +97,9 @@ export class ActionsContainerService {
     return derived(
       [repositoryFacade.getActionsConfigsStore(), this.getFilteredWorkflowRuns(), this.getLoadingStates()],
       ([$configs, $filteredRuns, $loadingStates]) => {
-        if ($configs.length === 0) {
+        // Ensure configs is always an array
+        const configs = Array.isArray($configs) ? $configs : [];
+        if (configs.length === 0) {
           return 'No repositories configured for actions monitoring';
         } else if (this.shouldShowNoRunsMessage($loadingStates, $filteredRuns)) {
           return 'No workflow runs match your current filters';
@@ -109,7 +111,9 @@ export class ActionsContainerService {
 
   hasConfiguredRepositories(): Readable<boolean> {
     return derived(repositoryFacade.getActionsConfigsStore(), ($configs) => {
-      return $configs.length > 0;
+      // Ensure configs is always an array
+      const configs = Array.isArray($configs) ? $configs : [];
+      return configs.length > 0;
     });
   }
 
@@ -128,7 +132,8 @@ export class ActionsContainerService {
 
   getConfiguredRepositories(): Readable<RepoConfig[]> {
     return derived(repositoryFacade.getActionsConfigsStore(), ($configs) => {
-      return $configs;
+      // Ensure configs is always an array
+      return Array.isArray($configs) ? $configs : [];
     });
   }
 

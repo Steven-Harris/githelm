@@ -53,7 +53,9 @@ export class PullRequestsContainerService {
     return derived(
       [repositoryFacade.getPullRequestConfigsStore(), repositoryFacade.getPullRequestsStore()],
       ([$configs, $pullRequests]) => {
-        return $configs.map(repo => {
+        // Ensure configs is always an array
+        const configs = Array.isArray($configs) ? $configs : [];
+        return configs.map(repo => {
           const repoKey = repositoryFacade.getRepoKey(repo);
           const pullRequests = $pullRequests[repoKey] || [];
           const hasPRs = pullRequests.length > 0;
@@ -109,7 +111,9 @@ export class PullRequestsContainerService {
     return derived(
       [repositoryFacade.getPullRequestConfigsStore(), this.getFilteredRepositories()],
       ([$configs, $filteredRepos]) => {
-        if ($configs.length === 0) {
+        // Ensure configs is always an array
+        const configs = Array.isArray($configs) ? $configs : [];
+        if (configs.length === 0) {
           return 'No repositories configured for pull requests monitoring';
         } else if ($filteredRepos.length === 0) {
           return 'No repositories match the current filters';
@@ -121,7 +125,9 @@ export class PullRequestsContainerService {
 
   hasConfiguredRepositories(): Readable<boolean> {
     return derived(repositoryFacade.getPullRequestConfigsStore(), ($configs) => {
-      return $configs.length > 0;
+      // Ensure configs is always an array
+      const configs = Array.isArray($configs) ? $configs : [];
+      return configs.length > 0;
     });
   }
 
