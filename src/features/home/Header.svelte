@@ -34,8 +34,7 @@
   }
 
   function cancelConfig() {
-    configService.disableKillSwitch();
-    goto('/');
+    configService.navigateToDashboard();
   }
 
   function navigateToConfig() {

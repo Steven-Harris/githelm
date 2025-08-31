@@ -5,6 +5,7 @@
   import Footer from "./Footer.svelte";
   import Tabs from "./Tabs.svelte";
   import { homePageService } from "./services/home-page.service";
+  import { configPageService } from "$features/config/services/config-page.service";
   import { ReloadPrompt } from "$shared";
   import { repositoryFacade } from "$shared/stores/facades/repository.facade";
   import { pwaAssetsHead } from "virtual:pwa-assets/head";
@@ -18,13 +19,17 @@
   const { children }: Props = $props();
   
   const authState = homePageService.getAuthState();
+  let configsLoaded = $state(false);
 
   $effect(() => {
-    if ($authState.isAuth === 'authenticated') {
+    if ($authState.isAuth === 'authenticated' && !configsLoaded) {
       initAuthStateHandling();
-      repositoryFacade.loadAllConfigurations();
+      configPageService.loadConfigurations().then(() => {
+        configsLoaded = true;
+      });
     } else if ($authState.isAuth === 'unauthenticated') {
       repositoryFacade.clearAllStores();
+      configsLoaded = false;
     }
   });
 </script>
@@ -59,6 +64,19 @@
 
   {#if $authState.shouldShowContent}
     {@render children?.()}
+  {:else if $authState.isConfigLoading}
+    <div class="flex flex-col items-center justify-center pt-20">
+      <div class="hero-section max-w-md w-full p-8 text-center">
+        <div class="animate-spin mx-auto w-8 h-8 mb-4">
+          <svg class="w-full h-full text-[#58a6ff] fill-current" viewBox="0 0 16 16">
+            <path d="M8 16a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
+            <path class="text-[#0d1117] fill-current" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"></path>
+          </svg>
+        </div>
+        <h1 class="hero-title text-2xl mb-4">Loading Configuration</h1>
+        <p class="text-[#c9d1d9] mb-6">Please wait while we load your repository configurations...</p>
+      </div>
+    </div>
   {:else if $authState.shouldShowConfigurePrompt}
     <div class="flex flex-col items-center justify-center pt-20">
       <div class="hero-section max-w-md w-full p-8 text-center">

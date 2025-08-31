@@ -4,6 +4,7 @@ import { configService } from '$features/config/services/config.service';
 import { repositoryFacade } from '$shared/stores/facades/repository.facade';
 import { errorService } from '$shared/error/error.service';
 import { loggerService } from '$shared/logging/logger.service';
+import { goto } from '$app/navigation';
 import type { CombinedConfig } from '$features/config/stores/config.store';
 
 export interface SaveState {
@@ -160,6 +161,10 @@ export class ConfigPageService {
       
       throw error;
     }
+  }
+
+  navigateToDashboard(): void {
+    goto('/');
   }
 
   handleConfigUpdate(configs: CombinedConfig[]): void {

@@ -24,8 +24,7 @@
     try {
       const result = await configService.saveConfigurations($configurations);
       if (result.success) {
-        configService.disableKillSwitch();
-        goto('/');
+        configService.navigateToDashboard();
       } else {
         console.error('Failed to save configurations:', result.error);
       }

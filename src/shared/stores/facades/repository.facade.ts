@@ -1,5 +1,6 @@
 import { type RepoConfig } from '$integrations/firebase';
 import { type CombinedConfig } from '$features/config/stores/config.store';
+import { eventBus } from '$shared/stores/event-bus.store';
 import { 
   loadPullRequestConfigs, 
   initializePullRequestsPolling, 
@@ -26,7 +27,9 @@ import {
   getCombinedConfigs, 
   updateRepositoryConfigs,
   refreshConfigurations,
-  clearConfigStores
+  clearConfigStores,
+  pullRequestConfigs as configPullRequestConfigs,
+  actionsConfigs as configActionsConfigs
 } from '$features/config/stores/config.store';
 
 export class RepositoryFacade {
@@ -42,8 +45,11 @@ export class RepositoryFacade {
   }
 
   async loadAllConfigurations(): Promise<void> {
+    // First load the main repository configs
+    await loadRepositoryConfigs();
+    
+    // Then ensure the pull requests and actions stores are in sync
     await Promise.all([
-      loadRepositoryConfigs(),
       loadPullRequestConfigs(),
       loadActionsConfigs()
     ]);
