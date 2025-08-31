@@ -1,18 +1,6 @@
 import type { WorkflowRun } from '$integrations/github';
 import type { WorkflowStatus } from '$shared/stores/workflow-status-filter.store';
 
-export interface FilterCriteria {
-  statusFilters?: Record<WorkflowStatus, boolean>;
-  labelFilters?: string[];
-  workflowFilters?: string[];
-}
-
-export interface FilterResult<T> {
-  data: T[];
-  totalCount: number;
-  filteredCount: number;
-}
-
 export class FilterService {
   private static instance: FilterService;
 
@@ -71,50 +59,7 @@ export class FilterService {
     }
   }
 
-  hasActiveFilters(filters: FilterCriteria): boolean {
-    if (filters.statusFilters) {
-      const hasStatusFilters = Object.values(filters.statusFilters).some(Boolean);
-      if (hasStatusFilters) return true;
-    }
 
-    if (filters.labelFilters && filters.labelFilters.length > 0) {
-      return true;
-    }
-
-    if (filters.workflowFilters && filters.workflowFilters.length > 0) {
-      return true;
-    }
-
-    return false;
-  }
-
-  getFilteredData<T extends object>(
-    data: T[],
-    filters: FilterCriteria
-  ): FilterResult<T> {
-    let filteredData = [...data];
-
-    if (filters.statusFilters && data.length > 0 && 'conclusion' in data[0]) {
-      filteredData = this.filterWorkflowRunsByStatus(
-        filteredData as WorkflowRun[],
-        filters.statusFilters
-      ) as T[];
-    }
-
-    return {
-      data: filteredData,
-      totalCount: data.length,
-      filteredCount: filteredData.length,
-    };
-  }
-
-  clearFilters(): FilterCriteria {
-    return {
-      statusFilters: undefined,
-      labelFilters: [],
-      workflowFilters: [],
-    };
-  }
 }
 
 export const filterService = FilterService.getInstance();

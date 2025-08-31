@@ -6,13 +6,13 @@ export { authState, authContext, isAuthenticated, isLoading, hasError } from './
 
 // Error Handling
 export { errorService } from './error/error.service';
-export { withErrorHandling, withRetry } from './error/error.utils';
+
 
 // Logging
 export { loggerService } from './logging/logger.service';
 
 // Storage
-export { cacheService } from './storage/cache.service';
+
 export { getStorageObject, setStorageObject, clearSiteData } from './storage/storage';
 
 // Commands

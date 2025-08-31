@@ -400,10 +400,7 @@ function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]
     });
 }
 
-export function getJobsForRun(org: string, repo: string, runId: number): Job[] {
-  const key = `${org}/${repo}:${runId}`;
-  return get(allWorkflowJobs)[key] || [];
-}
+
 
 // Clear all stores when user is unauthenticated
 export function clearAllStores(): void {
