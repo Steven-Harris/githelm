@@ -1,0 +1,22 @@
+// Shared Utilities Exports
+
+// Authentication
+export { authService } from './auth/auth.service';
+export { authState, authContext, isAuthenticated, isLoading, hasError } from './auth/auth.state';
+
+// Error Handling
+export { errorService } from './error/error.service';
+export { withErrorHandling, withRetry } from './error/error.utils';
+
+// Logging
+export { loggerService } from './logging/logger.service';
+
+// Storage
+export { cacheService } from './storage/cache.service';
+export { getStorageObject, setStorageObject, clearSiteData } from './storage/storage';
+
+// Commands
+export { commandExecutor } from './repository.commands';
+
+// Filter Service
+export { filterService } from './filter.service';

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import OrganizationManager from '$lib/config/OrganizationManager.svelte';
-  import ConfigList from '$lib/config/ConfigList.svelte';
-  import { configPageService } from '$lib/services/config-page.service';
-  import { configService } from '$lib/services/config.service';
-  import { isMobile } from '$lib/stores/mobile.store';
+  import OrganizationManager from '$features/config/components/OrganizationManager.svelte';
+  import ConfigList from '$features/config/components/ConfigList.svelte';
+  import { configPageService } from '$features/config/services/config-page.service';
+  import { configService } from '$features/config/services/config.service';
+  import { isMobile } from '$shared/stores/mobile.store';
 
   // Get all data from the service
   const configurations = configPageService.getConfigurations();
