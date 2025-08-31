@@ -28,6 +28,7 @@ vi.mock('$shared/storage/storage', () => ({
 
 vi.mock('$integrations/sentry', () => ({
   clearUserInfo: vi.fn(),
+  captureException: vi.fn(),
 }));
 
 vi.mock('svelte/store', () => ({
@@ -84,8 +85,8 @@ describe('AuthService', () => {
       const mockState = 'authenticated';
       const { get } = await import('svelte/store');
       vi.mocked(get)
-        .mockReturnValueOnce(mockUser)
-        .mockReturnValueOnce(mockState);
+        .mockReturnValueOnce(mockState)  // First call: getAuthState()
+        .mockReturnValueOnce(mockUser);  // Second call: getCurrentUser()
 
       const result = authService.isAuthenticated();
       expect(result).toBe(true);
@@ -96,8 +97,8 @@ describe('AuthService', () => {
       const mockState = 'unauthenticated';
       const { get } = await import('svelte/store');
       vi.mocked(get)
-        .mockReturnValueOnce(mockUser)
-        .mockReturnValueOnce(mockState);
+        .mockReturnValueOnce(mockState)  // First call: getAuthState()
+        .mockReturnValueOnce(mockUser);  // Second call: getCurrentUser()
 
       const result = authService.isAuthenticated();
       expect(result).toBe(false);
