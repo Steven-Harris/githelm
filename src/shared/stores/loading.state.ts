@@ -1,5 +1,4 @@
 import { writable, derived } from 'svelte/store';
-import { loggerService } from '$shared/logging/logger.service';
 
 export enum LoadingState {
   IDLE = 'idle',
@@ -46,7 +45,6 @@ class LoadingStateMachine {
     });
 
     this.updateGlobalState();
-    this.logTaskEvent(id, 'started', message);
   }
 
   completeTask(id: string, message?: string): void {
@@ -64,7 +62,6 @@ class LoadingStateMachine {
     });
 
     this.updateGlobalState();
-    this.logTaskEvent(id, 'completed', message);
   }
 
   failTask(id: string, error: string, message?: string): void {
@@ -83,7 +80,6 @@ class LoadingStateMachine {
     });
 
     this.updateGlobalState();
-    this.logTaskEvent(id, 'failed', error);
   }
 
   updateTaskProgress(id: string, progress: number): void {
@@ -104,16 +100,11 @@ class LoadingStateMachine {
     });
 
     this.updateGlobalState();
-    this.logTaskEvent(id, 'removed');
   }
 
   clearAllTasks(): void {
     this.tasks.set(new Map());
     this.globalState.set(LoadingState.IDLE);
-    loggerService.info('All loading tasks cleared', {
-      component: 'LoadingStateMachine',
-      action: 'clearAllTasks',
-    });
   }
 
   getTask(id: string): LoadingTask | undefined {
@@ -183,15 +174,6 @@ class LoadingStateMachine {
       return tasks;
     });
   }
-
-  private logTaskEvent(taskId: string, event: string, message?: string): void {
-    loggerService.debug(`Loading task ${event}: ${taskId}`, {
-      component: 'LoadingStateMachine',
-      action: `task${event.charAt(0).toUpperCase() + event.slice(1)}`,
-      data: { taskId, message },
-    });
-  }
-
 
   getTasks() {
     return this.tasks;

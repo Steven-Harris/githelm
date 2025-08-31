@@ -25,3 +25,4 @@ export { filterService } from './filter/filter.service';
 export { default as Loading } from './ui/Loading.svelte';
 export { default as RateLimitModal } from './ui/RateLimitModal.svelte';
 export { default as ReloadPrompt } from './ui/ReloadPrompt.svelte';
+export { default as CountBadge } from './ui/CountBadge.svelte';

@@ -10,6 +10,7 @@
     onRemove,
     onLoadOptions,
     noOptionsAvailable = false,
+    showValidationError = false,
   } = $props();
 
   let filterState = $state<FilterState>(labelFilterService.createInitialState());
@@ -102,9 +103,9 @@
         </span>
       {/each}
     </div>
-  {:else if labelFilterService.isWorkflowRequired(title)}
+  {:else if labelFilterService.isWorkflowRequired(title) && showValidationError}
     <p class="text-xs text-[#f97583] mb-2">At least one workflow must be selected.</p>
-  {:else}
+  {:else if !labelFilterService.isWorkflowRequired(title)}
     <p class="text-xs text-[#8b949e] mb-2">
       No filters set. All {title.toLowerCase()} will be displayed.
     </p>
@@ -151,9 +152,9 @@
 
   {#if loading}
     <p class="text-xs text-[#8b949e] mt-1">Loading {title.toLowerCase()}...</p>
-  {:else}
+  {:else if noOptionsAvailable}
     <button type="button" class="text-xs text-[#58a6ff] mt-1 hover:underline" onclick={onLoadOptions}>
-      {noOptionsAvailable ? `Refresh ${title.toLowerCase()} list` : `Load available ${title.toLowerCase()} from repository`}
+      Refresh {title.toLowerCase()} list
     </button>
   {/if}
 </div>

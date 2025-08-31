@@ -8,21 +8,34 @@ export interface SearchRepositoryResult {
 }
 
 export async function searchRepositories(org: string, searchTerm: string): Promise<SearchRepositoryResult[]> {
+  
   try {
-    const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(searchTerm)}+org:${org}`;
+    // Try a more permissive search first - just search by org without the search term
+    const url = `https://api.github.com/search/repositories?q=org:${org}&per_page=30`;
+    
     const data = await fetchData<{ items: any[] }>(url, 0, true);
 
     if (!data?.items || !Array.isArray(data.items)) {
       return [];
     }
 
-    return data.items.map((repo) => ({
+    // Filter results by search term if provided
+    let filteredItems = data.items;
+    if (searchTerm.trim() && searchTerm.trim().length > 2) {
+      filteredItems = data.items.filter(repo => 
+        repo?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        repo?.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    } 
+
+    const results = filteredItems.map((repo) => ({
       name: repo?.name || '',
       full_name: repo?.full_name || '',
       description: repo?.description || null,
     }));
+    
+    return results;
   } catch (error) {
-    // Don't report rate limit errors to Sentry - they're expected behavior
     if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
       captureException(error, {
         function: 'searchRepositories',

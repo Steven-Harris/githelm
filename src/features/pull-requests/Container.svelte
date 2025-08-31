@@ -1,6 +1,5 @@
 <script lang="ts">
-  import List from './List.svelte';
-  import PlaceholderHint from './PlaceholderHint.svelte';
+  import RepositoryCard from './RepositoryCard.svelte';
   import RepositoryFilter from './RepositoryFilter.svelte';
   import { pullRequestsContainerService } from '$features/pull-requests/services/pull-requests-container.service';
   import { repositoryFacade } from '$shared/stores/facades/repository.facade';
@@ -32,30 +31,14 @@
       <div class="space-y-4">
         {#each $filteredRepositories as { repo, isLoaded, hasPRs } (repo.org + '/' + repo.repo)}
           <div class="stagger-item">
-            {#if isLoaded}
-              {#if hasPRs}
-                <List 
-                  org={repo.org} 
-                  repo={repo.repo} 
-                  pullRequests={$allPullRequests[repositoryFacade.getRepoKey(repo)] || []} 
-                />
-              {:else}
-                <div class="hero-card">
-                  <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
-                    <h3 class="font-semibold">
-                      <a href={`https://github.com/${repo.org}/${repo.repo}/pulls`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${repo.org}/${repo.repo}`}>
-                        <span class="text-[#58a6ff] pl-1">{repo.repo}</span>
-                      </a>
-                    </h3>
-                  </div>
-                  <div class="p-4 bg-[#0d1117] text-center">
-                    <div class="text-sm text-[#8b949e]">No open pull requests</div>
-                  </div>
-                </div>
-              {/if}
-            {:else}
-              <PlaceholderHint org={repo.org} repo={repo.repo} filterHint={$filterHint} />
-            {/if}
+            <RepositoryCard 
+              org={repo.org} 
+              repo={repo.repo} 
+              isLoaded={isLoaded}
+              hasPRs={hasPRs}
+              pullRequests={$allPullRequests[repositoryFacade.getRepoKey(repo)] || []}
+              filterHint={$filterHint}
+            />
           </div>
         {/each}
       </div>

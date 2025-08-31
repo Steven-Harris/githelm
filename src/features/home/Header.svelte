@@ -11,7 +11,7 @@
   import { isLoading } from '$shared/stores/loading.store';
   import { isMobile } from '$shared/stores/mobile.store';
   import { timeAgoInSeconds } from '$shared/utils/date-utils';
-  import CountBadge from '$shared/components/CountBadge.svelte';
+  import CountBadge from '$shared/ui/CountBadge.svelte';
 
   let { signedIn } = $props();
 
@@ -73,9 +73,8 @@
       <div class="flex items-center">
         {#if signedIn}
           {#if page.url.pathname === '/config'}
-            <!-- Back to Dashboard button for config page -->
-            <button class="nav-button" onclick={backToDashboard} aria-label="back to dashboard" title="Back to Dashboard">
-              <span>Back to Dashboard</span>
+            <button class="nav-button" onclick={backToDashboard} aria-label="dashboard" title="Dashboard">
+              <span>Dashboard</span>
             </button>
             <!-- Profile dropdown -->
             <div class="relative ml-2" bind:this={menuRef}>

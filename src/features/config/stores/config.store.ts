@@ -122,7 +122,7 @@ function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): Combin
     }
 
     const combinedConfig = combined.get(key)!;
-    combinedConfig.actions = config.filters || [];
+    combinedConfig.actions = config.filters && config.filters.length > 0 ? config.filters : null;
   }
 
   return Array.from(combined.values());
@@ -144,7 +144,7 @@ function splitCombinedConfigs(combinedConfigs: CombinedConfig[]): {
       });
     }
 
-    if (config.actions) {
+    if (config.actions && config.actions.length > 0) {
       actionConfigs.push({
         org: config.org,
         repo: config.repo,
@@ -177,9 +177,6 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
     pullRequestConfigs.set(prConfigs);
     actionsConfigs.set(actionConfigs);
 
-    // Trigger config updated event to refresh UI
-    eventBus.set('config-updated');
-
     return Promise.resolve();
   } catch (error) {
     captureException(error, {
@@ -202,7 +199,6 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
 
     setStorageObject('pull-requests-configs', updatedConfigs);
     pullRequestConfigs.set(updatedConfigs);
-    eventBus.set('config-updated');
 
     return Promise.resolve();
   } catch (error) {

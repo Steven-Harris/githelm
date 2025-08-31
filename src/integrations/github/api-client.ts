@@ -148,8 +148,7 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
-
-        // Parse response body once
+    
     const responseBody = await response.json().catch(() => null);
 
     // Handle response status

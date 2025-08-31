@@ -304,7 +304,6 @@ class FirebaseAuthClient {
       
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
-        console.debug(`Cleared cached data: ${key}`);
       });
       
     } catch (error) {

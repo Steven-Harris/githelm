@@ -1,28 +1,113 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import OrganizationManager from './OrganizationManager.svelte';
   import ConfigList from './ConfigList.svelte';
   import { configPageService } from './services/config-page.service';
   import { configService } from './services/config.service';
+  import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+  import { getStorageObject, setStorageObject } from '$shared/storage/storage';
   import { isMobile } from '$shared/stores/mobile.store';
   import type { CombinedConfig } from './stores/config.store';
+  import type { RepoConfig } from '$integrations/firebase';
+  import { configService as firebaseConfigService } from '$integrations/firebase';
 
-  const configurations = configPageService.getConfigurations();
-  const loadingState = configPageService.getLoadingState();
-  const saveState = configPageService.getSaveState();
-  const errorMessage = configPageService.getErrorMessage();
+  let configurations = $state<CombinedConfig[]>([]);
+  let isLoading = $state(false);
+  let isSaving = $state(false);
 
-  const isLoading = $derived($loadingState);
-  const isSaving = $derived($saveState.isSaving);
-  const hasError = $derived($errorMessage !== null);
+  // Load configurations on mount
+  onMount(async () => {
+    await loadConfigurations();
+  });
 
-  function handleConfigUpdate(configs: CombinedConfig[]): void {
-    configPageService.handleConfigUpdate(configs);
+  async function loadConfigurations(): Promise<void> {
+    isLoading = true;
+    try {
+      // Load configurations directly from storage without triggering store updates
+      const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
+      const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
+      
+      // Merge configs manually
+      const combined = new Map<string, CombinedConfig>();
+      
+      // Process pull request configs
+      for (const config of prConfigs) {
+        const key = `${config.org}/${config.repo}`;
+        if (!combined.has(key)) {
+          combined.set(key, {
+            org: config.org,
+            repo: config.repo,
+          });
+        }
+        const combinedConfig = combined.get(key)!;
+        combinedConfig.pullRequests = config.filters || [];
+      }
+      
+      // Process actions configs
+      for (const config of actionConfigs) {
+        const key = `${config.org}/${config.repo}`;
+        if (!combined.has(key)) {
+          combined.set(key, {
+            org: config.org,
+            repo: config.repo,
+          });
+        }
+        const combinedConfig = combined.get(key)!;
+        combinedConfig.actions = config.filters && config.filters.length > 0 ? config.filters : null;
+      }
+      
+      configurations = Array.from(combined.values());
+    } catch (error) {
+      console.error('Error loading configurations:', error);
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  async function handleConfigUpdate(configs: CombinedConfig[]): Promise<void> {
+    isSaving = true;
+    try {
+      // Update stores that dashboard components use (this also saves to Firebase and local storage)
+      await repositoryFacade.updateConfigurations(configs);
+      
+      // Update local state directly
+      configurations = configs;
+    } catch (error) {
+      console.error('Error saving configurations:', error);
+    } finally {
+      isSaving = false;
+    }
+  }
+
+  function splitConfigs(combinedConfigs: CombinedConfig[]): { prConfigs: RepoConfig[]; actionConfigs: RepoConfig[] } {
+    const prConfigs: RepoConfig[] = [];
+    const actionConfigs: RepoConfig[] = [];
+
+    for (const config of combinedConfigs) {
+      if (config.pullRequests) {
+        prConfigs.push({
+          org: config.org,
+          repo: config.repo,
+          filters: config.pullRequests,
+        });
+      }
+
+      if (config.actions && config.actions.length > 0) {
+        actionConfigs.push({
+          org: config.org,
+          repo: config.repo,
+          filters: config.actions,
+        });
+      }
+    }
+
+    return { prConfigs, actionConfigs };
   }
 
   async function handleSave(): Promise<void> {
     try {
-      const result = await configService.saveConfigurations($configurations);
+      const result = await configService.saveConfigurations(configurations);
       if (result.success) {
         configService.navigateToDashboard();
       } else {
@@ -39,18 +124,7 @@
     <div class="container mx-auto">
       <h1 class={$isMobile ? 'text-xl mb-2' : 'hero-title'}>Configuration</h1>
 
-      {#if hasError}
-        <div class="bg-[rgba(68,44,44,0.7)] text-[#ff7b72] p-3 rounded-md mb-3 border border-[#f85149] backdrop-blur-sm">
-          <div class="flex items-center">
-            <svg class="w-4 h-4 mr-2 text-[#f85149] fill-current" viewBox="0 0 16 16">
-              <path
-                d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm10.28-1.72-4.5 4.5a.75.75 0 0 1-1.06 0l-2.25-2.25a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6.75 9.19l3.97-3.97a.751.751 0 0 1 1.042.018.751.751 0 0 1 .018 1.042Z"
-              ></path>
-            </svg>
-            {$errorMessage}
-          </div>
-        </div>
-      {/if}
+
 
       {#if isLoading}
         <div class="text-center py-8">
@@ -91,7 +165,7 @@
                 <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Repositories</h2>
               </div>
               <div class="card-body flex-1">
-                <ConfigList configs={$configurations} onUpdate={handleConfigUpdate} />
+                <ConfigList configs={configurations} onUpdate={handleConfigUpdate} />
               </div>
             </div>
           </div>

@@ -61,14 +61,16 @@ export class RepositoryFormService {
     state.selectedOrg = config.org;
     state.repoName = config.repo;
 
-    if (config.pullRequests) {
+    // PRs: If pullRequests exists (even as empty array), monitoring is enabled
+    if (config.pullRequests !== null && config.pullRequests !== undefined) {
       state.monitorPRs = true;
       state.prFilters = Array.isArray(config.pullRequests) ? [...config.pullRequests] : [];
     }
 
-    if (config.actions) {
+    // Actions: Only enable if there are actual workflows (not empty array)
+    if (config.actions !== null && config.actions !== undefined && Array.isArray(config.actions) && config.actions.length > 0) {
       state.monitorActions = true;
-      state.actionFilters = Array.isArray(config.actions) ? [...config.actions] : [];
+      state.actionFilters = [...config.actions];
     }
 
     return state;
@@ -127,10 +129,6 @@ export class RepositoryFormService {
 
     if (!state.monitorPRs && !state.monitorActions) {
       errors.push('Please enable at least one of Pull Requests or Actions monitoring.');
-    }
-
-    if (state.monitorActions && state.actionFilters.length === 0) {
-      errors.push('Please select at least one workflow filter for GitHub Actions monitoring.');
     }
 
     return {

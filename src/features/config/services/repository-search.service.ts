@@ -41,6 +41,7 @@ export class RepositorySearchService {
     existingRepos: ExistingRepo[],
     onStateUpdate: (updates: Partial<SearchState>) => void
   ): Promise<void> {
+    
     if (!orgName || !repoName.trim()) {
       onStateUpdate({
         searchResults: [],
