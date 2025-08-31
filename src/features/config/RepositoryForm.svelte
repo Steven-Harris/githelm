@@ -1,0 +1,223 @@
+<script lang="ts">
+  import { eventBus } from '$shared/stores/event-bus.store';
+  import { isMobile } from '$shared/stores/mobile.store';
+  import OrganizationSelector from './OrganizationSelector.svelte';
+  import RepositorySearch from './RepositorySearch.svelte';
+  import LabelFilter from './LabelFilter.svelte';
+  import MonitoringToggle from './MonitoringToggle.svelte';
+  import { repositoryFormService, type FormState, type SaveEventData } from '$features/config/services/repository-form.service';
+  import type { CombinedConfig } from '$features/config/stores/config.store';
+
+  let { config = null, onSave, onCancel, existingRepos = [] } = $props<{
+    config?: CombinedConfig | null;
+    onSave: (data: SaveEventData) => void;
+    onCancel?: () => void;
+    existingRepos?: CombinedConfig[];
+  }>();
+
+  let formState = $state<FormState>(repositoryFormService.createInitialState());
+
+  $effect(() => {
+    if (config) {
+      formState = repositoryFormService.loadStateFromConfig(config);
+      if (formState.monitorPRs) {
+        loadLabels();
+      }
+      if (formState.monitorActions) {
+        loadWorkflows();
+      }
+    }
+  });
+
+  $effect(() => {
+    if ($eventBus === 'save-config') {
+      handleSubmit();
+      eventBus.set('');
+    }
+  });
+
+  async function loadLabels(): Promise<void> {
+    if (!formState.selectedOrg || !formState.repoName) return;
+
+    formState.isLoadingLabels = true;
+
+    try {
+      formState.availablePRLabels = await repositoryFormService.loadLabels(formState.selectedOrg, formState.repoName);
+    } catch (error) {
+      formState.availablePRLabels = [];
+    } finally {
+      formState.isLoadingLabels = false;
+    }
+  }
+
+  async function loadWorkflows(): Promise<void> {
+    if (!formState.selectedOrg || !formState.repoName) return;
+
+    formState.isLoadingWorkflows = true;
+
+    try {
+      formState.availableWorkflows = await repositoryFormService.loadWorkflows(formState.selectedOrg, formState.repoName);
+    } catch (error) {
+      formState.availableWorkflows = [];
+    } finally {
+      formState.isLoadingWorkflows = false;
+    }
+  }
+
+  function handleSubmit(): void {
+    const validation = repositoryFormService.validateForm(formState);
+    if (!validation.isValid) {
+      alert(validation.errors.join('\n'));
+      return;
+    }
+
+    const result = repositoryFormService.createSaveEventData(formState);
+    onSave(result);
+  }
+
+  function handleOrgChange(org: string): void {
+    formState.selectedOrg = org;
+
+    if (!config) {
+      formState.repoName = '';
+    }
+  }
+
+  function handleRepoChange(repo: string): void {
+    formState.repoName = repo;
+
+    if (formState.repoName && formState.selectedOrg) {
+      if (formState.monitorPRs) {
+        loadLabels();
+      }
+
+      if (formState.monitorActions) {
+        loadWorkflows();
+      }
+    }
+  }
+
+  function toggleMonitorPRs(enabled: boolean): void {
+    formState.monitorPRs = enabled;
+
+    if (repositoryFormService.shouldLoadLabels(formState)) {
+      loadLabels();
+    }
+  }
+
+  function toggleMonitorActions(enabled: boolean): void {
+    formState.monitorActions = enabled;
+
+    if (repositoryFormService.shouldLoadWorkflows(formState)) {
+      loadWorkflows();
+    }
+  }
+
+  function addPrFilter(filter: string): void {
+    formState.prFilters = repositoryFormService.addPrFilter(formState.prFilters, filter);
+  }
+
+  function removePrFilter(filter: string): void {
+    formState.prFilters = repositoryFormService.removePrFilter(formState.prFilters, filter);
+  }
+
+  function addActionFilter(filter: string): void {
+    formState.actionFilters = repositoryFormService.addActionFilter(formState.actionFilters, filter);
+  }
+
+  function removeActionFilter(filter: string): void {
+    formState.actionFilters = repositoryFormService.removeActionFilter(formState.actionFilters, filter);
+  }
+</script>
+
+<div class="{$isMobile ? 'p-3' : 'p-4'} rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)] relative">
+  <h3 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold {$isMobile ? 'mb-3' : 'mb-4'} text-[#c9d1d9]">
+    {config ? 'Edit' : 'Add'} Repository Configuration
+  </h3>
+
+  <OrganizationSelector selectedOrg={formState.selectedOrg} disabled={config !== null} onChange={handleOrgChange} />
+
+  <div class="static">
+    <RepositorySearch orgName={formState.selectedOrg} repoName={formState.repoName} disabled={config !== null} {existingRepos} onChange={handleRepoChange} />
+  </div>
+
+  {#if formState.selectedOrg && formState.repoName}
+    <div class={$isMobile ? 'mb-3 space-y-3' : 'mb-4 grid grid-cols-1 md:grid-cols-2 gap-4'}>
+      <!-- Pull Requests Section -->
+      <div class="bg-[rgba(22,27,34,0.5)] {$isMobile ? 'p-3' : 'p-4'} rounded-md border border-[#30363d]">
+        <MonitoringToggle title="Monitor Pull Requests" enabled={formState.monitorPRs} color="blue" onChange={toggleMonitorPRs} />
+
+        {#if formState.monitorPRs}
+          <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
+            <LabelFilter title="Label" filters={formState.prFilters} availableOptions={formState.availablePRLabels} loading={formState.isLoadingLabels} onAdd={addPrFilter} onRemove={removePrFilter} onLoadOptions={loadLabels} />
+          </div>
+        {/if}
+      </div>
+
+      <!-- GitHub Actions Section -->
+      <div class="bg-[rgba(22,27,34,0.5)] {$isMobile ? 'p-3' : 'p-4'} rounded-md border border-[#30363d]">
+        <MonitoringToggle title="Monitor GitHub Actions" enabled={formState.monitorActions} color="green" onChange={toggleMonitorActions} />
+
+        {#if formState.monitorActions}
+          <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
+            <LabelFilter
+              title="Workflow"
+              filters={formState.actionFilters}
+              availableOptions={formState.availableWorkflows}
+              loading={formState.isLoadingWorkflows}
+              onAdd={addActionFilter}
+              onRemove={removeActionFilter}
+              onLoadOptions={loadWorkflows}
+              noOptionsAvailable={!formState.isLoadingWorkflows && formState.availableWorkflows.length === 0 && formState.repoName !== ''}
+            />
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  <div class="flex justify-end gap-2">
+    {#if onCancel}
+      <button
+        class="bg-[rgba(110,118,129,0.4)] text-[#c9d1d9] {$isMobile
+          ? 'px-3 py-1.5 text-sm'
+          : 'px-4 py-2'} rounded-md hover:bg-[rgba(110,118,129,0.5)] border border-[#30363d] transition-colors duration-200"
+        type="button"
+        aria-label="Cancel"
+        title="Cancel changes"
+        onclick={onCancel}
+      >
+        Cancel
+      </button>
+    {/if}
+    <button
+      class="bg-[#238636] text-white {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md border border-[#2ea043] transition-colors duration-200
+      {formState.selectedOrg && formState.repoName ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
+      disabled={!formState.selectedOrg || !formState.repoName || (!formState.monitorPRs && !formState.monitorActions)}
+      type="submit"
+      aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
+      title={config ? 'Update repository configuration' : 'Add repository configuration'}
+      onclick={handleSubmit}
+    >
+      {config ? 'Update' : 'Add Repository'}
+    </button>
+  </div>
+</div>
+
+<style>
+  @media (max-width: 768px) {
+    :global(.glass-container h5) {
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+
+    :global(.glass-container .chip) {
+      font-size: 0.7rem !important;
+      padding: 1px 6px !important;
+    }
+
+    :global(.monitoring-toggle-label) {
+      font-size: 0.9rem;
+    }
+  }
+</style>

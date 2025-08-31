@@ -1,7 +1,7 @@
 import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
-import { getStorageObject } from '../storage';
-import { captureException } from '../sentry';
+import { getStorageObject } from '$shared/storage/storage';
+import { captureException } from '$integrations/sentry';
 import { type PullRequest, type PullRequests, type RepoInfo, type Review } from './types';
 
 export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {

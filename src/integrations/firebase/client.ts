@@ -2,8 +2,8 @@ import { initializeApp } from 'firebase/app';
 import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
-import { clearSiteData, getGithubToken, setGithubToken } from '../storage';
-import { setUserInfo, clearUserInfo, captureException } from '../sentry';
+import { clearSiteData, getGithubToken, setGithubToken } from '$shared/storage/storage';
+import { setUserInfo, clearUserInfo, captureException } from '$integrations/sentry';
 import { type AuthState } from './types';
 
 const firebaseConfig = {
