@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { activeTab } from '$shared/stores/active-tab.store';
   import { isMobile } from '$shared/stores/mobile.store';
-  import CountBadge from '$shared/components/CountBadge.svelte';
+  import CountBadge from '$shared/ui/CountBadge.svelte';
   
   const pullRequestsTab = 'pull-requests';
   const actionsTab = 'actions';
