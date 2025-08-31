@@ -47,37 +47,6 @@ export class FilterService {
       : true;
   }
 
-  filterPullRequestsByLabels(
-    pullRequests: any[],
-    labelFilters: string[]
-  ): any[] {
-    if (!pullRequests || pullRequests.length === 0) return [];
-    if (!labelFilters || labelFilters.length === 0) return pullRequests;
-
-    return pullRequests.filter((pr) => {
-      const prLabels = pr.labels?.map((label: any) => label.name) || [];
-      return labelFilters.some((filterLabel) =>
-        prLabels.some((prLabel: string) =>
-          prLabel.toLowerCase().includes(filterLabel.toLowerCase())
-        )
-      );
-    });
-  }
-
-  filterRepositoriesByName(
-    repositories: any[],
-    searchTerm: string
-  ): any[] {
-    if (!repositories || repositories.length === 0) return [];
-    if (!searchTerm || searchTerm.trim() === '') return repositories;
-
-    const term = searchTerm.toLowerCase().trim();
-    return repositories.filter((repo) =>
-      repo.name.toLowerCase().includes(term) ||
-      repo.full_name.toLowerCase().includes(term)
-    );
-  }
-
   getFilterHint(statusFilters: Record<WorkflowStatus, boolean>): string {
     const statusLabels: Record<string, string> = {
       in_progress: 'in progress',
@@ -129,13 +98,6 @@ export class FilterService {
       filteredData = this.filterWorkflowRunsByStatus(
         filteredData as WorkflowRun[],
         filters.statusFilters
-      ) as T[];
-    }
-
-    if (filters.labelFilters && data.length > 0 && 'labels' in data[0]) {
-      filteredData = this.filterPullRequestsByLabels(
-        filteredData as any[],
-        filters.labelFilters
       ) as T[];
     }
 
