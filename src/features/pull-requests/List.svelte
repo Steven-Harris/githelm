@@ -2,6 +2,7 @@
   import Reviews from './Reviews.svelte';
   import githubSVG from '$assets/github-logo.svg';
   import { repositoryCollapseStore } from '$shared/stores/repository-collapse.store';
+  import CountBadge from '$shared/components/CountBadge.svelte';
 
   let { org, repo, pullRequests } = $props();
   
@@ -40,14 +41,13 @@
         </h3>
       </div>
       <div class="flex items-center gap-3">
-        <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
-          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="18" class="fill-[#8b949e]">
-            <path
-              d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm3.75.75a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"
-            ></path>
-          </svg>
-          <span class="text-[#8b949e]">{pullRequests.length} {pullRequests.length === 1 ? 'PR' : 'PRs'}</span>
-        </span>
+        <CountBadge 
+          repoKey={repoKey}
+          type="pullRequests"
+          count={pullRequests.length}
+          iconType="pullRequest"
+          label="PR"
+        />
       </div>
     </div>
 

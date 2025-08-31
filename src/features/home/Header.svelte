@@ -11,6 +11,7 @@
   import { isLoading } from '$shared/stores/loading.store';
   import { isMobile } from '$shared/stores/mobile.store';
   import { timeAgoInSeconds } from '$shared/utils/date-utils';
+  import CountBadge from '$shared/components/CountBadge.svelte';
 
   let { signedIn } = $props();
 
@@ -111,6 +112,8 @@
               {:else}
                 <span class="mr-2">Updating...</span>
               {/if}
+              
+
             </div>
             <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
               {#if $isLoading}

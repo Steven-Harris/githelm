@@ -2,9 +2,11 @@
   import { page } from '$app/state';
   import { activeTab } from '$shared/stores/active-tab.store';
   import { isMobile } from '$shared/stores/mobile.store';
+  import CountBadge from '$shared/components/CountBadge.svelte';
+  
   const pullRequestsTab = 'pull-requests';
-
   const actionsTab = 'actions';
+  
   function switchTab(tab: string) {
     activeTab.set(tab);
   }
@@ -20,8 +22,12 @@
 
 {#if $isMobile && page.url.pathname !== '/config'}
   <div id="tabs" class="flex justify-center w-full mb-4 md:hidden sticky top-0 z-10 bg-gray-900">
-    <button id="tab-pull-requests" type="button" class="tab-button {pullRequestsTabActive()}" onclick={() => switchTab(pullRequestsTab)}> Pull Requests </button>
-    <button id="tab-actions" type="button" class="tab-button {actionTabActive()}" onclick={() => switchTab(actionsTab)}> Actions </button>
+    <button id="tab-pull-requests" type="button" class="tab-button {pullRequestsTabActive()}" onclick={() => switchTab(pullRequestsTab)}>
+      Pull Requests
+    </button>
+    <button id="tab-actions" type="button" class="tab-button {actionTabActive()}" onclick={() => switchTab(actionsTab)}>
+      Actions
+    </button>
   </div>
 {/if}
 
