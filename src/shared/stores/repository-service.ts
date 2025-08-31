@@ -65,7 +65,6 @@ function unsubscribe(key: string): void {
 // Subscribe to config-updated events to refresh configurations
 eventBus.subscribe(async (event) => {
   if (event === 'config-updated') {
-    console.log('🔄 Repository service: Received config-updated event, refreshing configurations');
     await refreshConfigurations();
   }
 });
@@ -83,8 +82,7 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
 
     setStorageObject('pull-requests-configs', updatedConfigs);
     pullRequestConfigs.set(updatedConfigs);
-    // Temporarily disabled to prevent infinite loop
-    // eventBus.set('config-updated');
+    eventBus.set('config-updated');
 
     return Promise.resolve();
   } catch (error) {
@@ -193,8 +191,7 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
     actionsConfigs.set(actionConfigs);
 
     // Trigger config updated event
-    // Temporarily disabled to prevent infinite loop
-    // eventBus.set('config-updated');
+    eventBus.set('config-updated');
 
     return Promise.resolve();
   } catch (error) {
@@ -250,21 +247,17 @@ export async function loadRepositoryConfigs(): Promise<void> {
   
   // Initialize data fetching with a delay to avoid infinite loops
   const prConfigs = get(pullRequestConfigs);
-  console.log('🔄 Repository service: PR configs for data fetching:', prConfigs.length);
   if (prConfigs.length) {
     // Use setTimeout to avoid immediate execution
     setTimeout(() => {
-      console.log('🔄 Repository service: Starting PR data fetch...');
       refreshPullRequestsData(prConfigs);
       initializePullRequestsPolling({ repoConfigs: prConfigs });
     }, 100);
   }
   const actionConfigs = get(actionsConfigs);
-  console.log('🔄 Repository service: Action configs for data fetching:', actionConfigs.length);
   if (actionConfigs.length) {
     // Use setTimeout to avoid immediate execution
     setTimeout(() => {
-      console.log('🔄 Repository service: Starting Action data fetch...');
       refreshActionsData(actionConfigs);
       initializeActionsPolling(actionConfigs);
     }, 200);
@@ -300,19 +293,23 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     repo: config.repo,
     filters: { labels: config.filters || [] }
   }));
-  createPollingStore<Record<string, PullRequest[]>>('all-pull-requests', () => pullRequestRepo.fetchPullRequestsForMultiple(queries)).subscribe((data) => {
+  
+  const storeKey = 'all-pull-requests';
+  unsubscribe(storeKey);
+  
+  const store = createPollingStore<Record<string, PullRequest[]>>(storeKey, () => pullRequestRepo.fetchPullRequestsForMultiple(queries));
+  pollingUnsubscribers.set(storeKey, store.subscribe((data) => {
     if (!data) return;
-    allPullRequests.set(
-      repoConfigs.reduce(
-        (acc, config) => {
-          const key = getRepoKey(config);
-          if (data[key]) acc[key] = data[key];
-          return acc;
-        },
-        {} as Record<string, PullRequest[]>
-      )
+    const processedData = repoConfigs.reduce(
+      (acc, config) => {
+        const key = getRepoKey(config);
+        if (data[key]) acc[key] = data[key];
+        return acc;
+      },
+      {} as Record<string, PullRequest[]>
     );
-  });
+    allPullRequests.set(processedData);
+  }));
 }
 
 export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promise<void> {
@@ -328,16 +325,15 @@ export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promis
   try {
     const pullRequestRepo = PullRequestRepository.getInstance();
     const data = await pullRequestRepo.fetchPullRequestsForMultiple(queries);
-    allPullRequests.set(
-      repoConfigs.reduce(
-        (acc, config) => {
-          const key = getRepoKey(config);
-          if (data[key]) acc[key] = data[key];
-          return acc;
-        },
-        {} as Record<string, PullRequest[]>
-      )
+    const processedData = repoConfigs.reduce(
+      (acc, config) => {
+        const key = getRepoKey(config);
+        if (data[key]) acc[key] = data[key];
+        return acc;
+      },
+      {} as Record<string, PullRequest[]>
     );
+    allPullRequests.set(processedData);
   } catch (error) {
     captureException(error, {
       action: 'refreshPullRequestsData',
@@ -442,7 +438,6 @@ export function clearAllStores(): void {
     // Unsubscribe from all polling
     Array.from(pollingUnsubscribers.keys()).forEach(unsubscribe);
     
-    console.log('Cleared all repository stores');
   } catch (error) {
     console.warn('Error clearing repository stores:', error);
   }

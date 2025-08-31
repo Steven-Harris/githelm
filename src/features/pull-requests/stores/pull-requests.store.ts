@@ -172,7 +172,10 @@ export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<v
   try {
     setStorageObject('pull-requests-configs', configs);
     pullRequestConfigs.set(configs);
-    initializePullRequestsPolling(configs);
+    
+    // Use the bulk polling system instead of individual polling
+    const { initializePullRequestsPolling } = await import('$shared/stores/repository-service');
+    initializePullRequestsPolling({ repoConfigs: configs });
   } catch (error) {
     captureException(error, {
       action: 'updatePullRequestConfigs',
@@ -191,7 +194,6 @@ export function clearPullRequestStores(): void {
     allPullRequests.set({});
     pullRequestConfigs.set([]);
     
-    console.log('Cleared pull request stores');
   } catch (error) {
     console.warn('Error clearing pull request stores:', error);
   }

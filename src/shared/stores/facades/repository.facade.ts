@@ -3,11 +3,8 @@ import { type CombinedConfig } from '$features/config/stores/config.store';
 import { eventBus } from '$shared/stores/event-bus.store';
 import { 
   loadPullRequestConfigs, 
-  initializePullRequestsPolling, 
-  refreshPullRequestsData,
   updatePullRequestConfigs,
   clearPullRequestStores,
-  allPullRequests,
   pullRequestConfigs,
   pullRequestRepos
 } from '$features/pull-requests/stores/pull-requests.store';
@@ -17,8 +14,6 @@ import {
   refreshActionsData,
   updateActionsConfigs,
   clearActionsStores,
-  allWorkflowRuns,
-  allWorkflowJobs,
   actionsConfigs,
   actionRepos
 } from '$features/actions/stores/actions.store';
@@ -27,9 +22,16 @@ import {
   getCombinedConfigs, 
   updateRepositoryConfigs,
   refreshConfigurations,
-  clearConfigStores,
   pullRequestConfigs as configPullRequestConfigs,
-  actionsConfigs as configActionsConfigs
+  actionsConfigs as configActionsConfigs,
+  initializePullRequestsPolling,
+  refreshPullRequestsData,
+  allPullRequests,
+  allWorkflowRuns,
+  allWorkflowJobs
+} from '$shared/stores/repository-service';
+import { 
+  clearConfigStores
 } from '$features/config/stores/config.store';
 import { configService } from '$integrations/firebase';
 import { setStorageObject } from '$shared/storage/storage';

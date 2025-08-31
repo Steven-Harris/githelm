@@ -6,12 +6,12 @@ import { type PullRequest, type PullRequests, type RepoInfo, type Review } from 
 
 export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
-    const labelsFilter = filters.length > 0 ? `labels: ${JSON.stringify(filters)}` : '';
+    const labelsFilter = filters.length > 0 ? `, labels: ${JSON.stringify(filters)}` : '';
 
     const query = `
       query GetPullRequests($owner: String!, $repo: String!) {
         repository(owner: $owner, name: $repo) {
-          pullRequests(first: 20, states: OPEN ${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
+          pullRequests(first: 20, states: OPEN${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
             edges {
               node {
                 id
@@ -241,11 +241,11 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
     query FetchMultipleRepositoriesPullRequests {
       ${configs
         .map((config, index) => {
-          const labelsFilter = config.filters.length > 0 ? `labels: ${JSON.stringify(config.filters)}` : '';
+          const labelsFilter = config.filters.length > 0 ? `, labels: ${JSON.stringify(config.filters)}` : '';
 
           return `
           repo${index}: repository(owner: "${config.org}", name: "${config.repo}") {
-            pullRequests(first: 20, states: OPEN ${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
+            pullRequests(first: 20, states: OPEN${labelsFilter}, orderBy: {field: UPDATED_AT, direction: DESC}) {
               edges {
                 node {
                   id
@@ -321,7 +321,6 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
 }
 
 function transformMultiRepositoryPullRequests(data: any, configs: RepoInfo[]): Record<string, PullRequest[]> {
-  
   const results: Record<string, PullRequest[]> = {};
 
   configs.forEach((config, index) => {

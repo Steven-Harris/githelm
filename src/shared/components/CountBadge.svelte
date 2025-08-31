@@ -32,14 +32,14 @@
 </script>
 
 <span 
-  class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full transition-all duration-300 {isAnimating ? 'scale-110' : ''}"
+  class="text-sm flex items-center gap-2 bg-[#21262d] py-1 px-2 rounded-full transition-all duration-300 {isAnimating ? 'scale-110' : ''}"
   class:bg-green-900={isAnimating && changeDirection === 'increase'}
   class:bg-red-900={isAnimating && changeDirection === 'decrease'}
   class:border-green-500={isAnimating && changeDirection === 'increase'}
   class:border-red-500={isAnimating && changeDirection === 'decrease'}
   class:border={isAnimating}
 >
-  <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
+  <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e] flex-shrink-0 min-w-[16px]">
     {#if iconType === 'pullRequest'}
       <path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0-1.5Zm3.75.75a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"></path>
     {:else if iconType === 'action'}
@@ -54,15 +54,6 @@
     {count} {count === 1 ? label : label + 's'}
   </span>
   
-  {#if isAnimating && changeDirection}
-    <span 
-      class="ml-1 text-xs font-bold transition-all duration-300"
-      class:text-green-300={changeDirection === 'increase'}
-      class:text-red-300={changeDirection === 'decrease'}
-    >
-      {changeDirection === 'increase' ? '+' : ''}{count - previousCount}
-    </span>
-  {/if}
 </span>
 
 <style>

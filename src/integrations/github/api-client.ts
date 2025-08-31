@@ -196,7 +196,6 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
         
         // Auto-resume after rate limit resets (with some buffer)
         setTimeout(() => {
-          console.log('Rate limit should be reset, re-enabling API calls');
           killSwitch.set(false);
         }, timeUntilReset + 5000); // Add 5 second buffer
         
@@ -218,7 +217,6 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
           
           // Re-enable after a short delay
           setTimeout(() => {
-            console.log('Resuming GitHub API requests after rate limit cooldown');
             killSwitch.set(false);
           }, 60000); // Wait 1 minute before resuming
         }

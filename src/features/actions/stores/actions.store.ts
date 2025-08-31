@@ -221,7 +221,6 @@ export function clearActionsStores(): void {
     allWorkflowJobs.set({});
     actionsConfigs.set([]);
     
-    console.log('Cleared actions stores');
   } catch (error) {
     console.warn('Error clearing actions stores:', error);
   }

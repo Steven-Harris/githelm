@@ -44,10 +44,9 @@ export async function loadRepositoryConfigs(): Promise<void> {
       
               // Initialize data fetching with a delay
         setTimeout(async () => {
-          console.log('🔄 Config store: Starting PR data fetch...');
-          const { refreshPullRequestsData, initializePullRequestsPolling } = await import('$features/pull-requests/stores/pull-requests.store');
+          const { refreshPullRequestsData, initializePullRequestsPolling } = await import('$shared/stores/repository-service');
           await refreshPullRequestsData(prConfigs);
-          initializePullRequestsPolling(prConfigs);
+          initializePullRequestsPolling({ repoConfigs: prConfigs });
         }, 100);
     }
     
@@ -58,36 +57,23 @@ export async function loadRepositoryConfigs(): Promise<void> {
         const key = getRepoKey(config);
         initialActions[key] = [];
       });
-      const { allWorkflowRuns } = await import('$features/actions/stores/actions.store');
+      const { allWorkflowRuns } = await import('$shared/stores/repository-service');
       allWorkflowRuns.set(initialActions);
       
       // Initialize data fetching with a delay
       setTimeout(async () => {
-        console.log('🔄 Config store: Starting Action data fetch...');
-        console.log('📦 Action configs for fetching:', actionConfigs);
         try {
-          const { refreshActionsData, initializeActionsPolling, allWorkflowRuns } = await import('$features/actions/stores/actions.store');
-          console.log('✅ Imported actions store functions');
-          
-          // Check initial state
-          console.log('🔍 Initial actions store state:', get(allWorkflowRuns));
+          const { refreshActionsData, initializeActionsPolling } = await import('$shared/stores/repository-service');
           
           await refreshActionsData(actionConfigs);
-          console.log('✅ refreshActionsData completed');
-          
-          // Check state after refresh
-          console.log('🔍 Actions store state after refresh:', get(allWorkflowRuns));
           
           initializeActionsPolling(actionConfigs);
-          console.log('✅ initializeActionsPolling completed');
-          
-          // Check state after polling setup
-          setTimeout(() => {
-            console.log('🔍 Actions store state after polling setup:', get(allWorkflowRuns));
-          }, 1000);
-          
         } catch (error) {
-          console.error('❌ Actions data fetch failed:', error);
+          captureException(error, {
+            action: 'loadRepositoryConfigs',
+            context: 'Actions configuration loading',
+          });
+          throw error;
         }
       }, 200);
     }
@@ -216,8 +202,7 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
 
     setStorageObject('pull-requests-configs', updatedConfigs);
     pullRequestConfigs.set(updatedConfigs);
-    // Temporarily disabled to prevent infinite loop
-    // eventBus.set('config-updated');
+    eventBus.set('config-updated');
 
     return Promise.resolve();
   } catch (error) {
@@ -269,7 +254,6 @@ export function clearConfigStores(): void {
     pullRequestConfigs.set([]);
     actionsConfigs.set([]);
     
-    console.log('Cleared configuration stores');
   } catch (error) {
     console.warn('Error clearing configuration stores:', error);
   }

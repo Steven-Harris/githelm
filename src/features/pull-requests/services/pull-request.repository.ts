@@ -1,6 +1,6 @@
-import { fetchPullRequestsWithGraphQL } from '$integrations/github';
+import { fetchPullRequestsWithGraphQL, fetchMultipleRepositoriesPullRequests } from '$integrations/github';
 import { captureException } from '$integrations/sentry';
-import type { PullRequest } from '$integrations/github';
+import type { PullRequest, RepoInfo } from '$integrations/github';
 
 export interface PullRequestFilters {
   labels?: string[];
@@ -50,24 +50,16 @@ export class PullRequestRepository {
   async fetchPullRequestsForMultiple(
     queries: PullRequestQuery[]
   ): Promise<Record<string, PullRequest[]>> {
-    const results: Record<string, PullRequest[]> = {};
-
     try {
-      const promises = queries.map(async (query) => {
-        const key = `${query.org}/${query.repo}`;
-        try {
-          const pullRequests = await this.fetchPullRequests(query);
-          results[key] = pullRequests;
-        } catch (error) {
-          captureException(error, {
-            action: 'fetchPullRequestsForMultiple',
-            context: key,
-          });
-          results[key] = [];
-        }
-      });
+      // Convert queries to RepoInfo format for the single GraphQL query
+      const repoInfos: RepoInfo[] = queries.map(query => ({
+        org: query.org,
+        repo: query.repo,
+        filters: query.filters?.labels || []
+      }));
 
-      await Promise.all(promises);
+      // Use the single GraphQL query for all repositories
+      const results = await fetchMultipleRepositoriesPullRequests(repoInfos);
       return results;
     } catch (error) {
       captureException(error, {
