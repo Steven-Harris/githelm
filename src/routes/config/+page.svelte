@@ -62,6 +62,16 @@
           </div>
           <p class="mt-2 text-[#8b949e] text-sm">Loading configurations...</p>
         </div>
+      {:else if isSaving}
+        <div class="text-center py-8">
+          <div class="animate-spin mx-auto w-8 h-8">
+            <svg class="w-full h-full text-[#3fb950] fill-current" viewBox="0 0 16 16">
+              <path d="M8 16a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
+              <path class="text-[#0d1117] fill-current" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"></path>
+            </svg>
+          </div>
+          <p class="mt-2 text-[#8b949e] text-sm">Saving configurations...</p>
+        </div>
       {:else}
         <div class="config-card mb-4">
           <div class="card-header">

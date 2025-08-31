@@ -5,31 +5,20 @@ import { getStorageObject, setStorageObject } from '$integrations/storage';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from './polling.store';
 
-// Pull request data store
 export const allPullRequests = writable<Record<string, PullRequest[]>>({});
-
-// Pull request configurations store
 export const pullRequestConfigs = writable<RepoConfig[]>([]);
 
-// Derived store for repositories with pull requests
 export const pullRequestRepos = derived(
   [pullRequestConfigs, allPullRequests],
   ([$configs, $prs]) => $configs.filter((config) => !!$prs[getRepoKey(config)]?.length)
 );
 
-// Polling subscribers management
 const pollingUnsubscribers = new Map<string, () => void>();
 
-/**
- * Get repository key for consistent identification
- */
 export function getRepoKey(config: RepoConfig): string {
   return `${config.org}/${config.repo}`;
 }
 
-/**
- * Unsubscribe from polling for a specific key
- */
 function unsubscribe(key: string): void {
   const unsub = pollingUnsubscribers.get(key);
   if (unsub) {
@@ -38,9 +27,6 @@ function unsubscribe(key: string): void {
   }
 }
 
-/**
- * Load pull request configurations from storage
- */
 export async function loadPullRequestConfigs(): Promise<void> {
   try {
     const storedConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs');
@@ -59,12 +45,9 @@ export async function loadPullRequestConfigs(): Promise<void> {
   }
 }
 
-/**
- * Initialize polling for pull requests
- */
 export function initializePullRequestsPolling(configs: RepoConfig[]): void {
   if (!configs?.length) {
-    // Clean up existing polling
+    // Clean up existing polling.
     Array.from(pollingUnsubscribers.keys())
       .filter((key) => key.startsWith('pull-requests-'))
       .forEach(unsubscribe);
@@ -72,7 +55,7 @@ export function initializePullRequestsPolling(configs: RepoConfig[]): void {
     return;
   }
 
-  // Initialize empty entries for all repos immediately
+  // Initialize empty entries for all repos immediately.
   const initialPRs: Record<string, PullRequest[]> = {};
   configs.forEach(config => {
     const key = getRepoKey(config);
@@ -80,7 +63,7 @@ export function initializePullRequestsPolling(configs: RepoConfig[]): void {
   });
   allPullRequests.set(initialPRs);
 
-  // Set up polling for each repository
+  // Set up polling for each repository.
   for (const config of configs) {
     const key = getRepoKey(config);
     const storeKey = `pull-requests-${key}`;
@@ -99,9 +82,6 @@ export function initializePullRequestsPolling(configs: RepoConfig[]): void {
   }
 }
 
-/**
- * Refresh pull requests data
- */
 export async function refreshPullRequestsData(configs: RepoConfig[]): Promise<void> {
   try {
     if (!configs?.length) {
@@ -120,19 +100,16 @@ export async function refreshPullRequestsData(configs: RepoConfig[]): Promise<vo
   }
 }
 
-/**
- * Smart pull requests fetching with caching
- */
 async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest[]> {
   try {
     const labels = config.filters || [];
     
-    // Check if we need to update by looking for new pull requests
+    // Check if we need to update by looking for new pull requests.
     const needsUpdate = await Promise.all(
       labels.map(label => checkForNewPullRequests(config.org, config.repo, label))
     );
     
-    // If no updates needed, return cached data
+    // If no updates needed, return cached data.
     if (!needsUpdate.some(Boolean)) {
       const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
       const cached = localStorage.getItem(cacheKey);
@@ -150,7 +127,7 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     const repoKey = getRepoKey(config);
     const result = pullRequests[repoKey] || [];
     
-    // Cache the result
+    // Cache the result.
     try {
       const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
       localStorage.setItem(cacheKey, JSON.stringify(result));
@@ -160,7 +137,7 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     
     return result;
   } catch (error) {
-    // On error, try to return cached data
+    // On error, try to return cached data.
     const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -175,18 +152,10 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
   }
 }
 
-/**
- * Check for new pull requests (placeholder - would need implementation)
- */
 async function checkForNewPullRequests(org: string, repo: string, label: string): Promise<boolean> {
-  // This would need to be implemented based on your specific requirements
-  // For now, return true to always fetch fresh data
   return true;
 }
 
-/**
- * Update pull request configurations
- */
 export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<void> {
   try {
     setStorageObject('pull-requests-configs', configs);
@@ -201,12 +170,8 @@ export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<v
   }
 }
 
-/**
- * Clear all pull request stores
- */
 export function clearPullRequestStores(): void {
   try {
-    // Unsubscribe from all pull request polling
     Array.from(pollingUnsubscribers.keys())
       .filter((key) => key.startsWith('pull-requests-'))
       .forEach(unsubscribe);

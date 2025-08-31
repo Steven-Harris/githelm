@@ -26,18 +26,13 @@ export class ActionRepository {
     return ActionRepository.instance;
   }
 
-  /**
-   * Fetch workflow runs for a repository
-   */
   async fetchWorkflowRuns(query: ActionQuery): Promise<WorkflowRun[]> {
     try {
       const { org, repo, filters } = query;
       const workflows = await fetchActions(org, repo, filters?.workflows || []);
       
-      // Flatten workflow runs from all workflows
       const allRuns = workflows.flatMap(workflow => workflow.workflow_runs || []);
       
-      // Apply additional filtering
       let filteredRuns = allRuns;
 
       if (filters?.status) {
@@ -58,9 +53,6 @@ export class ActionRepository {
     }
   }
 
-  /**
-   * Fetch workflow runs for multiple repositories
-   */
   async fetchWorkflowRunsForMultiple(
     queries: ActionQuery[]
   ): Promise<Record<string, WorkflowRun[]>> {
@@ -92,9 +84,6 @@ export class ActionRepository {
     }
   }
 
-  /**
-   * Fetch jobs for workflow runs
-   */
   async fetchJobsForWorkflowRuns(
     org: string,
     repo: string,
@@ -127,9 +116,6 @@ export class ActionRepository {
     }
   }
 
-  /**
-   * Get workflow run statistics
-   */
   getWorkflowRunStats(runs: WorkflowRun[]): {
     total: number;
     completed: number;
@@ -154,7 +140,6 @@ export class ActionRepository {
     };
 
     runs.forEach(run => {
-      // Count by status
       switch (run.status) {
         case 'completed':
           stats.completed++;
@@ -170,7 +155,6 @@ export class ActionRepository {
           break;
       }
 
-      // Count by conclusion
       switch (run.conclusion) {
         case 'success':
           stats.success++;
@@ -183,7 +167,6 @@ export class ActionRepository {
           break;
       }
 
-      // Count by workflow
       const workflowName = run.name || 'Unknown';
       stats.byWorkflow[workflowName] = (stats.byWorkflow[workflowName] || 0) + 1;
     });
@@ -191,9 +174,6 @@ export class ActionRepository {
     return stats;
   }
 
-  /**
-   * Filter workflow runs by criteria
-   */
   filterWorkflowRuns(
     runs: WorkflowRun[],
     criteria: {
@@ -205,27 +185,22 @@ export class ActionRepository {
     }
   ): WorkflowRun[] {
     return runs.filter(run => {
-      // Filter by status
       if (criteria.status && run.status !== criteria.status) {
         return false;
       }
 
-      // Filter by conclusion
       if (criteria.conclusion && run.conclusion !== criteria.conclusion) {
         return false;
       }
 
-      // Filter by workflow name
       if (criteria.workflow && run.name !== criteria.workflow) {
         return false;
       }
 
-      // Filter by branch (not available in current WorkflowRun interface)
       // if (criteria.branch && run.head_branch !== criteria.branch) {
       //   return false;
       // }
 
-      // Filter by actor
       if (criteria.actor && run.actor?.login !== criteria.actor) {
         return false;
       }
@@ -235,7 +210,7 @@ export class ActionRepository {
   }
 
   /**
-   * Sort workflow runs by various criteria
+   * Sort workflow runs by various criteria.
    */
   sortWorkflowRuns(
     runs: WorkflowRun[],
@@ -264,9 +239,6 @@ export class ActionRepository {
     });
   }
 
-  /**
-   * Get workflow run duration
-   */
   getWorkflowRunDuration(run: WorkflowRun): number | null {
     if (!run.created_at || !run.updated_at) {
       return null;
@@ -277,9 +249,6 @@ export class ActionRepository {
     return endTime - startTime;
   }
 
-  /**
-   * Format workflow run duration
-   */
   formatWorkflowRunDuration(durationMs: number | null): string {
     if (durationMs === null) {
       return 'Unknown';
@@ -299,5 +268,4 @@ export class ActionRepository {
   }
 }
 
-// Export singleton instance
 export const actionRepository = ActionRepository.getInstance();

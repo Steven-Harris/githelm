@@ -68,22 +68,20 @@ export class ConfigPageService {
 
   getLoadingState(): Readable<boolean> {
     return derived(eventBus, ($eventBus) => {
-      return $eventBus === 'save-config';
+      // Only show loading for initial load, not for save operations
+      return $eventBus === 'loading-configurations';
     });
   }
 
   getSaveState(): Readable<SaveState> {
-    return derived(
-      [this.getLoadingState(), eventBus],
-      ([$isLoading, $eventBus]) => {
-        const isSaving = $isLoading && $eventBus === 'save-config';
-        return {
-          isSaving,
-          hasError: false,
-          errorMessage: null,
-        };
-      }
-    );
+    return derived(eventBus, ($eventBus) => {
+      const isSaving = $eventBus === 'save-config';
+      return {
+        isSaving,
+        hasError: false,
+        errorMessage: null,
+      };
+    });
   }
 
   getErrorMessage(): Readable<string | null> {
@@ -95,13 +93,22 @@ export class ConfigPageService {
 
   async loadConfigurations(): Promise<void> {
     try {
+      // Set loading state
+      eventBus.set('loading-configurations');
+      
       await repositoryFacade.loadAllConfigurations();
+      
+      // Clear loading state
+      eventBus.set('');
       
       loggerService.info('Configurations loaded successfully', {
         component: 'ConfigPageService',
         action: 'loadConfigurations',
       });
     } catch (error) {
+      // Clear loading state on error
+      eventBus.set('');
+      
       const errorResult = errorService.handleError(error, {
         component: 'ConfigPageService',
         action: 'loadConfigurations',
@@ -119,13 +126,16 @@ export class ConfigPageService {
 
   async saveConfigurations(configs: CombinedConfig[]): Promise<void> {
     try {
+      // Set save state
+      eventBus.set('save-config');
+      
       const result = await configService.saveConfigurations(configs);
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to save configurations');
       }
       
-      // Trigger config update event
+      // Clear save state and trigger config update event
       eventBus.set('config-updated');
       
       loggerService.info('Configurations saved successfully', {
@@ -134,6 +144,9 @@ export class ConfigPageService {
         data: { configCount: configs.length },
       });
     } catch (error) {
+      // Clear save state on error
+      eventBus.set('');
+      
       const errorResult = errorService.handleError(error, {
         component: 'ConfigPageService',
         action: 'saveConfigurations',
@@ -158,29 +171,7 @@ export class ConfigPageService {
   }
 
   private initializeEventListeners(): void {
-    // Listen for save-config events
-    eventBus.subscribe((event) => {
-      if (event === 'save-config') {
-        this.handleSaveEvent();
-      }
-    });
-  }
-
-  private async handleSaveEvent(): Promise<void> {
-    try {
-      const configsStore = this.getConfigurations();
-      const configs = get(configsStore);
-      await this.saveConfigurations(configs);
-      
-      // Clear the event after handling
-      eventBus.set('');
-    } catch (error) {
-      loggerService.error('Failed to handle save event', {
-        component: 'ConfigPageService',
-        action: 'handleSaveEvent',
-        data: { error },
-      });
-    }
+    // Event listeners can be added here if needed in the future
   }
 
   validateConfigurations(configs: CombinedConfig[]): boolean {

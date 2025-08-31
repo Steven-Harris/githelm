@@ -5,34 +5,23 @@ import { getStorageObject, setStorageObject } from '$integrations/storage';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from './polling.store';
 
-// Workflow runs data store
 export const allWorkflowRuns = writable<Record<string, WorkflowRun[]>>({});
 
-// Workflow jobs data store
 export const allWorkflowJobs = writable<Record<string, Job[]>>({});
 
-// Actions configurations store
 export const actionsConfigs = writable<RepoConfig[]>([]);
 
-// Derived store for repositories with workflow runs
 export const actionRepos = derived(
   [actionsConfigs, allWorkflowRuns],
   ([$configs, $runs]) => $configs.filter((config) => !!$runs[getRepoKey(config)]?.length)
 );
 
-// Polling subscribers management
 const pollingUnsubscribers = new Map<string, () => void>();
 
-/**
- * Get repository key for consistent identification
- */
 export function getRepoKey(config: RepoConfig): string {
   return `${config.org}/${config.repo}`;
 }
 
-/**
- * Unsubscribe from polling for a specific key
- */
 function unsubscribe(key: string): void {
   const unsub = pollingUnsubscribers.get(key);
   if (unsub) {
@@ -41,9 +30,6 @@ function unsubscribe(key: string): void {
   }
 }
 
-/**
- * Load actions configurations from storage
- */
 export async function loadActionsConfigs(): Promise<void> {
   try {
     const storedConfigs = getStorageObject<RepoConfig[]>('actions-configs');
@@ -62,12 +48,8 @@ export async function loadActionsConfigs(): Promise<void> {
   }
 }
 
-/**
- * Initialize polling for workflow actions
- */
 export function initializeActionsPolling(configs: RepoConfig[]): void {
   if (!configs?.length) {
-    // Clean up existing polling
     Array.from(pollingUnsubscribers.keys())
       .filter((key) => key.startsWith('actions-'))
       .forEach(unsubscribe);
@@ -75,7 +57,6 @@ export function initializeActionsPolling(configs: RepoConfig[]): void {
     return;
   }
 
-  // Initialize empty entries for all repos immediately
   const initialRuns: Record<string, WorkflowRun[]> = {};
   configs.forEach(config => {
     const key = getRepoKey(config);
@@ -83,7 +64,6 @@ export function initializeActionsPolling(configs: RepoConfig[]): void {
   });
   allWorkflowRuns.set(initialRuns);
 
-  // Set up polling for each repository
   for (const config of configs) {
     const key = getRepoKey(config);
     const storeKey = `actions-${key}`;
@@ -104,9 +84,6 @@ export function initializeActionsPolling(configs: RepoConfig[]): void {
   }
 }
 
-/**
- * Refresh actions data
- */
 export async function refreshActionsData(configs: RepoConfig[]): Promise<void> {
   try {
     if (!configs?.length) {
@@ -141,9 +118,6 @@ export async function refreshActionsData(configs: RepoConfig[]): Promise<void> {
   }
 }
 
-/**
- * Smart actions fetching with caching
- */
 async function fetchActionsSmartly(config: RepoConfig): Promise<any> {
   try {
     const actions = config.filters || [];
@@ -166,10 +140,10 @@ async function fetchActionsSmartly(config: RepoConfig): Promise<any> {
       }
     }
     
-    // Fetch fresh data
+    // Fetch fresh data.
     const workflows = await fetchActions(config.org, config.repo, actions);
     
-    // Cache the result
+    // Cache the result.
     try {
       const cacheKey = `actions-cache-${config.org}/${config.repo}`;
       localStorage.setItem(cacheKey, JSON.stringify(workflows));
@@ -179,7 +153,7 @@ async function fetchActionsSmartly(config: RepoConfig): Promise<any> {
     
     return workflows;
   } catch (error) {
-    // On error, try to return cached data
+    // On error, try to return cached data.
     const cacheKey = `actions-cache-${config.org}/${config.repo}`;
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -194,9 +168,6 @@ async function fetchActionsSmartly(config: RepoConfig): Promise<any> {
   }
 }
 
-/**
- * Fetch jobs for workflow runs
- */
 async function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]): Promise<void> {
   try {
     const results: Record<string, Job[]> = {};
@@ -225,9 +196,6 @@ async function fetchJobsForWorkflowRuns(org: string, repo: string, runs: Workflo
   }
 }
 
-/**
- * Update actions configurations
- */
 export async function updateActionsConfigs(configs: RepoConfig[]): Promise<void> {
   try {
     setStorageObject('actions-configs', configs);
@@ -242,12 +210,9 @@ export async function updateActionsConfigs(configs: RepoConfig[]): Promise<void>
   }
 }
 
-/**
- * Clear all actions stores
- */
 export function clearActionsStores(): void {
   try {
-    // Unsubscribe from all actions polling
+    // Unsubscribe from all actions polling.
     Array.from(pollingUnsubscribers.keys())
       .filter((key) => key.startsWith('actions-'))
       .forEach(unsubscribe);

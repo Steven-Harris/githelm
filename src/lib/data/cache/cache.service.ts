@@ -25,9 +25,6 @@ export class CacheService {
     return CacheService.instance;
   }
 
-  /**
-   * Get data from cache
-   */
   get<T>(key: string): T | null {
     try {
       const entry = getStorageObject<CacheEntry<T>>(key);
@@ -36,7 +33,6 @@ export class CacheService {
         return null;
       }
 
-      // Check if cache entry is expired
       if (this.isExpired(entry.data)) {
         this.delete(key);
         return null;
@@ -52,9 +48,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Set data in cache
-   */
   set<T>(key: string, data: T, options: CacheOptions = {}): void {
     try {
       const ttl = options.ttl || this.defaultTTL;
@@ -73,9 +66,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Delete data from cache
-   */
   delete(key: string): void {
     try {
       if (typeof localStorage !== 'undefined') {
@@ -89,21 +79,14 @@ export class CacheService {
     }
   }
 
-  /**
-   * Check if cache entry is expired
-   */
   private isExpired<T>(entry: CacheEntry<T>): boolean {
     const now = Date.now();
     return now - entry.timestamp > entry.ttl;
   }
 
-  /**
-   * Clear all cache entries
-   */
   clear(): void {
     try {
       if (typeof localStorage !== 'undefined') {
-        // Only clear cache entries, not other storage
         const keys = Object.keys(localStorage);
         keys.forEach(key => {
           if (this.isCacheKey(key)) {
@@ -118,11 +101,7 @@ export class CacheService {
     }
   }
 
-  /**
-   * Check if a key is a cache key
-   */
   private isCacheKey(key: string): boolean {
-    // Cache keys typically start with specific prefixes
     const cachePrefixes = [
       'pull-requests-',
       'actions-',
@@ -134,9 +113,6 @@ export class CacheService {
     return cachePrefixes.some(prefix => key.startsWith(prefix));
   }
 
-  /**
-   * Get cache statistics
-   */
   getStats(): {
     totalEntries: number;
     expiredEntries: number;
@@ -194,9 +170,6 @@ export class CacheService {
     }
   }
 
-  /**
-   * Clean up expired cache entries
-   */
   cleanup(): void {
     try {
       if (typeof localStorage === 'undefined') {
@@ -213,7 +186,6 @@ export class CacheService {
             this.delete(key);
           }
         } catch {
-          // If we can't parse the entry, delete it
           this.delete(key);
         }
       });
@@ -224,20 +196,13 @@ export class CacheService {
     }
   }
 
-  /**
-   * Generate cache key for repository data
-   */
   generateRepositoryKey(org: string, repo: string, type: 'pull-requests' | 'actions' | 'labels' | 'workflows'): string {
     return `${type}-${org}/${repo}`;
   }
 
-  /**
-   * Generate cache key for workflow jobs
-   */
   generateWorkflowJobsKey(org: string, repo: string, runId: number): string {
     return `workflow-jobs-${org}/${repo}-${runId}`;
   }
 }
 
-// Export singleton instance
 export const cacheService = CacheService.getInstance();

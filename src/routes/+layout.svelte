@@ -18,21 +18,19 @@ import { derived } from "svelte/store";
   const { children }: Props = $props();
   
   let signedIn = derived(firebase.user, ($user) => $user !== null);
-  let isAuth = derived(authState, ($authState) => {
-    if ($authState === 'authenticated') {
+  let isAuth = derived(authState, ($authState) => $authState);
+
+  $effect(() => {
+    if ($isAuth === 'authenticated') {
       initAuthStateHandling();
       repositoryFacade.loadAllConfigurations();
-    } else if ($authState === 'unauthenticated') {
-      // Clear all stores when unauthenticated to prevent showing stale data
+    } else if ($isAuth === 'unauthenticated') {
       repositoryFacade.clearAllStores();
     }
-    return $authState;
   });
 
-  // Helper to determine if we should show the main content
   let shouldShowContent = $derived($signedIn && $isAuth === 'authenticated');
   
-  // Helper to determine if we should show loading state
   let isAuthLoading = $derived($isAuth === 'initializing' || $isAuth === 'authenticating');
 
   function login() {
@@ -69,10 +67,8 @@ import { derived } from "svelte/store";
   {/if}
 
   {#if shouldShowContent}
-    <!-- Only show content when fully authenticated -->
     {@render children?.()}
   {:else}
-    <!-- Show login screen for all non-authenticated states -->
     <div class="flex flex-col items-center justify-center pt-20">
       <div class="hero-section max-w-md w-full p-8 text-center">
         <h1 class="hero-title text-2xl mb-4">Welcome to GitHelm</h1>

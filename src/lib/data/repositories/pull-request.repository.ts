@@ -25,15 +25,12 @@ export class PullRequestRepository {
     return PullRequestRepository.instance;
   }
 
-  /**
-   * Fetch pull requests for a repository
-   */
   async fetchPullRequests(query: PullRequestQuery): Promise<PullRequest[]> {
     try {
       const { org, repo, filters } = query;
       const pullRequests = await fetchPullRequestsWithGraphQL(org, repo, filters?.labels || []);
 
-      // Apply additional filtering if needed
+      // Apply additional filtering if needed.
       let filteredPRs = pullRequests;
 
       if (filters?.state && filters.state !== 'all') {
@@ -50,9 +47,6 @@ export class PullRequestRepository {
     }
   }
 
-  /**
-   * Fetch pull requests for multiple repositories
-   */
   async fetchPullRequestsForMultiple(
     queries: PullRequestQuery[]
   ): Promise<Record<string, PullRequest[]>> {
@@ -84,9 +78,6 @@ export class PullRequestRepository {
     }
   }
 
-  /**
-   * Get pull request statistics
-   */
   getPullRequestStats(pullRequests: PullRequest[]): {
     total: number;
     open: number;
@@ -112,7 +103,7 @@ export class PullRequestRepository {
         stats.closed++;
       }
 
-      // Count by labels
+      // Count by labels.
       pr.labels?.forEach(label => {
         stats.byLabel[label.name] = (stats.byLabel[label.name] || 0) + 1;
       });
@@ -121,9 +112,6 @@ export class PullRequestRepository {
     return stats;
   }
 
-  /**
-   * Filter pull requests by criteria
-   */
   filterPullRequests(
     pullRequests: PullRequest[],
     criteria: {
@@ -134,22 +122,22 @@ export class PullRequestRepository {
     }
   ): PullRequest[] {
     return pullRequests.filter(pr => {
-      // Filter by state
+      // Filter by state.
       if (criteria.state && criteria.state !== 'all' && pr.state !== criteria.state) {
         return false;
       }
 
-      // Filter by draft status
+      // Filter by draft status.
       if (criteria.draft !== undefined && pr.draft !== criteria.draft) {
         return false;
       }
 
-      // Filter by author
+      // Filter by author.
       if (criteria.author && pr.user.login !== criteria.author) {
         return false;
       }
 
-      // Filter by labels
+      // Filter by labels.
       if (criteria.labels && criteria.labels.length > 0) {
         const prLabels = pr.labels?.map(label => label.name) || [];
         const hasMatchingLabel = criteria.labels.some(label =>
@@ -164,9 +152,6 @@ export class PullRequestRepository {
     });
   }
 
-  /**
-   * Sort pull requests by various criteria
-   */
   sortPullRequests(
     pullRequests: PullRequest[],
     sortBy: 'title' | 'author' = 'title',
@@ -189,5 +174,4 @@ export class PullRequestRepository {
   }
 }
 
-// Export singleton instance
 export const pullRequestRepository = PullRequestRepository.getInstance();

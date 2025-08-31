@@ -4,7 +4,6 @@ import { getStorageObject, setStorageObject } from '$integrations/storage';
 import { captureException } from '$integrations/sentry';
 import { eventBus } from './event-bus.store';
 
-// Combined config types for the config page
 export interface CombinedConfig {
   org: string;
   repo: string;
@@ -12,30 +11,23 @@ export interface CombinedConfig {
   actions?: string[];
 }
 
-// Configuration stores
 export const pullRequestConfigs = writable<RepoConfig[]>([]);
 export const actionsConfigs = writable<RepoConfig[]>([]);
 
-/**
- * Get repository key for consistent identification
- */
 export function getRepoKey(config: RepoConfig): string {
   return `${config.org}/${config.repo}`;
 }
 
-/**
- * Load all repository configurations
- */
 export async function loadRepositoryConfigs(): Promise<void> {
   try {
-    // Load from Firestore
+    // Load from Firestore.
     const configs = await configService.getConfigs();
     
     // Update stores
     pullRequestConfigs.set(configs.pullRequests || []);
     actionsConfigs.set(configs.actions || []);
     
-    // Update local storage
+    // Update local storage.
     setStorageObject('pull-requests-configs', configs.pullRequests || []);
     setStorageObject('actions-configs', configs.actions || []);
   } catch (error) {
@@ -47,9 +39,6 @@ export async function loadRepositoryConfigs(): Promise<void> {
   }
 }
 
-/**
- * Get combined configuration for the config page
- */
 export async function getCombinedConfigs(): Promise<CombinedConfig[]> {
   const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
   const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
@@ -57,13 +46,10 @@ export async function getCombinedConfigs(): Promise<CombinedConfig[]> {
   return mergeConfigs(prConfigs, actionConfigs);
 }
 
-/**
- * Merge PR and Action configs into a single combined format
- */
 function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): CombinedConfig[] {
   const combined = new Map<string, CombinedConfig>();
 
-  // Process pull request configs
+  // Process pull request configs.
   for (const config of pullRequests) {
     const key = `${config.org}/${config.repo}`;
     if (!combined.has(key)) {
@@ -77,7 +63,7 @@ function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): Combin
     combinedConfig.pullRequests = config.filters || [];
   }
 
-  // Process actions configs
+  // Process actions configs.
   for (const config of actions) {
     const key = `${config.org}/${config.repo}`;
     if (!combined.has(key)) {
@@ -94,9 +80,6 @@ function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): Combin
   return Array.from(combined.values());
 }
 
-/**
- * Split combined configs back to separate PR and Actions configs
- */
 function splitCombinedConfigs(combinedConfigs: CombinedConfig[]): {
   prConfigs: RepoConfig[];
   actionConfigs: RepoConfig[];
@@ -125,23 +108,20 @@ function splitCombinedConfigs(combinedConfigs: CombinedConfig[]): {
   return { prConfigs, actionConfigs };
 }
 
-/**
- * Update configs from the combined format
- */
 export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[]): Promise<void> {
   const { prConfigs, actionConfigs } = splitCombinedConfigs(combinedConfigs);
 
   try {
     const configs = await configService.getConfigs();
 
-    // Update in Firestore
+    // Update in Firestore.
     await configService.saveConfigs({
       ...configs,
       pullRequests: prConfigs,
       actions: actionConfigs,
     });
 
-    // Update in local storage
+    // Update in local storage.
     setStorageObject('pull-requests-configs', prConfigs);
     setStorageObject('actions-configs', actionConfigs);
 
@@ -162,9 +142,6 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
   }
 }
 
-/**
- * Save repository configuration
- */
 export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
   try {
     const configs = await configService.getConfigs();
@@ -190,16 +167,10 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
   }
 }
 
-/**
- * Refresh configuration functions
- */
 export async function refreshConfigurations(): Promise<void> {
   await Promise.all([refreshPRConfigs(), refreshActionConfigs()]);
 }
 
-/**
- * Refresh pull request configurations
- */
 async function refreshPRConfigs(): Promise<void> {
   try {
     const configs = await configService.getConfigs();
@@ -215,9 +186,6 @@ async function refreshPRConfigs(): Promise<void> {
   }
 }
 
-/**
- * Refresh actions configurations
- */
 async function refreshActionConfigs(): Promise<void> {
   try {
     const configs = await configService.getConfigs();
@@ -233,9 +201,6 @@ async function refreshActionConfigs(): Promise<void> {
   }
 }
 
-/**
- * Clear all configuration stores
- */
 export function clearConfigStores(): void {
   try {
     pullRequestConfigs.set([]);

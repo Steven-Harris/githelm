@@ -3,9 +3,9 @@ import { browser } from '$app/environment';
 
 const STORAGE_KEY = 'githelm_repository_collapse_state';
 
-// Store to track which repositories are collapsed (true = collapsed, false = expanded)
+// Store to track which repositories are collapsed (true = collapsed, false = expanded).
 function createRepositoryCollapseStore() {
-  // Initialize from localStorage if in browser
+  // Initialize from localStorage if in browser.
   const initialState: Record<string, boolean> = {};
   
   if (browser) {
