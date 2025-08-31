@@ -59,15 +59,23 @@
               <div class="flex justify-between items-start">
                 <div class="flex-1 min-w-0">
                   <div class="flex items">
-                    <img src={pr.user.avatar_url} class="avatar mt-1 mr-2" alt={`Avatar of ${pr.user.login}`} />
+                    {#if pr.user?.avatar_url}
+                      <img src={pr.user.avatar_url} class="avatar mt-1 mr-2" alt={`Avatar of ${pr.user.login || 'User'}`} />
+                    {:else}
+                      <div class="avatar mt-1 mr-2 bg-[#30363d] flex items-center justify-center">
+                        <svg class="w-4 h-4 text-[#8b949e]" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M8 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        </svg>
+                      </div>
+                    {/if}
                     <a href={pr.html_url} target="_blank" class="text-[#58a6ff] hover:text-[#79c0ff] text-lg font-medium hover:underline block truncate">
                       {pr.title}
                     </a>
                   </div>
                   <div class="text-sm text-[#8b949e] mt-1">
                     #{pr.number} opened {pr.createdAt} by
-                    <a href={`https://github.com/${pr.user.login}`} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff]">
-                      {pr.user.login}
+                    <a href={`https://github.com/${pr.user?.login || 'unknown'}`} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff]">
+                      {pr.user?.login || 'Unknown User'}
                     </a>
                   </div>
                   {#if pr.labels?.length > 0}

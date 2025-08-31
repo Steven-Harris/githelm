@@ -94,14 +94,11 @@ export class ConfigPageService {
 
   async loadConfigurations(): Promise<void> {
     try {
-      console.log('ConfigPageService: Setting loading state...');
       // Set loading state
       eventBus.set('loading-configurations');
       
-      console.log('ConfigPageService: Loading all configurations...');
       await repositoryFacade.loadAllConfigurations();
       
-      console.log('ConfigPageService: Clearing loading state...');
       // Clear loading state
       eventBus.set('');
       
@@ -110,7 +107,6 @@ export class ConfigPageService {
         action: 'loadConfigurations',
       });
     } catch (error) {
-      console.error('ConfigPageService: Error loading configurations:', error);
       // Clear loading state on error
       eventBus.set('');
       
