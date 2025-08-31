@@ -7,6 +7,7 @@ export { useKeyboardNavigation } from './directives/useKeyboardNavigation';
 // Services
 export { configPageService } from './services/config-page.service';
 export { configService } from './services/config.service';
+export * from './services';
 
 // Stores
 export * from './stores/config.store';

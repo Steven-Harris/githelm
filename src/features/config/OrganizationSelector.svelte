@@ -1,16 +1,15 @@
 <script lang="ts">
-  import { configService } from '$integrations/firebase';
-  import type { Organization } from '$integrations/firebase';
   import { eventBus } from '$shared/stores/event-bus.store';
   import { onMount } from 'svelte';
+  import { organizationService, type OrganizationState } from '$features/config/services/organization.service';
 
-  let { selectedOrg = '', disabled = false, onChange } = $props();
+  let { selectedOrg = '', disabled = false, onChange } = $props<{
+    selectedOrg: string;
+    disabled?: boolean;
+    onChange: (org: string) => void;
+  }>();
 
-  let organizations = $state<Organization[]>([]);
-
-  function updateOrganizations() {
-    organizations = configService.getLocalOrganizations();
-  }
+  let orgState = $state<OrganizationState>(organizationService.createInitialState());
 
   onMount(() => {
     updateOrganizations();
@@ -21,13 +20,17 @@
       updateOrganizations();
       eventBus.set('');
 
-      if (!selectedOrg || organizations.some((org) => org.name === selectedOrg)) {
-        return;
+      if (organizationService.shouldResetOrganization(selectedOrg, orgState.organizations)) {
+        onChange('');
       }
-
-      onChange('');
     }
   });
+
+  function updateOrganizations(): void {
+    organizationService.updateOrganizations((updates) => {
+      Object.assign(orgState, updates);
+    });
+  }
 </script>
 
 <div class="mb-4">
@@ -42,7 +45,7 @@
     {/if}
   </label>
   {#if !disabled}
-    {#if organizations.length > 0}
+    {#if organizationService.hasOrganizations(orgState.organizations)}
       <div class="relative">
         <select
           id="organization-select"
@@ -52,7 +55,7 @@
           aria-required="true"
         >
           <option value="" class="bg-[#161b22] text-[#f0f6fc]">Select an organization</option>
-          {#each organizations as org, i (i)}
+          {#each orgState.organizations as org, i (i)}
             <option value={org.name} class="bg-[#161b22] text-[#f0f6fc]">{org.name}</option>
           {/each}
         </select>

@@ -209,6 +209,78 @@ export class ConfigService {
     }
   }
 
+  // List management methods
+  createConfigFromSaveEvent(event: {
+    pullRequests?: { org: string; repo: string; filters: string[] } | null;
+    actions?: { org: string; repo: string; filters: string[] } | null;
+  }): CombinedConfig | null {
+    if (!event.pullRequests && !event.actions) {
+      return null;
+    }
+
+    return {
+      org: event.pullRequests?.org || event.actions?.org || '',
+      repo: event.pullRequests?.repo || event.actions?.repo || '',
+      pullRequests: event.pullRequests?.filters || [],
+      actions: event.actions?.filters || [],
+    };
+  }
+
+  updateConfigAtIndex(
+    configs: CombinedConfig[],
+    index: number,
+    event: {
+      pullRequests?: { org: string; repo: string; filters: string[] } | null;
+      actions?: { org: string; repo: string; filters: string[] } | null;
+    }
+  ): CombinedConfig[] {
+    const updatedConfigs = [...configs];
+    
+    if (event.pullRequests || event.actions) {
+      const updatedConfig = this.createConfigFromSaveEvent(event);
+      if (updatedConfig) {
+        updatedConfigs[index] = updatedConfig;
+      }
+    } else {
+      updatedConfigs.splice(index, 1);
+    }
+    
+    return updatedConfigs;
+  }
+
+  addNewConfig(
+    configs: CombinedConfig[],
+    event: {
+      pullRequests?: { org: string; repo: string; filters: string[] } | null;
+      actions?: { org: string; repo: string; filters: string[] } | null;
+    }
+  ): CombinedConfig[] {
+    if (event.pullRequests || event.actions) {
+      const newConfig = this.createConfigFromSaveEvent(event);
+      if (newConfig) {
+        return [...configs, newConfig];
+      }
+    }
+    return configs;
+  }
+
+  removeConfigAtIndex(configs: CombinedConfig[], index: number): CombinedConfig[] {
+    const updatedConfigs = [...configs];
+    updatedConfigs.splice(index, 1);
+    return updatedConfigs;
+  }
+
+  reorderConfigs(
+    configs: CombinedConfig[],
+    fromIndex: number,
+    toIndex: number
+  ): CombinedConfig[] {
+    const updatedConfigs = [...configs];
+    const [removed] = updatedConfigs.splice(fromIndex, 1);
+    updatedConfigs.splice(toIndex, 0, removed);
+    return updatedConfigs;
+  }
+
   enableKillSwitch(): void {
     killSwitch.set(true);
   }

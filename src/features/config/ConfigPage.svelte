@@ -5,31 +5,32 @@
   import { configPageService } from './services/config-page.service';
   import { configService } from './services/config.service';
   import { isMobile } from '$shared/stores/mobile.store';
+  import type { CombinedConfig } from './stores/config.store';
 
-  // Get all data from the service
   const configurations = configPageService.getConfigurations();
   const loadingState = configPageService.getLoadingState();
   const saveState = configPageService.getSaveState();
   const errorMessage = configPageService.getErrorMessage();
 
-  // Simple derived values for presentation
   const isLoading = $derived($loadingState);
   const isSaving = $derived($saveState.isSaving);
   const hasError = $derived($errorMessage !== null);
 
-  // Handle configuration updates
-  function handleConfigUpdate(configs: any[]): void {
+  function handleConfigUpdate(configs: CombinedConfig[]): void {
     configPageService.handleConfigUpdate(configs);
   }
 
-  // Handle save operation
   async function handleSave(): Promise<void> {
     try {
-      await configPageService.saveConfigurations($configurations);
-      configService.disableKillSwitch();
-      goto('/');
+      const result = await configService.saveConfigurations($configurations);
+      if (result.success) {
+        configService.disableKillSwitch();
+        goto('/');
+      } else {
+        console.error('Failed to save configurations:', result.error);
+      }
     } catch (error) {
-      // Error is handled by the service
+      console.error('Error saving configurations:', error);
     }
   }
 </script>

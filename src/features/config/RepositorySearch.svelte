@@ -1,14 +1,7 @@
 <script lang="ts">
-  import { searchRepositories } from '$integrations/github';
-  import { captureException } from '$integrations/sentry';
-  import type { SearchRepositoryResult } from '$integrations/github';
   import { useDropdown } from './directives/useDropdown';
   import { useKeyboardNavigation } from './directives/useKeyboardNavigation';
-
-  interface ExistingRepo {
-    org: string;
-    repo: string;
-  }
+  import { repositorySearchService, type SearchState, type ExistingRepo } from '$features/config/services/repository-search.service';
 
   let {
     orgName = '',
@@ -24,77 +17,64 @@
     existingRepos?: ExistingRepo[];
   }>();
 
-  let searchResults = $state<(SearchRepositoryResult & { alreadyConfigured?: boolean })[]>([]);
-  let isLoading = $state<boolean>(false);
-  let showResults = $state<boolean>(false);
-  let searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null);
+  let searchState = $state<SearchState>(repositorySearchService.createInitialState());
   let containerRef = $state<HTMLDivElement | null>(null);
+
+  $effect(() => {
+    if (orgName) {
+      repositorySearchService.resetSearchState((updates) => {
+        Object.assign(searchState, updates);
+      });
+    }
+  });
 
   async function handleInputChange(): Promise<void> {
     if (!orgName || !repoName.trim()) {
-      searchResults = [];
+      repositorySearchService.resetSearchState((updates) => {
+        Object.assign(searchState, updates);
+      });
       return;
     }
 
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-
-    searchTimeout = setTimeout(async () => {
-      isLoading = true;
-      showResults = true;
-
-      try {
-        const results = await searchRepositories(orgName, repoName);
-
-        // Mark repositories that are already configured
-        searchResults = results.map((repo) => ({
-          ...repo,
-          alreadyConfigured: existingRepos.some((existing: { org: any; repo: string }) => existing.org === orgName && existing.repo === repo.name),
-        }));
-      } catch (error) {
-        captureException(error);
-        searchResults = [];
-      } finally {
-        isLoading = false;
+    searchState.searchTimeout = repositorySearchService.debouncedSearch(
+      orgName,
+      repoName,
+      existingRepos,
+      searchState.searchTimeout,
+      (updates) => {
+        Object.assign(searchState, updates);
       }
-    }, 300);
+    );
   }
 
   function selectRepository(repo: string): void {
-    // Check if repository is already configured
-    const isAlreadyConfigured = existingRepos.some((existing) => existing.org === orgName && existing.repo === repo);
+    const isAlreadyConfigured = repositorySearchService.isRepositoryAlreadyConfigured(
+      orgName,
+      repo,
+      existingRepos
+    );
 
     if (!isAlreadyConfigured) {
       onChange(repo);
-      showResults = false;
-      searchResults = [];
+      searchState.showResults = false;
+      searchState.searchResults = [];
     }
   }
 
-  // New keyboard navigation handler for dropdown
   function handleResultSelection(index: number): void {
-    const repo = searchResults[index];
+    const repo = searchState.searchResults[index];
     if (repo && !repo.alreadyConfigured) {
       selectRepository(repo.name);
     }
   }
 
   function closeDropdown(): void {
-    showResults = false;
+    searchState.showResults = false;
     const inputElement = document.getElementById('repository-input');
     if (inputElement) {
       inputElement.focus();
     }
   }
-
-  $effect(() => {
-    // Reset when organization changes
-    if (orgName) {
-      searchResults = [];
-      showResults = false;
-    }
-  });
 </script>
 
 <div class="mb-4">
@@ -132,7 +112,7 @@
         bind:value={repoName}
         oninput={handleInputChange}
         onfocus={() => {
-          if (repoName && orgName) showResults = true;
+          if (repoName && orgName) searchState.showResults = true;
         }}
         class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName
           ? 'opacity-50 cursor-not-allowed'
@@ -142,12 +122,12 @@
         aria-required="true"
       />
 
-      {#if showResults && orgName && searchResults.length > 0}
-        <div use:useDropdown={{ isOpen: showResults }} class="absolute w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg backdrop-blur-sm">
-          {#if isLoading}
+      {#if searchState.showResults && orgName && searchState.searchResults.length > 0}
+        <div use:useDropdown={{ isOpen: searchState.showResults }} class="absolute w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg backdrop-blur-sm">
+          {#if searchState.isLoading}
             <div class="p-3 text-[#8b949e]">Searching repositories...</div>
           {:else}
-            {#each searchResults as repo, i (i)}
+            {#each searchState.searchResults as repo, i (i)}
               <button
                 type="button"
                 class="repo-result w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9] {repo.alreadyConfigured

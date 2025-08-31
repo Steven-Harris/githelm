@@ -5,112 +5,58 @@
   import deleteSVG from '$assets/delete.svg';
   import { useDraggable } from './directives/useDraggable';
   import { isMobile } from '$shared/stores/mobile.store';
-  import { captureException } from '$integrations/sentry';
+  import type { CombinedConfig } from '$features/config/stores/config.store';
+  import type { SaveEventData } from '$features/config/services/repository-form.service';
 
-  interface RepoConfig {
-    org: string;
-    repo: string;
-    pullRequests: string[];
-    actions: string[];
-  }
-
-  interface SaveEventData {
-    pullRequests?: {
-      org: string;
-      repo: string;
-      filters: string[];
-    };
-    actions?: {
-      org: string;
-      repo: string;
-      filters: string[];
-    };
-  }
-
-  let { configs = [], onUpdate } = $props();
+  let { configs = [], onUpdate } = $props<{ configs: CombinedConfig[]; onUpdate: (configs: CombinedConfig[]) => void }>();
 
   let editingIndex = $state<number>(-1);
   let configListElement = $state<HTMLElement | null>(null);
 
-  function startEditing(index: number): void {
-    editingIndex = index;
-  }
 
-  function removeConfig(index: number): void {
-    const updatedConfigs = [...configs];
-    updatedConfigs.splice(index, 1);
-    configs = updatedConfigs;
-    saveConfigs(updatedConfigs);
-  }
-
-  function saveConfigs(updatedConfigs: RepoConfig[]): void {
-    configService.saveConfigurations(updatedConfigs)
-      .then((result) => {
-        if (result.success) {
-          onUpdate(updatedConfigs);
-        } else {
-          console.error('Failed to save configurations:', result.error);
-        }
-      })
-      .catch((error) => {
-        captureException(error);
-      });
-  }
-
-  function handleSave(event: SaveEventData, index?: number): void {
-    const { pullRequests, actions } = event;
-    let updatedConfigs = [...configs];
+  async function handleSave(event: SaveEventData, index?: number): Promise<void> {
+    let updatedConfigs: CombinedConfig[];
 
     if (typeof index === 'number') {
-      if (pullRequests || actions) {
-        const updatedConfig = {
-          org: pullRequests?.org || actions?.org || '',
-          repo: pullRequests?.repo || actions?.repo || '',
-          pullRequests: pullRequests?.filters || [],
-          actions: actions?.filters || [],
-        };
-
-        updatedConfigs[index] = updatedConfig;
-      } else {
-        updatedConfigs.splice(index, 1);
-      }
-
-      configs = updatedConfigs;
+      updatedConfigs = configService.updateConfigAtIndex(configs, index, event);
       editingIndex = -1;
     } else {
-      if (pullRequests || actions) {
-        updatedConfigs = [
-          ...configs,
-          {
-            org: pullRequests?.org || actions?.org || '',
-            repo: pullRequests?.repo || actions?.repo || '',
-            pullRequests: pullRequests?.filters || [],
-            actions: actions?.filters || [],
-          },
-        ];
-        configs = updatedConfigs;
-        editingIndex = -1;
-      }
+      updatedConfigs = configService.addNewConfig(configs, event);
+      editingIndex = -1;
     }
 
-    saveConfigs(updatedConfigs);
+    try {
+      const result = await configService.saveConfigurations(updatedConfigs);
+      if (result.success) {
+        onUpdate(updatedConfigs);
+      } else {
+        console.error('Failed to save configurations:', result.error);
+      }
+    } catch (error) {
+      console.error('Error saving configurations:', error);
+    }
   }
 
-  function handleCancel(): void {
-    editingIndex = -1;
-  }
-
-  function handleReorder(fromIndex: number, toIndex: number): void {
-    const updatedConfigs = [...configs];
-    const [removed] = updatedConfigs.splice(fromIndex, 1);
-    updatedConfigs.splice(toIndex, 0, removed);
-
-    configs = updatedConfigs;
-    saveConfigs(updatedConfigs);
+  async function handleReorder(fromIndex: number, toIndex: number): Promise<void> {
+    const updatedConfigs = configService.reorderConfigs(configs, fromIndex, toIndex);
+    
+    try {
+      const result = await configService.saveConfigurations(updatedConfigs);
+      if (result.success) {
+        onUpdate(updatedConfigs);
+      } else {
+        console.error('Failed to save configurations:', result.error);
+      }
+    } catch (error) {
+      console.error('Error saving configurations:', error);
+    }
   }
 
   function handleMouseDown(event: MouseEvent): void {
-    if (event.target instanceof HTMLElement && (event.target.closest('button') || event.target.classList.contains('no-drag') || event.target.closest('.no-drag'))) {
+    if (event.target instanceof HTMLElement && 
+        (event.target.closest('button') || 
+         event.target.classList.contains('no-drag') || 
+         event.target.closest('.no-drag'))) {
       return;
     }
   }
@@ -121,7 +67,7 @@
     <div class="space-y-3 mb-4" bind:this={configListElement} use:useDraggable={{ onReorder: handleReorder }}>
       {#each configs as config, i (i)}
         {#if editingIndex === i}
-          <RepositoryForm {config} onSave={(data: any) => handleSave(data, i)} onCancel={handleCancel} />
+          <RepositoryForm {config} onSave={(data: any) => handleSave(data, i)} onCancel={() => (editingIndex = -1)} />
         {:else}
           <div
             class="config-item {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
@@ -143,7 +89,7 @@
                     type="button"
                     aria-label="edit {config.org}/{config.repo}"
                     title="Edit repository configuration"
-                    onclick={() => startEditing(i)}
+                    onclick={() => (editingIndex = i)}
                   >
                     <img src={editSVG} alt="edit" width={$isMobile ? '16' : '15'} height={$isMobile ? '16' : '15'} />
                   </button>
@@ -157,7 +103,7 @@
                     type="button"
                     aria-label="edit {config.org}/{config.repo}"
                     title="Edit repository configuration"
-                    onclick={() => startEditing(i)}
+                    onclick={() => (editingIndex = i)}
                   >
                     <img src={editSVG} alt="edit" width={$isMobile ? '16' : '15'} height={$isMobile ? '16' : '15'} />
                   </button>
@@ -167,7 +113,19 @@
                   class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}"
                   title="Remove repository"
                   aria-label="delete {config.org}/{config.repo}"
-                  onclick={() => removeConfig(i)}
+                  onclick={async () => {
+                    const updatedConfigs = configService.removeConfigAtIndex(configs, i);
+                    try {
+                      const result = await configService.saveConfigurations(updatedConfigs);
+                      if (result.success) {
+                        onUpdate(updatedConfigs);
+                      } else {
+                        console.error('Failed to save configurations:', result.error);
+                      }
+                    } catch (error) {
+                      console.error('Error saving configurations:', error);
+                    }
+                  }}
                 >
                   <img src={deleteSVG} alt="Delete" width={$isMobile ? '16' : '14'} height={$isMobile ? '16' : '14'} />
                 </button>
@@ -221,23 +179,11 @@
   {/if}
 
   {#if editingIndex === -2}
-    <RepositoryForm onSave={handleSave} onCancel={handleCancel} existingRepos={configs} />
+    <RepositoryForm onSave={handleSave} onCancel={() => (editingIndex = -1)} existingRepos={configs} />
   {/if}
 </div>
 
 <style>
-  input:focus {
-    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
-  }
-
-  button[type='submit'] {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  button[type='submit']:hover:not(:disabled) {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-  }
-
   :global(.chip) {
     display: flex;
     align-items: center;
