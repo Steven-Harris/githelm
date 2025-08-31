@@ -15,21 +15,7 @@
 <div>
   <div class="mb-4 hero-card">
     <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
-      <h3 class="font-semibold">
-        <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
-          <img src={githubSVG} alt="GitHub" width="16" height="16" />
-          <span class="text-[#58a6ff] pl-1">{repo}</span>
-        </a>
-      </h3>
       <div class="flex items-center gap-3">
-        <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
-          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="18" class="fill-[#8b949e]">
-            <path
-              d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm3.75.75a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"
-            ></path>
-          </svg>
-          <span class="text-[#8b949e]">{pullRequests.length} {pullRequests.length === 1 ? 'PR' : 'PRs'}</span>
-        </span>
         <button 
           onclick={toggleCollapse}
           class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
@@ -47,6 +33,21 @@
             </svg>
           {/if}
         </button>
+        <h3 class="font-semibold">
+          <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
+            <span class="text-[#58a6ff]">{repo}</span>
+          </a>
+        </h3>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
+          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="18" class="fill-[#8b949e]">
+            <path
+              d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-2.25.75a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854v4.792a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 10.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm3.75.75a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"
+            ></path>
+          </svg>
+          <span class="text-[#8b949e]">{pullRequests.length} {pullRequests.length === 1 ? 'PR' : 'PRs'}</span>
+        </span>
       </div>
     </div>
 

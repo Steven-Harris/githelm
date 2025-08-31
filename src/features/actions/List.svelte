@@ -15,21 +15,7 @@
 <div>
   <div class="mb-4 hero-card">
     <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
-      <h3 class="font-semibold">
-        <a href={`https://github.com/${org}/${repo}/actions`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
-          <img src={githubSVG} alt="GitHub" width="16" height="16" />
-          <span class="text-[#58a6ff] pl-1">{repo}</span>
-        </a>
-      </h3>
       <div class="flex items-center gap-3">
-        <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
-          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
-            <path
-              d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"
-            ></path>
-          </svg>
-          <span class="text-[#8b949e]">{workflowRuns.length} {workflowRuns.length === 1 ? 'run' : 'runs'}</span>
-        </span>
         <button 
           onclick={toggleCollapse}
           class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
@@ -47,6 +33,21 @@
             </svg>
           {/if}
         </button>
+        <h3 class="font-semibold">
+          <a href={`https://github.com/${org}/${repo}/actions`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
+            <span class="text-[#58a6ff]">{repo}</span>
+          </a>
+        </h3>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
+          <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
+            <path
+              d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"
+            ></path>
+          </svg>
+          <span class="text-[#8b949e]">{workflowRuns.length} {workflowRuns.length === 1 ? 'run' : 'runs'}</span>
+        </span>
       </div>
     </div>
 
