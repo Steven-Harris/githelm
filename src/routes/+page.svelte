@@ -1,21 +1,5 @@
 <script lang="ts">
-  import ActionsContainer from '$features/actions/components/Container.svelte';
-  import PullRequestsContainer from '$features/pull-requests/components/Container.svelte';
-  import { RateLimitModal } from '$shared';
-  import { activeTab } from '$shared/stores/active-tab.store';
-  import { isMobile } from '$shared/stores/mobile.store';
+  import { Dashboard } from "$features/dashboard";
 </script>
 
-<RateLimitModal />
-<div id="content" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
-  {#if $isMobile}
-    {#if $activeTab === 'pull-requests'}
-      <PullRequestsContainer />
-    {:else}
-      <ActionsContainer />
-    {/if}
-  {:else}
-    <PullRequestsContainer />
-    <ActionsContainer />
-  {/if}
-</div>
+<Dashboard />

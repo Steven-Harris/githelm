@@ -3,7 +3,7 @@
   import RepositoryForm from './RepositoryForm.svelte';
   import { configService } from '$features/config/services/config.service';
   import deleteSVG from '$assets/delete.svg';
-  import { useDraggable } from './useDraggable';
+  import { useDraggable } from './directives/useDraggable';
   import { isMobile } from '$shared/stores/mobile.store';
   import { captureException } from '$integrations/sentry';
 
@@ -226,6 +226,18 @@
 </div>
 
 <style>
+  input:focus {
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
+  }
+
+  button[type='submit'] {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  }
+
+  button[type='submit']:hover:not(:disabled) {
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  }
+
   :global(.chip) {
     display: flex;
     align-items: center;

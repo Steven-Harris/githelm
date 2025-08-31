@@ -2,8 +2,8 @@
   import { searchRepositories } from '$integrations/github';
   import { captureException } from '$integrations/sentry';
   import type { SearchRepositoryResult } from '$integrations/github';
-  import { useDropdown } from './useDropdown';
-  import { useKeyboardNavigation } from './useKeyboardNavigation';
+  import { useDropdown } from './directives/useDropdown';
+  import { useKeyboardNavigation } from './directives/useKeyboardNavigation';
 
   interface ExistingRepo {
     org: string;
