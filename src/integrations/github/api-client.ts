@@ -149,6 +149,9 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
       body: body ? JSON.stringify(body) : undefined,
     });
 
+        // Parse response body once
+    const responseBody = await response.json().catch(() => null);
+
     // Handle response status
     if (!response.ok) {
       if (response.status === 401 && retryCount < MAX_RETRIES) {
@@ -221,9 +224,6 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
         }
       }
 
-      // Handle other errors
-      const responseBody = await response.json().catch(() => null);
-
       // Check for GraphQL-specific rate limiting
       if (responseBody?.errors?.some((error: any) => error.type === 'RATE_LIMITED' || error.message?.includes('API rate limit exceeded'))) {
         killSwitch.set(true);
@@ -261,7 +261,7 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
 
     // Process successful response
     setLastUpdated();
-    const result = await response.json();
+    const result = responseBody; // Use the already parsed response body
 
     // Cache if needed
     if (cacheKey) {
