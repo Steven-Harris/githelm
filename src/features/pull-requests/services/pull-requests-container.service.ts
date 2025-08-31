@@ -116,7 +116,7 @@ export class PullRequestsContainerService {
         if (configs.length === 0) {
           return 'No repositories configured for pull requests monitoring';
         } else if ($filteredRepos.length === 0) {
-          return 'No repositories match the current filters';
+          return 'No pull requests match the current filters';
         }
         return '';
       }

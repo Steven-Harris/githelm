@@ -16,7 +16,12 @@ export { cacheService } from './storage/cache.service';
 export { getStorageObject, setStorageObject, clearSiteData } from './storage/storage';
 
 // Commands
-export { commandExecutor } from './repository.commands';
+export { commandExecutor } from './commands/repository.commands';
 
 // Filter Service
-export { filterService } from './filter.service';
+export { filterService } from './filter/filter.service';
+
+// UI Components
+export { default as Loading } from './ui/Loading.svelte';
+export { default as RateLimitModal } from './ui/RateLimitModal.svelte';
+export { default as ReloadPrompt } from './ui/ReloadPrompt.svelte';

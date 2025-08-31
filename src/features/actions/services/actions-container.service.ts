@@ -1,6 +1,6 @@
 import { derived, type Readable } from 'svelte/store';
 import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { filterService } from '$shared/filter.service';
+import { filterService } from '$shared/filter/filter.service';
 import { workflowStatusFilters, type WorkflowStatus } from '$shared/stores/workflow-status-filter.store';
 import type { WorkflowRun } from '$integrations/github';
 import type { RepoConfig } from '$integrations/firebase';
@@ -102,7 +102,7 @@ export class ActionsContainerService {
         if (configs.length === 0) {
           return 'No repositories configured for actions monitoring';
         } else if (this.shouldShowNoRunsMessage($loadingStates, $filteredRuns)) {
-          return 'No workflow runs match your current filters';
+          return 'No workflow runs match the current filters';
         }
         return '';
       }

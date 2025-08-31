@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AuthService } from './auth/auth.service';
+import { AuthService } from './auth.service';
 import { firebase, authState } from '$integrations/firebase';
 import { repositoryFacade } from '$shared/stores/facades/repository.facade';
 import { clearSiteData } from '$shared/storage/storage';

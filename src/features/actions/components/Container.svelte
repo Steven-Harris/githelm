@@ -30,18 +30,6 @@
     {#if showEmptyState}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
         <div class="text-lg text-[#8b949e] mb-4">{$emptyStateMessage}</div>
-        {#if !$hasConfiguredRepositories}
-          <div class="text-sm text-[#8b949e] mb-4">Add repositories in the configuration section to monitor GitHub Actions</div>
-          <a 
-            href="/config" 
-            class="inline-flex items-center px-4 py-2 bg-[#2ea043] hover:bg-[#3fb950] text-white font-medium rounded-md transition-all duration-200 shadow-lg hover:shadow-xl transform hover:translate-y-[-1px] active:translate-y-[1px]"
-          >
-            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
-            </svg>
-            Configure Repositories
-          </a>
-        {/if}
       </div>
     {:else}
       <div class="space-y-4">

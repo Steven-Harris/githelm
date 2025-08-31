@@ -1,15 +1,12 @@
 <script lang="ts">
   import { firebase, authState } from "$integrations/firebase";
 import { initAuthStateHandling } from "$integrations/github";
-import Footer from "./components/Footer.svelte";
-import Header from "./components/Header.svelte";
-import Tabs from "./components/Tabs.svelte";
+import { Header, Footer, Tabs, homePageService } from "$features/home";
+import { ReloadPrompt } from "$shared";
 import { repositoryFacade } from "$shared/stores/facades/repository.facade";
-import { authService } from "$shared/auth/auth.service";
 import { pwaAssetsHead } from "virtual:pwa-assets/head";
 import { pwaInfo } from 'virtual:pwa-info';
 import "../style.css";
-import { derived } from "svelte/store";
 
   interface Props {
     children?: import('svelte').Snippet;
@@ -17,25 +14,16 @@ import { derived } from "svelte/store";
 
   const { children }: Props = $props();
   
-  let signedIn = derived(firebase.user, ($user) => $user !== null);
-  let isAuth = derived(authState, ($authState) => $authState);
+  const authState = homePageService.getAuthState();
 
   $effect(() => {
-    if ($isAuth === 'authenticated') {
+    if ($authState.isAuth === 'authenticated') {
       initAuthStateHandling();
       repositoryFacade.loadAllConfigurations();
-    } else if ($isAuth === 'unauthenticated') {
+    } else if ($authState.isAuth === 'unauthenticated') {
       repositoryFacade.clearAllStores();
     }
   });
-
-  let shouldShowContent = $derived($signedIn && $isAuth === 'authenticated');
-  
-  let isAuthLoading = $derived($isAuth === 'initializing' || $isAuth === 'authenticating');
-
-  function login() {
-    authService.signIn();
-  }
 </script>
 
 <svelte:head>
@@ -50,12 +38,12 @@ import { derived } from "svelte/store";
   {/if}
 </svelte:head>
 
-<Header signedIn={signedIn && $authState === 'authenticated'} />
+<Header signedIn={$authState.signedIn && $authState.isAuth === 'authenticated'} />
 
 <main class="flex-1 overflow-auto md:px-5 bg-gray-900 pb-12">
   <Tabs />
 
-  {#if $isAuth === 'error'}
+  {#if $authState.isAuth === 'error'}
     <div class="my-4 mx-auto max-w-3xl bg-red-800/80 text-white p-3 rounded-md shadow-lg border border-red-700 backdrop-blur-sm text-center">
       <div class="flex items-center justify-center">
         <svg class="h-5 w-5 mr-2 text-red-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -66,8 +54,24 @@ import { derived } from "svelte/store";
     </div>
   {/if}
 
-  {#if shouldShowContent}
+  {#if $authState.shouldShowContent}
     {@render children?.()}
+  {:else if $authState.shouldShowConfigurePrompt}
+    <div class="flex flex-col items-center justify-center pt-20">
+      <div class="hero-section max-w-md w-full p-8 text-center">
+        <h1 class="hero-title text-2xl mb-4">Welcome to GitHelm</h1>
+        <p class="text-[#c9d1d9] mb-6">You're all set up! Now let's configure which repositories you'd like to monitor for pull requests and actions.</p>
+        <button
+          class="flex items-center justify-center mx-auto bg-[#2ea043] hover:bg-[#3fb950] text-white font-medium px-6 py-3 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl transform hover:translate-y-[-1px] active:translate-y-[1px]"
+          onclick={() => homePageService.goToConfig()}
+        >
+          <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+          </svg>
+          <span>Configure Repositories</span>
+        </button>
+      </div>
+    </div>
   {:else}
     <div class="flex flex-col items-center justify-center pt-20">
       <div class="hero-section max-w-md w-full p-8 text-center">
@@ -75,16 +79,16 @@ import { derived } from "svelte/store";
         <p class="text-[#c9d1d9] mb-6">Sign in with your GitHub account to monitor pull requests and actions across your repositories.</p>
         <button
           class="flex items-center justify-center mx-auto bg-[#2ea043] hover:bg-[#3fb950] text-white font-medium px-6 py-3 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl transform hover:translate-y-[-1px] active:translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed"
-          onclick={login}
-          disabled={isAuthLoading}
+          onclick={() => homePageService.login()}
+          disabled={$authState.isAuthLoading}
         >
-          {#if isAuthLoading}
+          {#if $authState.isAuthLoading}
             <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <span>
-              {#if $isAuth === 'initializing'}
+              {#if $authState.isAuth === 'initializing'}
                 Initializing...
               {:else}
                 Logging in...
@@ -108,6 +112,4 @@ import { derived } from "svelte/store";
 
 <Footer />
 
-{#await import("./components/ReloadPrompt.svelte") then { default: ReloadPrompt }}
-  <ReloadPrompt />
-{/await}
+<ReloadPrompt />
