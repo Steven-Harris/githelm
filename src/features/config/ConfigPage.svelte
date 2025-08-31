@@ -34,9 +34,9 @@
   }
 </script>
 
-<div class={$isMobile ? 'px-2 py-3' : 'px-5 py-6'}>
+<div class={$isMobile ? 'px-2 py-3' : 'py-6'}>
   <section class="hero-section glass-effect">
-    <div class="container m-auto p-4">
+    <div class="container mx-auto">
       <h1 class={$isMobile ? 'text-xl mb-2' : 'hero-title'}>Configuration</h1>
 
       {#if hasError}
@@ -73,8 +73,8 @@
           <p class="mt-2 text-[#8b949e] text-sm">Saving configurations...</p>
         </div>
       {:else}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-1">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+          <div class="lg:col-span-1 min-w-0">
             <div class="hero-card">
               <div class="card-header">
                 <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Organization Management</h2>
@@ -85,12 +85,12 @@
             </div>
           </div>
 
-          <div class="lg:col-span-2">
-            <div class="hero-card">
+          <div class="lg:col-span-2 min-w-0">
+            <div class="hero-card h-full">
               <div class="card-header">
                 <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Repository Configurations</h2>
               </div>
-              <div class="card-body">
+              <div class="card-body flex-1">
                 <ConfigList configs={$configurations} onUpdate={handleConfigUpdate} />
               </div>
             </div>
@@ -130,6 +130,8 @@
   .container {
     position: relative;
     z-index: 3;
+    width: 100%;
+    max-width: none;
   }
 
   .hero-card {
@@ -137,16 +139,21 @@
     border: 1px solid rgba(48, 54, 61, 0.5);
     border-radius: 6px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   .card-header {
     background: rgba(22, 27, 34, 0.8);
     padding: 1rem 1.5rem;
     border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+    flex-shrink: 0;
   }
 
   .card-body {
     padding: 1.5rem;
+    flex: 1;
+    overflow: auto;
   }
 
   .hero-title {
