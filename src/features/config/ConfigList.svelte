@@ -221,4 +221,37 @@
       justify-content: center;
     }
   }
+
+  /* Auto-scroll zone visual feedback */
+  :global(body.scroll-zone-top) {
+    position: relative;
+  }
+
+  :global(body.scroll-zone-top::before) {
+    content: '';
+    position: fixed;
+    top: 60px; /* Start below header */
+    left: 0;
+    right: 0;
+    height: 120px; /* Match the scroll zone height */
+    background: linear-gradient(to bottom, rgba(88, 166, 255, 0.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  :global(body.scroll-zone-bottom) {
+    position: relative;
+  }
+
+  :global(body.scroll-zone-bottom::after) {
+    content: '';
+    position: fixed;
+    bottom: 60px; /* End above footer */
+    left: 0;
+    right: 0;
+    height: 120px; /* Match the scroll zone height */
+    background: linear-gradient(to top, rgba(88, 166, 255, 0.15) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
 </style>
