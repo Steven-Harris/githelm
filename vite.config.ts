@@ -5,29 +5,27 @@ import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import type { UserConfig } from 'vite';
 import { defineConfig } from 'vite';
 
-// Helper to determine if Sentry should be enabled
 function shouldEnableSentry() {
-  // Disable in development mode
   if (process.env.NODE_ENV === 'development') {
     return false;
   }
-  // Only enable when auth token is provided
+  
+  if (process.env.CYPRESS_TESTING === 'true') {
+    return false;
+  }
+  
   return Boolean(process.env.SENTRY_AUTH_TOKEN);
 }
 
-// Helper to determine the environment name
 function getSentryEnvironment() {
-  // For PR previews
   if (process.env.PR_NUMBER) {
     return `preview-pr-${process.env.PR_NUMBER}`;
   }
 
-  // For explicit environment variable
   if (process.env.SENTRY_ENVIRONMENT) {
     return process.env.SENTRY_ENVIRONMENT;
   }
 
-  // From GitHub environment
   if (process.env.GITHUB_REF) {
     if (process.env.GITHUB_REF.includes('main')) {
       return 'production';
@@ -35,23 +33,18 @@ function getSentryEnvironment() {
     return `branch-${process.env.GITHUB_REF.replace('refs/heads/', '')}`;
   }
 
-  // Default
   return process.env.NODE_ENV || 'production';
 }
 
-// Configure release name
 function getReleaseVersion() {
-  // From GitHub Actions with branch info
   if (process.env.GITHUB_SHA) {
     let releaseName = `githelm@${process.env.GITHUB_SHA.substring(0, 8)}`;
 
-    // Add branch name if available
     if (process.env.GITHUB_REF) {
       const branchName = process.env.GITHUB_REF.replace('refs/heads/', '').replace('refs/pull/', 'pr-');
       releaseName = `githelm@${branchName}-${process.env.GITHUB_SHA.substring(0, 8)}`;
     }
 
-    // For pull requests, add PR number
     if (process.env.PR_NUMBER) {
       releaseName = `githelm@pr-${process.env.PR_NUMBER}-${process.env.GITHUB_SHA.substring(0, 8)}`;
     }
@@ -59,7 +52,6 @@ function getReleaseVersion() {
     return releaseName;
   }
 
-  // From package version
   return `githelm@${process.env.npm_package_version || '2.0.0'}`;
 }
 
@@ -69,13 +61,11 @@ const config: UserConfig = defineConfig({
   build: {
     emptyOutDir: true,
     sourcemap: true,
-    // Improve build performance
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
     target: 'baseline-widely-available',
   },
 
-  // Optimize development server and caching
   server: {
     hmr: {
       overlay: true,
@@ -85,7 +75,6 @@ const config: UserConfig = defineConfig({
     },
   },
 
-  // Enhanced dependency optimization
   optimizeDeps: {
     include: ['graphql'],
     exclude: [],
@@ -94,12 +83,9 @@ const config: UserConfig = defineConfig({
     },
   },
 
-  // Improved caching options
   cacheDir: 'node_modules/.vite',
 
-  // Define environment variables that will be available in the client code
   define: {
-    // Pass environment information to the client
     'import.meta.env.VITE_IS_PR_PREVIEW': process.env.PR_NUMBER ? JSON.stringify('true') : JSON.stringify('false'),
     'import.meta.env.VITE_SENTRY_ENVIRONMENT': JSON.stringify(getSentryEnvironment()),
     'import.meta.env.VITE_APP_VERSION': JSON.stringify(process.env.npm_package_version || '2.0.0'),
@@ -107,7 +93,6 @@ const config: UserConfig = defineConfig({
 
   plugins: [
     tailwindcss(),
-    // Sentry SvelteKit plugin must come before sveltekit()
     ...(shouldEnableSentry()
       ? [
           sentrySvelteKit({
@@ -119,7 +104,6 @@ const config: UserConfig = defineConfig({
                 name: getReleaseVersion(),
               },
             },
-            // Auto-instrument load functions for better tracing
             autoInstrument: {
               load: true,
               serverLoad: true,
@@ -169,7 +153,6 @@ const config: UserConfig = defineConfig({
           },
         ],
       },
-      // Configure workbox to properly handle SvelteKit's output structure
       workbox: {
         globPatterns: [
           '**/*.{js,css,html,ico,png,svg,webp,woff,woff2}',
@@ -180,12 +163,11 @@ const config: UserConfig = defineConfig({
         ],
         clientsClaim: false,
         skipWaiting: false,
-        // Handle SvelteKit's routing
         navigateFallback: '/',
         navigateFallbackDenylist: [/^\/_app\//, /^\/api\//],
       },
       devOptions: {
-        enabled: false, // Enable PWA in development for testing
+        enabled: false,
         suppressWarnings: process.env.SUPPRESS_WARNING === 'true',
         type: 'module',
         navigateFallback: '/',

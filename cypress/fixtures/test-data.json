@@ -1,0 +1,139 @@
+{
+  "users": {
+    "authenticated": {
+      "uid": "test-user-123",
+      "displayName": "Test User",
+      "email": "test@example.com",
+      "photoURL": null
+    },
+    "withAvatar": {
+      "uid": "test-user-456",
+      "displayName": "Avatar User",
+      "email": "avatar@example.com",
+      "photoURL": "https://github.com/avatar.png"
+    }
+  },
+  "repositories": [
+    {
+      "org": "testorg",
+      "repo": "testrepo",
+      "name": "testorg/testrepo",
+      "description": "A test repository",
+      "private": false,
+      "fork": false
+    },
+    {
+      "org": "anotherorg",
+      "repo": "anotherrepo",
+      "name": "anotherorg/anotherrepo",
+      "description": "Another test repository",
+      "private": true,
+      "fork": true
+    }
+  ],
+  "pullRequests": [
+    {
+      "id": 1,
+      "number": 123,
+      "title": "Add new feature",
+      "html_url": "https://github.com/test/repo/pull/123",
+      "state": "open",
+      "user": {
+        "login": "testuser",
+        "avatar_url": "https://github.com/testuser.png"
+      },
+      "createdAt": "2 days ago",
+      "updatedAt": "1 day ago",
+      "draft": false,
+      "mergeable": true
+    },
+    {
+      "id": 2,
+      "number": 124,
+      "title": "Fix bug in component",
+      "html_url": "https://github.com/test/repo/pull/124",
+      "state": "open",
+      "user": {
+        "login": "anotheruser",
+        "avatar_url": null
+      },
+      "createdAt": "1 day ago",
+      "updatedAt": "1 day ago",
+      "draft": true,
+      "mergeable": false
+    },
+    {
+      "id": 3,
+      "number": 125,
+      "title": "Update documentation",
+      "html_url": "https://github.com/test/repo/pull/125",
+      "state": "closed",
+      "user": {
+        "login": "docuser",
+        "avatar_url": "https://github.com/docuser.png"
+      },
+      "createdAt": "3 days ago",
+      "updatedAt": "2 days ago",
+      "draft": false,
+      "mergeable": null
+    }
+  ],
+  "githubResponses": {
+    "repositories": {
+      "status": 200,
+      "body": {
+        "data": {
+          "viewer": {
+            "repositories": {
+              "nodes": [
+                {
+                  "name": "testrepo",
+                  "owner": { "login": "testorg" },
+                  "description": "A test repository",
+                  "isPrivate": false,
+                  "isFork": false
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "pullRequests": {
+      "status": 200,
+      "body": {
+        "data": {
+          "repository": {
+            "pullRequests": {
+              "nodes": [
+                {
+                  "id": "PR_1",
+                  "number": 123,
+                  "title": "Add new feature",
+                  "url": "https://github.com/test/repo/pull/123",
+                  "state": "OPEN",
+                  "author": {
+                    "login": "testuser",
+                    "avatarUrl": "https://github.com/testuser.png"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "firebaseResponses": {
+    "auth": {
+      "status": 200,
+      "body": {
+        "user": {
+          "uid": "test-user-123",
+          "displayName": "Test User",
+          "email": "test@example.com"
+        }
+      }
+    }
+  }
+}
