@@ -1,4 +1,4 @@
-import { Dashboard } from './Dashboard.svelte'
+import Dashboard from './Dashboard.svelte'
 
 describe('Dashboard Component', () => {
   beforeEach(() => {

@@ -1,5 +1,4 @@
 import { defineConfig } from 'cypress'
-import { devServer } from '@cypress/vite-dev-server'
 
 export default defineConfig({
   e2e: {
@@ -28,10 +27,13 @@ export default defineConfig({
   },
   // Component testing configuration
   component: {
-    // Support for Svelte components
+    // Support for Svelte components with Vite
     devServer: {
       framework: 'svelte',
       bundler: 'vite',
+      viteConfig: {
+        configFile: 'vite.config.ts',
+      },
     },
     // Configure test discovery for co-located tests
     specPattern: 'src/**/*.test.cy.ts',

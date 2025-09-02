@@ -29,7 +29,7 @@ describe('RepositoryCard Component', () => {
   beforeEach(() => {
     // Stub repository collapse store
     cy.window().then((win) => {
-      win.repositoryCollapseStore = {
+      (win as any).repositoryCollapseStore = {
         toggle: cy.stub().as('toggleCollapse'),
         isCollapsed: cy.stub().returns(false).as('isCollapsed')
       }
