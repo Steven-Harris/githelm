@@ -1,8 +1,8 @@
 <script lang="ts">
-  import RepositoryCard from './RepositoryCard.svelte';
-  import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
   import { actionsContainerService } from '$features/actions/services/actions-container.service';
   import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+  import RepositoryCard from './RepositoryCard.svelte';
+  import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
 
   const filteredWorkflowRuns = actionsContainerService.getFilteredWorkflowRuns();
   const filterHint = actionsContainerService.getFilterHint();
@@ -21,7 +21,7 @@
       <h2 class="hero-title">Actions</h2>
       <WorkflowStatusFilter />
     </div>
-    
+
     {#if showEmptyState}
       <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
         <div class="text-lg text-[#8b949e] mb-4">{$emptyStateMessage}</div>
@@ -37,13 +37,7 @@
 
           {#if shouldShow}
             <div class="stagger-item">
-              <RepositoryCard 
-                org={repo.org} 
-                repo={repo.repo} 
-                isLoaded={isLoaded}
-                workflowRuns={filteredRuns}
-                filterHint={$filterHint}
-              />
+              <RepositoryCard org={repo.org} repo={repo.repo} {isLoaded} workflowRuns={filteredRuns} filterHint={$filterHint} />
             </div>
           {/if}
         {/each}
@@ -51,34 +45,3 @@
     {/if}
   </div>
 </section>
-
-<style>
-  .glass-effect {
-    position: relative;
-    background: rgba(22, 27, 34, 0.25);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(99, 102, 106, 0.25);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-
-  /* Single large glass glare covering the entire surface */
-  .glass-effect::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 40%, rgba(255, 255, 255, 0.03) 60%, rgba(255, 255, 255, 0) 80%);
-    pointer-events: none;
-    z-index: 1;
-  }
-
-  /* Ensure content appears above the glare effect */
-  .container {
-    position: relative;
-    z-index: 3;
-  }
-</style>

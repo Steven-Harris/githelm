@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import deleteSVG from '$assets/delete.svg';
   import { organizationManagerService, type OrganizationManagerState } from '$features/config/services/organization-manager.service';
   import { isMobile } from '$shared/stores/mobile.store';
+  import { onMount } from 'svelte';
 
   let state = $state<OrganizationManagerState>(organizationManagerService.createInitialState());
   let isAdding = $state(false);
@@ -17,27 +17,19 @@
   async function addOrganization(): Promise<void> {
     if (!newOrgName.trim()) return;
 
-    await organizationManagerService.addOrganization(
-      newOrgName,
-      state.organizations,
-      (updates) => {
-        Object.assign(state, updates);
-      }
-    );
-    
+    await organizationManagerService.addOrganization(newOrgName, state.organizations, (updates) => {
+      Object.assign(state, updates);
+    });
+
     // Reset form
     newOrgName = '';
     isAdding = false;
   }
 
   async function deleteOrganization(index: number): Promise<void> {
-    await organizationManagerService.deleteOrganization(
-      index,
-      state.organizations,
-      (updates) => {
-        Object.assign(state, updates);
-      }
-    );
+    await organizationManagerService.deleteOrganization(index, state.organizations, (updates) => {
+      Object.assign(state, updates);
+    });
   }
 
   function startAdding(): void {
@@ -115,10 +107,7 @@
             >
               Add
             </button>
-            <button
-              class="bg-[rgba(33,38,45,0.8)] text-[#c9d1d9] px-4 py-2 rounded-md border border-[#30363d] transition-colors duration-200 hover:bg-[rgba(48,54,61,0.8)]"
-              onclick={cancelAdding}
-            >
+            <button class="bg-[rgba(33,38,45,0.8)] text-[#c9d1d9] px-4 py-2 rounded-md border border-[#30363d] transition-colors duration-200 hover:bg-[rgba(48,54,61,0.8)]" onclick={cancelAdding}>
               Cancel
             </button>
           </div>
@@ -127,18 +116,3 @@
     {/if}
   {/if}
 </div>
-
-<style>
-  /* Glassmorphism hover effects */
-  input:focus {
-    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.3);
-  }
-
-  button[type='submit'] {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  button[type='submit']:hover:not(:disabled) {
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
-  }
-</style>

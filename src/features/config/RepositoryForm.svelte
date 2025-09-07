@@ -1,16 +1,21 @@
 <script lang="ts">
+  import { repositoryFormService, type FormState, type SaveEventData } from '$features/config/services/repository-form.service';
+  import type { CombinedConfig } from '$features/config/stores/config.store';
   import { eventBus } from '$shared/stores/event-bus.store';
   import { isMobile } from '$shared/stores/mobile.store';
   import { onMount } from 'svelte';
-  import OrganizationSelector from './OrganizationSelector.svelte';
-  import RepositorySearch from './RepositorySearch.svelte';
   import LabelFilter from './LabelFilter.svelte';
   import MonitoringToggle from './MonitoringToggle.svelte';
-  import deleteSVG from '$assets/delete.svg';
-  import { repositoryFormService, type FormState, type SaveEventData } from '$features/config/services/repository-form.service';
-  import type { CombinedConfig } from '$features/config/stores/config.store';
+  import OrganizationSelector from './OrganizationSelector.svelte';
+  import RepositorySearch from './RepositorySearch.svelte';
 
-  let { config = null, onSave, onCancel, onDelete, existingRepos = [] } = $props<{
+  let {
+    config = null,
+    onSave,
+    onCancel,
+    onDelete,
+    existingRepos = [],
+  } = $props<{
     config?: CombinedConfig | null;
     onSave: (data: SaveEventData) => void;
     onCancel?: () => void;
@@ -74,12 +79,12 @@
     hasAttemptedSubmit = true;
     const validation = repositoryFormService.validateForm(formState);
     validationErrors = validation.errors;
-    
+
     // Check workflow validation separately
     if (formState.monitorActions && formState.actionFilters.length === 0) {
       return;
     }
-    
+
     if (!validation.isValid) {
       return;
     }
@@ -189,7 +194,15 @@
 
         {#if formState.monitorPRs}
           <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
-            <LabelFilter title="Label" filters={formState.prFilters} availableOptions={formState.availablePRLabels} loading={formState.isLoadingLabels} onAdd={addPrFilter} onRemove={removePrFilter} onLoadOptions={loadLabels} />
+            <LabelFilter
+              title="Label"
+              filters={formState.prFilters}
+              availableOptions={formState.availablePRLabels}
+              loading={formState.isLoadingLabels}
+              onAdd={addPrFilter}
+              onRemove={removePrFilter}
+              onLoadOptions={loadLabels}
+            />
           </div>
         {/if}
       </div>
@@ -220,7 +233,9 @@
   <div class="flex justify-end gap-2">
     {#if config && onDelete}
       <button
-        class="bg-[rgba(248,81,73,0.1)] text-[#f85149] {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md hover:bg-[rgba(248,81,73,0.2)] border border-[#f85149] transition-colors duration-200"
+        class="bg-[rgba(248,81,73,0.1)] text-[#f85149] {$isMobile
+          ? 'px-3 py-1.5 text-sm'
+          : 'px-4 py-2'} rounded-md hover:bg-[rgba(248,81,73,0.2)] border border-[#f85149] transition-colors duration-200"
         type="button"
         aria-label="Delete repository configuration"
         title="Delete repository configuration"
@@ -255,21 +270,3 @@
     </button>
   </div>
 </div>
-
-<style>
-  @media (max-width: 768px) {
-    :global(.glass-container h5) {
-      font-size: 0.85rem;
-      margin-bottom: 0.5rem;
-    }
-
-    :global(.glass-container .chip) {
-      font-size: 0.7rem !important;
-      padding: 1px 6px !important;
-    }
-
-    :global(.monitoring-toggle-label) {
-      font-size: 0.9rem;
-    }
-  }
-</style>
