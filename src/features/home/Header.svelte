@@ -11,7 +11,6 @@
   import { isLoading } from '$shared/stores/loading.store';
   import { isMobile } from '$shared/stores/mobile.store';
   import { timeAgoInSeconds } from '$shared/utils/date-utils';
-  import CountBadge from '$shared/ui/CountBadge.svelte';
 
   let { signedIn } = $props();
 
