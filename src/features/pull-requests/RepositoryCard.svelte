@@ -1,6 +1,5 @@
 <script lang="ts">
   import Reviews from './Reviews.svelte';
-  import githubSVG from '$assets/github-logo.svg';
   import { repositoryCollapseStore } from '$shared/stores/repository-collapse.store';
   import CountBadge from '$shared/ui/CountBadge.svelte';
 
@@ -37,7 +36,6 @@
       </button>
       <h3 class="font-semibold">
         <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
-          <img src={githubSVG} alt="GitHub" width="16" height="16" />
           <span class="text-[#58a6ff] pl-1">{repo}</span>
         </a>
       </h3>
