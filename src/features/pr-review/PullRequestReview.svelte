@@ -306,7 +306,7 @@
 
             <!-- File diffs -->
             {#each prReview.state.files as file}
-              <FileDiff {file} isExpanded={prReview.state.expandedFiles?.has(file.filename) ?? false} onToggle={prReview.toggleFileExpanded} />
+              <FileDiff {file} isExpanded={prReview.state.expandedFiles?.has(file.filename) ?? false} onToggle={prReview.toggleFileExpanded} reviewComments={prReview.state.reviewComments} />
             {/each}
           </div>
         {:else if prReview.state.activeTab === 'commits'}
