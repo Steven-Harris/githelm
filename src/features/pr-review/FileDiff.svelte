@@ -1,0 +1,204 @@
+<script lang="ts">
+  import type { PullRequestFile } from '$integrations/github';
+
+  interface Props {
+    file: PullRequestFile;
+    isExpanded?: boolean;
+    onToggle?: (filename: string) => void;
+  }
+
+  let { file, isExpanded = false, onToggle }: Props = $props();
+
+  function toggleExpanded() {
+    if (onToggle) {
+      onToggle(file.filename);
+    }
+  }
+
+  function getStatusColor(status: string): string {
+    switch (status) {
+      case 'added':
+        return 'text-green-600 bg-green-50 border-green-200';
+      case 'removed':
+        return 'text-red-600 bg-red-50 border-red-200';
+      case 'modified':
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'renamed':
+        return 'text-blue-600 bg-blue-50 border-blue-200';
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+  }
+
+  function getStatusIcon(status: string): string {
+    switch (status) {
+      case 'added':
+        return '+';
+      case 'removed':
+        return '-';
+      case 'modified':
+        return '~';
+      case 'renamed':
+        return '→';
+      default:
+        return '?';
+    }
+  }
+
+  // Parse the patch to show line-by-line diff
+  function parsePatch(patch: string): Array<{ type: 'context' | 'addition' | 'deletion' | 'header'; content: string; lineNumber?: { old: number | null; new: number | null } }> {
+    if (!patch) return [];
+
+    const lines = patch.split('\n');
+    const result = [];
+    let oldLineNumber = 0;
+    let newLineNumber = 0;
+
+    for (const line of lines) {
+      if (line.startsWith('@@')) {
+        // Hunk header - extract line numbers
+        const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+        if (match) {
+          oldLineNumber = parseInt(match[1]) - 1;
+          newLineNumber = parseInt(match[2]) - 1;
+        }
+        result.push({ type: 'header', content: line });
+      } else if (line.startsWith('+')) {
+        newLineNumber++;
+        result.push({
+          type: 'addition',
+          content: line.slice(1),
+          lineNumber: { old: null, new: newLineNumber },
+        });
+      } else if (line.startsWith('-')) {
+        oldLineNumber++;
+        result.push({
+          type: 'deletion',
+          content: line.slice(1),
+          lineNumber: { old: oldLineNumber, new: null },
+        });
+      } else if (line.startsWith(' ')) {
+        oldLineNumber++;
+        newLineNumber++;
+        result.push({
+          type: 'context',
+          content: line.slice(1),
+          lineNumber: { old: oldLineNumber, new: newLineNumber },
+        });
+      }
+    }
+
+    return result;
+  }
+
+  const parsedPatch = $derived(file.patch ? parsePatch(file.patch) : []);
+</script>
+
+<div class="border border-gray-200 rounded-lg overflow-hidden">
+  <!-- File header -->
+  <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <button onclick={toggleExpanded} class="text-gray-500 hover:text-gray-700" title={isExpanded ? 'Collapse file' : 'Expand file'}>
+          {#if isExpanded}
+            <!-- Collapse icon -->
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          {:else}
+            <!-- Expand icon -->
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          {/if}
+        </button>
+
+        <span class={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getStatusColor(file.status)}`}>
+          {getStatusIcon(file.status)}
+          {file.status}
+        </span>
+
+        <span class="font-mono text-sm text-gray-900">{file.filename}</span>
+
+        {#if file.previous_filename && file.status === 'renamed'}
+          <span class="text-gray-500 text-sm">← {file.previous_filename}</span>
+        {/if}
+      </div>
+
+      <div class="flex items-center space-x-4 text-sm">
+        {#if file.additions > 0}
+          <span class="text-green-600 font-medium">+{file.additions}</span>
+        {/if}
+        {#if file.deletions > 0}
+          <span class="text-red-600 font-medium">-{file.deletions}</span>
+        {/if}
+        <span class="text-gray-500">{file.changes} changes</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- File diff content -->
+  {#if isExpanded && file.patch}
+    <div class="bg-white overflow-x-auto">
+      <table class="w-full text-sm font-mono">
+        <tbody>
+          {#each parsedPatch as line, index (index)}
+            {#if line.type === 'header'}
+              <tr class="bg-gray-100">
+                <td colspan="3" class="px-4 py-2 text-gray-600 text-xs">
+                  {line.content}
+                </td>
+              </tr>
+            {:else}
+              <tr
+                class={`
+                ${line.type === 'addition' ? 'bg-green-50 hover:bg-green-100' : ''}
+                ${line.type === 'deletion' ? 'bg-red-50 hover:bg-red-100' : ''}
+                ${line.type === 'context' ? 'hover:bg-gray-50' : ''}
+              `}
+              >
+                <!-- Old line number -->
+                <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                  {line.lineNumber?.old || ''}
+                </td>
+
+                <!-- New line number -->
+                <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                  {line.lineNumber?.new || ''}
+                </td>
+
+                <!-- Content -->
+                <td class="px-4 py-1 whitespace-pre-wrap">
+                  <span
+                    class={`
+                    ${line.type === 'addition' ? 'text-green-800' : ''}
+                    ${line.type === 'deletion' ? 'text-red-800' : ''}
+                    ${line.type === 'context' ? 'text-gray-800' : ''}
+                  `}
+                  >
+                    {#if line.type === 'addition'}+{/if}
+                    {#if line.type === 'deletion'}-{/if}
+                    {line.content}
+                  </span>
+                </td>
+              </tr>
+            {/if}
+          {/each}
+        </tbody>
+      </table>
+    </div>
+  {:else if isExpanded && !file.patch}
+    <!-- No patch available (binary file or no changes to show) -->
+    <div class="p-4 text-center text-gray-500">
+      {#if file.status === 'added'}
+        <p>New file created</p>
+      {:else if file.status === 'removed'}
+        <p>File deleted</p>
+      {:else if file.status === 'renamed'}
+        <p>File renamed from <code class="bg-gray-100 px-1 rounded">{file.previous_filename}</code></p>
+      {:else}
+        <p>Binary file or no diff available</p>
+      {/if}
+    </div>
+  {/if}
+</div>
