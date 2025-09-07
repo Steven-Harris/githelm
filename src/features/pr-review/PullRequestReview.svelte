@@ -18,12 +18,159 @@
   // Create the reactive state
   const prReview = createPRReviewState();
 
+  // Refs for scroll synchronization
+  let mainContentElement: HTMLDivElement;
+  let isScrollingFromNavigation = $state(false);
+  let scrollTimeout: NodeJS.Timeout | null = null;
+
   // Load data when component mounts or params change
   $effect(() => {
     if (owner && repo && prNumber) {
       prReview.loadPullRequest(owner, repo, prNumber);
     }
   });
+
+  // Handle intersection observer for automatic file selection during scroll
+  $effect(() => {
+    if (!mainContentElement) return;
+
+    // Wait for files to be rendered in the DOM
+    const setupObserver = () => {
+      const fileSections = mainContentElement.querySelectorAll('[data-filename]');
+      if (fileSections.length === 0) {
+        // Files not rendered yet, try again after a short delay
+        setTimeout(setupObserver, 100);
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (isScrollingFromNavigation) {
+            console.log('Skipping intersection update - scrolling from navigation');
+            return;
+          }
+
+          // Filter to only entries that are intersecting
+          const intersectingEntries = entries.filter((entry) => entry.isIntersecting);
+          if (intersectingEntries.length === 0) return;
+
+          // Find the entry with the highest intersection ratio
+          let mostVisibleEntry = intersectingEntries[0];
+          let maxIntersectionRatio = 0;
+
+          for (const entry of intersectingEntries) {
+            if (entry.intersectionRatio > maxIntersectionRatio) {
+              maxIntersectionRatio = entry.intersectionRatio;
+              mostVisibleEntry = entry;
+            }
+          }
+
+          const filename = mostVisibleEntry.target.getAttribute('data-filename');
+          if (filename && filename !== prReview.state.selectedFile) {
+            console.log('Auto-selecting file:', filename, 'with ratio:', maxIntersectionRatio);
+            prReview.selectFile(filename);
+          }
+        },
+        {
+          root: mainContentElement,
+          rootMargin: '-10% 0px -80% 0px', // More permissive top margin
+          threshold: [0, 0.1, 0.25, 0.5, 0.75, 1], // More granular thresholds
+        }
+      );
+
+      // Observe all file sections
+      fileSections.forEach((section) => {
+        observer.observe(section);
+      });
+
+      return observer;
+    };
+
+    const observer = setupObserver();
+
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  });
+
+  // Auto-select first file when files are loaded
+  $effect(() => {
+    if (prReview.state.files.length > 0 && !prReview.state.selectedFile) {
+      prReview.selectFile(prReview.state.files[0].filename);
+    }
+  });
+
+  // Function to scroll to a specific file
+  function scrollToFile(filename: string) {
+    if (!mainContentElement) return;
+
+    isScrollingFromNavigation = true;
+    const fileElement = mainContentElement.querySelector(`[data-filename="${filename}"]`);
+
+    if (fileElement) {
+      fileElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      });
+
+      // Reset the flag after scrolling completes
+      setTimeout(() => {
+        isScrollingFromNavigation = false;
+      }, 1000);
+    }
+  }
+
+  // Enhanced file select function that includes scrolling
+  function handleFileSelect(filename: string) {
+    prReview.selectFile(filename);
+    scrollToFile(filename);
+  }
+
+  // Fallback scroll detection in case intersection observer isn't working
+  function handleScroll() {
+    if (isScrollingFromNavigation || !mainContentElement) return;
+
+    const fileSections = mainContentElement.querySelectorAll('[data-filename]');
+    const scrollTop = mainContentElement.scrollTop;
+    const containerHeight = mainContentElement.clientHeight;
+    const viewportCenter = scrollTop + containerHeight / 3; // Check top third of viewport
+
+    let currentFile: string | null = null;
+    let minDistance = Infinity;
+
+    fileSections.forEach((section) => {
+      const rect = section.getBoundingClientRect();
+      const containerRect = mainContentElement.getBoundingClientRect();
+      const sectionTop = rect.top - containerRect.top + scrollTop;
+      const sectionHeight = rect.height;
+      const sectionCenter = sectionTop + sectionHeight / 2;
+
+      const distance = Math.abs(viewportCenter - sectionTop);
+
+      if (distance < minDistance && sectionTop <= viewportCenter && sectionTop + sectionHeight >= viewportCenter - containerHeight / 3) {
+        minDistance = distance;
+        currentFile = section.getAttribute('data-filename');
+      }
+    });
+
+    if (currentFile && currentFile !== prReview.state.selectedFile) {
+      console.log('Scroll-based selection:', currentFile);
+      prReview.selectFile(currentFile);
+    }
+  }
+
+  // Throttled scroll handler
+  function handleScrollThrottled() {
+    if (scrollTimeout) return;
+
+    scrollTimeout = setTimeout(() => {
+      handleScroll();
+      scrollTimeout = null;
+    }, 100); // Throttle to every 100ms
+  }
 
   // Helper function to format dates
   function formatDate(dateString: string): string {
@@ -92,12 +239,6 @@
         return '?';
     }
   }
-
-  // Get currently selected file for display
-  const selectedFileObj = $derived(() => {
-    if (!prReview.state.selectedFile) return null;
-    return prReview.state.files.find((f) => f.filename === prReview.state.selectedFile);
-  });
 
   // Auto-select first file if none selected and files are loaded
   $effect(() => {
@@ -245,13 +386,23 @@
     <!-- Main Content Area -->
     <div class="flex flex-1 min-h-0">
       <!-- Left Sidebar: File Tree -->
-      <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
+      <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={handleFileSelect} />
 
-      <!-- Center: File Diff -->
-      <div class="flex-1 overflow-y-auto bg-gray-50">
-        {#if selectedFileObj()}
-          <div class="bg-white">
-            <FileDiff file={selectedFileObj()} isExpanded={true} onToggle={() => {}} reviewComments={prReview.state.reviewComments} diffViewMode={prReview.state.diffViewMode} />
+      <!-- Center: All File Diffs -->
+      <div bind:this={mainContentElement} class="flex-1 overflow-y-auto bg-gray-50" onscroll={handleScrollThrottled}>
+        {#if prReview.state.files.length > 0}
+          <div class="space-y-1">
+            {#each prReview.state.files as file (file.filename)}
+              <div data-filename={file.filename} class="bg-white border-b border-gray-200 last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
+                <FileDiff
+                  {file}
+                  isExpanded={prReview.state.expandedFiles.has(file.filename)}
+                  onToggle={() => prReview.toggleFileExpanded(file.filename)}
+                  reviewComments={prReview.state.reviewComments}
+                  diffViewMode={prReview.state.diffViewMode}
+                />
+              </div>
+            {/each}
           </div>
         {:else}
           <div class="flex items-center justify-center h-full text-gray-500">
@@ -264,7 +415,7 @@
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <p class="text-lg">Select a file to view changes</p>
+              <p class="text-lg">No files to display</p>
             </div>
           </div>
         {/if}
