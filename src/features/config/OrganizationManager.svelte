@@ -4,9 +4,9 @@
   import { isMobile } from '$shared/stores/mobile.store';
   import { onMount } from 'svelte';
 
-  let state = $state<OrganizationManagerState>(organizationManagerService.createInitialState());
-  let isAdding = $state(false);
-  let newOrgName = $state('');
+  let state: OrganizationManagerState = organizationManagerService.createInitialState();
+  let isAdding = false;
+  let newOrgName = '';
 
   onMount(async () => {
     await organizationManagerService.loadOrganizations((updates) => {

@@ -19,8 +19,12 @@ export interface PullRequestReviewState {
   error: string | null;
   activeTab: 'overview' | 'files' | 'commits' | 'checks';
   selectedFile: string | null;
+  selectedCommit: string | null;
   showResolvedComments: boolean;
   expandedFiles: Set<string>;
+  diffViewMode: 'inline' | 'side-by-side';
+  expandFilesOnLoad: boolean;
+  preferencesLoaded: boolean;
 }
 
 // Create a reactive state using Svelte 5 runes
@@ -36,8 +40,12 @@ export function createPRReviewState() {
     error: null,
     activeTab: 'overview',
     selectedFile: null,
+    selectedCommit: null,
     showResolvedComments: false,
     expandedFiles: new Set<string>(),
+    diffViewMode: 'side-by-side',
+    expandFilesOnLoad: true,
+    preferencesLoaded: false,
   });
 
   // Derived values using $derived
@@ -153,11 +161,62 @@ export function createPRReviewState() {
   });
 
   // Actions
+  const loadPreferences = async () => {
+    try {
+      const { configService } = await import('$integrations/firebase');
+      const preferences = await configService.getPreferences();
+
+      if (preferences?.diffView) {
+        state.diffViewMode = preferences.diffView.viewMode || 'side-by-side';
+        state.expandFilesOnLoad = preferences.diffView.expandFilesOnLoad ?? true;
+      } else {
+        // Set defaults if no preferences exist
+        state.diffViewMode = 'side-by-side';
+        state.expandFilesOnLoad = true;
+      }
+
+      state.preferencesLoaded = true;
+    } catch (error) {
+      console.warn('Failed to load preferences:', error);
+      // Use defaults
+      state.diffViewMode = 'side-by-side';
+      state.expandFilesOnLoad = true;
+      state.preferencesLoaded = true;
+    }
+  };
+
+  const saveDiffViewMode = async (mode: 'inline' | 'side-by-side') => {
+    state.diffViewMode = mode;
+
+    try {
+      const { configService } = await import('$integrations/firebase');
+      const preferences = await configService.getPreferences() || {
+        repositoryFilters: { with_prs: true, without_prs: true },
+        workflowStatusFilters: { success: true, failure: true, in_progress: true, queued: true, pending: true },
+        diffView: { viewMode: 'side-by-side', expandFilesOnLoad: true }
+      };
+
+      preferences.diffView = {
+        ...preferences.diffView,
+        viewMode: mode
+      };
+
+      await configService.savePreferences(preferences);
+    } catch (error) {
+      console.warn('Failed to save diff view preference:', error);
+    }
+  };
+
   const loadPullRequest = async (owner: string, repo: string, prNumber: number) => {
     state.loading = true;
     state.error = null;
 
     try {
+      // Load preferences first if not already loaded
+      if (!state.preferencesLoaded) {
+        await loadPreferences();
+      }
+
       const { fetchAllPullRequestData } = await import('../services/pr-review.service');
       const data = await fetchAllPullRequestData(owner, repo, prNumber);
 
@@ -166,6 +225,15 @@ export function createPRReviewState() {
         loading: false,
         error: null
       });
+
+      // Auto-expand files based on preferences (default to true)
+      const { configService } = await import('$integrations/firebase');
+      const preferences = await configService.getPreferences();
+      const shouldExpandFiles = preferences?.diffView?.expandFilesOnLoad ?? true;
+
+      if (shouldExpandFiles) {
+        state.expandedFiles = new Set(state.files.map(file => file.filename));
+      }
     } catch (error) {
       state.loading = false;
       state.error = error instanceof Error ? error.message : 'Failed to load pull request';
@@ -178,6 +246,10 @@ export function createPRReviewState() {
 
   const selectFile = (fileName: string | null) => {
     state.selectedFile = fileName;
+  };
+
+  const selectCommit = (commitSha: string | null) => {
+    state.selectedCommit = commitSha;
   };
 
   const toggleResolvedComments = () => {
@@ -198,6 +270,8 @@ export function createPRReviewState() {
       selectedFile: null,
       showResolvedComments: false,
       expandedFiles: new Set<string>(),
+      diffViewMode: 'side-by-side' as const,
+      preferencesLoaded: false,
     });
   };
 
@@ -234,9 +308,12 @@ export function createPRReviewState() {
     get commentsByFile() { return commentsByFile; },
 
     // Actions
+    loadPreferences,
+    saveDiffViewMode,
     loadPullRequest,
     setActiveTab,
     selectFile,
+    selectCommit,
     toggleResolvedComments,
     reset,
     clearError,

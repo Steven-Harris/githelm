@@ -8,9 +8,10 @@
     isExpanded?: boolean;
     onToggle?: (filename: string) => void;
     reviewComments?: ReviewComment[];
+    diffViewMode?: 'inline' | 'side-by-side';
   }
 
-  let { file, isExpanded = false, onToggle, reviewComments = [] }: Props = $props();
+  let { file, isExpanded = false, onToggle, reviewComments = [], diffViewMode = 'side-by-side' }: Props = $props();
 
   function toggleExpanded() {
     if (onToggle) {
@@ -150,55 +151,135 @@
   <!-- File diff content -->
   {#if isExpanded && file.patch}
     <div class="bg-white overflow-x-auto">
-      <table class="w-full text-sm font-mono">
-        <tbody>
-          {#each parsedPatch as line, index (index)}
-            {#if line.type === 'header'}
-              <tr class="bg-gray-100">
-                <td colspan="3" class="px-4 py-2 text-gray-600 text-xs">
-                  {line.content}
-                </td>
-              </tr>
-            {:else}
-              <tr
-                class={`
-                ${line.type === 'addition' ? 'bg-green-50 hover:bg-green-100' : ''}
-                ${line.type === 'deletion' ? 'bg-red-50 hover:bg-red-100' : ''}
-                ${line.type === 'context' ? 'hover:bg-gray-50' : ''}
-              `}
-              >
-                <!-- Old line number -->
-                <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
-                  {line.lineNumber?.old || ''}
-                </td>
-
-                <!-- New line number -->
-                <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
-                  {line.lineNumber?.new || ''}
-                </td>
-
-                <!-- Content -->
-                <td class="px-4 py-1 whitespace-pre-wrap">
-                  <span
-                    class={`
-                    ${line.type === 'addition' ? 'text-green-800' : ''}
-                    ${line.type === 'deletion' ? 'text-red-800' : ''}
-                    ${line.type === 'context' ? 'text-gray-800' : ''}
-                  `}
-                  >
-                    {#if line.type === 'addition'}+{/if}
-                    {#if line.type === 'deletion'}-{/if}
-                    {@html highlightCode(line.content, file.filename)}
-                  </span>
-                </td>
-              </tr>
+      {#if diffViewMode === 'side-by-side'}
+        <!-- Side-by-side view -->
+        <table class="w-full text-sm font-mono">
+          <tbody>
+            {#each parsedPatch as line, index (index)}
+              {#if line.type === 'header'}
+                <tr class="bg-gray-100">
+                  <td colspan="4" class="px-4 py-2 text-gray-600 text-xs">
+                    {line.content}
+                  </td>
+                </tr>
+              {:else if line.type === 'context'}
+                <tr class="hover:bg-gray-50">
+                  <!-- Old line number -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                    {line.lineNumber?.old || ''}
+                  </td>
+                  <!-- Old content -->
+                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200">
+                    <span class="text-gray-800">
+                      {@html highlightCode(line.content, file.filename)}
+                    </span>
+                  </td>
+                  <!-- New line number -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                    {line.lineNumber?.new || ''}
+                  </td>
+                  <!-- New content -->
+                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2">
+                    <span class="text-gray-800">
+                      {@html highlightCode(line.content, file.filename)}
+                    </span>
+                  </td>
+                </tr>
+              {:else if line.type === 'deletion'}
+                <tr class="bg-red-50 hover:bg-red-100">
+                  <!-- Old line number -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                    {line.lineNumber?.old || ''}
+                  </td>
+                  <!-- Old content (deleted) -->
+                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200">
+                    <span class="text-red-800">
+                      -
+                      {@html highlightCode(line.content, file.filename)}
+                    </span>
+                  </td>
+                  <!-- New line number (empty) -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none bg-gray-50"> </td>
+                  <!-- New content (empty) -->
+                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 bg-gray-50"> </td>
+                </tr>
+              {:else if line.type === 'addition'}
+                <tr class="bg-green-50 hover:bg-green-100">
+                  <!-- Old line number (empty) -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none bg-gray-50"> </td>
+                  <!-- Old content (empty) -->
+                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 bg-gray-50"> </td>
+                  <!-- New line number -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                    {line.lineNumber?.new || ''}
+                  </td>
+                  <!-- New content (added) -->
+                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2">
+                    <span class="text-green-800">
+                      +
+                      {@html highlightCode(line.content, file.filename)}
+                    </span>
+                  </td>
+                </tr>
+              {/if}
 
               <!-- Inline comments for this line -->
               <InlineComments comments={reviewComments} fileName={file.filename} lineNumber={line.lineNumber?.new || line.lineNumber?.old || 0} />
-            {/if}
-          {/each}
-        </tbody>
-      </table>
+            {/each}
+          </tbody>
+        </table>
+      {:else}
+        <!-- Inline view (original) -->
+        <table class="w-full text-sm font-mono">
+          <tbody>
+            {#each parsedPatch as line, index (index)}
+              {#if line.type === 'header'}
+                <tr class="bg-gray-100">
+                  <td colspan="3" class="px-4 py-2 text-gray-600 text-xs">
+                    {line.content}
+                  </td>
+                </tr>
+              {:else}
+                <tr
+                  class={`
+                  ${line.type === 'addition' ? 'bg-green-50 hover:bg-green-100' : ''}
+                  ${line.type === 'deletion' ? 'bg-red-50 hover:bg-red-100' : ''}
+                  ${line.type === 'context' ? 'hover:bg-gray-50' : ''}
+                `}
+                >
+                  <!-- Old line number -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                    {line.lineNumber?.old || ''}
+                  </td>
+
+                  <!-- New line number -->
+                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                    {line.lineNumber?.new || ''}
+                  </td>
+
+                  <!-- Content -->
+                  <td class="px-4 py-1 whitespace-pre-wrap">
+                    <span
+                      class={`
+                      ${line.type === 'addition' ? 'text-green-800' : ''}
+                      ${line.type === 'deletion' ? 'text-red-800' : ''}
+                      ${line.type === 'context' ? 'text-gray-800' : ''}
+                    `}
+                    >
+                      {#if line.type === 'addition'}+{/if}
+                      {#if line.type === 'deletion'}-{/if}
+                      {@html highlightCode(line.content, file.filename)}
+                    </span>
+                  </td>
+                </tr>
+
+                <!-- Inline comments for this line -->
+                <InlineComments comments={reviewComments} fileName={file.filename} lineNumber={line.lineNumber?.new || line.lineNumber?.old || 0} />
+              {/if}
+            {/each}
+          </tbody>
+        </table>
+      {/if}
     </div>
   {:else if isExpanded && !file.patch}
     <!-- No patch available (binary file or no changes to show) -->

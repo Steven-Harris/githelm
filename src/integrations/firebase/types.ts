@@ -22,9 +22,15 @@ export interface WorkflowStatusFilters {
   pending: boolean;
 }
 
+export interface DiffViewPreferences {
+  viewMode: 'inline' | 'side-by-side';
+  expandFilesOnLoad: boolean;
+}
+
 export interface UserPreferences {
   repositoryFilters: RepositoryFilters;
   workflowStatusFilters: WorkflowStatusFilters;
+  diffView?: DiffViewPreferences;
 }
 
 export interface Configs {
