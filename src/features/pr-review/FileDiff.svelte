@@ -1,13 +1,16 @@
 <script lang="ts">
-  import type { PullRequestFile } from '$integrations/github';
+  import type { PullRequestFile, ReviewComment } from '$integrations/github';
+  import { detectLanguage, getFileTypeIcon, highlightCode } from '$shared';
+  import InlineComments from './InlineComments.svelte';
 
   interface Props {
     file: PullRequestFile;
     isExpanded?: boolean;
     onToggle?: (filename: string) => void;
+    reviewComments?: ReviewComment[];
   }
 
-  let { file, isExpanded = false, onToggle }: Props = $props();
+  let { file, isExpanded = false, onToggle, reviewComments = [] }: Props = $props();
 
   function toggleExpanded() {
     if (onToggle) {
@@ -92,6 +95,8 @@
   }
 
   const parsedPatch = $derived(file.patch ? parsePatch(file.patch) : []);
+  const fileIcon = $derived(getFileTypeIcon(file.filename));
+  const detectedLanguage = $derived(detectLanguage(file.filename));
 </script>
 
 <div class="border border-gray-200 rounded-lg overflow-hidden">
@@ -118,7 +123,12 @@
           {file.status}
         </span>
 
+        <span class="text-lg mr-2">{fileIcon}</span>
         <span class="font-mono text-sm text-gray-900">{file.filename}</span>
+
+        {#if detectedLanguage}
+          <span class="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">{detectedLanguage}</span>
+        {/if}
 
         {#if file.previous_filename && file.status === 'renamed'}
           <span class="text-gray-500 text-sm">← {file.previous_filename}</span>
@@ -178,10 +188,13 @@
                   >
                     {#if line.type === 'addition'}+{/if}
                     {#if line.type === 'deletion'}-{/if}
-                    {line.content}
+                    {@html highlightCode(line.content, file.filename)}
                   </span>
                 </td>
               </tr>
+
+              <!-- Inline comments for this line -->
+              <InlineComments comments={reviewComments} fileName={file.filename} lineNumber={line.lineNumber?.new || line.lineNumber?.old || 0} />
             {/if}
           {/each}
         </tbody>
