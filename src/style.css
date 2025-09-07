@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 :root {
-  /* GitHub-inspired spacey glass theme colors */
+  /* GitHub-inspired theme colors */
   --primary-accent-color: #2ea043;
   --primary-accent-hover-color: #3fb950;
   --secondary-accent-color: #58a6ff;
@@ -17,14 +17,11 @@
   --border-color: rgba(99, 102, 106, 0.25);
   --subtle-bg-color: rgba(255, 255, 255, 0.05);
 
-  /* New glassmorphism styles */
-  --hero-gradient-start: #0d1117;
-  --hero-gradient-end: #161b22;
-  --hero-card-bg: rgba(22, 27, 34, 0.3);
-  --hero-card-border: rgba(99, 102, 106, 0.25);
-  --hero-card-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --hero-card-bg: #161b22;
+  --hero-card-border: #30363d;
+  --hero-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   --hero-section-spacing: 2rem;
-  --hero-section-bg: rgba(22, 27, 34, 0.2);
+  --hero-section-bg: #161b22;
 }
 
 /* Global Styles */
@@ -47,9 +44,8 @@ body {
 
 /* Add glass effect to containers */
 .glass-container {
-  background: var(--subtle-bg-color);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border-color);
+  background: var(--hero-card-bg);
+  border: 1px solid var(--hero-card-border);
   border-radius: 6px;
 }
 
@@ -63,31 +59,17 @@ body {
   border-radius: 10px;
   box-shadow: var(--hero-card-shadow);
   border: 1px solid var(--hero-card-border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .hero-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 160px;
-  background: linear-gradient(135deg, rgba(46, 160, 67, 0.05), rgba(56, 139, 253, 0.1));
-  opacity: 0.3;
-  z-index: -1;
-  border-radius: 10px 10px 0 0;
+  display: none;
 }
 
 .hero-title {
   font-size: 1.75rem;
   font-weight: 600;
   margin-bottom: 1.5rem;
-  background-image: linear-gradient(90deg, var(--primary-text-color), var(--secondary-accent-color));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--primary-text-color);
   display: inline-block;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
@@ -100,19 +82,11 @@ body {
   transition: all 0.3s ease;
   overflow: hidden;
   color: var(--primary-text-color);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   position: relative;
 }
 
 .hero-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  display: none;
 }
 
 /*

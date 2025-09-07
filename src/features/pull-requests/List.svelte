@@ -1,13 +1,12 @@
 <script lang="ts">
-  import Reviews from './Reviews.svelte';
-  import githubSVG from '$assets/github-logo.svg';
   import { repositoryCollapseStore } from '$shared/stores/repository-collapse.store';
   import CountBadge from '$shared/ui/CountBadge.svelte';
+  import Reviews from './Reviews.svelte';
 
   let { org, repo, pullRequests } = $props();
-  
+
   const repoKey = `${org}/${repo}`;
-  
+
   function toggleCollapse() {
     repositoryCollapseStore.toggle(repoKey);
   }
@@ -17,7 +16,7 @@
   <div class="mb-4 hero-card">
     <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <button 
+        <button
           onclick={toggleCollapse}
           class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
           title={repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore) ? 'Expand repository' : 'Collapse repository'}
@@ -25,12 +24,12 @@
           {#if repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore)}
             <!-- Expand icon (chevron right) -->
             <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z"/>
+              <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z" />
             </svg>
           {:else}
             <!-- Collapse icon (chevron down) -->
             <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+              <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
             </svg>
           {/if}
         </button>
@@ -41,13 +40,7 @@
         </h3>
       </div>
       <div class="flex items-center gap-3">
-        <CountBadge 
-          repoKey={repoKey}
-          type="pullRequests"
-          count={pullRequests.length}
-          iconType="pullRequest"
-          label="PR"
-        />
+        <CountBadge {repoKey} type="pullRequests" count={pullRequests.length} iconType="pullRequest" label="PR" />
       </div>
     </div>
 
@@ -64,7 +57,9 @@
                     {:else}
                       <div class="avatar mt-1 mr-2 bg-[#30363d] flex items-center justify-center">
                         <svg class="w-4 h-4 text-[#8b949e]" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M8 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                          <path
+                            d="M8 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"
+                          />
                         </svg>
                       </div>
                     {/if}
@@ -108,7 +103,3 @@
     {/if}
   </div>
 </div>
-
-<style>
-  /* Styles are handled by global classes and Tailwind */
-</style>

@@ -3,11 +3,11 @@
   import { page } from '$app/state';
   import helmSVG from '$assets/helm.svg';
   import refreshSVG from '$assets/refresh.svg';
+  import { configService } from '$features/config/services/config.service';
   import { firebase } from '$integrations/firebase';
   import { authService } from '$shared/auth/auth.service';
-  import { configService } from '$features/config/services/config.service';
   import { killSwitch } from '$shared/stores/kill-switch.store';
-  import { manualTrigger, lastUpdatedStore } from '$shared/stores/last-updated.store';
+  import { lastUpdatedStore, manualTrigger } from '$shared/stores/last-updated.store';
   import { isLoading } from '$shared/stores/loading.store';
   import { isMobile } from '$shared/stores/mobile.store';
   import { timeAgoInSeconds } from '$shared/utils/date-utils';
@@ -62,7 +62,7 @@
 <svelte:window on:click={handleWindowClick} on:keydown={handleKeydown} />
 
 <header class="sticky top-0 z-50 glass-nav-header w-full">
-  <div class="backdrop-blur-md bg-opacity-75 bg-[#0d1117] border-b border-[#30363d] shadow-sm">
+  <div class="bg-[#0d1117] border-b border-[#30363d] shadow-sm">
     <div class="h-full px-4 py-2 flex justify-between items-center">
       <div class="flex items-center">
         <img src={helmSVG} alt="GitHelm logo" class="w-10 h-10 mr-2" />
@@ -86,8 +86,22 @@
               </button>
               {#if menuOpen}
                 <div class="menu" role="menu">
-                  <button class="menu-item" role="menuitem" onclick={() => { navigateToConfig(); closeMenu(); }}>Settings</button>
-                  <button class="menu-item" role="menuitem" onclick={() => { logout(); closeMenu(); }}>Logout</button>
+                  <button
+                    class="menu-item"
+                    role="menuitem"
+                    onclick={() => {
+                      navigateToConfig();
+                      closeMenu();
+                    }}>Settings</button
+                  >
+                  <button
+                    class="menu-item"
+                    role="menuitem"
+                    onclick={() => {
+                      logout();
+                      closeMenu();
+                    }}>Logout</button
+                  >
                 </div>
               {/if}
             </div>
@@ -102,8 +116,6 @@
               {:else}
                 <span class="mr-2">Updating...</span>
               {/if}
-              
-
             </div>
             <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
               {#if $isLoading}
@@ -131,8 +143,22 @@
               </button>
               {#if menuOpen}
                 <div class="menu" role="menu">
-                  <button class="menu-item" role="menuitem" onclick={() => { navigateToConfig(); closeMenu(); }}>Settings</button>
-                  <button class="menu-item" role="menuitem" onclick={() => { logout(); closeMenu(); }}>Logout</button>
+                  <button
+                    class="menu-item"
+                    role="menuitem"
+                    onclick={() => {
+                      navigateToConfig();
+                      closeMenu();
+                    }}>Settings</button
+                  >
+                  <button
+                    class="menu-item"
+                    role="menuitem"
+                    onclick={() => {
+                      logout();
+                      closeMenu();
+                    }}>Logout</button
+                  >
                 </div>
               {/if}
             </div>
@@ -144,12 +170,6 @@
 </header>
 
 <style>
-  .glass-nav-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-  }
-
   .nav-button {
     display: flex;
     align-items: center;
@@ -176,16 +196,6 @@
   .nav-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .github-btn {
-    background-color: var(--primary-accent-color);
-    border-color: rgba(240, 246, 252, 0.1);
-  }
-
-  .github-btn:hover {
-    background-color: var(--primary-accent-hover-color);
-    border-color: rgba(240, 246, 252, 0.2);
   }
 
   @media (max-width: 768px) {
