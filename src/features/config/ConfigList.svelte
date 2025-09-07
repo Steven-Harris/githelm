@@ -1,17 +1,16 @@
 <script lang="ts">
   import editSVG from '$assets/edit.svg';
-  import RepositoryForm from './RepositoryForm.svelte';
   import { configService } from '$features/config/services/config.service';
-  import { useDraggable } from './directives/useDraggable';
-  import { isMobile } from '$shared/stores/mobile.store';
-  import type { CombinedConfig } from '$features/config/stores/config.store';
   import type { SaveEventData } from '$features/config/services/repository-form.service';
+  import type { CombinedConfig } from '$features/config/stores/config.store';
+  import { isMobile } from '$shared/stores/mobile.store';
+  import { useDraggable } from './directives/useDraggable';
+  import RepositoryForm from './RepositoryForm.svelte';
 
   let { configs = [], onUpdate } = $props<{ configs: CombinedConfig[]; onUpdate: (configs: CombinedConfig[]) => void }>();
 
   let editingIndex = $state<number>(-1);
   let configListElement = $state<HTMLElement | null>(null);
-
 
   async function handleSave(event: SaveEventData, index?: number): Promise<void> {
     let updatedConfigs: CombinedConfig[];
@@ -29,15 +28,12 @@
 
   async function handleReorder(fromIndex: number, toIndex: number): Promise<void> {
     const updatedConfigs = configService.reorderConfigs(configs, fromIndex, toIndex);
-    
+
     onUpdate(updatedConfigs);
   }
 
   function handleMouseDown(event: MouseEvent): void {
-    if (event.target instanceof HTMLElement && 
-        (event.target.closest('button') || 
-         event.target.classList.contains('no-drag') || 
-         event.target.closest('.no-drag'))) {
+    if (event.target instanceof HTMLElement && (event.target.closest('button') || event.target.classList.contains('no-drag') || event.target.closest('.no-drag'))) {
       return;
     }
   }
@@ -48,14 +44,19 @@
     <div class="space-y-3 mb-4" bind:this={configListElement} use:useDraggable={{ onReorder: handleReorder }}>
       {#each configs as config, i (i)}
         {#if editingIndex === i}
-          <RepositoryForm {config} onSave={(data: any) => handleSave(data, i)} onCancel={() => (editingIndex = -1)} onDelete={() => {
-            const updatedConfigs = configService.removeConfigAtIndex(configs, i);
-            onUpdate(updatedConfigs);
-            editingIndex = -1;
-          }} />
+          <RepositoryForm
+            {config}
+            onSave={(data: any) => handleSave(data, i)}
+            onCancel={() => (editingIndex = -1)}
+            onDelete={() => {
+              const updatedConfigs = configService.removeConfigAtIndex(configs, i);
+              onUpdate(updatedConfigs);
+              editingIndex = -1;
+            }}
+          />
         {:else}
           <div
-            class="config-item {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] transition-all duration-200 cursor-grab active:cursor-grabbing"
+            class="config-item flex items-center justify-between p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md hover:border-[#388bfd44] transition-colors cursor-grab active:cursor-grabbing mb-1"
             draggable="true"
             role="button"
             tabindex="0"
@@ -70,32 +71,32 @@
                     {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
                   </strong>
                   <div class="{$isMobile ? 'text-xs' : 'text-sm'} flex flex-wrap gap-2 mt-1">
-                      {#if config.pullRequests?.length > 0}
-                        <div class="flex items-center">
-                          <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
-                          <div class="flex flex-wrap gap-1">
-                            {#each config.pullRequests as filter, i (i)}
-                              <span class="chip">{filter}</span>
-                            {/each}
-                          </div>
+                    {#if config.pullRequests?.length > 0}
+                      <div class="flex items-center">
+                        <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
+                        <div class="flex flex-wrap gap-1">
+                          {#each config.pullRequests as filter, i (i)}
+                            <span class="chip">{filter}</span>
+                          {/each}
                         </div>
-                      {:else if config.pullRequests}
-                        <div class="flex items-center">
-                          <span class="text-[#58a6ff] font-medium">PRs: All Labels</span>
-                        </div>
-                      {/if}
+                      </div>
+                    {:else if config.pullRequests}
+                      <div class="flex items-center">
+                        <span class="text-[#58a6ff] font-medium">PRs: All Labels</span>
+                      </div>
+                    {/if}
 
-                      {#if config.actions && config.actions.length > 0}
-                        <div class="flex items-center">
-                          <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
-                          <div class="flex flex-wrap gap-1">
-                            {#each config.actions as filter, i (i)}
-                              <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
-                            {/each}
-                          </div>
+                    {#if config.actions && config.actions.length > 0}
+                      <div class="flex items-center">
+                        <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
+                        <div class="flex flex-wrap gap-1">
+                          {#each config.actions as filter, i (i)}
+                            <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
+                          {/each}
                         </div>
-                      {/if}
-                    </div>
+                      </div>
+                    {/if}
+                  </div>
                 </div>
               </div>
 
