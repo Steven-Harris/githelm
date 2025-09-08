@@ -5,6 +5,8 @@
   import FileDiff from './FileDiff.svelte';
   import FileTreeSidebar from './FileTreeSidebar.svelte';
   import PRDescription from './PRDescription.svelte';
+  import { submitPullRequestComment, submitPullRequestReview, canReviewPullRequest, type ReviewSubmission } from './services/review-api.service';
+  import { isAuthenticated } from '$shared/auth/auth.state';
   import { createPRReviewState } from './stores/pr-review.store.svelte';
 
   interface Props {
@@ -176,19 +178,26 @@
   }
 
   // Handle PR review submissions
-  async function handleApproveReview() {
+  async function handleApproveReview(comment?: string) {
     if (!prReview.state.pullRequest) return;
 
     isSubmittingReview = true;
     try {
-      console.log('Approving PR:', { owner, repo, prNumber });
-      // TODO: Implement actual GitHub API call for approval
-      // await submitReview(owner, repo, prNumber, 'APPROVE', '');
+      console.log('Approving PR:', { owner, repo, prNumber, comment });
 
-      // For now, just reload the PR data to refresh reviews
-      await prReview.loadPullRequest(owner, repo, prNumber);
+      const review: ReviewSubmission = {
+        event: 'APPROVE',
+        body: comment || '',
+      };
+
+      const newReview = await submitPullRequestReview(owner, repo, prNumber, review);
+      
+      // Add the new review to the current state instead of full reload
+      prReview.state.reviews = [...prReview.state.reviews, newReview];
+      
     } catch (error) {
       console.error('Failed to approve PR:', error);
+      // TODO: Show error notification to user
     } finally {
       isSubmittingReview = false;
     }
@@ -200,13 +209,20 @@
     isSubmittingReview = true;
     try {
       console.log('Requesting changes for PR:', { owner, repo, prNumber, reason });
-      // TODO: Implement actual GitHub API call for requesting changes
-      // await submitReview(owner, repo, prNumber, 'REQUEST_CHANGES', reason);
 
-      // For now, just reload the PR data to refresh reviews
-      await prReview.loadPullRequest(owner, repo, prNumber);
+      const review: ReviewSubmission = {
+        event: 'REQUEST_CHANGES',
+        body: reason,
+      };
+
+      const newReview = await submitPullRequestReview(owner, repo, prNumber, review);
+      
+      // Add the new review to the current state instead of full reload
+      prReview.state.reviews = [...prReview.state.reviews, newReview];
+      
     } catch (error) {
       console.error('Failed to request changes:', error);
+      // TODO: Show error notification to user
     } finally {
       isSubmittingReview = false;
     }
@@ -218,13 +234,24 @@
     isSubmittingReview = true;
     try {
       console.log('Submitting comment for PR:', { owner, repo, prNumber, comment });
-      // TODO: Implement actual GitHub API call for comment
-      // await submitReview(owner, repo, prNumber, 'COMMENT', comment);
 
-      // For now, just reload the PR data to refresh reviews
-      await prReview.loadPullRequest(owner, repo, prNumber);
+      const newComment = await submitPullRequestComment(owner, repo, prNumber, comment);
+      
+      // Add the new comment as a review to the current state instead of full reload
+      const commentReview = {
+        id: newComment.id,
+        user: newComment.user,
+        body: newComment.body,
+        state: 'COMMENTED' as const,
+        submitted_at: newComment.created_at,
+        commit_id: prReview.state.pullRequest.head.sha,
+      };
+      
+      prReview.state.reviews = [...prReview.state.reviews, commentReview];
+      
     } catch (error) {
       console.error('Failed to submit comment:', error);
+      // TODO: Show error notification to user
     } finally {
       isSubmittingReview = false;
     }
@@ -528,6 +555,8 @@
                   onToggle={() => prReview.toggleFileExpanded(file.filename)}
                   reviewComments={prReview.state.reviewComments}
                   diffViewMode={prReview.state.diffViewMode}
+                  onLineClick={prReview.selectLine}
+                  isLineSelected={prReview.isLineSelected}
                 />
               </div>
             {/each}
@@ -550,7 +579,24 @@
       </div>
 
       <!-- Right Sidebar: Comments -->
-      <CommentsSidebar reviews={prReview.state.reviews} reviewComments={prReview.state.reviewComments} selectedFile={prReview.state.selectedFile} onCommentClick={handleCommentClick} />
+      <CommentsSidebar
+        reviews={prReview.state.reviews}
+        reviewComments={prReview.state.reviewComments}
+        selectedFile={prReview.state.selectedFile}
+        onCommentClick={handleCommentClick}
+        selectedLines={prReview.state.selectedLines}
+        pendingComments={prReview.state.pendingComments}
+        activeCommentId={prReview.state.activeCommentId}
+        onStartComment={prReview.startCommentOnSelectedLines}
+        onUpdateComment={prReview.updatePendingComment}
+        onSubmitComment={prReview.submitPendingComment}
+        onCancelComment={prReview.cancelPendingComment}
+        onApproveReview={handleApproveReview}
+        onRequestChanges={handleRequestChanges}
+        onSubmitGeneralComment={handleSubmitComment}
+        canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, prReview.state.currentUser) : false}
+        isAuthenticated={$isAuthenticated}
+      />
     </div>
   {:else}
     <div class="text-center py-12">

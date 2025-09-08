@@ -8,9 +8,12 @@
     onToggle?: (filename: string) => void;
     reviewComments?: ReviewComment[];
     diffViewMode?: 'inline' | 'side-by-side';
+    // New props for line selection
+    onLineClick?: (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => void;
+    isLineSelected?: (filename: string, lineNumber: number, side: 'left' | 'right') => boolean;
   }
 
-  let { file, isExpanded = false, onToggle, reviewComments = [], diffViewMode = 'side-by-side' }: Props = $props();
+  let { file, isExpanded = false, onToggle, reviewComments = [], diffViewMode = 'side-by-side', onLineClick, isLineSelected }: Props = $props();
 
   function toggleExpanded() {
     if (onToggle) {
@@ -97,6 +100,18 @@
   const parsedPatch = $derived(file.patch ? parsePatch(file.patch) : []);
   const fileIcon = $derived(getFileTypeIcon(file.filename));
   const detectedLanguage = $derived(detectLanguage(file.filename));
+
+  // Handle line clicks for commenting
+  function handleLineClick(lineNumber: number, side: 'left' | 'right', content: string) {
+    if (onLineClick) {
+      onLineClick(file.filename, lineNumber, side, content);
+    }
+  }
+
+  // Check if a line is selected
+  function checkLineSelected(lineNumber: number, side: 'left' | 'right'): boolean {
+    return isLineSelected ? isLineSelected(file.filename, lineNumber, side) : false;
+  }
 </script>
 
 <div class="border border-gray-200 rounded-lg overflow-hidden">
@@ -162,36 +177,62 @@
                   </td>
                 </tr>
               {:else if line.type === 'context'}
-                <tr class="hover:bg-gray-50" data-line-old={line.lineNumber?.old} data-line-new={line.lineNumber?.new}>
+                <tr
+                  class={`hover:bg-gray-50 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-100' : ''} ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-100' : ''}`}
+                  data-line-old={line.lineNumber?.old}
+                  data-line-new={line.lineNumber?.new}
+                >
                   <!-- Old line number -->
-                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                  <td
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-gray-200 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-200' : ''}`}
+                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                  >
                     {line.lineNumber?.old || ''}
                   </td>
                   <!-- Old content -->
-                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200">
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-50' : ''}`}
+                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                  >
                     <span class="text-gray-800">
                       {@html highlightCode(line.content, file.filename)}
                     </span>
                   </td>
                   <!-- New line number -->
-                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                  <td
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-gray-200 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-200' : ''}`}
+                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                  >
                     {line.lineNumber?.new || ''}
                   </td>
                   <!-- New content -->
-                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2">
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-50' : ''}`}
+                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                  >
                     <span class="text-gray-800">
                       {@html highlightCode(line.content, file.filename)}
                     </span>
                   </td>
                 </tr>
               {:else if line.type === 'deletion'}
-                <tr class="bg-red-50 hover:bg-red-100" data-line-old={line.lineNumber?.old} data-line-new={line.lineNumber?.new}>
+                <tr
+                  class={`bg-red-50 hover:bg-red-100 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-200' : ''}`}
+                  data-line-old={line.lineNumber?.old}
+                  data-line-new={line.lineNumber?.new}
+                >
                   <!-- Old line number -->
-                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                  <td
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-red-200 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-300' : ''}`}
+                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                  >
                     {line.lineNumber?.old || ''}
                   </td>
                   <!-- Old content (deleted) -->
-                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200">
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-100' : ''}`}
+                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                  >
                     <span class="text-red-800">
                       -
                       {@html highlightCode(line.content, file.filename)}
@@ -203,17 +244,27 @@
                   <td class="px-4 py-1 whitespace-pre-wrap w-1/2 bg-gray-50"> </td>
                 </tr>
               {:else if line.type === 'addition'}
-                <tr class="bg-green-50 hover:bg-green-100" data-line-old={line.lineNumber?.old} data-line-new={line.lineNumber?.new}>
+                <tr
+                  class={`bg-green-50 hover:bg-green-100 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-200' : ''}`}
+                  data-line-old={line.lineNumber?.old}
+                  data-line-new={line.lineNumber?.new}
+                >
                   <!-- Old line number (empty) -->
                   <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none bg-gray-50"> </td>
                   <!-- Old content (empty) -->
                   <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 bg-gray-50"> </td>
                   <!-- New line number -->
-                  <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
+                  <td
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-green-200 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-300' : ''}`}
+                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                  >
                     {line.lineNumber?.new || ''}
                   </td>
                   <!-- New content (added) -->
-                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2">
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-100' : ''}`}
+                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                  >
                     <span class="text-green-800">
                       +
                       {@html highlightCode(line.content, file.filename)}
