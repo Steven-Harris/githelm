@@ -1,14 +1,54 @@
 <script lang="ts">
   import type { Review, ReviewComment } from '$integrations/github';
+  import type { PendingComment, SelectedLine } from './stores/pr-review.store.svelte';
 
   interface Props {
     reviews: Review[];
     reviewComments: ReviewComment[];
     selectedFile: string | null;
     onCommentClick?: (filename: string, lineNumber: number) => void;
+    // New props for line selection and commenting
+    selectedLines?: SelectedLine[];
+    pendingComments?: PendingComment[];
+    activeCommentId?: string | null;
+    onStartComment?: () => void;
+    onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
+    onSubmitComment?: (commentId: string) => void;
+    onCancelComment?: (commentId: string) => void;
+    // Review action props
+    onApproveReview?: (comment?: string) => void;
+    onRequestChanges?: (reason: string) => void;
+    onSubmitGeneralComment?: (comment: string) => void;
+    canReview?: boolean;
+    isAuthenticated?: boolean;
   }
 
-  const { reviews, reviewComments, selectedFile, onCommentClick }: Props = $props();
+  const {
+    reviews,
+    reviewComments,
+    selectedFile,
+    onCommentClick,
+    selectedLines = [],
+    pendingComments = [],
+    activeCommentId = null,
+    onStartComment,
+    onUpdateComment,
+    onSubmitComment,
+    onCancelComment,
+    onApproveReview,
+    onRequestChanges,
+    onSubmitGeneralComment,
+    canReview = false,
+    isAuthenticated = false,
+  }: Props = $props();
+
+  // State for overall comment forms
+  let showGeneralCommentForm = $state(false);
+  let showApproveForm = $state(false);
+  let showRequestChangesForm = $state(false);
+  let generalCommentText = $state('');
+  let approveCommentText = $state('');
+  let requestChangesText = $state('');
 
   // Get approval/rejection reviews (reviews with states but not necessarily comments)
   const approvalReviews = $derived(reviews.filter((review) => ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(review.state)));
@@ -78,6 +118,40 @@
   function getFileName(path: string): string {
     return path.split('/').pop() || path;
   }
+
+  // Handle review form submissions
+  function handleApproveSubmit() {
+    if (onApproveReview) {
+      onApproveReview(approveCommentText.trim() || undefined);
+    }
+    showApproveForm = false;
+    approveCommentText = '';
+  }
+
+  function handleRequestChangesSubmit() {
+    if (onRequestChanges && requestChangesText.trim()) {
+      onRequestChanges(requestChangesText.trim());
+    }
+    showRequestChangesForm = false;
+    requestChangesText = '';
+  }
+
+  function handleGeneralCommentSubmit() {
+    if (onSubmitGeneralComment && generalCommentText.trim()) {
+      onSubmitGeneralComment(generalCommentText.trim());
+    }
+    showGeneralCommentForm = false;
+    generalCommentText = '';
+  }
+
+  function cancelAllForms() {
+    showGeneralCommentForm = false;
+    showApproveForm = false;
+    showRequestChangesForm = false;
+    generalCommentText = '';
+    approveCommentText = '';
+    requestChangesText = '';
+  }
 </script>
 
 <div class="w-80 bg-white border-l border-gray-200 h-full overflow-y-auto">
@@ -89,6 +163,204 @@
   </div>
 
   <div class="divide-y divide-gray-100">
+    <!-- New Comment Input Section -->
+    {#if selectedLines.length > 0 || pendingComments.length > 0}
+      <div class="p-4 bg-blue-50">
+        {#if selectedLines.length > 0 && !activeCommentId}
+          <!-- Line selection display -->
+          <div class="mb-3">
+            <h4 class="text-xs font-medium text-blue-700 uppercase tracking-wide mb-2">Selected Lines</h4>
+            <div class="text-sm text-blue-800">
+              <div class="font-mono text-xs bg-blue-100 p-2 rounded">
+                {getFileName(selectedLines[0].filename)}
+                {#if selectedLines.length === 1}
+                  : Line {selectedLines[0].lineNumber} ({selectedLines[0].side === 'left' ? 'original' : 'modified'})
+                {:else}
+                  : Lines {selectedLines[0].lineNumber}-{selectedLines[selectedLines.length - 1].lineNumber} ({selectedLines[0].side === 'left' ? 'original' : 'modified'})
+                {/if}
+              </div>
+            </div>
+          </div>
+
+          <!-- Start comment button -->
+          <button onclick={onStartComment} class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors"> Add Comment </button>
+        {/if}
+
+        {#if pendingComments.length > 0}
+          {#each pendingComments as comment}
+            <div class="border border-blue-200 rounded-lg p-3 bg-white">
+              <div class="mb-2">
+                <div class="text-xs text-blue-600 font-medium">
+                  {getFileName(comment.filename)}
+                  {#if comment.endLine}
+                    : Lines {comment.startLine}-{comment.endLine}
+                  {:else}
+                    : Line {comment.startLine}
+                  {/if}
+                  ({comment.side === 'left' ? 'original' : 'modified'})
+                </div>
+              </div>
+
+              {#if activeCommentId === comment.id}
+                <!-- Comment input form -->
+                <div>
+                  <textarea
+                    value={comment.body}
+                    oninput={(e) => onUpdateComment && onUpdateComment(comment.id, e.target.value)}
+                    placeholder="Add your comment..."
+                    class="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="3"
+                  ></textarea>
+
+                  <!-- Comment actions -->
+                  <div class="flex items-center justify-between mt-2">
+                    <div class="flex items-center space-x-2">
+                      <label class="flex items-center text-xs text-gray-600">
+                        <input type="checkbox" checked={comment.isPartOfReview} onchange={(e) => onUpdateComment && onUpdateComment(comment.id, comment.body, e.target.checked)} class="mr-1" />
+                        Part of review
+                      </label>
+                    </div>
+
+                    <div class="flex space-x-2">
+                      <button onclick={() => onCancelComment && onCancelComment(comment.id)} class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"> Cancel </button>
+                      <button
+                        onclick={() => onSubmitComment && onSubmitComment(comment.id)}
+                        disabled={!comment.body.trim()}
+                        class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {comment.isPartOfReview ? 'Add to Review' : 'Add Comment'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              {:else}
+                <!-- Preview of pending comment -->
+                <div class="text-sm text-gray-600">
+                  {comment.body || 'Draft comment...'}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        {/if}
+      </div>
+    {/if}
+
+    <!-- Review Actions Section -->
+    {#if isAuthenticated}
+      <div class="p-4 bg-gray-50">
+        <h4 class="text-xs font-medium text-gray-700 uppercase tracking-wide mb-3">Review Actions</h4>
+        
+        <div class="space-y-2">
+          <!-- General Comment Button -->
+          <button 
+            onclick={() => {cancelAllForms(); showGeneralCommentForm = true;}}
+            class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            💬 Add Comment
+          </button>
+
+          {#if canReview}
+            <!-- Approve Button -->
+            <button 
+              onclick={() => {cancelAllForms(); showApproveForm = true;}}
+              class="w-full bg-green-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-green-700 transition-colors"
+            >
+              ✓ Approve
+            </button>
+
+            <!-- Request Changes Button -->
+            <button 
+              onclick={() => {cancelAllForms(); showRequestChangesForm = true;}}
+              class="w-full bg-red-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-red-700 transition-colors"
+            >
+              ⚠ Request Changes
+            </button>
+          {/if}
+        </div>
+
+        <!-- Comment Forms -->
+        {#if showGeneralCommentForm}
+          <div class="mt-3 border border-blue-200 rounded-lg p-3 bg-white">
+            <textarea 
+              bind:value={generalCommentText}
+              placeholder="Add your comment..."
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+            ></textarea>
+            <div class="flex justify-end space-x-2 mt-2">
+              <button 
+                onclick={cancelAllForms}
+                class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onclick={handleGeneralCommentSubmit}
+                disabled={!generalCommentText.trim()}
+                class="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Add Comment
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        {#if showApproveForm}
+          <div class="mt-3 border border-green-200 rounded-lg p-3 bg-white">
+            <p class="text-sm text-gray-600 mb-2">You're approving this pull request.</p>
+            <textarea 
+              bind:value={approveCommentText}
+              placeholder="Add an optional comment..."
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              rows="3"
+            ></textarea>
+            <div class="flex justify-end space-x-2 mt-2">
+              <button 
+                onclick={cancelAllForms}
+                class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onclick={handleApproveSubmit}
+                class="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              >
+                ✓ Approve Pull Request
+              </button>
+            </div>
+          </div>
+        {/if}
+
+        {#if showRequestChangesForm}
+          <div class="mt-3 border border-red-200 rounded-lg p-3 bg-white">
+            <p class="text-sm text-gray-600 mb-2">You're requesting changes on this pull request.</p>
+            <textarea 
+              bind:value={requestChangesText}
+              placeholder="Explain what changes are needed..."
+              class="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              rows="4"
+              required
+            ></textarea>
+            <div class="flex justify-end space-x-2 mt-2">
+              <button 
+                onclick={cancelAllForms}
+                class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onclick={handleRequestChangesSubmit}
+                disabled={!requestChangesText.trim()}
+                class="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                ⚠ Request Changes
+              </button>
+            </div>
+          </div>
+        {/if}
+      </div>
+    {/if}
+
     <!-- Approvals Section -->
     {#if approvalReviews.length > 0}
       <div class="p-4">

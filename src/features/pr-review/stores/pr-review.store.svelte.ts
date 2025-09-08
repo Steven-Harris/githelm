@@ -7,6 +7,24 @@ import type {
   ReviewComment
 } from '$integrations/github';
 
+// Types for line selection and pending comments
+export interface SelectedLine {
+  filename: string;
+  lineNumber: number;
+  side: 'left' | 'right'; // For side-by-side diff view
+  content: string;
+}
+
+export interface PendingComment {
+  id: string;
+  filename: string;
+  startLine: number;
+  endLine?: number; // For multi-line comments
+  side: 'left' | 'right';
+  body: string;
+  isPartOfReview: boolean; // true if part of review, false for standalone comment
+}
+
 // Types for our store state
 export interface PullRequestReviewState {
   pullRequest: DetailedPullRequest | null;
@@ -25,6 +43,11 @@ export interface PullRequestReviewState {
   diffViewMode: 'inline' | 'side-by-side';
   expandFilesOnLoad: boolean;
   preferencesLoaded: boolean;
+  // New properties for line selection and commenting
+  selectedLines: SelectedLine[];
+  pendingComments: PendingComment[];
+  isSelectingLines: boolean;
+  activeCommentId: string | null; // ID of comment currently being edited
 }
 
 // Create a reactive state using Svelte 5 runes
@@ -46,6 +69,11 @@ export function createPRReviewState() {
     diffViewMode: 'side-by-side',
     expandFilesOnLoad: true,
     preferencesLoaded: false,
+    // Initialize new properties
+    selectedLines: [],
+    pendingComments: [],
+    isSelectingLines: false,
+    activeCommentId: null,
   });
 
   // Derived values using $derived
@@ -297,6 +325,102 @@ export function createPRReviewState() {
     state.expandedFiles = newExpanded;
   };
 
+  // Line selection and commenting methods
+  const selectLine = (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => {
+    // Start new selection or extend existing selection
+    const newSelection: SelectedLine = { filename, lineNumber, side, content };
+
+    // If selecting on the same file and side, check for multi-line selection
+    const existingSelection = state.selectedLines.find(
+      line => line.filename === filename && line.side === side
+    );
+
+    if (existingSelection) {
+      // Extend selection to include range
+      const startLine = Math.min(existingSelection.lineNumber, lineNumber);
+      const endLine = Math.max(existingSelection.lineNumber, lineNumber);
+
+      state.selectedLines = [];
+      for (let i = startLine; i <= endLine; i++) {
+        state.selectedLines.push({
+          filename,
+          lineNumber: i,
+          side,
+          content: i === lineNumber ? content : `Line ${i}` // We'd need actual content here
+        });
+      }
+    } else {
+      // New selection
+      state.selectedLines = [newSelection];
+    }
+  };
+
+  const clearLineSelection = () => {
+    state.selectedLines = [];
+    state.isSelectingLines = false;
+  };
+
+  const startCommentOnSelectedLines = () => {
+    if (state.selectedLines.length === 0) return;
+
+    const firstLine = state.selectedLines[0];
+    const lastLine = state.selectedLines[state.selectedLines.length - 1];
+
+    const commentId = `pending-${Date.now()}`;
+    const pendingComment: PendingComment = {
+      id: commentId,
+      filename: firstLine.filename,
+      startLine: firstLine.lineNumber,
+      endLine: state.selectedLines.length > 1 ? lastLine.lineNumber : undefined,
+      side: firstLine.side,
+      body: '',
+      isPartOfReview: false
+    };
+
+    state.pendingComments.push(pendingComment);
+    state.activeCommentId = commentId;
+    // Don't clear selection yet - we'll clear it when comment is submitted or cancelled
+  };
+
+  const updatePendingComment = (commentId: string, body: string, isPartOfReview?: boolean) => {
+    const comment = state.pendingComments.find(c => c.id === commentId);
+    if (comment) {
+      comment.body = body;
+      if (isPartOfReview !== undefined) {
+        comment.isPartOfReview = isPartOfReview;
+      }
+    }
+  };
+
+  const submitPendingComment = async (commentId: string) => {
+    const comment = state.pendingComments.find(c => c.id === commentId);
+    if (!comment || !comment.body.trim()) return;
+
+    // TODO: Implement actual API call to submit comment
+    console.log('Submitting comment:', comment);
+
+    // Remove from pending comments
+    state.pendingComments = state.pendingComments.filter(c => c.id !== commentId);
+    state.activeCommentId = null;
+    clearLineSelection();
+
+    // TODO: Refresh PR data to show new comment
+  };
+
+  const cancelPendingComment = (commentId: string) => {
+    state.pendingComments = state.pendingComments.filter(c => c.id !== commentId);
+    if (state.activeCommentId === commentId) {
+      state.activeCommentId = null;
+    }
+    clearLineSelection();
+  };
+
+  const isLineSelected = (filename: string, lineNumber: number, side: 'left' | 'right'): boolean => {
+    return state.selectedLines.some(
+      line => line.filename === filename && line.lineNumber === lineNumber && line.side === side
+    );
+  };
+
   return {
     // State
     state,
@@ -319,6 +443,15 @@ export function createPRReviewState() {
     clearError,
     expandAllFiles,
     collapseAllFiles,
-    toggleFileExpanded
+    toggleFileExpanded,
+
+    // New comment and line selection actions
+    selectLine,
+    clearLineSelection,
+    startCommentOnSelectedLines,
+    updatePendingComment,
+    submitPendingComment,
+    cancelPendingComment,
+    isLineSelected
   };
 }
