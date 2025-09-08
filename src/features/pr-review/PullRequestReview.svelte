@@ -19,7 +19,7 @@
   const prReview = createPRReviewState();
 
   // Refs for scroll synchronization
-  let mainContentElement: HTMLDivElement;
+  let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
   let isScrollingFromNavigation = $state(false);
   let scrollTimeout: NodeJS.Timeout | null = null;
 
@@ -102,7 +102,79 @@
     }
   });
 
-  // Function to scroll to a specific file
+  // Function to scroll to a specific file and line
+  function scrollToFileAndLine(filename: string, lineNumber: number) {
+    if (!mainContentElement) return;
+
+    isScrollingFromNavigation = true;
+
+    // First scroll to the file
+    const fileElement = mainContentElement.querySelector(`[data-filename="${filename}"]`);
+
+    if (fileElement) {
+      // Expand the file if it's collapsed
+      if (!prReview.state.expandedFiles.has(filename)) {
+        prReview.toggleFileExpanded(filename);
+        // Wait a moment for the file to expand
+        setTimeout(() => {
+          scrollToSpecificLine(filename, lineNumber);
+        }, 300);
+      } else {
+        scrollToSpecificLine(filename, lineNumber);
+      }
+    }
+
+    // Reset the navigation flag
+    setTimeout(() => {
+      isScrollingFromNavigation = false;
+    }, 1000);
+  }
+
+  // Function to scroll to a specific line within a file
+  function scrollToSpecificLine(filename: string, lineNumber: number) {
+    if (!mainContentElement) return;
+
+    // Look for the line number in the file's diff table using data attributes
+    const fileElement = mainContentElement.querySelector(`[data-filename="${filename}"]`);
+    if (!fileElement) return;
+
+    // Look for a row with the matching line number in either old or new line data attributes
+    const targetRow = fileElement.querySelector(`tr[data-line-new="${lineNumber}"], tr[data-line-old="${lineNumber}"]`);
+
+    if (targetRow) {
+      // Scroll to the line with some offset for better visibility
+      targetRow.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+
+      // Add a highlight effect
+      targetRow.classList.add('bg-yellow-200', 'ring-2', 'ring-yellow-400', 'transition-all', 'duration-300');
+      setTimeout(() => {
+        targetRow.classList.remove('bg-yellow-200', 'ring-2', 'ring-yellow-400');
+        // Keep transition classes for smooth removal
+        setTimeout(() => {
+          targetRow.classList.remove('transition-all', 'duration-300');
+        }, 300);
+      }, 2000);
+    } else {
+      // Fallback: just scroll to the file if specific line not found
+      fileElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest',
+      });
+    }
+  }
+
+  // Handle comment click from sidebar
+  function handleCommentClick(filename: string, lineNumber: number) {
+    prReview.selectFile(filename);
+    scrollToFileAndLine(filename, lineNumber);
+  }
+
+  // Function to scroll to a specific file (for file tree navigation)
   function scrollToFile(filename: string) {
     if (!mainContentElement) return;
 
@@ -422,7 +494,7 @@
       </div>
 
       <!-- Right Sidebar: Comments -->
-      <CommentsSidebar reviews={prReview.state.reviews} reviewComments={prReview.state.reviewComments} selectedFile={prReview.state.selectedFile} />
+      <CommentsSidebar reviews={prReview.state.reviews} reviewComments={prReview.state.reviewComments} selectedFile={prReview.state.selectedFile} onCommentClick={handleCommentClick} />
     </div>
   {:else}
     <div class="text-center py-12">

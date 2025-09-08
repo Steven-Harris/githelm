@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { PullRequestFile, ReviewComment } from '$integrations/github';
   import { detectLanguage, getFileTypeIcon, highlightCode } from '$shared';
-  import InlineComments from './InlineComments.svelte';
 
   interface Props {
     file: PullRequestFile;
@@ -163,7 +162,7 @@
                   </td>
                 </tr>
               {:else if line.type === 'context'}
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50" data-line-old={line.lineNumber?.old} data-line-new={line.lineNumber?.new}>
                   <!-- Old line number -->
                   <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
                     {line.lineNumber?.old || ''}
@@ -186,7 +185,7 @@
                   </td>
                 </tr>
               {:else if line.type === 'deletion'}
-                <tr class="bg-red-50 hover:bg-red-100">
+                <tr class="bg-red-50 hover:bg-red-100" data-line-old={line.lineNumber?.old} data-line-new={line.lineNumber?.new}>
                   <!-- Old line number -->
                   <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
                     {line.lineNumber?.old || ''}
@@ -204,7 +203,7 @@
                   <td class="px-4 py-1 whitespace-pre-wrap w-1/2 bg-gray-50"> </td>
                 </tr>
               {:else if line.type === 'addition'}
-                <tr class="bg-green-50 hover:bg-green-100">
+                <tr class="bg-green-50 hover:bg-green-100" data-line-old={line.lineNumber?.old} data-line-new={line.lineNumber?.new}>
                   <!-- Old line number (empty) -->
                   <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none bg-gray-50"> </td>
                   <!-- Old content (empty) -->
@@ -222,9 +221,6 @@
                   </td>
                 </tr>
               {/if}
-
-              <!-- Inline comments for this line -->
-              <InlineComments comments={reviewComments} fileName={file.filename} lineNumber={line.lineNumber?.new || line.lineNumber?.old || 0} />
             {/each}
           </tbody>
         </table>
@@ -246,6 +242,8 @@
                   ${line.type === 'deletion' ? 'bg-red-50 hover:bg-red-100' : ''}
                   ${line.type === 'context' ? 'hover:bg-gray-50' : ''}
                 `}
+                  data-line-old={line.lineNumber?.old}
+                  data-line-new={line.lineNumber?.new}
                 >
                   <!-- Old line number -->
                   <td class="px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none">
@@ -272,9 +270,6 @@
                     </span>
                   </td>
                 </tr>
-
-                <!-- Inline comments for this line -->
-                <InlineComments comments={reviewComments} fileName={file.filename} lineNumber={line.lineNumber?.new || line.lineNumber?.old || 0} />
               {/if}
             {/each}
           </tbody>
