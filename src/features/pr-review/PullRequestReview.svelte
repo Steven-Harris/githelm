@@ -22,6 +22,7 @@
   let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
   let isScrollingFromNavigation = $state(false);
   let scrollTimeout: NodeJS.Timeout | null = null;
+  let isSubmittingReview = $state(false);
 
   // Load data when component mounts or params change
   $effect(() => {
@@ -172,6 +173,61 @@
   function handleCommentClick(filename: string, lineNumber: number) {
     prReview.selectFile(filename);
     scrollToFileAndLine(filename, lineNumber);
+  }
+
+  // Handle PR review submissions
+  async function handleApproveReview() {
+    if (!prReview.state.pullRequest) return;
+
+    isSubmittingReview = true;
+    try {
+      console.log('Approving PR:', { owner, repo, prNumber });
+      // TODO: Implement actual GitHub API call for approval
+      // await submitReview(owner, repo, prNumber, 'APPROVE', '');
+
+      // For now, just reload the PR data to refresh reviews
+      await prReview.loadPullRequest(owner, repo, prNumber);
+    } catch (error) {
+      console.error('Failed to approve PR:', error);
+    } finally {
+      isSubmittingReview = false;
+    }
+  }
+
+  async function handleRequestChanges(reason: string) {
+    if (!prReview.state.pullRequest) return;
+
+    isSubmittingReview = true;
+    try {
+      console.log('Requesting changes for PR:', { owner, repo, prNumber, reason });
+      // TODO: Implement actual GitHub API call for requesting changes
+      // await submitReview(owner, repo, prNumber, 'REQUEST_CHANGES', reason);
+
+      // For now, just reload the PR data to refresh reviews
+      await prReview.loadPullRequest(owner, repo, prNumber);
+    } catch (error) {
+      console.error('Failed to request changes:', error);
+    } finally {
+      isSubmittingReview = false;
+    }
+  }
+
+  async function handleSubmitComment(comment: string) {
+    if (!prReview.state.pullRequest) return;
+
+    isSubmittingReview = true;
+    try {
+      console.log('Submitting comment for PR:', { owner, repo, prNumber, comment });
+      // TODO: Implement actual GitHub API call for comment
+      // await submitReview(owner, repo, prNumber, 'COMMENT', comment);
+
+      // For now, just reload the PR data to refresh reviews
+      await prReview.loadPullRequest(owner, repo, prNumber);
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+    } finally {
+      isSubmittingReview = false;
+    }
   }
 
   // Function to scroll to a specific file (for file tree navigation)
