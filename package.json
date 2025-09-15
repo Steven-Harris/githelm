@@ -68,7 +68,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-svelte": "^3.12.3",
     "firebase-tools": "^14.16.0",
-    "jsdom": "^26.1.0",
+    "jsdom": "^27.0.0",
     "msw": "^2.11.2",
     "prettier": "^3.6.2",
     "prettier-plugin-svelte": "^3.4.0",
