@@ -3,8 +3,8 @@ import { manualTrigger, lastUpdatedStore } from './last-updated.store';
 import { get } from 'svelte/store';
 import * as storage from '$shared/services/storage.service';
 
-// Mock the storage module
-vi.mock('$shared/storage/storage', () => ({
+// Mock the storage module correctly (match actual import path)
+vi.mock('$shared/services/storage.service', () => ({
   getLastUpdated: vi.fn(),
 }));
 
