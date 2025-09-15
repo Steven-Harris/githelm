@@ -17,7 +17,7 @@
 <div class="hero-card">
   <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
     <div class="flex items-center gap-3">
-      <button onclick={toggleCollapse} class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]" title={isCollapsed ? 'Expand repository' : 'Collapse repository'}>
+      <button onclick={toggleCollapse} class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]" title={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-label={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-pressed={!isCollapsed}>
         {#if isCollapsed}
           <!-- Expand icon (chevron right) -->
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">

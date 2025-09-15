@@ -62,7 +62,7 @@
 <div class="select-none">
   {#if node.type === 'directory'}
     <!-- Directory node -->
-    <button onclick={() => onToggle?.(node)} class="file-tree-button flex items-center w-full px-2 py-1 text-left hover:bg-gray-100 rounded text-sm" style="padding-left: {level * 16 + 8}px">
+    <button onclick={() => onToggle?.(node)} class="file-tree-button flex items-center w-full px-2 py-1 text-left hover:bg-gray-100 rounded text-sm" style="padding-left: {level * 16 + 8}px" aria-label={`Toggle folder ${node.name}`} aria-expanded={node.isExpanded}>
       <span class="w-4 h-4 flex items-center justify-center mr-2">
         {#if node.isExpanded}
           <!-- Expanded folder icon -->
@@ -89,10 +89,12 @@
     <!-- File node -->
     <button
       onclick={() => handleFileClick(node)}
-      class={`file-tree-button flex items-center w-full px-2 py-1 text-left hover:bg-gray-100 rounded text-sm transition-colors ${
-        selectedFile === node.path ? 'bg-blue-50 border-l-2 border-blue-500' : ''
-      }`}
+      class="file-tree-button flex items-center w-full px-2 py-1 text-left hover:bg-gray-100 rounded text-sm transition-colors"
+      class:bg-blue-50={selectedFile === node.path}
+      class:border-l-2={selectedFile === node.path}
+      class:border-blue-500={selectedFile === node.path}
       style="padding-left: {level * 16 + 8}px"
+      aria-label={`Open file ${node.name}`}
     >
       <span class="w-4 h-4 flex items-center justify-center mr-2">
         <span class="text-xs">{getFileTypeIcon(node.name)}</span>

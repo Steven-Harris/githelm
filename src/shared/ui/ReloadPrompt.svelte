@@ -52,9 +52,9 @@
     </div>
     <div class="buttons">
       {#if $needRefresh}
-        <button onclick={update} class="update-button"> Update </button>
+        <button onclick={update} class="update-button" aria-label="Update application"> Update </button>
       {/if}
-      <button onclick={close} class="close-button">
+      <button onclick={close} class="close-button" aria-label={$offlineReady ? 'Close' : 'Dismiss'}>
         {$offlineReady ? 'Close' : 'Dismiss'}
       </button>
     </div>

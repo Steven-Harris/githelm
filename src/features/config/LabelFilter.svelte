@@ -99,7 +99,7 @@
       {#each filters as filter, i (i)}
         <span class="chip">
           {getDisplayName(filter)}
-          <button type="button" onclick={() => onRemove(filter)} aria-label="Remove {filter} filter">×</button>
+          <button type="button" onclick={() => onRemove(filter)} aria-label={`Remove ${filter} filter`}>×</button>
         </span>
       {/each}
     </div>
@@ -153,7 +153,7 @@
   {#if loading}
     <p class="text-xs text-[#8b949e] mt-1">Loading {title.toLowerCase()}...</p>
   {:else if noOptionsAvailable}
-    <button type="button" class="text-xs text-[#58a6ff] mt-1 hover:underline" onclick={onLoadOptions}>
+    <button type="button" class="text-xs text-[#58a6ff] mt-1 hover:underline" onclick={onLoadOptions} aria-label={`Load ${title} options`}>
       Refresh {title.toLowerCase()} list
     </button>
   {/if}

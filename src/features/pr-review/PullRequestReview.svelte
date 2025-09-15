@@ -6,8 +6,9 @@
   import FileTreeSidebar from './FileTreeSidebar.svelte';
   import PRDescription from './PRDescription.svelte';
   import { submitPullRequestComment, submitPullRequestReview, canReviewPullRequest, type ReviewSubmission } from './services/review-api.service';
-  import { isAuthenticated } from '$shared/auth/auth.state';
+  import { isAuthenticated } from '$shared/services/auth.state';
   import { createPRReviewState } from './stores/pr-review.store.svelte';
+  import type { Review } from '$integrations/github';
 
   interface Props {
     owner: string;
@@ -247,7 +248,8 @@
         commit_id: prReview.state.pullRequest.head.sha,
       };
       
-      prReview.state.reviews = [...prReview.state.reviews, commentReview];
+      // Cast the comment object to Review to satisfy the reviews array type
+      prReview.state.reviews = [...prReview.state.reviews, commentReview as unknown as Review];
       
     } catch (error) {
       console.error('Failed to submit comment:', error);
@@ -418,7 +420,7 @@
             {prReview.state.error}
           </div>
           <div class="mt-4">
-            <button onclick={() => prReview.loadPullRequest(owner, repo, prNumber)} class="bg-red-100 px-3 py-2 text-sm font-medium text-red-800 rounded-md hover:bg-red-200"> Try Again </button>
+            <button onclick={() => prReview.loadPullRequest(owner, repo, prNumber)} class="bg-red-100 px-3 py-2 text-sm font-medium text-red-800 rounded-md hover:bg-red-200" aria-label="Retry loading pull request"> Try Again </button>
           </div>
         </div>
       </div>
@@ -531,8 +533,8 @@
         <div class="flex items-center space-x-4">
           <DiffViewToggle currentMode={prReview.state.diffViewMode} onModeChange={prReview.saveDiffViewMode} />
           <div class="flex space-x-2">
-            <button onclick={() => prReview.expandAllFiles()} class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md"> Expand All </button>
-            <button onclick={() => prReview.collapseAllFiles()} class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md"> Collapse All </button>
+            <button onclick={() => prReview.expandAllFiles()} class="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md" aria-label="Expand all files"> Expand All </button>
+            <button onclick={() => prReview.collapseAllFiles()} class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-md" aria-label="Collapse all files"> Collapse All </button>
           </div>
         </div>
       </div>
@@ -594,7 +596,7 @@
         onApproveReview={handleApproveReview}
         onRequestChanges={handleRequestChanges}
         onSubmitGeneralComment={handleSubmitComment}
-        canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, prReview.state.currentUser) : false}
+        canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, undefined) : false}
         isAuthenticated={$isAuthenticated}
       />
     </div>

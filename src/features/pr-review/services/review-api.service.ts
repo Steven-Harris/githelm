@@ -1,5 +1,5 @@
-import { isAuthenticated } from '$shared/auth/auth.state';
-import { getGithubToken } from '$shared/storage/storage';
+import { isAuthenticated } from '$shared/services/auth.state';
+import { getGithubToken } from '$shared/services/storage.service';
 import { get } from 'svelte/store';
 
 export interface ReviewSubmission {

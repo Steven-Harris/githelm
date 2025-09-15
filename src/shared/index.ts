@@ -1,8 +1,9 @@
 // Shared Utilities Exports
+export { getFileTypeIcon, detectLanguage, highlightCode } from "./utils/syntax-highlighter";
 
 // Authentication
 export { authService } from './services/auth.service';
-export { authContext, authState, hasError, isAuthenticated, isLoading } from './stores/auth.state';
+export { authContext, authState, hasError, isAuthenticated, isLoading } from './services/auth.state';
 
 // Error Handling
 export { errorService } from './services/error.service';

@@ -51,8 +51,6 @@
   marked.setOptions({
     breaks: true, // Convert line breaks to <br>
     gfm: true, // GitHub Flavored Markdown
-    headerIds: false, // Don't generate header IDs
-    mangle: false, // Don't mangle email addresses
   });
 
   const cleanText = $derived(() => stripMarkdown(displayText()));

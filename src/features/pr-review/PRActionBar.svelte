@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { PullRequest } from '$integrations/github/types';
-  import { isAuthenticated } from '$shared/auth/auth.state';
+  import type { PullRequest } from '$integrations/github';
+  import { isAuthenticated } from '$shared/services/auth.state';
   import { canReviewPullRequest } from './services/review-api.service';
 
   interface Props {
@@ -67,29 +67,41 @@
     requestChangesComment = '';
     generalComment = '';
   }
+
+  // Svelte 5: handle event modifiers in functions instead of pipe syntax
+  function stopPropagation(e: Event) {
+    e.stopPropagation();
+  }
+
+  function handleOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      closeModals();
+    }
+  }
 </script>
 
-<div class="pr-action-bar">
+  <div class="pr-action-bar">
   <div class="action-buttons">
     {#if canReview}
-      <button class="action-btn approve" onclick={handleApprove} title="Approve this pull request"> ✓ Approve </button>
+  <button class="action-btn approve" onclick={handleApprove} title="Approve this pull request" aria-label="Approve pull request"> ✓ Approve </button>
 
-      <button class="action-btn request-changes" onclick={handleRequestChanges} title="Request changes on this pull request"> ⚠ Request Changes </button>
+  <button class="action-btn request-changes" onclick={handleRequestChanges} title="Request changes on this pull request" aria-label="Request changes"> ⚠ Request Changes </button>
     {/if}
 
     {#if $isAuthenticated}
-      <button class="action-btn comment" onclick={handleComment} title="Add a comment to this pull request"> 💬 Comment </button>
+  <button class="action-btn comment" onclick={handleComment} title="Add a comment to this pull request" aria-label="Add comment"> 💬 Comment </button>
     {/if}
   </div>
 </div>
 
 <!-- Approve Modal -->
 {#if showApproveModal}
-  <div class="modal-overlay" onclick={closeModals}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-overlay" onclick={closeModals} tabindex="0" role="button" aria-label="Close modal" onkeydown={handleOverlayKeydown}>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="approve-title" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="modal-header">
-        <h3>Approve Pull Request</h3>
-        <button class="close-btn" onclick={closeModals}>×</button>
+        <h3 id="approve-title">Approve Pull Request</h3>
+        <button class="close-btn" onclick={closeModals} aria-label="Close">×</button>
       </div>
 
       <div class="modal-body">
@@ -102,8 +114,8 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn secondary" onclick={closeModals}>Cancel</button>
-        <button class="btn primary approve" onclick={submitApprove}> ✓ Approve Pull Request </button>
+        <button class="btn secondary" onclick={closeModals} aria-label="Cancel approve">Cancel</button>
+        <button class="btn primary approve" onclick={submitApprove} aria-label="Confirm approve"> ✓ Approve Pull Request </button>
       </div>
     </div>
   </div>
@@ -111,11 +123,11 @@
 
 <!-- Request Changes Modal -->
 {#if showRequestChangesModal}
-  <div class="modal-overlay" onclick={closeModals}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-overlay" onclick={closeModals} tabindex="0" role="button" aria-label="Close modal" onkeydown={handleOverlayKeydown}>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="request-changes-title" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="modal-header">
-        <h3>Request Changes</h3>
-        <button class="close-btn" onclick={closeModals}>×</button>
+        <h3 id="request-changes-title">Request Changes</h3>
+        <button class="close-btn" onclick={closeModals} aria-label="Close">×</button>
       </div>
 
       <div class="modal-body">
@@ -128,8 +140,8 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn secondary" onclick={closeModals}>Cancel</button>
-        <button class="btn primary request-changes" onclick={submitRequestChanges} disabled={!requestChangesComment.trim()}> ⚠ Request Changes </button>
+        <button class="btn secondary" onclick={closeModals} aria-label="Cancel request changes">Cancel</button>
+        <button class="btn primary request-changes" onclick={submitRequestChanges} aria-label="Submit request changes" disabled={!requestChangesComment.trim()}> ⚠ Request Changes </button>
       </div>
     </div>
   </div>
@@ -137,11 +149,11 @@
 
 <!-- Comment Modal -->
 {#if showCommentModal}
-  <div class="modal-overlay" onclick={closeModals}>
-    <div class="modal" onclick={(e) => e.stopPropagation()}>
+  <div class="modal-overlay" onclick={closeModals} tabindex="0" role="button" aria-label="Close modal" onkeydown={handleOverlayKeydown}>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="comment-title" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
       <div class="modal-header">
-        <h3>Add Comment</h3>
-        <button class="close-btn" onclick={closeModals}>×</button>
+        <h3 id="comment-title">Add Comment</h3>
+        <button class="close-btn" onclick={closeModals} aria-label="Close">×</button>
       </div>
 
       <div class="modal-body">
@@ -152,8 +164,8 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn secondary" onclick={closeModals}>Cancel</button>
-        <button class="btn primary comment" onclick={submitComment} disabled={!generalComment.trim()}> 💬 Add Comment </button>
+        <button class="btn secondary" onclick={closeModals} aria-label="Cancel comment">Cancel</button>
+        <button class="btn primary comment" onclick={submitComment} aria-label="Add comment" disabled={!generalComment.trim()}> 💬 Add Comment </button>
       </div>
     </div>
   </div>

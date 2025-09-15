@@ -206,7 +206,7 @@
                 <div>
                   <textarea
                     value={comment.body}
-                    oninput={(e) => onUpdateComment && onUpdateComment(comment.id, e.target.value)}
+                    oninput={(e) => onUpdateComment && onUpdateComment(comment.id, (e.target as HTMLTextAreaElement).value)}
                     placeholder="Add your comment..."
                     class="w-full border border-gray-300 rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows="3"
@@ -216,7 +216,7 @@
                   <div class="flex items-center justify-between mt-2">
                     <div class="flex items-center space-x-2">
                       <label class="flex items-center text-xs text-gray-600">
-                        <input type="checkbox" checked={comment.isPartOfReview} onchange={(e) => onUpdateComment && onUpdateComment(comment.id, comment.body, e.target.checked)} class="mr-1" />
+                        <input type="checkbox" checked={comment.isPartOfReview} onchange={(e) => onUpdateComment && onUpdateComment(comment.id, comment.body, (e.target as HTMLInputElement).checked)} class="mr-1" />
                         Part of review
                       </label>
                     </div>

@@ -119,7 +119,7 @@
   <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <button onclick={toggleExpanded} class="text-gray-500 hover:text-gray-700" title={isExpanded ? 'Collapse file' : 'Expand file'}>
+        <button onclick={toggleExpanded} class="text-gray-500 hover:text-gray-700" title={isExpanded ? 'Collapse file' : 'Expand file'} aria-label={isExpanded ? 'Collapse file' : 'Expand file'}>
           {#if isExpanded}
             <!-- Collapse icon -->
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
