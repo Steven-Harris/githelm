@@ -27,7 +27,6 @@
   let validationErrors = $state<string[]>([]);
   let hasAttemptedSubmit = $state(false);
 
-  // Initial setup when component mounts
   onMount(() => {
     if (config) {
       formState = repositoryFormService.loadStateFromConfig(config);

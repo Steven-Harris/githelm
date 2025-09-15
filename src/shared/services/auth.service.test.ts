@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthService } from './auth.service';
 import { firebase, authState } from '$integrations/firebase';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { clearSiteData } from '$shared/storage/storage';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { clearSiteData } from '$shared/services/storage.service';
 import { clearUserInfo } from '$integrations/sentry';
 
 // Mock dependencies
@@ -16,13 +16,13 @@ vi.mock('$integrations/firebase', () => ({
   authState: { subscribe: vi.fn() },
 }));
 
-vi.mock('$shared/stores/facades/repository.facade', () => ({
+vi.mock('$shared/stores/repository.facade', () => ({
   repositoryFacade: {
     clearAllStores: vi.fn(),
   },
 }));
 
-vi.mock('$shared/storage/storage', () => ({
+vi.mock('$shared/services/storage.service', () => ({
   clearSiteData: vi.fn(),
 }));
 
@@ -31,9 +31,13 @@ vi.mock('$integrations/sentry', () => ({
   captureException: vi.fn(),
 }));
 
-vi.mock('svelte/store', () => ({
-  get: vi.fn(),
-}));
+vi.mock(import('svelte/store'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    get: vi.fn(),
+  };
+});
 
 describe('AuthService', () => {
   let authService: AuthService;

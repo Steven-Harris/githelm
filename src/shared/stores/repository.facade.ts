@@ -1,15 +1,12 @@
 import { type RepoConfig } from '$integrations/firebase';
 import { type CombinedConfig } from '$features/config/stores/config.store';
-import { eventBus } from '$shared/stores/event-bus.store';
 import { 
-  loadPullRequestConfigs, 
   updatePullRequestConfigs,
   clearPullRequestStores,
   pullRequestConfigs,
   pullRequestRepos
 } from '$features/pull-requests/stores/pull-requests.store';
 import { 
-  loadActionsConfigs, 
   initializeActionsPolling, 
   refreshActionsData,
   updateActionsConfigs,
@@ -34,7 +31,7 @@ import {
   clearConfigStores
 } from '$features/config/stores/config.store';
 import { configService } from '$integrations/firebase';
-import { setStorageObject } from '$shared/storage/storage';
+import { setStorageObject } from '$shared/services/storage.service';
 
 export class RepositoryFacade {
   private static instance: RepositoryFacade;
@@ -83,7 +80,7 @@ export class RepositoryFacade {
   }
 
   initializePullRequestsPolling(configs: RepoConfig[]): void {
-    initializePullRequestsPolling(configs);
+    initializePullRequestsPolling({ repoConfigs: configs });
   }
 
   async refreshPullRequestsData(configs: RepoConfig[]): Promise<void> {

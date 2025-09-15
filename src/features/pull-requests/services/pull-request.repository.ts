@@ -51,14 +51,12 @@ export class PullRequestRepository {
     queries: PullRequestQuery[]
   ): Promise<Record<string, PullRequest[]>> {
     try {
-      // Convert queries to RepoInfo format for the single GraphQL query
       const repoInfos: RepoInfo[] = queries.map(query => ({
         org: query.org,
         repo: query.repo,
         filters: query.filters?.labels || []
       }));
 
-      // Use the single GraphQL query for all repositories
       const results = await fetchMultipleRepositoriesPullRequests(repoInfos);
       return results;
     } catch (error) {

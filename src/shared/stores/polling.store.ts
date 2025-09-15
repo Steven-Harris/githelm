@@ -1,4 +1,4 @@
-import { getStorageObject, setStorageObject } from '$shared/storage/storage';
+import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { readable } from 'svelte/store';
 import { killSwitch } from './kill-switch.store';
 import { manualTrigger } from './last-updated.store';

@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
 import { type RepoConfig } from '$integrations/firebase';
 import { fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type WorkflowRun, type Job } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/storage/storage';
+import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from "$shared/stores/polling.store";
 

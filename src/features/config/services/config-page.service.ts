@@ -1,8 +1,8 @@
 import { derived, type Readable, get } from 'svelte/store';
 import { eventBus } from '$shared/stores/event-bus.store';
 import { configService } from '$features/config/services/config.service';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { errorService } from '$shared/error/error.service';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { errorService } from '$shared/services/error.service';
 import { goto } from '$app/navigation';
 import type { CombinedConfig } from '$features/config/stores/config.store';
 

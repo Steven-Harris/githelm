@@ -1,6 +1,6 @@
 import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
-import { getStorageObject } from '$shared/storage/storage';
+import { getStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
 import { type PullRequest, type PullRequests, type RepoInfo, type Review } from './types';
 

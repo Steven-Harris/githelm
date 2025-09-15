@@ -1,6 +1,6 @@
 <script lang="ts">
   import { actionsContainerService } from '$features/actions/services/actions-container.service';
-  import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+  import { repositoryFacade } from '$shared/stores/repository.facade';
   import RepositoryCard from './RepositoryCard.svelte';
   import WorkflowStatusFilter from './WorkflowStatusFilter.svelte';
 

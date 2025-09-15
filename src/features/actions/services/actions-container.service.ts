@@ -1,7 +1,7 @@
 import { derived, type Readable } from 'svelte/store';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { filterService } from '$shared/filter/filter.service';
-import { workflowStatusFilters, type WorkflowStatus } from '$shared/stores/workflow-status-filter.store';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { filterService } from '$shared/services/filter.service';
+import { workflowStatusFilters } from '$shared/stores/workflow-status-filter.store';
 import type { WorkflowRun } from '$integrations/github';
 import type { RepoConfig } from '$integrations/firebase';
 

@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
 import { type RepoConfig, configService } from '$integrations/firebase';
-import { getStorageObject, setStorageObject } from '$shared/storage/storage';
+import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
 import { eventBus } from '$shared/stores/event-bus.store';
 
@@ -20,18 +20,14 @@ export function getRepoKey(config: RepoConfig): string {
 
 export async function loadRepositoryConfigs(): Promise<void> {
   try {
-    // Load from Firestore.
     const configs = await configService.getConfigs();
     
-    // Update stores
     pullRequestConfigs.set(configs.pullRequests || []);
     actionsConfigs.set(configs.actions || []);
     
-    // Update local storage.
     setStorageObject('pull-requests-configs', configs.pullRequests || []);
     setStorageObject('actions-configs', configs.actions || []);
     
-    // Initialize empty data to mark repositories as loaded
     const prConfigs = configs.pullRequests || [];
     if (prConfigs.length) {
       const initialPRs: Record<string, any[]> = {};
@@ -42,7 +38,6 @@ export async function loadRepositoryConfigs(): Promise<void> {
       const { allPullRequests } = await import('$features/pull-requests/stores/pull-requests.store');
       allPullRequests.set(initialPRs);
       
-              // Initialize data fetching with a delay
         setTimeout(async () => {
           const { refreshPullRequestsData, initializePullRequestsPolling } = await import('$shared/stores/repository-service');
           await refreshPullRequestsData(prConfigs);
@@ -60,7 +55,6 @@ export async function loadRepositoryConfigs(): Promise<void> {
       const { allWorkflowRuns } = await import('$shared/stores/repository-service');
       allWorkflowRuns.set(initialActions);
       
-      // Initialize data fetching with a delay
       setTimeout(async () => {
         try {
           const { refreshActionsData, initializeActionsPolling } = await import('$shared/stores/repository-service');
@@ -97,7 +91,6 @@ export async function getCombinedConfigs(): Promise<CombinedConfig[]> {
 function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): CombinedConfig[] {
   const combined = new Map<string, CombinedConfig>();
 
-  // Process pull request configs.
   for (const config of pullRequests) {
     const key = `${config.org}/${config.repo}`;
     if (!combined.has(key)) {
@@ -110,8 +103,7 @@ function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): Combin
     const combinedConfig = combined.get(key)!;
     combinedConfig.pullRequests = config.filters || [];
   }
-
-  // Process actions configs.
+  
   for (const config of actions) {
     const key = `${config.org}/${config.repo}`;
     if (!combined.has(key)) {
@@ -162,18 +154,15 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
   try {
     const configs = await configService.getConfigs();
 
-    // Update in Firestore.
     await configService.saveConfigs({
       ...configs,
       pullRequests: prConfigs,
       actions: actionConfigs,
     });
 
-    // Update in local storage.
     setStorageObject('pull-requests-configs', prConfigs);
     setStorageObject('actions-configs', actionConfigs);
 
-    // Update stores
     pullRequestConfigs.set(prConfigs);
     actionsConfigs.set(actionConfigs);
 

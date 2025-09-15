@@ -1,6 +1,5 @@
 <script lang="ts">
   import WorkflowRun from './WorkflowRun.svelte';
-  import githubSVG from '$assets/github-logo.svg';
   import { repositoryCollapseStore } from '$shared/stores/repository-collapse.store';
   import CountBadge from '$shared/ui/CountBadge.svelte';
 
