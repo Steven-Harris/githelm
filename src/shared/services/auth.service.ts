@@ -1,8 +1,8 @@
 import { firebase, authState } from '$integrations/firebase';
-import { clearSiteData } from '$shared/storage/storage';
+import { clearSiteData } from '$shared/services/storage.service';
 import { clearUserInfo } from '$integrations/sentry';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { errorService } from '$shared/error/error.service';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { errorService } from '$shared/services/error.service';
 import { get } from 'svelte/store';
 import type { User } from 'firebase/auth';
 

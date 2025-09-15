@@ -1,6 +1,6 @@
 import { killSwitch } from '$shared/stores/kill-switch.store';
 import { startRequest, endRequest } from '$shared/stores/loading.store';
-import { setLastUpdated, setStorageObject } from '$shared/storage/storage';
+import { setLastUpdated, setStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
 import { getTokenSafely, getCurrentAuthState, queueApiCallIfNeeded, MAX_RETRIES, RETRY_DELAY_BASE_MS } from './auth';
 import { firebase } from '$integrations/firebase';

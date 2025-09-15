@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { manualTrigger, lastUpdatedStore } from './last-updated.store';
 import { get } from 'svelte/store';
-import * as storage from '$shared/storage/storage';
+import * as storage from '$shared/services/storage.service';
 
 // Mock the storage module
 vi.mock('$shared/storage/storage', () => ({

@@ -1,25 +1,25 @@
 // Shared Utilities Exports
 
 // Authentication
-export { authService } from './auth/auth.service';
-export { authState, authContext, isAuthenticated, isLoading, hasError } from './auth/auth.state';
+export { authService } from './services/auth.service';
+export { authState, authContext, isAuthenticated, isLoading, hasError } from './stores/auth.state';
 
 // Error Handling
-export { errorService } from './error/error.service';
+export { errorService } from './services/error.service';
 
 
 // Logging
-export { loggerService } from './logging/logger.service';
+export { loggerService } from './services/logger.service';
 
 // Storage
 
-export { getStorageObject, setStorageObject, clearSiteData } from './storage/storage';
+export { getStorageObject, setStorageObject, clearSiteData } from './services/storage.service';
 
 // Commands
 export { commandExecutor } from './commands/repository.commands';
 
 // Filter Service
-export { filterService } from './filter/filter.service';
+export { filterService } from './services/filter.service';
 
 // UI Components
 export { default as Loading } from './ui/Loading.svelte';

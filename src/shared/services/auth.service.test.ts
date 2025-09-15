@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthService } from './auth.service';
 import { firebase, authState } from '$integrations/firebase';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { clearSiteData } from '$shared/storage/storage';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { clearSiteData } from '$shared/services/storage.service';
 import { clearUserInfo } from '$integrations/sentry';
 
 // Mock dependencies

@@ -4,21 +4,21 @@
   import { isMobile } from '$shared/stores/mobile.store';
   import { onMount } from 'svelte';
 
-  let state = $state<OrganizationManagerState>(organizationManagerService.createInitialState());
+  let managerState = $state(organizationManagerService.createInitialState() as OrganizationManagerState);
   let isAdding = $state(false);
   let newOrgName = $state('');
 
   onMount(async () => {
     await organizationManagerService.loadOrganizations((updates) => {
-      Object.assign(state, updates);
+      Object.assign(managerState, updates);
     });
   });
 
   async function addOrganization(): Promise<void> {
     if (!newOrgName.trim()) return;
 
-    await organizationManagerService.addOrganization(newOrgName, state.organizations, (updates) => {
-      Object.assign(state, updates);
+    await organizationManagerService.addOrganization(newOrgName, managerState.organizations, (updates) => {
+      Object.assign(managerState, updates);
     });
 
     // Reset form
@@ -27,8 +27,8 @@
   }
 
   async function deleteOrganization(index: number): Promise<void> {
-    await organizationManagerService.deleteOrganization(index, state.organizations, (updates) => {
-      Object.assign(state, updates);
+    await organizationManagerService.deleteOrganization(index, managerState.organizations, (updates) => {
+      Object.assign(managerState, updates);
     });
   }
 
@@ -43,7 +43,7 @@
 </script>
 
 <div>
-  {#if state.loading}
+  {#if managerState.loading}
     <div class="text-center py-3 flex flex-col items-center">
       <div class="animate-spin w-6 h-6 mb-2">
         <svg class="w-full h-full text-[#58a6ff] fill-current" viewBox="0 0 16 16">
@@ -55,8 +55,8 @@
     </div>
   {:else}
     <div class="space-y-2">
-      {#if state.organizations.length > 0}
-        {#each state.organizations as org, i (i)}
+      {#if managerState.organizations.length > 0}
+        {#each managerState.organizations as org, i (i)}
           <div class="flex items-center justify-between p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md hover:border-[#388bfd44] transition-colors">
             <span class="text-[#c9d1d9] font-medium">{org.name}</span>
             <button

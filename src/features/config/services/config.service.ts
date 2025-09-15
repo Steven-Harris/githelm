@@ -1,7 +1,7 @@
 import { captureException } from '$integrations/sentry';
 import { eventBus } from '$shared/stores/event-bus.store';
 import { killSwitch } from '$shared/stores/kill-switch.store';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+import { repositoryFacade } from '$shared/stores/repository.facade';
 import { get } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { CombinedConfig } from '$features/config/stores/config.store';

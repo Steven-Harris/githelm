@@ -2,7 +2,7 @@
   import { configPageService } from '$features/config/services/config-page.service';
   import { initAuthStateHandling } from '$integrations/github';
   import { ReloadPrompt } from '$shared';
-  import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+  import { repositoryFacade } from '$shared/stores/repository.facade';
   import { pwaAssetsHead } from 'virtual:pwa-assets/head';
   import { pwaInfo } from 'virtual:pwa-info';
   import '../../style.css';

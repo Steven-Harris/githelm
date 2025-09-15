@@ -1,4 +1,4 @@
-import { getLastUpdated } from '$shared/storage/storage';
+import { getLastUpdated } from '$shared/services/storage.service';
 import { readable, writable } from 'svelte/store';
 
 export const manualTrigger = writable(false);

@@ -1,7 +1,7 @@
 import { derived, type Readable } from 'svelte/store';
 import { firebase, authState } from '$integrations/firebase';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { authService } from '$shared/auth/auth.service';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { authService } from '$shared/services/auth.service';
 import { eventBus } from '$shared/stores/event-bus.store';
 import { goto } from '$app/navigation';
 

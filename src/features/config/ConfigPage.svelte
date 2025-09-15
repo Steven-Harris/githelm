@@ -1,19 +1,17 @@
 <script lang="ts">
   import type { RepoConfig } from '$integrations/firebase';
-  import { getStorageObject } from '$shared/storage/storage';
-  import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+  import { getStorageObject } from '$shared/services/storage.service';
+  import { repositoryFacade } from '$shared/stores/repository.facade';
   import { isMobile } from '$shared/stores/mobile.store';
   import { onMount } from 'svelte';
   import ConfigList from './ConfigList.svelte';
   import OrganizationManager from './OrganizationManager.svelte';
-  import { configService } from './services/config.service';
   import type { CombinedConfig } from './stores/config.store';
 
   let configurations = $state<CombinedConfig[]>([]);
   let isLoading = $state(false);
   let isSaving = $state(false);
 
-  // Load configurations on mount
   onMount(async () => {
     await loadConfigurations();
   });
@@ -21,14 +19,11 @@
   async function loadConfigurations(): Promise<void> {
     isLoading = true;
     try {
-      // Load configurations directly from storage without triggering store updates
       const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
       const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
 
-      // Merge configs manually
       const combined = new Map<string, CombinedConfig>();
 
-      // Process pull request configs
       for (const config of prConfigs) {
         const key = `${config.org}/${config.repo}`;
         if (!combined.has(key)) {
@@ -41,7 +36,6 @@
         combinedConfig.pullRequests = config.filters || [];
       }
 
-      // Process actions configs
       for (const config of actionConfigs) {
         const key = `${config.org}/${config.repo}`;
         if (!combined.has(key)) {
@@ -65,53 +59,13 @@
   async function handleConfigUpdate(configs: CombinedConfig[]): Promise<void> {
     isSaving = true;
     try {
-      // Update stores that dashboard components use (this also saves to Firebase and local storage)
       await repositoryFacade.updateConfigurations(configs);
 
-      // Update local state directly
       configurations = configs;
     } catch (error) {
       console.error('Error saving configurations:', error);
     } finally {
       isSaving = false;
-    }
-  }
-
-  function splitConfigs(combinedConfigs: CombinedConfig[]): { prConfigs: RepoConfig[]; actionConfigs: RepoConfig[] } {
-    const prConfigs: RepoConfig[] = [];
-    const actionConfigs: RepoConfig[] = [];
-
-    for (const config of combinedConfigs) {
-      if (config.pullRequests) {
-        prConfigs.push({
-          org: config.org,
-          repo: config.repo,
-          filters: config.pullRequests,
-        });
-      }
-
-      if (config.actions && config.actions.length > 0) {
-        actionConfigs.push({
-          org: config.org,
-          repo: config.repo,
-          filters: config.actions,
-        });
-      }
-    }
-
-    return { prConfigs, actionConfigs };
-  }
-
-  async function handleSave(): Promise<void> {
-    try {
-      const result = await configService.saveConfigurations(configurations);
-      if (result.success) {
-        configService.navigateToDashboard();
-      } else {
-        console.error('Failed to save configurations:', result.error);
-      }
-    } catch (error) {
-      console.error('Error saving configurations:', error);
     }
   }
 </script>

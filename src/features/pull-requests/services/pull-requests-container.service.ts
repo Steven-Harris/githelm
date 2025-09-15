@@ -1,5 +1,5 @@
 import { derived, type Readable } from 'svelte/store';
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+import { repositoryFacade } from '$shared/stores/repository.facade';
 import { repositoryFilters } from '$shared/stores/repository-filter.store';
 import type { RepoConfig } from '$integrations/firebase';
 
@@ -95,13 +95,10 @@ export class PullRequestsContainerService {
 
   shouldShowPlaceholder(repo: RepoConfig, isLoaded: boolean): Readable<boolean> {
     return derived(repositoryFilters, ($filters) => {
-      // If it's loaded, we'll show real data or nothing
       if (isLoaded) {
         return false;
       }
       
-      // For loading repos, only show placeholder if filters suggest we might show content
-      // If both with_prs and without_prs are disabled, don't show any placeholders
       const hasAnyFilterEnabled = $filters.with_prs || $filters.without_prs;
       return hasAnyFilterEnabled;
     });
@@ -111,7 +108,6 @@ export class PullRequestsContainerService {
     return derived(
       [repositoryFacade.getPullRequestConfigsStore(), this.getFilteredRepositories()],
       ([$configs, $filteredRepos]) => {
-        // Ensure configs is always an array
         const configs = Array.isArray($configs) ? $configs : [];
         if (configs.length === 0) {
           return 'No repositories configured for pull requests monitoring';
@@ -125,7 +121,6 @@ export class PullRequestsContainerService {
 
   hasConfiguredRepositories(): Readable<boolean> {
     return derived(repositoryFacade.getPullRequestConfigsStore(), ($configs) => {
-      // Ensure configs is always an array
       const configs = Array.isArray($configs) ? $configs : [];
       return configs.length > 0;
     });
@@ -145,22 +140,17 @@ export class PullRequestsContainerService {
     filters: any
   ): boolean {
     if (!isLoaded) {
-      // Show placeholder only if filters suggest we might show this repo
       return this.shouldShowPlaceholderForRepo(repo, isLoaded, filters);
     }
     
-    // For loaded repos, apply filters
     return (hasPRs && filters.with_prs) || (!hasPRs && filters.without_prs);
   }
 
   private shouldShowPlaceholderForRepo(repo: RepoConfig, isLoaded: boolean, filters: any): boolean {
-    // If it's loaded, we'll show real data or nothing
     if (isLoaded) {
       return false;
     }
     
-    // For loading repos, only show placeholder if filters suggest we might show content
-    // If both with_prs and without_prs are disabled, don't show any placeholders
     const hasAnyFilterEnabled = filters.with_prs || filters.without_prs;
     return hasAnyFilterEnabled;
   }

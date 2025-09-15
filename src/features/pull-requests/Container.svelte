@@ -1,6 +1,6 @@
 <script lang="ts">
   import { pullRequestsContainerService } from '$features/pull-requests/services/pull-requests-container.service';
-  import { repositoryFacade } from '$shared/stores/facades/repository.facade';
+  import { repositoryFacade } from '$shared/stores/repository.facade';
   import RepositoryCard from './RepositoryCard.svelte';
   import RepositoryFilter from './RepositoryFilter.svelte';
 

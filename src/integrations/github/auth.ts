@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 import { firebase } from '../firebase';
-import { getGithubToken } from '$shared/storage/storage';
+import { getGithubToken } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
 
 const MAX_RETRIES = 2;

@@ -5,7 +5,7 @@
   import refreshSVG from '$assets/refresh.svg';
   import { configService } from '$features/config/services/config.service';
   import { firebase } from '$integrations/firebase';
-  import { authService } from '$shared/auth/auth.service';
+  import { authService } from '$shared/services/auth.service';
   import { killSwitch } from '$shared/stores/kill-switch.store';
   import { lastUpdatedStore, manualTrigger } from '$shared/stores/last-updated.store';
   import { isLoading } from '$shared/stores/loading.store';
@@ -14,7 +14,6 @@
 
   let { signedIn } = $props();
 
-  // Get the actual store instance
   const lastUpdated = lastUpdatedStore();
   const user = firebase.user;
 

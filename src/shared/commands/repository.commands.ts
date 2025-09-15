@@ -1,5 +1,5 @@
-import { repositoryFacade } from '$shared/stores/facades/repository.facade';
-import { errorService } from '$shared/error/error.service';
+import { repositoryFacade } from '$shared/stores/repository.facade';
+import { errorService } from '$shared/services/error.service';
 import type { RepoConfig } from '$integrations/firebase';
 import type { CombinedConfig } from '$features/config/stores/config.store';
 
