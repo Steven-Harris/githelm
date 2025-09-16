@@ -43,6 +43,10 @@
               prReview.selectLine(filename, lineNumber, side, '');
             }}
             isLineSelected={(filename, lineNumber, side) => prReview.isLineSelected(filename, lineNumber, side)}
+            pendingComments={prReview.state.pendingComments.filter((c) => c.filename === file.filename)}
+            onUpdateComment={prReview.updatePendingComment}
+            onSubmitComment={prReview.submitPendingComment}
+            onCancelComment={prReview.cancelPendingComment}
           />
         </div>
       {/each}

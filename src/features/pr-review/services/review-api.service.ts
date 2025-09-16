@@ -99,6 +99,179 @@ export async function submitPullRequestComment(
 }
 
 /**
+ * Submit a line-specific comment on a pull request
+ */
+export async function submitLineComment(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  path: string,
+  line: number,
+  body: string,
+  side: 'LEFT' | 'RIGHT' = 'RIGHT'
+): Promise<any> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  const token = getGithubToken();
+  if (!token) {
+    throw new Error('GitHub token not available');
+  }
+
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/comments`;
+
+  const commentData: any = {
+    body,
+    path,
+    line,
+    side
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(commentData)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message ||
+      `GitHub API error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.json();
+}
+
+/**
+ * Reply to an existing review comment
+ */
+export async function replyToComment(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  inReplyTo: number,
+  body: string
+): Promise<any> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  const token = getGithubToken();
+  if (!token) {
+    throw new Error('GitHub token not available');
+  }
+
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/comments`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      body,
+      in_reply_to: inReplyTo
+    })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message ||
+      `GitHub API error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.json();
+}
+
+/**
+ * Update an existing comment
+ */
+export async function updateComment(
+  owner: string,
+  repo: string,
+  commentId: number,
+  body: string
+): Promise<any> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  const token = getGithubToken();
+  if (!token) {
+    throw new Error('GitHub token not available');
+  }
+
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/comments/${commentId}`;
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ body })
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message ||
+      `GitHub API error: ${response.status} ${response.statusText}`
+    );
+  }
+
+  return await response.json();
+}
+
+/**
+ * Delete a comment
+ */
+export async function deleteComment(
+  owner: string,
+  repo: string,
+  commentId: number
+): Promise<void> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  const token = getGithubToken();
+  if (!token) {
+    throw new Error('GitHub token not available');
+  }
+
+  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/comments/${commentId}`;
+
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    }
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.message ||
+      `GitHub API error: ${response.status} ${response.statusText}`
+    );
+  }
+}
+
+/**
  * Add a reaction to a pull request or comment
  */
 export async function addReaction(

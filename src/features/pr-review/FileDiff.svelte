@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { PullRequestFile, ReviewComment } from '$integrations/github';
   import { detectLanguage, getFileTypeIcon, highlightCode } from '$shared';
+  import InlineCommentForm from './components/InlineCommentForm.svelte';
+  import type { PendingComment } from './types/pr-review.types.js';
 
   interface Props {
     file: PullRequestFile;
@@ -8,12 +10,29 @@
     onToggle?: (filename: string) => void;
     reviewComments?: ReviewComment[];
     diffViewMode?: 'inline' | 'side-by-side';
-    // New props for line selection
+    // New props for line selection and commenting
     onLineClick?: (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => void;
     isLineSelected?: (filename: string, lineNumber: number, side: 'left' | 'right') => boolean;
+    // Props for comment handling
+    pendingComments?: PendingComment[];
+    onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
+    onSubmitComment?: (commentId: string) => void;
+    onCancelComment?: (commentId: string) => void;
   }
 
-  let { file, isExpanded = false, onToggle, reviewComments = [], diffViewMode = 'side-by-side', onLineClick, isLineSelected }: Props = $props();
+  let {
+    file,
+    isExpanded = false,
+    onToggle,
+    reviewComments = [],
+    diffViewMode = 'side-by-side',
+    onLineClick,
+    isLineSelected,
+    pendingComments = [],
+    onUpdateComment,
+    onSubmitComment,
+    onCancelComment,
+  }: Props = $props();
 
   function toggleExpanded() {
     if (onToggle) {
@@ -111,6 +130,35 @@
   // Check if a line is selected
   function checkLineSelected(lineNumber: number, side: 'left' | 'right'): boolean {
     return isLineSelected ? isLineSelected(file.filename, lineNumber, side) : false;
+  }
+
+  // Get pending comment for a specific line
+  function getPendingCommentForLine(lineNumber: number, side: 'left' | 'right'): PendingComment | undefined {
+    return pendingComments.find((comment) => comment.filename === file.filename && comment.startLine === lineNumber && comment.side === side);
+  }
+
+  // Get existing review comments for a specific line
+  function getCommentsForLine(lineNumber: number): ReviewComment[] {
+    return reviewComments.filter((comment) => comment.path === file.filename && (comment.line === lineNumber || comment.original_line === lineNumber));
+  }
+
+  // Handle comment form updates
+  function handleCommentUpdate(commentId: string, body: string, isPartOfReview?: boolean) {
+    if (onUpdateComment) {
+      onUpdateComment(commentId, body, isPartOfReview);
+    }
+  }
+
+  function handleCommentSubmit(commentId: string) {
+    if (onSubmitComment) {
+      onSubmitComment(commentId);
+    }
+  }
+
+  function handleCommentCancel(commentId: string) {
+    if (onCancelComment) {
+      onCancelComment(commentId);
+    }
   }
 </script>
 
@@ -215,6 +263,43 @@
                     </span>
                   </td>
                 </tr>
+
+                <!-- Comments and forms for context lines -->
+                {#if line.lineNumber?.new}
+                  {@const lineComments = getCommentsForLine(line.lineNumber.new)}
+                  {@const pendingComment = getPendingCommentForLine(line.lineNumber.new, 'right')}
+
+                  {#if pendingComment}
+                    <tr>
+                      <td colspan="4" class="p-0">
+                        <InlineCommentForm comment={pendingComment} {handleCommentUpdate} {handleCommentSubmit} {handleCommentCancel} />
+                      </td>
+                    </tr>
+                  {/if}
+
+                  {#each lineComments as comment (comment.id)}
+                    <tr>
+                      <td colspan="4" class="p-4 bg-gray-50 border-l-4 border-blue-200">
+                        <div class="flex items-start space-x-3">
+                          <img src={comment.user.avatar_url} alt={comment.user.login} class="w-6 h-6 rounded-full" />
+                          <div class="flex-1">
+                            <div class="flex items-center space-x-2 text-sm text-gray-600 mb-1">
+                              <span class="font-medium">{comment.user.login}</span>
+                              <span>•</span>
+                              <time>{new Date(comment.created_at).toLocaleString()}</time>
+                              {#if comment.updated_at !== comment.created_at}
+                                <span class="text-gray-400">(edited)</span>
+                              {/if}
+                            </div>
+                            <div class="prose prose-sm max-w-none text-gray-800">
+                              {comment.body}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  {/each}
+                {/if}
               {:else if line.type === 'deletion'}
                 <tr
                   class={`bg-red-50 hover:bg-red-100 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-200' : ''}`}

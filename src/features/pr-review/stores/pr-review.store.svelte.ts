@@ -327,32 +327,40 @@ export function createPRReviewState() {
 
   // Line selection and commenting methods
   const selectLine = (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => {
-    // Start new selection or extend existing selection
-    const newSelection: SelectedLine = { filename, lineNumber, side, content };
-
-    // If selecting on the same file and side, check for multi-line selection
-    const existingSelection = state.selectedLines.find(
-      line => line.filename === filename && line.side === side
+    // Check if there's already a pending comment for this line
+    const existingComment = state.pendingComments.find(
+      c => c.filename === filename && c.startLine === lineNumber && c.side === side
     );
 
-    if (existingSelection) {
-      // Extend selection to include range
-      const startLine = Math.min(existingSelection.lineNumber, lineNumber);
-      const endLine = Math.max(existingSelection.lineNumber, lineNumber);
-
-      state.selectedLines = [];
-      for (let i = startLine; i <= endLine; i++) {
-        state.selectedLines.push({
-          filename,
-          lineNumber: i,
-          side,
-          content: i === lineNumber ? content : `Line ${i}` // We'd need actual content here
-        });
-      }
-    } else {
-      // New selection
-      state.selectedLines = [newSelection];
+    if (existingComment) {
+      // If there's already a pending comment, make it active for editing
+      state.activeCommentId = existingComment.id;
+      return;
     }
+
+    // Create a new pending comment for this line
+    const commentId = `pending-${Date.now()}`;
+    const pendingComment: PendingComment = {
+      id: commentId,
+      filename,
+      startLine: lineNumber,
+      side,
+      body: '',
+      isPartOfReview: false
+    };
+
+    state.pendingComments.push(pendingComment);
+    state.activeCommentId = commentId;
+
+    // Update selected lines
+    state.selectedLines = [{
+      filename,
+      lineNumber,
+      side,
+      content
+    }];
+
+    state.isSelectingLines = true;
   };
 
   const clearLineSelection = () => {
@@ -396,15 +404,42 @@ export function createPRReviewState() {
     const comment = state.pendingComments.find(c => c.id === commentId);
     if (!comment || !comment.body.trim()) return;
 
-    // TODO: Implement actual API call to submit comment
-    console.log('Submitting comment:', comment);
+    if (!state.pullRequest) {
+      console.error('No pull request loaded');
+      return;
+    }
 
-    // Remove from pending comments
-    state.pendingComments = state.pendingComments.filter(c => c.id !== commentId);
-    state.activeCommentId = null;
-    clearLineSelection();
+    try {
+      // Import the API service dynamically
+      const { submitLineComment } = await import('../services/review-api.service');
 
-    // TODO: Refresh PR data to show new comment
+      // Get owner and repo from the PR data
+      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
+      const repo = state.pullRequest.head.repo?.name || '';
+
+      // Submit the comment to GitHub
+      const newComment = await submitLineComment(
+        owner,
+        repo,
+        state.pullRequest.number,
+        comment.filename,
+        comment.startLine,
+        comment.body,
+        comment.side === 'left' ? 'LEFT' : 'RIGHT'
+      );      // Add the new comment to our state
+      state.reviewComments.push(newComment);
+
+      // Remove from pending comments
+      state.pendingComments = state.pendingComments.filter(c => c.id !== commentId);
+      state.activeCommentId = null;
+      clearLineSelection();
+
+      console.log('Comment submitted successfully:', newComment);
+    } catch (error) {
+      console.error('Failed to submit comment:', error);
+      // TODO: Show error to user
+      state.error = error instanceof Error ? error.message : 'Failed to submit comment';
+    }
   };
 
   const cancelPendingComment = (commentId: string) => {
