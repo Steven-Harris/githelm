@@ -455,3 +455,5 @@ export function createPRReviewState() {
     isLineSelected
   };
 }
+
+export type PRReviewState = ReturnType<typeof createPRReviewState>;

@@ -76,7 +76,7 @@ export class RepositoryFacade {
   }
 
   initializePullRequestsPolling(configs: RepoConfig[]): void {
-    initializePullRequestsPolling({ repoConfigs:  configs });
+    initializePullRequestsPolling({ repoConfigs: configs });
   }
 
   async refreshPullRequestsData(configs: RepoConfig[]): Promise<void> {
