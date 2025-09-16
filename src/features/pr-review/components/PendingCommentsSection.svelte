@@ -9,9 +9,10 @@
     onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
     onSubmitComment?: (commentId: string) => void;
     onCancelComment?: (commentId: string) => void;
+    onCancelSelection?: () => void; // New prop for canceling line selection
   }
 
-  const { selectedLines = [], pendingComments = [], activeCommentId = null, onStartComment, onUpdateComment, onSubmitComment, onCancelComment }: Props = $props();
+  const { selectedLines = [], pendingComments = [], activeCommentId = null, onStartComment, onUpdateComment, onSubmitComment, onCancelComment, onCancelSelection }: Props = $props();
 
   // Get file name from path
   function getFileName(path: string): string {
@@ -34,11 +35,17 @@
               : Lines {selectedLines[0].lineNumber}-{selectedLines[selectedLines.length - 1].lineNumber} ({selectedLines[0].side === 'left' ? 'original' : 'modified'})
             {/if}
           </div>
+          <div class="text-xs text-blue-600 mt-1">💡 Tip: Click and drag to select multiple lines</div>
         </div>
       </div>
 
       <!-- Start comment button -->
-      <button onclick={onStartComment} class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors"> Add Comment </button>
+      <div class="flex space-x-2">
+        <button onclick={onStartComment} class="flex-1 bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors"> Add Comment </button>
+        {#if onCancelSelection}
+          <button onclick={onCancelSelection} class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded transition-colors"> Cancel </button>
+        {/if}
+      </div>
     {/if}
 
     {#if pendingComments.length > 0}

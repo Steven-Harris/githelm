@@ -11,7 +11,7 @@
     reviewComments?: ReviewComment[];
     diffViewMode?: 'inline' | 'side-by-side';
     // New props for line selection and commenting
-    onLineClick?: (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => void;
+    onLineClick?: (filename: string, lineNumber: number, side: 'left' | 'right', content: string, isExtending?: boolean) => void;
     isLineSelected?: (filename: string, lineNumber: number, side: 'left' | 'right') => boolean;
     // Props for comment handling
     pendingComments?: PendingComment[];
@@ -120,11 +120,52 @@
   const fileIcon = $derived(getFileTypeIcon(file.filename));
   const detectedLanguage = $derived(detectLanguage(file.filename));
 
-  // Handle line clicks for commenting
-  function handleLineClick(lineNumber: number, side: 'left' | 'right', content: string) {
+  // Handle line clicks for commenting with drag support
+  let isDragging = $state(false);
+  let dragStartLine: { lineNumber: number; side: 'left' | 'right' } | null = $state(null);
+
+  function handleLineMouseDown(lineNumber: number, side: 'left' | 'right', content: string, event: MouseEvent) {
+    event.preventDefault();
+    isDragging = true;
+    dragStartLine = { lineNumber, side };
+
+    // Start selection
     if (onLineClick) {
       onLineClick(file.filename, lineNumber, side, content);
     }
+  }
+
+  function handleLineMouseEnter(lineNumber: number, side: 'left' | 'right', content: string) {
+    if (isDragging && dragStartLine && dragStartLine.side === side && onLineClick) {
+      // Extend selection during drag
+      onLineClick(file.filename, lineNumber, side, content, true);
+    }
+  }
+
+  function handleLineMouseUp() {
+    if (isDragging) {
+      isDragging = false;
+      dragStartLine = null;
+    }
+  }
+
+  function handleLineClick(lineNumber: number, side: 'left' | 'right', content: string, isExtending: boolean = false) {
+    if (onLineClick) {
+      onLineClick(file.filename, lineNumber, side, content, isExtending);
+    }
+  }
+
+  // Global mouse up listener to handle drag end anywhere
+  function handleGlobalMouseUp() {
+    if (isDragging) {
+      isDragging = false;
+      dragStartLine = null;
+    }
+  }
+
+  // Add global mouse up listener
+  if (typeof window !== 'undefined') {
+    window.addEventListener('mouseup', handleGlobalMouseUp);
   }
 
   // Check if a line is selected
@@ -232,15 +273,19 @@
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-gray-200 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-200' : ''}`}
-                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-gray-200 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-200' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     {line.lineNumber?.old || ''}
                   </td>
                   <!-- Old content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-50' : ''}`}
-                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-blue-50' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     <span class="text-gray-800">
                       {@html highlightCode(line.content, file.filename)}
@@ -248,15 +293,19 @@
                   </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-gray-200 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-200' : ''}`}
-                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-gray-200 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-200' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     {line.lineNumber?.new || ''}
                   </td>
                   <!-- New content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-50' : ''}`}
-                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-blue-50' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     <span class="text-gray-800">
                       {@html highlightCode(line.content, file.filename)}
@@ -308,15 +357,19 @@
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-red-200 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-300' : ''}`}
-                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-red-200 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-300' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     {line.lineNumber?.old || ''}
                   </td>
                   <!-- Old content (deleted) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-100' : ''}`}
-                    onclick={() => line.lineNumber?.old && handleLineClick(line.lineNumber.old, 'left', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-100' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     <span class="text-red-800">
                       -
@@ -340,15 +393,19 @@
                   <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-gray-200 bg-gray-50"> </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-green-200 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-300' : ''}`}
-                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                    class={`px-2 py-1 text-gray-400 text-xs text-right border-r border-gray-200 w-12 select-none cursor-pointer hover:bg-green-200 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-300' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     {line.lineNumber?.new || ''}
                   </td>
                   <!-- New content (added) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-100' : ''}`}
-                    onclick={() => line.lineNumber?.new && handleLineClick(line.lineNumber.new, 'right', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-100' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
+                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    onmouseup={handleLineMouseUp}
                   >
                     <span class="text-green-800">
                       +

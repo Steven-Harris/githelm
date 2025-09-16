@@ -38,9 +38,8 @@
             onToggle={() => prReview.toggleFileExpanded(file.filename)}
             reviewComments={prReview.state.reviewComments}
             diffViewMode={prReview.state.diffViewMode}
-            onLineClick={(filename, lineNumber, side, event) => {
-              // For now, use empty content - the component should handle extracting the line content
-              prReview.selectLine(filename, lineNumber, side, '');
+            onLineClick={(filename, lineNumber, side, content, isExtending = false) => {
+              prReview.selectLine(filename, lineNumber, side, content, isExtending);
             }}
             isLineSelected={(filename, lineNumber, side) => prReview.isLineSelected(filename, lineNumber, side)}
             pendingComments={prReview.state.pendingComments.filter((c) => c.filename === file.filename)}

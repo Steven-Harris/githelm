@@ -118,6 +118,7 @@
         onUpdateComment={prReview.updatePendingComment}
         onSubmitComment={prReview.submitPendingComment}
         onCancelComment={prReview.cancelPendingComment}
+        onClearSelection={prReview.clearLineSelection}
         onApproveReview={reviewActions.approveReview}
         onRequestChanges={reviewActions.requestChanges}
         onSubmitGeneralComment={reviewActions.submitComment}

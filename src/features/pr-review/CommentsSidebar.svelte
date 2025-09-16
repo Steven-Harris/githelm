@@ -30,6 +30,7 @@
     onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
     onSubmitComment?: (commentId: string) => void;
     onCancelComment?: (commentId: string) => void;
+    onClearSelection?: () => void;
     // Review action props
     onApproveReview?: (comment?: string) => void;
     onRequestChanges?: (reason: string) => void;
@@ -50,6 +51,7 @@
     onUpdateComment,
     onSubmitComment,
     onCancelComment,
+    onClearSelection,
     onApproveReview,
     onRequestChanges,
     onSubmitGeneralComment,
@@ -150,7 +152,7 @@
 
   <div class="divide-y divide-gray-100">
     <!-- Pending Comments Section -->
-    <PendingCommentsSection {selectedLines} {pendingComments} {activeCommentId} {onStartComment} {onUpdateComment} {onSubmitComment} {onCancelComment} />
+    <PendingCommentsSection {selectedLines} {pendingComments} {activeCommentId} {onStartComment} {onUpdateComment} {onSubmitComment} {onCancelComment} onCancelSelection={onClearSelection} />
 
     <!-- Review Actions Section -->
     <ReviewActionsPanel

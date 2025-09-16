@@ -325,51 +325,63 @@ export function createPRReviewState() {
     state.expandedFiles = newExpanded;
   };
 
-  // Line selection and commenting methods
-  const selectLine = (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => {
-    // Check if there's already a pending comment for this line
-    const existingComment = state.pendingComments.find(
-      c => c.filename === filename && c.startLine === lineNumber && c.side === side
-    );
+  // Line selection and commenting methods with drag support
+  const selectLine = (filename: string, lineNumber: number, side: 'left' | 'right', content: string, isExtending: boolean = false) => {
+    if (isExtending && state.selectedLines.length > 0) {
+      const firstSelection = state.selectedLines[0];
 
-    if (existingComment) {
-      // If there's already a pending comment, make it active for editing
-      state.activeCommentId = existingComment.id;
-      return;
+      // Only extend if same file and side
+      if (firstSelection.filename === filename && firstSelection.side === side) {
+        const startLine = Math.min(firstSelection.lineNumber, lineNumber);
+        const endLine = Math.max(firstSelection.lineNumber, lineNumber);
+
+        // Create range selection
+        state.selectedLines = [];
+        for (let i = startLine; i <= endLine; i++) {
+          state.selectedLines.push({
+            filename,
+            lineNumber: i,
+            side,
+            content: i === lineNumber ? content : `Line ${i}`
+          });
+        }
+      } else {
+        // Different file/side, start new selection
+        state.selectedLines = [{ filename, lineNumber, side, content }];
+      }
+    } else {
+      // Start new selection (clear any existing pending comments if not active)
+      if (!state.activeCommentId) {
+        // Clear any abandoned pending comments
+        state.pendingComments = [];
+      }
+
+      state.selectedLines = [{ filename, lineNumber, side, content }];
     }
 
-    // Create a new pending comment for this line
-    const commentId = `pending-${Date.now()}`;
-    const pendingComment: PendingComment = {
-      id: commentId,
-      filename,
-      startLine: lineNumber,
-      side,
-      body: '',
-      isPartOfReview: false
-    };
-
-    state.pendingComments.push(pendingComment);
-    state.activeCommentId = commentId;
-
-    // Update selected lines
-    state.selectedLines = [{
-      filename,
-      lineNumber,
-      side,
-      content
-    }];
-
     state.isSelectingLines = true;
+  };
+
+  const extendSelection = (filename: string, lineNumber: number, side: 'left' | 'right', content: string) => {
+    selectLine(filename, lineNumber, side, content, true);
   };
 
   const clearLineSelection = () => {
     state.selectedLines = [];
     state.isSelectingLines = false;
+    // Also clear any pending comments that haven't been started
+    if (!state.activeCommentId) {
+      state.pendingComments = [];
+    }
   };
 
   const startCommentOnSelectedLines = () => {
     if (state.selectedLines.length === 0) return;
+
+    // Check if there's already an active pending comment - if so, don't create another
+    if (state.activeCommentId) {
+      return;
+    }
 
     const firstLine = state.selectedLines[0];
     const lastLine = state.selectedLines[state.selectedLines.length - 1];
@@ -387,7 +399,7 @@ export function createPRReviewState() {
 
     state.pendingComments.push(pendingComment);
     state.activeCommentId = commentId;
-    // Don't clear selection yet - we'll clear it when comment is submitted or cancelled
+    state.isSelectingLines = false; // Stop selecting once we start commenting
   };
 
   const updatePendingComment = (commentId: string, body: string, isPartOfReview?: boolean) => {
@@ -417,6 +429,9 @@ export function createPRReviewState() {
       const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
       const repo = state.pullRequest.head.repo?.name || '';
 
+      // Get the latest commit SHA from the PR
+      const commitSha = state.pullRequest.head.sha;
+
       // Submit the comment to GitHub
       const newComment = await submitLineComment(
         owner,
@@ -425,8 +440,11 @@ export function createPRReviewState() {
         comment.filename,
         comment.startLine,
         comment.body,
-        comment.side === 'left' ? 'LEFT' : 'RIGHT'
-      );      // Add the new comment to our state
+        comment.side === 'left' ? 'LEFT' : 'RIGHT',
+        commitSha
+      );
+
+      // Add the new comment to our state
       state.reviewComments.push(newComment);
 
       // Remove from pending comments
@@ -482,6 +500,7 @@ export function createPRReviewState() {
 
     // New comment and line selection actions
     selectLine,
+    extendSelection,
     clearLineSelection,
     startCommentOnSelectedLines,
     updatePendingComment,
