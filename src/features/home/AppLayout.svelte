@@ -1,7 +1,7 @@
 <script lang="ts">
   import { configPageService } from '$features/config/services/config-page.service';
   import { initAuthStateHandling } from '$integrations/github';
-  import { ReloadPrompt } from '$shared';
+  import { Breadcrumb, ReloadPrompt } from '$shared';
   import { repositoryFacade } from '$shared/stores/repository.facade';
   import { pwaAssetsHead } from 'virtual:pwa-assets/head';
   import { pwaInfo } from 'virtual:pwa-info';
@@ -55,6 +55,7 @@
 </svelte:head>
 
 <Header signedIn={$authState.signedIn && $authState.isAuth === 'authenticated'} />
+<Breadcrumb />
 
 <main class="flex-1 overflow-auto md:px-5 bg-gray-900 pb-12">
   <Tabs />

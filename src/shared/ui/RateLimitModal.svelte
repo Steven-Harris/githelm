@@ -33,15 +33,26 @@
   function dismissModal() {
     killSwitch.set(false);
   }
+
+  function stopPropagation(e: Event) {
+    e.stopPropagation();
+  }
+
+  function handleOverlayKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      dismissModal();
+    }
+  }
 </script>
 
 {#if showModal}
-  <div class="modal-overlay">
-    <div class="modal">
-      <h2>Rate Limit Exceeded</h2>
+  <div class="modal-overlay" onclick={dismissModal} tabindex="0" role="button" aria-label="Close rate limit modal" onkeydown={handleOverlayKeydown}>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rate-limit-title" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
+      <h2 id="rate-limit-title">Rate Limit Exceeded</h2>
       <p>Unfortunately, GitHub's Rate Limit has been hit. If you're feeling lucky you can try again or re-logging in.</p>
-      <button onclick={dismissModal}>I'm feeling lucky</button>
-      <button onclick={reLogin}>Re-Login</button>
+      <button onclick={dismissModal} aria-label="Try again">I'm feeling lucky</button>
+      <button onclick={reLogin} aria-label="Re-login with GitHub">Re-Login</button>
     </div>
   </div>
 {/if}

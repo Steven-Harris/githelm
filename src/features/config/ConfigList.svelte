@@ -121,7 +121,7 @@
   {/if}
 
   {#if editingIndex === -1}
-    <button class="flex items-center {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] w-full mb-4 transition-all duration-200" onclick={() => (editingIndex = -2)}>
+    <button class="flex items-center {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] w-full mb-4 transition-all duration-200" onclick={() => (editingIndex = -2)} aria-label="Add configuration">
       <span class="text-xl mr-1 text-[#3fb950]">+</span>
       <span>Add Repository</span>
     </button>

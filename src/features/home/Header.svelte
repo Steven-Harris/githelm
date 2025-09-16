@@ -28,10 +28,6 @@
     authService.signOut();
   }
 
-  function backToDashboard() {
-    configService.navigateToDashboard();
-  }
-
   function navigateToConfig() {
     configService.enableKillSwitch();
     goto('/config');
@@ -71,9 +67,6 @@
       <div class="flex items-center">
         {#if signedIn}
           {#if page.url.pathname === '/config'}
-            <button class="nav-button" onclick={backToDashboard} aria-label="dashboard" title="Dashboard">
-              <span>Dashboard</span>
-            </button>
             <!-- Profile dropdown -->
             <div class="relative ml-2" bind:this={menuRef}>
               <button class="avatar-button tooltip-container" onclick={toggleMenu} aria-label="user menu" title="User menu">

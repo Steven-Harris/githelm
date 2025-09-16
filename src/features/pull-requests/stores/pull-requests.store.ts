@@ -1,10 +1,11 @@
-import { writable, derived, get } from 'svelte/store';
+import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
 import { type RepoConfig } from '$integrations/firebase';
 import { type PullRequest } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
+import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import createPollingStore from '$shared/stores/polling.store';
-import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
+import { initializePullRequestsPolling as initializeRepositoryPullRequestsPolling } from '$shared/stores/repository-service';
+import { derived, writable } from 'svelte/store';
 
 export const allPullRequests = writable<Record<string, PullRequest[]>>({});
 export const pullRequestConfigs = writable<RepoConfig[]>([]);
@@ -33,7 +34,7 @@ export async function loadPullRequestConfigs(): Promise<void> {
     const storedConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs');
     const configs = storedConfigs.data || [];
     pullRequestConfigs.set(configs);
-    
+
     if (configs.length > 0) {
       initializePullRequestsPolling(configs);
     }
@@ -65,9 +66,9 @@ export function initializePullRequestsPolling(configs: RepoConfig[]): void {
   for (const config of configs) {
     const key = getRepoKey(config);
     const storeKey = `pull-requests-${key}`;
-    
+
     unsubscribe(storeKey);
-    
+
     const store = createPollingStore(storeKey, () => fetchPullRequestsSmartly(config));
     pollingUnsubscribers.set(
       storeKey,
@@ -107,11 +108,11 @@ export async function refreshPullRequestsData(configs: RepoConfig[]): Promise<vo
 async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest[]> {
   try {
     const labels = config.filters || [];
-    
+
     const needsUpdate = await Promise.all(
       labels.map(label => checkForNewPullRequests(config.org, config.repo, label))
     );
-    
+
     if (!needsUpdate.some(Boolean)) {
       const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
       const cached = localStorage.getItem(cacheKey);
@@ -123,7 +124,7 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
         }
       }
     }
-    
+
     const pullRequestRepo = PullRequestRepository.getInstance();
     const query = {
       org: config.org,
@@ -132,14 +133,14 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     };
     const pullRequests = await pullRequestRepo.fetchPullRequests(query);
     const result = pullRequests || [];
-    
+
     try {
       const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
       localStorage.setItem(cacheKey, JSON.stringify(result));
     } catch (cacheError) {
       console.warn('Failed to cache pull requests data:', cacheError);
     }
-    
+
     return result;
   } catch (error) {
     const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
@@ -151,7 +152,7 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
         console.warn('Failed to parse cached pull requests data as fallback:', e);
       }
     }
-    
+
     throw error;
   }
 }
@@ -164,9 +165,8 @@ export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<v
   try {
     setStorageObject('pull-requests-configs', configs);
     pullRequestConfigs.set(configs);
-    
-    const { initializePullRequestsPolling } = await import('$shared/stores/repository-service');
-    initializePullRequestsPolling({ repoConfigs: configs });
+
+    initializeRepositoryPullRequestsPolling({ repoConfigs: configs });
   } catch (error) {
     captureException(error, {
       action: 'updatePullRequestConfigs',
@@ -181,10 +181,10 @@ export function clearPullRequestStores(): void {
     Array.from(pollingUnsubscribers.keys())
       .filter((key) => key.startsWith('pull-requests-'))
       .forEach(unsubscribe);
-    
+
     allPullRequests.set({});
     pullRequestConfigs.set([]);
-    
+
   } catch (error) {
     console.warn('Error clearing pull request stores:', error);
   }
