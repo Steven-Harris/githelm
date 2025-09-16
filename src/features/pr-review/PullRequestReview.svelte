@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { isAuthenticated } from '$shared/services/auth.state';
+  import { currentUser, isAuthenticated } from '$shared/services/auth.state';
   import CommentsSidebar from './CommentsSidebar.svelte';
   import { useScrollManager } from './composables/useScrollManager.svelte.js';
   import FileTreeSidebar from './FileTreeSidebar.svelte';
@@ -114,15 +114,20 @@
         selectedLines={prReview.state.selectedLines}
         pendingComments={prReview.state.pendingComments}
         activeCommentId={prReview.state.activeCommentId}
+        reviewDraft={prReview.state.reviewDraft}
         onStartComment={prReview.startCommentOnSelectedLines}
+        onAddToReview={prReview.addCommentToReview}
+        onPostComment={prReview.postStandaloneComment}
         onUpdateComment={prReview.updatePendingComment}
-        onSubmitComment={prReview.submitPendingComment}
+        onSaveComment={prReview.savePendingComment}
         onCancelComment={prReview.cancelPendingComment}
         onClearSelection={prReview.clearLineSelection}
+        onUpdateReviewDraft={prReview.updateReviewDraft}
+        onSubmitReview={prReview.submitReview}
         onApproveReview={reviewActions.approveReview}
         onRequestChanges={reviewActions.requestChanges}
         onSubmitGeneralComment={reviewActions.submitComment}
-        canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, undefined) : false}
+        canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false}
         isAuthenticated={$isAuthenticated}
       />
     </div>

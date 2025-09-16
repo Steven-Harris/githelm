@@ -5,17 +5,8 @@
   import LineCommentsSection from './components/LineCommentsSection.svelte';
   import OverallCommentsSection from './components/OverallCommentsSection.svelte';
   import PendingCommentsSection from './components/PendingCommentsSection.svelte';
-  import ReviewActionsPanel from './components/ReviewActionsPanel.svelte';
-  import type { PendingComment, SelectedLine } from './stores/pr-review.store.svelte';
-
-  interface ReviewActionsState {
-    showGeneralCommentForm: boolean;
-    showApproveForm: boolean;
-    showRequestChangesForm: boolean;
-    generalCommentText: string;
-    approveCommentText: string;
-    requestChangesText: string;
-  }
+  import ReviewSubmissionSection from './components/ReviewSubmissionSection.svelte';
+  import type { PendingComment, ReviewDraft, SelectedLine } from './stores/pr-review.store.svelte';
 
   interface Props {
     reviews: Review[];
@@ -26,12 +17,17 @@
     selectedLines?: SelectedLine[];
     pendingComments?: PendingComment[];
     activeCommentId?: string | null;
+    reviewDraft?: ReviewDraft;
     onStartComment?: () => void;
+    onAddToReview?: (commentId: string) => void;
+    onPostComment?: (commentId: string) => void;
     onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
-    onSubmitComment?: (commentId: string) => void;
+    onSaveComment?: (commentId: string) => void;
     onCancelComment?: (commentId: string) => void;
     onClearSelection?: () => void;
-    // Review action props
+    onUpdateReviewDraft?: (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
+    onSubmitReview?: () => void;
+    // Legacy review action props (keeping for compatibility)
     onApproveReview?: (comment?: string) => void;
     onRequestChanges?: (reason: string) => void;
     onSubmitGeneralComment?: (comment: string) => void;
@@ -47,11 +43,16 @@
     selectedLines = [],
     pendingComments = [],
     activeCommentId = null,
+    reviewDraft = { body: '', event: 'COMMENT' },
     onStartComment,
+    onAddToReview,
+    onPostComment,
     onUpdateComment,
-    onSubmitComment,
+    onSaveComment,
     onCancelComment,
     onClearSelection,
+    onUpdateReviewDraft,
+    onSubmitReview,
     onApproveReview,
     onRequestChanges,
     onSubmitGeneralComment,
@@ -59,24 +60,14 @@
     isAuthenticated = false,
   }: Props = $props();
 
-  // State for review actions forms
-  let reviewActionsState = $state<ReviewActionsState>({
-    showGeneralCommentForm: false,
-    showApproveForm: false,
-    showRequestChangesForm: false,
-    generalCommentText: '',
-    approveCommentText: '',
-    requestChangesText: '',
-  });
-
-  // Loading state for review actions
-  let isSubmittingReview = $state(false);
-
   // Get approval/rejection reviews (reviews with states but not necessarily comments)
   const approvalReviews = $derived(reviews.filter((review) => ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(review.state)));
 
   // Separate overall comments (reviews with body content)
   const overallComments = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
+
+  // Check if there's an active review (pending comments that are part of review or review draft content)
+  const hasActiveReview = $derived(() => pendingComments.some((c) => c.isPartOfReview) || (reviewDraft && (reviewDraft.body.trim() !== '' || reviewDraft.event !== 'COMMENT')));
 
   // All individual line comments, sorted by file and line number
   const lineComments = $derived(
@@ -93,53 +84,6 @@
         return lineA - lineB;
       })
   );
-
-  function handleReviewActionsStateChange(newState: Partial<ReviewActionsState>) {
-    reviewActionsState = { ...reviewActionsState, ...newState };
-  }
-
-  // Wrapper functions to handle loading state
-  async function handleApproveReview(comment?: string) {
-    if (!onApproveReview || isSubmittingReview) return;
-
-    isSubmittingReview = true;
-    try {
-      await onApproveReview(comment);
-    } catch (error) {
-      console.error('Failed to approve review:', error);
-      // TODO: Show error notification
-    } finally {
-      isSubmittingReview = false;
-    }
-  }
-
-  async function handleRequestChanges(reason: string) {
-    if (!onRequestChanges || isSubmittingReview) return;
-
-    isSubmittingReview = true;
-    try {
-      await onRequestChanges(reason);
-    } catch (error) {
-      console.error('Failed to request changes:', error);
-      // TODO: Show error notification
-    } finally {
-      isSubmittingReview = false;
-    }
-  }
-
-  async function handleSubmitGeneralComment(comment: string) {
-    if (!onSubmitGeneralComment || isSubmittingReview) return;
-
-    isSubmittingReview = true;
-    try {
-      await onSubmitGeneralComment(comment);
-    } catch (error) {
-      console.error('Failed to submit comment:', error);
-      // TODO: Show error notification
-    } finally {
-      isSubmittingReview = false;
-    }
-  }
 </script>
 
 <div class="w-80 bg-white border-l border-gray-200 h-full overflow-y-auto">
@@ -152,19 +96,21 @@
 
   <div class="divide-y divide-gray-100">
     <!-- Pending Comments Section -->
-    <PendingCommentsSection {selectedLines} {pendingComments} {activeCommentId} {onStartComment} {onUpdateComment} {onSubmitComment} {onCancelComment} onCancelSelection={onClearSelection} />
-
-    <!-- Review Actions Section -->
-    <ReviewActionsPanel
-      state={reviewActionsState}
-      {canReview}
-      {isAuthenticated}
-      isSubmitting={isSubmittingReview}
-      onStateChange={handleReviewActionsStateChange}
-      onApproveReview={handleApproveReview}
-      onRequestChanges={handleRequestChanges}
-      onSubmitGeneralComment={handleSubmitGeneralComment}
+    <PendingCommentsSection
+      {selectedLines}
+      {pendingComments}
+      {activeCommentId}
+      {onStartComment}
+      {onAddToReview}
+      {onPostComment}
+      {onUpdateComment}
+      {onCancelComment}
+      onCancelSelection={onClearSelection}
+      hasActiveReview={hasActiveReview()}
     />
+
+    <!-- Review Submission Section -->
+    <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={canReview && isAuthenticated} />
 
     <!-- Approvals Section -->
     <ApprovalsSection reviews={approvalReviews} />

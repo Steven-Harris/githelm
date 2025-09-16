@@ -7,9 +7,16 @@ export interface ReviewSubmission {
   body?: string;
   comments?: Array<{
     path: string;
-    line: number;
+    position: number;
     body: string;
   }>;
+}
+
+export interface PendingReviewComment {
+  path: string;
+  line: number;
+  side: 'LEFT' | 'RIGHT';
+  body: string;
 }
 
 /**
@@ -32,6 +39,8 @@ export async function submitPullRequestReview(
 
   const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`;
 
+  console.log('Submitting review with data:', review);
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -48,6 +57,7 @@ export async function submitPullRequestReview(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    console.error('GitHub API Error Details:', errorData);
     throw new Error(
       errorData.message ||
       `GitHub API error: ${response.status} ${response.statusText}`
@@ -55,6 +65,66 @@ export async function submitPullRequestReview(
   }
 
   return await response.json();
+}
+
+/**
+ * Prepare pending comments for review submission by calculating positions
+ */
+export async function preparePendingCommentsForReview(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  pendingComments: PendingReviewComment[]
+): Promise<ReviewSubmission['comments']> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  const token = getGithubToken();
+  if (!token) {
+    throw new Error('GitHub token not available');
+  }
+
+  // Get the diff to calculate positions
+  const diffUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/files`;
+  const diffResponse = await fetch(diffUrl, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+    }
+  });
+
+  if (!diffResponse.ok) {
+    throw new Error('Failed to fetch diff data');
+  }
+
+  const files = await diffResponse.json();
+  const reviewComments: ReviewSubmission['comments'] = [];
+
+  for (const comment of pendingComments) {
+    const file = files.find((f: any) => f.filename === comment.path);
+
+    if (!file) {
+      console.warn(`File ${comment.path} not found in diff, skipping comment`);
+      continue;
+    }
+
+    // Calculate position from the patch
+    const position = calculatePositionFromLine(file.patch, comment.line, comment.side);
+
+    if (position === null) {
+      console.warn(`Could not find line ${comment.line} in diff for ${comment.path}, skipping comment`);
+      continue;
+    }
+
+    reviewComments.push({
+      path: comment.path,
+      position,
+      body: comment.body
+    });
+  }
+
+  return reviewComments;
 }
 
 /**

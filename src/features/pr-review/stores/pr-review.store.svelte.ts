@@ -25,6 +25,11 @@ export interface PendingComment {
   isPartOfReview: boolean; // true if part of review, false for standalone comment
 }
 
+export interface ReviewDraft {
+  body: string; // Overall review comment
+  event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+}
+
 // Types for our store state
 export interface PullRequestReviewState {
   pullRequest: DetailedPullRequest | null;
@@ -48,6 +53,7 @@ export interface PullRequestReviewState {
   pendingComments: PendingComment[];
   isSelectingLines: boolean;
   activeCommentId: string | null; // ID of comment currently being edited
+  reviewDraft: ReviewDraft;
 }
 
 // Create a reactive state using Svelte 5 runes
@@ -74,6 +80,10 @@ export function createPRReviewState() {
     pendingComments: [],
     isSelectingLines: false,
     activeCommentId: null,
+    reviewDraft: {
+      body: '',
+      event: 'COMMENT'
+    },
   });
 
   // Derived values using $derived
@@ -350,10 +360,10 @@ export function createPRReviewState() {
         state.selectedLines = [{ filename, lineNumber, side, content }];
       }
     } else {
-      // Start new selection (clear any existing pending comments if not active)
+      // Start new selection - only clear abandoned comments, not those that are part of review
       if (!state.activeCommentId) {
-        // Clear any abandoned pending comments
-        state.pendingComments = [];
+        // Only clear pending comments that are NOT part of a review (keep review comments)
+        state.pendingComments = state.pendingComments.filter(c => c.isPartOfReview);
       }
 
       state.selectedLines = [{ filename, lineNumber, side, content }];
@@ -369,20 +379,17 @@ export function createPRReviewState() {
   const clearLineSelection = () => {
     state.selectedLines = [];
     state.isSelectingLines = false;
-    // Also clear any pending comments that haven't been started
+    // Only clear pending comments that are not part of a review and haven't been started
     if (!state.activeCommentId) {
-      state.pendingComments = [];
+      // Keep comments that are part of review, only remove unfinished standalone comments
+      state.pendingComments = state.pendingComments.filter(c => c.isPartOfReview);
     }
   };
 
-  const startCommentOnSelectedLines = () => {
+  const startCommentOnSelectedLines = (isPartOfReview: boolean = false) => {
     if (state.selectedLines.length === 0) return;
 
-    // Check if there's already an active pending comment - if so, don't create another
-    if (state.activeCommentId) {
-      return;
-    }
-
+    // Create a new comment immediately when lines are selected
     const firstLine = state.selectedLines[0];
     const lastLine = state.selectedLines[state.selectedLines.length - 1];
 
@@ -394,25 +401,43 @@ export function createPRReviewState() {
       endLine: state.selectedLines.length > 1 ? lastLine.lineNumber : undefined,
       side: firstLine.side,
       body: '',
-      isPartOfReview: false
+      isPartOfReview
     };
 
     state.pendingComments.push(pendingComment);
     state.activeCommentId = commentId;
-    state.isSelectingLines = false; // Stop selecting once we start commenting
   };
 
-  const updatePendingComment = (commentId: string, body: string, isPartOfReview?: boolean) => {
+  const addCommentToReview = (commentId: string) => {
     const comment = state.pendingComments.find(c => c.id === commentId);
-    if (comment) {
-      comment.body = body;
-      if (isPartOfReview !== undefined) {
-        comment.isPartOfReview = isPartOfReview;
-      }
+    console.log('addCommentToReview called:', {
+      commentId,
+      comment: comment ? { id: comment.id, isPartOfReview: comment.isPartOfReview, hasBody: !!comment.body.trim() } : null,
+      allPendingComments: state.pendingComments.map(c => ({ id: c.id, isPartOfReview: c.isPartOfReview, hasBody: !!c.body.trim() }))
+    });
+
+    if (!comment || !comment.body.trim()) {
+      console.log('Early return - no comment or empty body');
+      return;
     }
+
+    // Mark as part of review and clear active state
+    comment.isPartOfReview = true;
+    state.activeCommentId = null;
+
+    console.log('Comment marked as part of review:', { id: comment.id, isPartOfReview: comment.isPartOfReview });
+
+    // Clear line selection so user can select new lines for next comment
+    clearLineSelection();
+
+    console.log('After clearLineSelection - Updated pending comments:', state.pendingComments.map(c => ({
+      id: c.id,
+      isPartOfReview: c.isPartOfReview,
+      hasBody: !!c.body.trim()
+    })));
   };
 
-  const submitPendingComment = async (commentId: string) => {
+  const postStandaloneComment = async (commentId: string) => {
     const comment = state.pendingComments.find(c => c.id === commentId);
     if (!comment || !comment.body.trim()) return;
 
@@ -428,11 +453,9 @@ export function createPRReviewState() {
       // Get owner and repo from the PR data
       const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
       const repo = state.pullRequest.head.repo?.name || '';
-
-      // Get the latest commit SHA from the PR
       const commitSha = state.pullRequest.head.sha;
 
-      // Submit the comment to GitHub
+      // Submit the individual comment to GitHub
       const newComment = await submitLineComment(
         owner,
         repo,
@@ -452,11 +475,112 @@ export function createPRReviewState() {
       state.activeCommentId = null;
       clearLineSelection();
 
-      console.log('Comment submitted successfully:', newComment);
+      console.log('Standalone comment posted successfully:', newComment);
     } catch (error) {
-      console.error('Failed to submit comment:', error);
-      // TODO: Show error to user
-      state.error = error instanceof Error ? error.message : 'Failed to submit comment';
+      console.error('Failed to post comment:', error);
+      state.error = error instanceof Error ? error.message : 'Failed to post comment';
+    }
+  };
+
+  const updatePendingComment = (commentId: string, body: string, isPartOfReview?: boolean) => {
+    const comment = state.pendingComments.find(c => c.id === commentId);
+    if (comment) {
+      comment.body = body;
+      if (isPartOfReview !== undefined) {
+        comment.isPartOfReview = isPartOfReview;
+      }
+    }
+  };
+
+  const savePendingComment = (commentId: string) => {
+    const comment = state.pendingComments.find(c => c.id === commentId);
+    if (!comment || !comment.body.trim()) return;
+
+    // Mark the comment as saved (part of review)
+    comment.isPartOfReview = true;
+    state.activeCommentId = null;
+    // Don't clear line selection - user might want to add another comment on same lines
+
+    console.log('Comment saved to pending review:', comment);
+  };
+
+  const submitReview = async () => {
+    if (!state.pullRequest) {
+      console.error('No pull request loaded');
+      return;
+    }
+
+    if (state.pendingComments.length === 0 && !state.reviewDraft.body.trim()) {
+      console.error('No comments or review body to submit');
+      return;
+    }
+
+    try {
+      // Import the API service dynamically
+      const { submitPullRequestReview, preparePendingCommentsForReview } = await import('../services/review-api.service');
+
+      // Get owner and repo from the PR data
+      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
+      const repo = state.pullRequest.head.repo?.name || '';
+
+      // Prepare pending comments for the review API
+      const pendingReviewComments = state.pendingComments
+        .filter(c => c.isPartOfReview && c.body.trim())
+        .map(c => ({
+          path: c.filename,
+          line: c.startLine,
+          side: c.side === 'left' ? 'LEFT' as const : 'RIGHT' as const,
+          body: c.body
+        }));
+
+      // Calculate positions for all pending comments
+      const reviewComments = await preparePendingCommentsForReview(
+        owner,
+        repo,
+        state.pullRequest.number,
+        pendingReviewComments
+      );
+
+      // Submit the entire review
+      const newReview = await submitPullRequestReview(
+        owner,
+        repo,
+        state.pullRequest.number,
+        {
+          event: state.reviewDraft.event,
+          body: state.reviewDraft.body,
+          comments: reviewComments
+        }
+      );
+
+      // Add the new review to our state
+      state.reviews.push(newReview);
+
+      // Add individual comments to reviewComments if they were created
+      if (newReview.comments) {
+        state.reviewComments.push(...newReview.comments);
+      }
+
+      // Clear pending state
+      state.pendingComments = [];
+      state.activeCommentId = null;
+      state.reviewDraft = {
+        body: '',
+        event: 'COMMENT'
+      };
+      clearLineSelection();
+
+      console.log('Review submitted successfully:', newReview);
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+      state.error = error instanceof Error ? error.message : 'Failed to submit review';
+    }
+  };
+
+  const updateReviewDraft = (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => {
+    state.reviewDraft.body = body;
+    if (event) {
+      state.reviewDraft.event = event;
     }
   };
 
@@ -503,8 +627,12 @@ export function createPRReviewState() {
     extendSelection,
     clearLineSelection,
     startCommentOnSelectedLines,
+    addCommentToReview,
+    postStandaloneComment,
     updatePendingComment,
-    submitPendingComment,
+    savePendingComment,
+    submitReview,
+    updateReviewDraft,
     cancelPendingComment,
     isLineSelected
   };
