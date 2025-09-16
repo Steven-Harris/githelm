@@ -260,7 +260,7 @@
       class="bg-[#238636] text-white {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md border border-[#2ea043] transition-colors duration-200
       {formState.selectedOrg && formState.repoName && (formState.monitorPRs || formState.monitorActions) ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
       disabled={!formState.selectedOrg || !formState.repoName || (!formState.monitorPRs && !formState.monitorActions)}
-      type="submit"
+      type="button"
       aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
       title={getButtonTooltip()}
       onclick={handleSubmit}
