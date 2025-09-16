@@ -1,6 +1,6 @@
+import type { SearchRepositoryResult } from '$integrations/github';
 import { searchRepositories } from '$integrations/github';
 import { captureException } from '$integrations/sentry';
-import type { SearchRepositoryResult } from '$integrations/github';
 
 export interface ExistingRepo {
   org: string;
@@ -17,7 +17,7 @@ export interface SearchState {
 export class RepositorySearchService {
   private static instance: RepositorySearchService;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): RepositorySearchService {
     if (!RepositorySearchService.instance) {
@@ -41,8 +41,8 @@ export class RepositorySearchService {
     existingRepos: ExistingRepo[],
     onStateUpdate: (updates: Partial<SearchState>) => void
   ): Promise<void> {
-    
-    if (!orgName || !repoName.trim()) {
+
+    if (!orgName) {
       onStateUpdate({
         searchResults: [],
         showResults: false,
@@ -50,13 +50,17 @@ export class RepositorySearchService {
       return;
     }
 
+    // Always perform search, even for short terms, since GitHub search is more effective
+    // than local filtering for finding specific repositories
+    const trimmedRepoName = repoName.trim();
+
     onStateUpdate({
       isLoading: true,
       showResults: true,
     });
 
     try {
-      const results = await searchRepositories(orgName, repoName);
+      const results = await searchRepositories(orgName, trimmedRepoName);
 
       // Mark repositories that are already configured
       const markedResults = results.map((repo) => ({

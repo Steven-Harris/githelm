@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { repositorySearchService, type ExistingRepo, type SearchState } from '$features/config/services/repository-search.service';
   import { useDropdown } from './directives/useDropdown';
   import { useKeyboardNavigation } from './directives/useKeyboardNavigation';
-  import { repositorySearchService, type SearchState, type ExistingRepo } from '$features/config/services/repository-search.service';
 
   let {
     orgName = '',
@@ -29,31 +29,20 @@
   });
 
   async function handleInputChange(): Promise<void> {
-    repoName = repoName.trim();
-    if (!orgName || !repoName.trim()) {
+    if (!orgName) {
       repositorySearchService.resetSearchState((updates) => {
         Object.assign(searchState, updates);
       });
       return;
     }
 
-    searchState.searchTimeout = repositorySearchService.debouncedSearch(
-      orgName,
-      repoName,
-      existingRepos,
-      searchState.searchTimeout,
-      (updates) => {
-        Object.assign(searchState, updates);
-      }
-    );
+    searchState.searchTimeout = repositorySearchService.debouncedSearch(orgName, repoName.trim(), existingRepos, searchState.searchTimeout, (updates) => {
+      Object.assign(searchState, updates);
+    });
   }
 
   function selectRepository(repo: string): void {
-    const isAlreadyConfigured = repositorySearchService.isRepositoryAlreadyConfigured(
-      orgName,
-      repo,
-      existingRepos
-    );
+    const isAlreadyConfigured = repositorySearchService.isRepositoryAlreadyConfigured(orgName, repo, existingRepos);
 
     if (!isAlreadyConfigured) {
       onChange(repo);
@@ -113,7 +102,7 @@
         bind:value={repoName}
         oninput={handleInputChange}
         onfocus={() => {
-          if (repoName && orgName) {
+          if (orgName) {
             searchState.showResults = true;
             handleInputChange();
           }
@@ -121,7 +110,7 @@
         class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName
           ? 'opacity-50 cursor-not-allowed'
           : ''}"
-        placeholder="Type to search repositories..."
+        placeholder="Search repositories or leave empty to see recent..."
         disabled={!orgName}
         aria-required="true"
       />
