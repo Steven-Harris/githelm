@@ -84,13 +84,13 @@
   <div class="pr-action-bar">
   <div class="action-buttons">
     {#if canReview}
-  <button class="action-btn approve" onclick={handleApprove} title="Approve this pull request" aria-label="Approve pull request"> ✓ Approve </button>
+      <button class="action-btn approve" onclick={handleApprove} title="Approve this pull request" aria-label="Approve pull request"> ✓ Approve </button>
 
-  <button class="action-btn request-changes" onclick={handleRequestChanges} title="Request changes on this pull request" aria-label="Request changes"> ⚠ Request Changes </button>
+      <button class="action-btn request-changes" onclick={handleRequestChanges} title="Request changes on this pull request" aria-label="Request changes"> ⚠ Request Changes </button>
     {/if}
 
     {#if $isAuthenticated}
-  <button class="action-btn comment" onclick={handleComment} title="Add a comment to this pull request" aria-label="Add comment"> 💬 Comment </button>
+      <button class="action-btn comment" onclick={handleComment} title="Add a comment to this pull request" aria-label="Add comment"> 💬 Comment </button>
     {/if}
   </div>
 </div>
