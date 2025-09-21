@@ -62,7 +62,7 @@
             <button
               class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 cursor-pointer flex items-center justify-center w-6 h-6"
               title="Remove organization"
-              aria-label="delete {org.name}"
+              aria-label={`Delete ${org.name}`}
               onclick={() => deleteOrganization(i)}
             >
               <img src={deleteSVG} alt="Delete" width="14" height="14" />

@@ -1,8 +1,9 @@
-import { writable, get } from 'svelte/store';
+import { allWorkflowRuns, initializeActionsPolling, refreshActionsData } from '$features/actions/stores/actions.store';
 import { type RepoConfig, configService } from '$integrations/firebase';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
-import { eventBus } from '$shared/stores/event-bus.store';
+import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
+import { allPullRequests, initializePullRequestsPolling, refreshPullRequestsData } from '$shared/stores/repository-service';
+import { writable } from 'svelte/store';
 
 export interface CombinedConfig {
   org: string;
@@ -21,13 +22,13 @@ export function getRepoKey(config: RepoConfig): string {
 export async function loadRepositoryConfigs(): Promise<void> {
   try {
     const configs = await configService.getConfigs();
-    
+
     pullRequestConfigs.set(configs.pullRequests || []);
     actionsConfigs.set(configs.actions || []);
-    
+
     setStorageObject('pull-requests-configs', configs.pullRequests || []);
     setStorageObject('actions-configs', configs.actions || []);
-    
+
     const prConfigs = configs.pullRequests || [];
     if (prConfigs.length) {
       const initialPRs: Record<string, any[]> = {};
@@ -35,16 +36,14 @@ export async function loadRepositoryConfigs(): Promise<void> {
         const key = getRepoKey(config);
         initialPRs[key] = [];
       });
-      const { allPullRequests } = await import('$features/pull-requests/stores/pull-requests.store');
       allPullRequests.set(initialPRs);
-      
-        setTimeout(async () => {
-          const { refreshPullRequestsData, initializePullRequestsPolling } = await import('$shared/stores/repository-service');
-          await refreshPullRequestsData(prConfigs);
-          initializePullRequestsPolling({ repoConfigs: prConfigs });
-        }, 100);
+
+      setTimeout(async () => {
+        await refreshPullRequestsData(prConfigs);
+        initializePullRequestsPolling({ repoConfigs: prConfigs });
+      }, 100);
     }
-    
+
     const actionConfigs = configs.actions || [];
     if (actionConfigs.length) {
       const initialActions: Record<string, any[]> = {};
@@ -52,15 +51,12 @@ export async function loadRepositoryConfigs(): Promise<void> {
         const key = getRepoKey(config);
         initialActions[key] = [];
       });
-      const { allWorkflowRuns } = await import('$shared/stores/repository-service');
       allWorkflowRuns.set(initialActions);
-      
+
       setTimeout(async () => {
         try {
-          const { refreshActionsData, initializeActionsPolling } = await import('$shared/stores/repository-service');
-          
           await refreshActionsData(actionConfigs);
-          
+
           initializeActionsPolling(actionConfigs);
         } catch (error) {
           captureException(error, {
@@ -71,7 +67,7 @@ export async function loadRepositoryConfigs(): Promise<void> {
         }
       }, 200);
     }
-    
+
   } catch (error) {
     captureException(error, {
       action: 'loadRepositoryConfigs',
@@ -103,7 +99,7 @@ function mergeConfigs(pullRequests: RepoConfig[], actions: RepoConfig[]): Combin
     const combinedConfig = combined.get(key)!;
     combinedConfig.pullRequests = config.filters || [];
   }
-  
+
   for (const config of actions) {
     const key = `${config.org}/${config.repo}`;
     if (!combined.has(key)) {
@@ -208,7 +204,7 @@ async function refreshPRConfigs(): Promise<void> {
   try {
     const configs = await configService.getConfigs();
     const prConfigs = configs.pullRequests || [];
-    
+
     pullRequestConfigs.set(prConfigs);
     setStorageObject('pull-requests-configs', prConfigs);
   } catch (error) {
@@ -223,7 +219,7 @@ async function refreshActionConfigs(): Promise<void> {
   try {
     const configs = await configService.getConfigs();
     const actionConfigs = configs.actions || [];
-    
+
     actionsConfigs.set(actionConfigs);
     setStorageObject('actions-configs', actionConfigs);
   } catch (error) {
@@ -238,7 +234,7 @@ export function clearConfigStores(): void {
   try {
     pullRequestConfigs.set([]);
     actionsConfigs.set([]);
-    
+
   } catch (error) {
     console.warn('Error clearing configuration stores:', error);
   }

@@ -1,0 +1,53 @@
+<script lang="ts">
+  import type { ReviewComment } from '../../../integrations/github/types.js';
+
+  interface Props {
+    comment: ReviewComment;
+    onScrollToCode?: (filename: string, line: number) => void;
+  }
+
+  let { comment, onScrollToCode }: Props = $props();
+
+  function handleScrollToCode() {
+    if (onScrollToCode && comment.path && comment.line) {
+      onScrollToCode(comment.path, comment.line);
+    }
+  }
+
+  function formatDate(dateString: string) {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+</script>
+
+<div class="bg-white border rounded-lg p-4 hover:shadow-sm transition-shadow">
+  <div class="flex items-start justify-between mb-3">
+    <div class="flex items-center gap-3">
+      {#if comment.user?.avatar_url}
+        <img src={comment.user.avatar_url} alt={comment.user.login} class="w-8 h-8 rounded-full" />
+      {/if}
+      <div>
+        <div class="font-medium text-gray-900">
+          {comment.user?.login || 'Unknown'}
+        </div>
+        <div class="text-sm text-gray-500">
+          {formatDate(comment.created_at)}
+        </div>
+      </div>
+    </div>
+
+    {#if comment.path && comment.line && onScrollToCode}
+      <button type="button" class="text-sm text-blue-600 hover:text-blue-800 transition-colors" onclick={handleScrollToCode}>
+        Line {comment.line} in {comment.path}
+      </button>
+    {/if}
+  </div>
+
+  <div class="prose prose-sm max-w-none">
+    {comment.body}
+  </div>
+</div>

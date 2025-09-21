@@ -22,12 +22,14 @@
 
 {#if $isMobile && page.url.pathname !== '/config'}
   <div id="tabs" class="flex justify-center w-full mb-4 md:hidden sticky top-0 z-10 bg-gray-900">
-    <button id="tab-pull-requests" type="button" class="tab-button {pullRequestsTabActive()}" onclick={() => switchTab(pullRequestsTab)}>
-      Pull Requests
-    </button>
-    <button id="tab-actions" type="button" class="tab-button {actionTabActive()}" onclick={() => switchTab(actionsTab)}>
-      Actions
-    </button>
+    <div role="tablist" aria-label="Main tabs">
+      <button id="tab-pull-requests" type="button" role="tab" aria-selected={$activeTab === pullRequestsTab} class="tab-button {pullRequestsTabActive()}" onclick={() => switchTab(pullRequestsTab)} aria-controls="panel-pull-requests">
+        Pull Requests
+      </button>
+      <button id="tab-actions" type="button" role="tab" aria-selected={$activeTab === actionsTab} class="tab-button {actionTabActive()}" onclick={() => switchTab(actionsTab)} aria-controls="panel-actions">
+        Actions
+      </button>
+    </div>
   </div>
 {/if}
 
