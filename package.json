@@ -48,7 +48,7 @@
     "tailwindcss": "^4.1.13"
   },
   "devDependencies": {
-    "@eslint/js": "^9.35.0",
+    "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.0",
     "@sveltejs/adapter-static": "^3.0.9",
     "@sveltejs/kit": "^2.39.1",
