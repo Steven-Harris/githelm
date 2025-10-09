@@ -287,7 +287,7 @@ class FirebaseAuthClient {
 
   private clearCachedData(): void {
     try {
-      // Clear all GitHub-related cached data
+      // Clear all GitHub-related cached data from localStorage
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -305,6 +305,11 @@ class FirebaseAuthClient {
       keysToRemove.forEach(key => {
         localStorage.removeItem(key);
       });
+
+      // Also clear sessionStorage (includes GitHub token and any other session data)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
+      }
       
     } catch (error) {
       console.warn('Error clearing cached data:', error);
