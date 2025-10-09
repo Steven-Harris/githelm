@@ -1,6 +1,5 @@
 import { type RepoConfig, configService } from '$integrations/firebase';
 import { fetchMultipleRepositoriesPullRequests, fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
@@ -81,7 +80,6 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
       pullRequests: updatedConfigs,
     });
 
-    setStorageObject('pull-requests-configs', updatedConfigs);
     pullRequestConfigs.set(updatedConfigs);
 
     return Promise.resolve();
@@ -97,8 +95,9 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
 
 // Get combined configuration for the config page
 export async function getCombinedConfigs(): Promise<CombinedConfig[]> {
-  const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
-  const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
+  const configs = await configService.getConfigs();
+  const prConfigs = configs.pullRequests || [];
+  const actionConfigs = configs.actions || [];
 
   return mergeConfigs(prConfigs, actionConfigs);
 }
@@ -182,10 +181,6 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
       // If we have unsaved organization changes, the ConfigService will include them when saving
     });
 
-    // Update in local storage
-    setStorageObject('pull-requests-configs', prConfigs);
-    setStorageObject('actions-configs', actionConfigs);
-
     // Update stores
     pullRequestConfigs.set(prConfigs);
     actionsConfigs.set(actionConfigs);
@@ -206,39 +201,30 @@ export async function refreshConfigurations(): Promise<void> {
 }
 
 async function refreshPRConfigs(): Promise<void> {
-  const configs = getStorageObject<RepoConfig[]>('pull-requests-configs');
-  if (configs.data?.length) {
-    pullRequestConfigs.set(configs.data);
-    return refreshPullRequestsData(configs.data);
+  const configs = await configService.getConfigs();
+  if (configs.pullRequests?.length) {
+    pullRequestConfigs.set(configs.pullRequests);
+    return refreshPullRequestsData(configs.pullRequests);
   }
 }
 
 async function refreshActionConfigs(): Promise<void> {
-  const configs = getStorageObject<RepoConfig[]>('actions-configs');
-  if (configs.data?.length) {
-    actionsConfigs.set(configs.data);
-    return refreshActionsData(configs.data);
+  const configs = await configService.getConfigs();
+  if (configs.actions?.length) {
+    actionsConfigs.set(configs.actions);
+    return refreshActionsData(configs.actions);
   }
 }
 
 export async function loadRepositoryConfigs(): Promise<void> {
-  // Load configurations only, without triggering data fetching
-  const prStorage = getStorageObject<RepoConfig[]>('pull-requests-configs');
-  if (prStorage.data?.length) {
-    pullRequestConfigs.set(prStorage.data);
-  } else {
-    const configs = await configService.getConfigs();
-    if (!configs.pullRequests.length) return;
-    setStorageObject('pull-requests-configs', configs.pullRequests);
+  // Load configurations from Firebase without triggering data fetching
+  const configs = await configService.getConfigs();
+  
+  if (configs.pullRequests?.length) {
     pullRequestConfigs.set(configs.pullRequests);
   }
-  const actionStorage = getStorageObject<RepoConfig[]>('actions-configs');
-  if (actionStorage.data?.length) {
-    actionsConfigs.set(actionStorage.data);
-  } else {
-    const configs = await configService.getConfigs();
-    if (!configs.actions.length) return;
-    setStorageObject('actions-configs', configs.actions);
+  
+  if (configs.actions?.length) {
     actionsConfigs.set(configs.actions);
   }
   
