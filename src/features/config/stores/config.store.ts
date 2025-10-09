@@ -1,6 +1,5 @@
 import { writable, get } from 'svelte/store';
 import { type RepoConfig, configService } from '$integrations/firebase';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { captureException } from '$integrations/sentry';
 import { eventBus } from '$shared/stores/event-bus.store';
 
@@ -24,9 +23,6 @@ export async function loadRepositoryConfigs(): Promise<void> {
     
     pullRequestConfigs.set(configs.pullRequests || []);
     actionsConfigs.set(configs.actions || []);
-    
-    setStorageObject('pull-requests-configs', configs.pullRequests || []);
-    setStorageObject('actions-configs', configs.actions || []);
     
     const prConfigs = configs.pullRequests || [];
     if (prConfigs.length) {
@@ -82,8 +78,9 @@ export async function loadRepositoryConfigs(): Promise<void> {
 }
 
 export async function getCombinedConfigs(): Promise<CombinedConfig[]> {
-  const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
-  const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
+  const configs = await configService.getConfigs();
+  const prConfigs = configs.pullRequests || [];
+  const actionConfigs = configs.actions || [];
 
   return mergeConfigs(prConfigs, actionConfigs);
 }
@@ -160,9 +157,6 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
       actions: actionConfigs,
     });
 
-    setStorageObject('pull-requests-configs', prConfigs);
-    setStorageObject('actions-configs', actionConfigs);
-
     pullRequestConfigs.set(prConfigs);
     actionsConfigs.set(actionConfigs);
 
@@ -186,7 +180,6 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
       pullRequests: updatedConfigs,
     });
 
-    setStorageObject('pull-requests-configs', updatedConfigs);
     pullRequestConfigs.set(updatedConfigs);
 
     return Promise.resolve();
@@ -210,7 +203,6 @@ async function refreshPRConfigs(): Promise<void> {
     const prConfigs = configs.pullRequests || [];
     
     pullRequestConfigs.set(prConfigs);
-    setStorageObject('pull-requests-configs', prConfigs);
   } catch (error) {
     captureException(error, {
       action: 'refreshPRConfigs',
@@ -225,7 +217,6 @@ async function refreshActionConfigs(): Promise<void> {
     const actionConfigs = configs.actions || [];
     
     actionsConfigs.set(actionConfigs);
-    setStorageObject('actions-configs', actionConfigs);
   } catch (error) {
     captureException(error, {
       action: 'refreshActionConfigs',

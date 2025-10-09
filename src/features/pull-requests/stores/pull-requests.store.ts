@@ -1,7 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
-import { type RepoConfig } from '$integrations/firebase';
+import { type RepoConfig, configService } from '$integrations/firebase';
 import { type PullRequest } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from '$shared/stores/polling.store';
@@ -31,8 +30,8 @@ function unsubscribe(key: string): void {
 
 export async function loadPullRequestConfigs(): Promise<void> {
   try {
-    const storedConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs');
-    const configs = storedConfigs.data || [];
+    const configData = await configService.getConfigs();
+    const configs = configData.pullRequests || [];
     pullRequestConfigs.set(configs);
     
     if (configs.length > 0) {
@@ -152,7 +151,11 @@ async function checkForNewPullRequests(org: string, repo: string, label: string)
 
 export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<void> {
   try {
-    setStorageObject('pull-requests-configs', configs);
+    const currentConfigs = await configService.getConfigs();
+    await configService.saveConfigs({
+      ...currentConfigs,
+      pullRequests: configs,
+    });
     pullRequestConfigs.set(configs);
     
     const { initializePullRequestsPolling } = await import('$shared/stores/repository-service');

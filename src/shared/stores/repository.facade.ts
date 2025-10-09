@@ -31,7 +31,6 @@ import {
   clearConfigStores
 } from '$features/config/stores/config.store';
 import { configService } from '$integrations/firebase';
-import { setStorageObject } from '$shared/services/storage.service';
 
 export class RepositoryFacade {
   private static instance: RepositoryFacade;
@@ -53,10 +52,6 @@ export class RepositoryFacade {
       // Update stores with configs
       pullRequestConfigs.set(configs.pullRequests || []);
       actionsConfigs.set(configs.actions || []);
-      
-      // Update local storage
-      setStorageObject('pull-requests-configs', configs.pullRequests || []);
-      setStorageObject('actions-configs', configs.actions || []);
       
       // Now call our modified loadRepositoryConfigs to initialize empty data
       await loadRepositoryConfigs();

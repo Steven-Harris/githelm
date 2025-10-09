@@ -1,6 +1,7 @@
 import { killSwitch } from '$shared/stores/kill-switch.store';
 import { startRequest, endRequest } from '$shared/stores/loading.store';
-import { setLastUpdated, setStorageObject } from '$shared/services/storage.service';
+import { setLastUpdated } from '$shared/services/storage.service';
+import { memoryCacheService } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import { getTokenSafely, getCurrentAuthState, queueApiCallIfNeeded, MAX_RETRIES, RETRY_DELAY_BASE_MS } from './auth';
 import { firebase } from '$integrations/firebase';
@@ -260,10 +261,10 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
     setLastUpdated();
     const result = responseBody; // Use the already parsed response body
 
-    // Cache if needed
+    // Cache if needed (using memory cache now)
     if (cacheKey) {
       const dataToCache = result.data || result;
-      setStorageObject(cacheKey, dataToCache);
+      memoryCacheService.set(cacheKey, dataToCache, 60 * 1000); // 60 second TTL
     }
 
     return result.data || result;

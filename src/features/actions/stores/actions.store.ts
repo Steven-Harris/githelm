@@ -1,7 +1,6 @@
 import { writable, derived } from 'svelte/store';
-import { type RepoConfig } from '$integrations/firebase';
+import { type RepoConfig, configService } from '$integrations/firebase';
 import { fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type WorkflowRun, type Job } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from "$shared/stores/polling.store";
@@ -33,8 +32,8 @@ function unsubscribe(key: string): void {
 
 export async function loadActionsConfigs(): Promise<void> {
   try {
-    const storedConfigs = getStorageObject<RepoConfig[]>('actions-configs');
-    const configs = storedConfigs.data || [];
+    const configData = await configService.getConfigs();
+    const configs = configData.actions || [];
     actionsConfigs.set(configs);
     
     if (configs.length > 0) {
@@ -187,7 +186,11 @@ async function fetchJobsForWorkflowRuns(org: string, repo: string, runs: Workflo
 
 export async function updateActionsConfigs(configs: RepoConfig[]): Promise<void> {
   try {
-    setStorageObject('actions-configs', configs);
+    const currentConfigs = await configService.getConfigs();
+    await configService.saveConfigs({
+      ...currentConfigs,
+      actions: configs,
+    });
     actionsConfigs.set(configs);
     initializeActionsPolling(configs);
   } catch (error) {
