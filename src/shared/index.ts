@@ -12,8 +12,10 @@ export { errorService } from './services/error.service';
 export { loggerService } from './services/logger.service';
 
 // Storage
-
 export { getStorageObject, setStorageObject, clearSiteData } from './services/storage.service';
+
+// Memory Cache
+export { memoryCacheService, CacheKeys } from './services/memory-cache.service';
 
 // Commands
 export { commandExecutor } from './commands/repository.commands';
