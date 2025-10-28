@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { RepoConfig } from '$integrations/firebase';
-  import { getStorageObject } from '$shared/services/storage.service';
+  import { configService } from '$integrations/firebase';
   import { isMobile } from '$shared/stores/mobile.store';
   import { repositoryFacade } from '$shared/stores/repository.facade';
   import { onMount } from 'svelte';
@@ -18,8 +18,9 @@
   async function loadConfigurations(): Promise<void> {
     isLoading = true;
     try {
-      const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
-      const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
+      const configs = await configService.getConfigs();
+      const prConfigs = configs.pullRequests || [];
+      const actionConfigs = configs.actions || [];
 
       const combined = new Map<string, CombinedConfig>();
 

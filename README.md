@@ -10,7 +10,8 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 - **Language**: TypeScript
 - **Authentication**: Firebase Authentication with GitHub provider
 - **Data Storage**: Firebase Firestore
-- **Local Storage**: Browser localStorage for caching API responses
+- **Caching**: In-memory cache for API responses with automatic expiration
+- **Session Storage**: Browser sessionStorage for GitHub authentication tokens
 - **API Integration**: GitHub REST API and GraphQL API
 - **Styling**: TailwindCSS
 - **Deployment**: Client-only deployment to Firebase Hosting

@@ -1,7 +1,7 @@
 import { writable, derived } from 'svelte/store';
-import { type RepoConfig } from '$integrations/firebase';
+import { type RepoConfig, configService } from '$integrations/firebase';
 import { fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type WorkflowRun, type Job } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
+import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from "$shared/stores/polling.store";
 
@@ -32,8 +32,8 @@ function unsubscribe(key: string): void {
 
 export async function loadActionsConfigs(): Promise<void> {
   try {
-    const storedConfigs = getStorageObject<RepoConfig[]>('actions-configs');
-    const configs = storedConfigs.data || [];
+    const configData = await configService.getConfigs();
+    const configs = configData.actions || [];
     actionsConfigs.set(configs);
     
     if (configs.length > 0) {
@@ -129,39 +129,27 @@ async function fetchActionsSmartly(config: RepoConfig): Promise<any> {
     
     // If no actions need updating, return cached data
     if (!needsUpdate.some(Boolean)) {
-      const cacheKey = `actions-cache-${config.org}/${config.repo}`;
-      const cached = localStorage.getItem(cacheKey);
+      const cacheKey = memoryCacheService.createKey(CacheKeys.ACTIONS, config.org, config.repo);
+      const cached = memoryCacheService.get<any>(cacheKey);
       if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch (e) {
-          console.warn('Failed to parse cached actions data:', e);
-        }
+        return cached;
       }
     }
     
     // Fetch fresh data.
     const workflows = await fetchActions(config.org, config.repo, actions);
     
-    // Cache the result.
-    try {
-      const cacheKey = `actions-cache-${config.org}/${config.repo}`;
-      localStorage.setItem(cacheKey, JSON.stringify(workflows));
-    } catch (cacheError) {
-      console.warn('Failed to cache actions data:', cacheError);
-    }
+    // Cache the result for 60 seconds
+    const cacheKey = memoryCacheService.createKey(CacheKeys.ACTIONS, config.org, config.repo);
+    memoryCacheService.set(cacheKey, workflows, 60 * 1000);
     
     return workflows;
   } catch (error) {
     // On error, try to return cached data.
-    const cacheKey = `actions-cache-${config.org}/${config.repo}`;
-    const cached = localStorage.getItem(cacheKey);
+    const cacheKey = memoryCacheService.createKey(CacheKeys.ACTIONS, config.org, config.repo);
+    const cached = memoryCacheService.get<any>(cacheKey);
     if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        console.warn('Failed to parse cached actions data as fallback:', e);
-      }
+      return cached;
     }
     
     throw error;
@@ -198,7 +186,11 @@ async function fetchJobsForWorkflowRuns(org: string, repo: string, runs: Workflo
 
 export async function updateActionsConfigs(configs: RepoConfig[]): Promise<void> {
   try {
-    setStorageObject('actions-configs', configs);
+    const currentConfigs = await configService.getConfigs();
+    await configService.saveConfigs({
+      ...currentConfigs,
+      actions: configs,
+    });
     actionsConfigs.set(configs);
     initializeActionsPolling(configs);
   } catch (error) {

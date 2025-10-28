@@ -15,31 +15,7 @@ const defaultFilters: Record<WorkflowStatus, boolean> = {
   pending: true,
 };
 
-const loadFiltersFromLocalStorage = (): Record<WorkflowStatus, boolean> => {
-  try {
-    const savedFilters = localStorage.getItem('workflow-status-filters');
-    if (savedFilters) {
-      const parsed = JSON.parse(savedFilters);
-      // Convert old format to new format if needed
-      if (parsed.in_progress !== undefined) {
-        return {
-          success: parsed.success ?? true,
-          failure: parsed.failure ?? true,
-          in_progress: parsed.in_progress ?? true,
-          queued: parsed.queued ?? true,
-          pending: parsed.pending ?? true,
-        };
-      }
-      return parsed;
-    }
-  } catch (error) {
-    captureException(error, {
-      context: 'Workflow Status Filter Store',
-      function: 'loadFiltersFromLocalStorage',
-    });
-  }
-  return { ...defaultFilters };
-};
+
 
 const loadFiltersFromFirebase = async (): Promise<Record<WorkflowStatus, boolean> | null> => {
   try {
@@ -80,19 +56,11 @@ const saveFilters = async (filters: Record<WorkflowStatus, boolean>): Promise<vo
     });
   }
 
-  // Always save to localStorage as backup
-  try {
-    localStorage.setItem('workflow-status-filters', JSON.stringify(filters));
-  } catch (error) {
-    captureException(error, {
-      context: 'Workflow Status Filter Store',
-      function: 'saveFilters - localStorage',
-    });
-  }
+
 };
 
-// Initialize store with localStorage data, then load from Firebase
-export const workflowStatusFilters = writable<Record<WorkflowStatus, boolean>>(loadFiltersFromLocalStorage());
+// Initialize store with default values, then load from Firebase
+export const workflowStatusFilters = writable<Record<WorkflowStatus, boolean>>({ ...defaultFilters });
 
 // Initialize Firebase loading on user authentication
 firebase.user.subscribe(async (user) => {
@@ -104,7 +72,7 @@ firebase.user.subscribe(async (user) => {
   }
 });
 
-// Save to both localStorage and Firebase when filters change
+// Save to Firebase when filters change
 workflowStatusFilters.subscribe((value) => {
   saveFilters(value);
 });

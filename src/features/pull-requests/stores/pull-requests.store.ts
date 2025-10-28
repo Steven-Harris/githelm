@@ -1,7 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
-import { type RepoConfig } from '$integrations/firebase';
+import { type RepoConfig, configService } from '$integrations/firebase';
 import { type PullRequest } from '$integrations/github';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
+import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import createPollingStore from '$shared/stores/polling.store';
 import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
@@ -30,8 +30,8 @@ function unsubscribe(key: string): void {
 
 export async function loadPullRequestConfigs(): Promise<void> {
   try {
-    const storedConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs');
-    const configs = storedConfigs.data || [];
+    const configData = await configService.getConfigs();
+    const configs = configData.pullRequests || [];
     pullRequestConfigs.set(configs);
     
     if (configs.length > 0) {
@@ -113,14 +113,10 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     );
     
     if (!needsUpdate.some(Boolean)) {
-      const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
-      const cached = localStorage.getItem(cacheKey);
+      const cacheKey = memoryCacheService.createKey(CacheKeys.PULL_REQUESTS, config.org, config.repo);
+      const cached = memoryCacheService.get<PullRequest[]>(cacheKey);
       if (cached) {
-        try {
-          return JSON.parse(cached);
-        } catch (e) {
-          console.warn('Failed to parse cached pull requests data:', e);
-        }
+        return cached;
       }
     }
     
@@ -133,23 +129,16 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     const pullRequests = await pullRequestRepo.fetchPullRequests(query);
     const result = pullRequests || [];
     
-    try {
-      const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
-      localStorage.setItem(cacheKey, JSON.stringify(result));
-    } catch (cacheError) {
-      console.warn('Failed to cache pull requests data:', cacheError);
-    }
+    // Cache the result for 60 seconds
+    const cacheKey = memoryCacheService.createKey(CacheKeys.PULL_REQUESTS, config.org, config.repo);
+    memoryCacheService.set(cacheKey, result, 60 * 1000);
     
     return result;
   } catch (error) {
-    const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
-    const cached = localStorage.getItem(cacheKey);
+    const cacheKey = memoryCacheService.createKey(CacheKeys.PULL_REQUESTS, config.org, config.repo);
+    const cached = memoryCacheService.get<PullRequest[]>(cacheKey);
     if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        console.warn('Failed to parse cached pull requests data as fallback:', e);
-      }
+      return cached;
     }
     
     throw error;
@@ -162,7 +151,11 @@ async function checkForNewPullRequests(org: string, repo: string, label: string)
 
 export async function updatePullRequestConfigs(configs: RepoConfig[]): Promise<void> {
   try {
-    setStorageObject('pull-requests-configs', configs);
+    const currentConfigs = await configService.getConfigs();
+    await configService.saveConfigs({
+      ...currentConfigs,
+      pullRequests: configs,
+    });
     pullRequestConfigs.set(configs);
     
     const { initializePullRequestsPolling } = await import('$shared/stores/repository-service');

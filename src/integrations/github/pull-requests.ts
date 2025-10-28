@@ -1,6 +1,6 @@
 import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
-import { getStorageObject } from '$shared/services/storage.service';
+import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import { type PullRequest, type PullRequests, type RepoInfo, type Review } from './types';
 
@@ -204,10 +204,11 @@ export function squashReviewsByAuthor(reviews: Review[]): Review[] {
 export async function fetchReviews(org: string, repo: string, prNumber: number): Promise<Review[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const pullRequestsCache = getStorageObject<PullRequest[]>(`graphql-${JSON.stringify({ owner: org, repo: repo })}`);
+      const cacheKey = memoryCacheService.createKey(CacheKeys.PULL_REQUESTS, org, repo);
+      const pullRequestsCache = memoryCacheService.get<PullRequest[]>(cacheKey);
 
-      if (pullRequestsCache.data && Array.isArray(pullRequestsCache.data)) {
-        const pr = pullRequestsCache.data.find((pr) => pr.number === prNumber);
+      if (pullRequestsCache && Array.isArray(pullRequestsCache)) {
+        const pr = pullRequestsCache.find((pr) => pr.number === prNumber);
 
         if (pr && pr.reviews) {
           return pr.reviews;
