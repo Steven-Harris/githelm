@@ -21,7 +21,7 @@
 </script>
 
 <div class="flex items-center space-x-4">
-  <label for="commit-selector" class="text-sm font-medium text-gray-700">View changes:</label>
+  <label for="commit-selector" class="text-sm font-medium text-[#8b949e]">View changes:</label>
   <select
     id="commit-selector"
     value={selectedCommit || 'all'}

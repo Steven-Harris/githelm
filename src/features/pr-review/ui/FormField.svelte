@@ -18,7 +18,7 @@
 
 <div class="space-y-2 {className}">
   {#if label}
-    <label for={fieldId} class="block text-sm font-medium text-gray-700">
+    <label for={fieldId} class="block text-sm font-medium text-[#c9d1d9]">
       {label}
       {#if required}
         <span class="text-red-500">*</span>

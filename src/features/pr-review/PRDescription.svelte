@@ -86,12 +86,12 @@
 <div class="mt-3">
   {#if hasMarkdown() && (renderedMarkdown() || (!shouldShowToggle() && !expanded))}
     <!-- Render markdown when there's markdown content -->
-    <div class="prose prose-sm max-w-none text-gray-700">
+    <div class="prose prose-sm max-w-none text-[#c9d1d9]">
       {@html renderedMarkdown()}
     </div>
   {:else}
     <!-- Show plain text when no markdown or in preview mode -->
-    <div class="text-sm text-gray-700 whitespace-pre-line">
+    <div class="text-sm text-[#c9d1d9] whitespace-pre-line">
       {cleanText()}
     </div>
   {/if}

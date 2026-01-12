@@ -57,9 +57,9 @@
   }
 </script>
 
-<section>
-  <div class="container mx-auto mt-5">
-    <div class="hero-card overflow-hidden flex flex-col">
+<section class="mt-5 px-2 md:px-0">
+  <div class="mx-auto w-full max-w-none">
+    <div class="hero-card w-full overflow-hidden flex flex-col min-h-0">
       {#if prReview.state.loading}
         <div class="p-6">
           <LoadingState />
