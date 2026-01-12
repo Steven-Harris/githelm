@@ -57,53 +57,64 @@
   }
 </script>
 
-<div class="flex flex-col min-h-0">
-  {#if prReview.state.loading}
-    <LoadingState />
-  {:else if prReview.state.error}
-    <ErrorState error={prReview.state.error} onRetry={() => prReview.loadPullRequest(owner, repo, prNumber)} />
-  {:else if prReview.state.pullRequest}
-    <!-- Header -->
-    <PRHeader pullRequest={prReview.state.pullRequest} commitCount={prReview.state.commits.length} fileStats={prReview.fileStats()} />
+<section>
+  <div class="container mx-auto mt-5">
+    <div class="hero-card overflow-hidden flex flex-col">
+      {#if prReview.state.loading}
+        <div class="p-6">
+          <LoadingState />
+        </div>
+      {:else if prReview.state.error}
+        <div class="p-6">
+          <ErrorState error={prReview.state.error} onRetry={() => prReview.loadPullRequest(owner, repo, prNumber)} />
+        </div>
+      {:else if prReview.state.pullRequest}
+        <!-- Header -->
+        <PRHeader pullRequest={prReview.state.pullRequest} commitCount={prReview.state.commits.length} fileStats={prReview.fileStats()} />
 
-    <!-- Description -->
-    {#if prReview.state.pullRequest.body}
-      <PRDescription body={prReview.state.pullRequest.body} title={prReview.state.pullRequest.title} />
-    {/if}
+        <!-- Description -->
+        {#if prReview.state.pullRequest.body}
+          <div class="px-6 pt-4">
+            <PRDescription body={prReview.state.pullRequest.body} title={prReview.state.pullRequest.title} />
+          </div>
+        {/if}
 
-    <ChecksDisplay checks={prReview.state.checks} />
+        <div class="px-6">
+          <ChecksDisplay checks={prReview.state.checks} />
+          <PRControls {prReview} />
+        </div>
 
-    <PRControls {prReview} />
+        <div class="flex flex-1 min-h-0 border-t border-[#30363d]">
+          <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
 
-    <div class="flex flex-1 min-h-0">
-      <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
+          <FilesList {prReview} {scrollManager} />
 
-      <FilesList {prReview} {scrollManager} />
-
-      <CommentsSidebar
-        reviews={prReview.state.reviews}
-        reviewComments={prReview.state.reviewComments}
-        onCommentClick={handleCommentClick}
-        selectedLines={prReview.state.selectedLines}
-        pendingComments={prReview.state.pendingComments}
-        activeCommentId={prReview.state.activeCommentId}
-        reviewDraft={prReview.state.reviewDraft}
-        onStartComment={prReview.startCommentOnSelectedLines}
-        onAddToReview={prReview.addCommentToReview}
-        onPostComment={prReview.postStandaloneComment}
-        onUpdateComment={prReview.updatePendingComment}
-        onCancelComment={prReview.cancelPendingComment}
-        onClearSelection={prReview.clearLineSelection}
-        onUpdateReviewDraft={prReview.updateReviewDraft}
-        onSubmitReview={prReview.submitReview}
-        onDeleteSubmittedComment={prReview.deleteSubmittedComment}
-        canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false}
-        isAuthenticated={$isAuthenticated}
-      />
+          <CommentsSidebar
+            reviews={prReview.state.reviews}
+            reviewComments={prReview.state.reviewComments}
+            onCommentClick={handleCommentClick}
+            selectedLines={prReview.state.selectedLines}
+            pendingComments={prReview.state.pendingComments}
+            activeCommentId={prReview.state.activeCommentId}
+            reviewDraft={prReview.state.reviewDraft}
+            onStartComment={prReview.startCommentOnSelectedLines}
+            onAddToReview={prReview.addCommentToReview}
+            onPostComment={prReview.postStandaloneComment}
+            onUpdateComment={prReview.updatePendingComment}
+            onCancelComment={prReview.cancelPendingComment}
+            onClearSelection={prReview.clearLineSelection}
+            onUpdateReviewDraft={prReview.updateReviewDraft}
+            onSubmitReview={prReview.submitReview}
+            onDeleteSubmittedComment={prReview.deleteSubmittedComment}
+            canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false}
+            isAuthenticated={$isAuthenticated}
+          />
+        </div>
+      {:else}
+        <div class="p-6 text-center">
+          <div class="text-[#8b949e]">No pull request data available</div>
+        </div>
+      {/if}
     </div>
-  {:else}
-    <div class="text-center py-12">
-      <div class="text-[#8b949e]">No pull request data available</div>
-    </div>
-  {/if}
-</div>
+  </div>
+</section>

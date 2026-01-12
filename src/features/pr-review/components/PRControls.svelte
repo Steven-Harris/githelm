@@ -10,7 +10,7 @@
   let { prReview }: Props = $props();
 </script>
 
-<div class="flex items-center justify-between mt-4 pt-4 border-t border-[#30363d]">
+<div class="flex items-center justify-between pt-4 pb-4 pr-1">
   <!-- Commit selector -->
   <CommitSelector commits={prReview.state.commits} selectedCommit={prReview.state.selectedCommit} onCommitChange={prReview.selectCommit} />
 

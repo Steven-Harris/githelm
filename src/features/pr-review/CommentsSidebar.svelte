@@ -70,7 +70,7 @@
   );
 </script>
 
-<div class="w-80 bg-[#161b22] border-l border-[#30363d] h-full overflow-y-auto text-[#c9d1d9]">
+<div class="w-80 bg-[#161b22] border-l border-[#30363d] min-h-0 overflow-y-auto text-[#c9d1d9]">
   <div class="p-4 border-b border-[#30363d]">
     <h3 class="text-sm font-medium text-[#f0f6fc]">Reviews & Comments</h3>
     <div class="text-xs text-[#8b949e] mt-1">
