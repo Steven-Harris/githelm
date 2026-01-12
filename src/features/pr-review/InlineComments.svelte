@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ReviewComment } from '$integrations/github';
+  import { renderMarkdownToHtml } from './utils/markdown';
 
   interface Props {
     comments: ReviewComment[];
@@ -50,8 +51,8 @@
                 </div>
 
                 <!-- Comment body -->
-                <div class="text-sm text-[#c9d1d9] prose prose-sm max-w-none prose-invert">
-                  {comment.body}
+                <div class="gh-markdown text-sm prose prose-sm max-w-none prose-invert overflow-x-auto">
+                  {@html renderMarkdownToHtml(comment.body)}
                 </div>
 
                 <!-- Comment metadata -->

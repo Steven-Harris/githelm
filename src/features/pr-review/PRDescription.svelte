@@ -86,7 +86,7 @@
 <div class="mt-3">
   {#if hasMarkdown() && (renderedMarkdown() || (!shouldShowToggle() && !expanded))}
     <!-- Render markdown when there's markdown content -->
-    <div class="prose prose-sm max-w-none text-[#c9d1d9]">
+    <div class="gh-markdown prose prose-sm max-w-none prose-invert">
       {@html renderedMarkdown()}
     </div>
   {:else}

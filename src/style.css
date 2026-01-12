@@ -43,6 +43,65 @@ body {
   flex-direction: column;
 }
 
+/* Markdown rendering (Tailwind Typography / prose) tuned for GitHelm dark UI */
+.gh-markdown {
+  /* Override Tailwind Typography CSS variables (works with .prose / .prose-invert) */
+  --tw-prose-body: #f0f6fc;
+  --tw-prose-headings: #ffffff;
+  --tw-prose-lead: #f0f6fc;
+  --tw-prose-links: #79c0ff;
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: #c9d1d9;
+  --tw-prose-bullets: #c9d1d9;
+  --tw-prose-hr: #30363d;
+  --tw-prose-quotes: #f0f6fc;
+  --tw-prose-quote-borders: #30363d;
+  --tw-prose-captions: #8b949e;
+  --tw-prose-code: #f0f6fc;
+  --tw-prose-pre-code: #f0f6fc;
+  --tw-prose-pre-bg: #0d1117;
+  --tw-prose-th-borders: #30363d;
+  --tw-prose-td-borders: #30363d;
+
+  /* prosa-invert uses a separate set of variables */
+  --tw-prose-invert-body: #f0f6fc;
+  --tw-prose-invert-headings: #ffffff;
+  --tw-prose-invert-lead: #f0f6fc;
+  --tw-prose-invert-links: #79c0ff;
+  --tw-prose-invert-bold: #ffffff;
+  --tw-prose-invert-counters: #c9d1d9;
+  --tw-prose-invert-bullets: #c9d1d9;
+  --tw-prose-invert-hr: #30363d;
+  --tw-prose-invert-quotes: #f0f6fc;
+  --tw-prose-invert-quote-borders: #30363d;
+  --tw-prose-invert-captions: #8b949e;
+  --tw-prose-invert-code: #f0f6fc;
+  --tw-prose-invert-pre-code: #f0f6fc;
+  --tw-prose-invert-pre-bg: #0d1117;
+  --tw-prose-invert-th-borders: #30363d;
+  --tw-prose-invert-td-borders: #30363d;
+}
+
+/* Make wide markdown tables usable in narrow sidebars */
+.gh-markdown :where(table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gh-markdown :where(th, td) {
+  white-space: nowrap;
+}
+
+.gh-markdown :where(pre) {
+  border: 1px solid #30363d;
+}
+
+.gh-markdown :where(h1, h2, h3, h4, h5, h6) {
+  color: #ffffff;
+}
+
 /* Add glass effect to containers */
 .glass-container {
   background: var(--hero-card-bg);
@@ -303,7 +362,7 @@ button#pwa-refresh {
 
 /* Custom prose styles for markdown rendering */
 .prose {
-  color: #374151;
+  color: var(--primary-text-color);
   max-width: 65ch;
 }
 
@@ -318,7 +377,7 @@ button#pwa-refresh {
 .prose h4,
 .prose h5,
 .prose h6 {
-  color: #111827;
+  color: var(--primary-text-color);
   font-weight: 600;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
@@ -362,16 +421,16 @@ button#pwa-refresh {
 }
 
 .prose code {
-  color: #111827;
+  color: var(--tw-prose-pre-code);
   font-weight: 600;
   font-size: 0.875em;
-  background-color: #f3f4f6;
+  background-color: #374151;
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
 }
 
 .prose pre {
-  color: #e5e7eb;
+  color: var(--tw-prose-pre-code);
   background-color: #374151;
   overflow-x: auto;
   font-weight: 400;

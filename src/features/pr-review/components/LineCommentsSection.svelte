@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ReviewComment } from '$integrations/github';
+  import { renderMarkdownToHtml } from '../utils/markdown';
 
   interface Props {
     comments: ReviewComment[];
@@ -56,7 +57,7 @@
         {@const lineNumber = comment.line || comment.original_line || 0}
         <div
           class="group border border-[#30363d] rounded-lg p-3 cursor-pointer transition-all duration-200 hover:border-[#1f6feb]/60 hover:shadow-sm {isResolved
-            ? 'opacity-50 bg-[#0d1117]'
+            ? 'opacity-50 bg-[#161b22]'
             : 'hover:bg-[#1f6feb]/10'}"
           onclick={() => handleCommentClick(comment)}
           role="button"
@@ -116,8 +117,8 @@
           </div>
 
           <!-- Comment body -->
-          <div class="text-sm text-[#c9d1d9] whitespace-pre-wrap leading-relaxed {isResolved ? 'line-through' : ''}">
-            {comment.body}
+          <div class="gh-markdown text-sm prose prose-sm max-w-none prose-invert leading-relaxed overflow-x-auto {isResolved ? 'line-through' : ''}">
+            {@html renderMarkdownToHtml(comment.body)}
           </div>
 
           <!-- Hover indicator -->
