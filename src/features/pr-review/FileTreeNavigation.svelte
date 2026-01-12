@@ -89,16 +89,16 @@
   }
 </script>
 
-<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-  <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
-    <h3 class="text-sm font-medium text-gray-900">
+<div class="bg-[#161b22] border border-[#30363d] rounded-lg overflow-hidden text-[#c9d1d9]">
+  <div class="bg-[#0d1117] px-4 py-3 border-b border-[#30363d]">
+    <h3 class="text-sm font-medium text-[#f0f6fc]">
       Changed Files ({files.length})
     </h3>
   </div>
 
   <div class="p-2 max-h-96 overflow-y-auto">
     {#if fileTree.length === 0}
-      <div class="text-gray-500 text-sm p-4 text-center">No files changed</div>
+      <div class="text-[#8b949e] text-sm p-4 text-center">No files changed</div>
     {:else}
       {#each fileTree as node}
         <FileTreeNode {node} level={0} {selectedFile} {onFileSelect} onToggle={toggleDirectory} />

@@ -282,6 +282,9 @@ function calculatePositionFromLine(patch: string, targetLine: number, side: 'LEF
   let newLineNumber = 0;
 
   for (const line of lines) {
+    // Position counts every line in the patch, including hunk headers.
+    position++;
+
     if (line.startsWith('@@')) {
       // Parse the hunk header to get starting line numbers
       const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
@@ -291,8 +294,6 @@ function calculatePositionFromLine(patch: string, targetLine: number, side: 'LEF
       }
       continue;
     }
-
-    position++;
 
     if (line.startsWith('-')) {
       // Deletion line
@@ -435,10 +436,7 @@ export async function deleteComment(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
+    throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
   }
 }
 

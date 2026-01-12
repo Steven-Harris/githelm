@@ -11,9 +11,7 @@
   interface Props {
     reviews: Review[];
     reviewComments: ReviewComment[];
-    selectedFile: string | null;
     onCommentClick?: (filename: string, lineNumber: number) => void;
-    // New props for line selection and commenting
     selectedLines?: SelectedLine[];
     pendingComments?: PendingComment[];
     activeCommentId?: string | null;
@@ -22,15 +20,11 @@
     onAddToReview?: (commentId: string) => void;
     onPostComment?: (commentId: string) => void;
     onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
-    onSaveComment?: (commentId: string) => void;
     onCancelComment?: (commentId: string) => void;
     onClearSelection?: () => void;
     onUpdateReviewDraft?: (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
     onSubmitReview?: () => void;
-    // Legacy review action props (keeping for compatibility)
-    onApproveReview?: (comment?: string) => void;
-    onRequestChanges?: (reason: string) => void;
-    onSubmitGeneralComment?: (comment: string) => void;
+    onDeleteSubmittedComment?: (commentId: number) => void;
     canReview?: boolean;
     isAuthenticated?: boolean;
   }
@@ -38,7 +32,6 @@
   const {
     reviews,
     reviewComments,
-    selectedFile,
     onCommentClick,
     selectedLines = [],
     pendingComments = [],
@@ -48,37 +41,28 @@
     onAddToReview,
     onPostComment,
     onUpdateComment,
-    onSaveComment,
     onCancelComment,
     onClearSelection,
     onUpdateReviewDraft,
     onSubmitReview,
-    onApproveReview,
-    onRequestChanges,
-    onSubmitGeneralComment,
+    onDeleteSubmittedComment,
     canReview = false,
     isAuthenticated = false,
   }: Props = $props();
 
-  // Get approval/rejection reviews (reviews with states but not necessarily comments)
   const approvalReviews = $derived(reviews.filter((review) => ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(review.state)));
 
-  // Separate overall comments (reviews with body content)
   const overallComments = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
 
-  // Check if there's an active review (pending comments that are part of review or review draft content)
   const hasActiveReview = $derived(() => pendingComments.some((c) => c.isPartOfReview) || (reviewDraft && (reviewDraft.body.trim() !== '' || reviewDraft.event !== 'COMMENT')));
 
-  // All individual line comments, sorted by file and line number
   const lineComments = $derived(
     reviewComments
       .filter((comment) => comment.line || comment.original_line)
       .sort((a, b) => {
-        // First sort by file path
         const pathCompare = a.path.localeCompare(b.path);
         if (pathCompare !== 0) return pathCompare;
 
-        // Then sort by line number
         const lineA = a.line || a.original_line || 0;
         const lineB = b.line || b.original_line || 0;
         return lineA - lineB;
@@ -86,16 +70,15 @@
   );
 </script>
 
-<div class="w-80 bg-white border-l border-gray-200 h-full overflow-y-auto">
-  <div class="p-4 border-b border-gray-200">
-    <h3 class="text-sm font-medium text-gray-900">Reviews & Comments</h3>
-    <div class="text-xs text-gray-500 mt-1">
+<div class="w-80 bg-[#161b22] border-l border-[#30363d] h-full overflow-y-auto text-[#c9d1d9]">
+  <div class="p-4 border-b border-[#30363d]">
+    <h3 class="text-sm font-medium text-[#f0f6fc]">Reviews & Comments</h3>
+    <div class="text-xs text-[#8b949e] mt-1">
       {approvalReviews.length} approval{approvalReviews.length !== 1 ? 's' : ''} • {overallComments.length + lineComments.length} comment{overallComments.length + lineComments.length !== 1 ? 's' : ''}
     </div>
   </div>
 
-  <div class="divide-y divide-gray-100">
-    <!-- Pending Comments Section -->
+  <div class="divide-y divide-[#30363d]">
     <PendingCommentsSection
       {selectedLines}
       {pendingComments}
@@ -109,19 +92,14 @@
       hasActiveReview={hasActiveReview()}
     />
 
-    <!-- Review Submission Section -->
     <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={canReview && isAuthenticated} />
 
-    <!-- Approvals Section -->
     <ApprovalsSection reviews={approvalReviews} />
 
-    <!-- Overall Comments Section -->
     <OverallCommentsSection reviews={overallComments} />
 
-    <!-- Individual Line Comments Section -->
-    <LineCommentsSection comments={lineComments} {onCommentClick} />
+    <LineCommentsSection comments={lineComments} {onCommentClick} onDeleteComment={onDeleteSubmittedComment} />
 
-    <!-- Empty state -->
     {#if approvalReviews.length === 0 && overallComments.length === 0 && lineComments.length === 0}
       <EmptyState />
     {/if}

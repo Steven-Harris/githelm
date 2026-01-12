@@ -17,12 +17,12 @@
 
 <Modal open={true} onClose={onCancel} title="Add comment to {pendingComment.filename}" size="md">
   <div class="space-y-4">
-    <div class="bg-gray-50 border rounded-md p-3">
-      <div class="text-sm text-gray-600 mb-2">
+    <div class="bg-[#0d1117] border border-[#30363d] rounded-md p-3">
+      <div class="text-sm text-[#8b949e] mb-2">
         {lineText} in {pendingComment.filename}
       </div>
       {#if pendingComment.selectedText}
-        <pre class="text-sm bg-white border rounded p-2 whitespace-pre-wrap">{pendingComment.selectedText}</pre>
+        <pre class="text-sm bg-[#161b22] border border-[#30363d] rounded p-2 whitespace-pre-wrap text-[#c9d1d9]">{pendingComment.selectedText}</pre>
       {/if}
     </div>
 

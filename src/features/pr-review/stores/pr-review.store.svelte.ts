@@ -7,11 +7,10 @@ import type {
   ReviewComment
 } from '$integrations/github';
 
-// Types for line selection and pending comments
 export interface SelectedLine {
   filename: string;
   lineNumber: number;
-  side: 'left' | 'right'; // For side-by-side diff view
+  side: 'left' | 'right'; 
   content: string;
 }
 
@@ -19,14 +18,14 @@ export interface PendingComment {
   id: string;
   filename: string;
   startLine: number;
-  endLine?: number; // For multi-line comments
+  endLine?: number;
   side: 'left' | 'right';
   body: string;
-  isPartOfReview: boolean; // true if part of review, false for standalone comment
+  isPartOfReview: boolean;
 }
 
 export interface ReviewDraft {
-  body: string; // Overall review comment
+  body: string; 
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
 }
 
@@ -48,15 +47,13 @@ export interface PullRequestReviewState {
   diffViewMode: 'inline' | 'side-by-side';
   expandFilesOnLoad: boolean;
   preferencesLoaded: boolean;
-  // New properties for line selection and commenting
   selectedLines: SelectedLine[];
   pendingComments: PendingComment[];
   isSelectingLines: boolean;
-  activeCommentId: string | null; // ID of comment currently being edited
+  activeCommentId: string | null; 
   reviewDraft: ReviewDraft;
 }
 
-// Create a reactive state using Svelte 5 runes
 export function createPRReviewState() {
   const state = $state<PullRequestReviewState>({
     pullRequest: null,
@@ -75,7 +72,6 @@ export function createPRReviewState() {
     diffViewMode: 'side-by-side',
     expandFilesOnLoad: true,
     preferencesLoaded: false,
-    // Initialize new properties
     selectedLines: [],
     pendingComments: [],
     isSelectingLines: false,
@@ -86,7 +82,6 @@ export function createPRReviewState() {
     },
   });
 
-  // Derived values using $derived
   const fileStats = $derived(() => {
     if (!state.files.length) return null;
 
@@ -482,6 +477,13 @@ export function createPRReviewState() {
     }
   };
 
+  // Backwards-compatible alias used by some components.
+  // In this store implementation a "pending comment" is posted as a standalone
+  // review comment unless it has been explicitly added to the review.
+  const submitPendingComment = async (commentId: string) => {
+    return postStandaloneComment(commentId);
+  };
+
   const updatePendingComment = (commentId: string, body: string, isPartOfReview?: boolean) => {
     const comment = state.pendingComments.find(c => c.id === commentId);
     if (comment) {
@@ -510,7 +512,11 @@ export function createPRReviewState() {
       return;
     }
 
-    if (state.pendingComments.length === 0 && !state.reviewDraft.body.trim()) {
+    const reviewCommentsPending = state.pendingComments.filter(c => c.isPartOfReview && c.body.trim());
+
+    // Only allow submit if there's something in the review body OR at least one
+    // comment that has been explicitly added to the review.
+    if (reviewCommentsPending.length === 0 && !state.reviewDraft.body.trim()) {
       console.error('No comments or review body to submit');
       return;
     }
@@ -524,8 +530,7 @@ export function createPRReviewState() {
       const repo = state.pullRequest.head.repo?.name || '';
 
       // Prepare pending comments for the review API
-      const pendingReviewComments = state.pendingComments
-        .filter(c => c.isPartOfReview && c.body.trim())
+      const pendingReviewComments = reviewCommentsPending
         .map(c => ({
           path: c.filename,
           line: c.startLine,
@@ -556,9 +561,19 @@ export function createPRReviewState() {
       // Add the new review to our state
       state.reviews.push(newReview);
 
-      // Add individual comments to reviewComments if they were created
-      if (newReview.comments) {
-        state.reviewComments.push(...newReview.comments);
+      // Refresh server truth: the review creation response does not reliably include
+      // the newly-created inline comments, so we refetch them.
+      try {
+        const { fetchReviewComments, fetchPullRequestReviews } = await import('../services/pr-review.service');
+        const [freshComments, freshReviews] = await Promise.all([
+          fetchReviewComments(owner, repo, state.pullRequest.number),
+          fetchPullRequestReviews(owner, repo, state.pullRequest.number)
+        ]);
+        state.reviewComments = freshComments;
+        state.reviews = freshReviews;
+      } catch (refreshError) {
+        // If refresh fails, we still keep the optimistic review push above.
+        console.warn('Failed to refresh review data after submit:', refreshError);
       }
 
       // Clear pending state
@@ -570,7 +585,7 @@ export function createPRReviewState() {
       };
       clearLineSelection();
 
-      console.log('Review submitted successfully:', newReview);
+      // Success
     } catch (error) {
       console.error('Failed to submit review:', error);
       state.error = error instanceof Error ? error.message : 'Failed to submit review';
@@ -590,6 +605,35 @@ export function createPRReviewState() {
       state.activeCommentId = null;
     }
     clearLineSelection();
+  };
+
+  const deleteSubmittedComment = async (commentId: number) => {
+    if (!state.pullRequest) {
+      console.error('No pull request loaded');
+      return;
+    }
+
+    try {
+      const { deleteComment } = await import('../services/review-api.service');
+
+      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
+      const repo = state.pullRequest.head.repo?.name || '';
+
+      await deleteComment(owner, repo, commentId);
+
+      // Refresh comments so the UI matches GitHub without a full page reload.
+      try {
+        const { fetchReviewComments } = await import('../services/pr-review.service');
+        state.reviewComments = await fetchReviewComments(owner, repo, state.pullRequest.number);
+      } catch (refreshError) {
+        // Fall back to local removal if refresh fails.
+        state.reviewComments = state.reviewComments.filter((c: any) => c.id !== commentId);
+        console.warn('Failed to refresh comments after delete:', refreshError);
+      }
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      state.error = error instanceof Error ? error.message : 'Failed to delete comment';
+    }
   };
 
   const isLineSelected = (filename: string, lineNumber: number, side: 'left' | 'right'): boolean => {
@@ -629,11 +673,13 @@ export function createPRReviewState() {
     startCommentOnSelectedLines,
     addCommentToReview,
     postStandaloneComment,
+    submitPendingComment,
     updatePendingComment,
     savePendingComment,
     submitReview,
     updateReviewDraft,
     cancelPendingComment,
+    deleteSubmittedComment,
     isLineSelected
   };
 }

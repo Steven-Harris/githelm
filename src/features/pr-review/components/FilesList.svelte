@@ -27,11 +27,11 @@
   });
 </script>
 
-<div bind:this={mainContentElement} class="flex-1 overflow-y-auto bg-gray-50">
+<div bind:this={mainContentElement} class="flex-1 overflow-y-auto bg-[#0d1117]">
   {#if prReview.state.files.length > 0}
     <div class="space-y-1">
       {#each prReview.state.files as file (file.filename)}
-        <div data-filename={file.filename} class="bg-white border-b border-gray-200 last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
+        <div data-filename={file.filename} class="bg-[#161b22] border-b border-[#30363d] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
           <FileDiff
             {file}
             isExpanded={prReview.state.expandedFiles.has(file.filename)}
@@ -51,7 +51,7 @@
       {/each}
     </div>
   {:else}
-    <div class="flex items-center justify-center h-full text-gray-500">
+    <div class="flex items-center justify-center h-full text-[#8b949e]">
       <div class="text-center">
         <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

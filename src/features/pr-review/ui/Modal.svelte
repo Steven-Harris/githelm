@@ -59,11 +59,11 @@
 <dialog bind:this={dialog} class="backdrop:bg-black backdrop:bg-opacity-50 bg-transparent p-0 max-w-none max-h-none w-full h-full" oncancel={onClose}>
   {#if open}
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4" onclick={handleBackdropClick} onkeydown={handleKeydown} role="presentation">
-      <div class="bg-white rounded-lg shadow-xl w-full {sizeClasses[size]} max-h-[90vh] flex flex-col">
+      <div class="bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl w-full {sizeClasses[size]} max-h-[90vh] flex flex-col">
         {#if title}
-          <div class="flex items-center justify-between p-6 border-b">
-            <h2 class="text-lg font-semibold text-gray-900">{title}</h2>
-            <button type="button" class="text-gray-400 hover:text-gray-600 transition-colors" onclick={onClose} aria-label="Close modal">
+          <div class="flex items-center justify-between p-6 border-b border-[#30363d]">
+            <h2 class="text-lg font-semibold text-[#f0f6fc]">{title}</h2>
+            <button type="button" class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors" onclick={onClose} aria-label="Close modal">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -76,7 +76,7 @@
         </div>
 
         {#if actions}
-          <div class="flex justify-end gap-3 p-6 border-t bg-gray-50 rounded-b-lg">
+          <div class="flex justify-end gap-3 p-6 border-t border-[#30363d] bg-[#0d1117] rounded-b-lg">
             {@render actions()}
           </div>
         {/if}

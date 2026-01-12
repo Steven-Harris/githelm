@@ -24,23 +24,23 @@
   }
 </script>
 
-<div class="bg-white shadow-sm border-b border-gray-200 px-6 py-4 flex-shrink-0">
+<div class="bg-[#161b22] shadow-sm border-b border-[#30363d] px-6 py-4 flex-shrink-0">
   <div class="flex items-start justify-between">
     <!-- Left side: Title and meta -->
     <div class="flex-1 min-w-0">
-      <h1 class="text-xl font-bold text-gray-900 truncate">
+      <h1 class="text-xl font-bold text-[#f0f6fc] truncate">
         {pullRequest.title}
-        <span class="text-gray-500">#{pullRequest.number}</span>
+        <span class="text-[#8b949e]">#{pullRequest.number}</span>
       </h1>
 
-      <div class="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+      <div class="flex items-center space-x-4 mt-2 text-sm text-[#8b949e]">
         <div class="flex items-center">
           <img src={pullRequest.user.avatar_url} alt={pullRequest.user.login} class="w-5 h-5 rounded-full mr-2" />
-          <span>{pullRequest.user.login}</span>
+          <span class="text-[#c9d1d9]">{pullRequest.user.login}</span>
         </div>
-        <span>•</span>
+        <span class="text-[#30363d]">•</span>
         <span>created {formatDate(pullRequest.created_at)}</span>
-        <span>•</span>
+        <span class="text-[#30363d]">•</span>
         <span>updated {formatDate(pullRequest.updated_at)}</span>
       </div>
     </div>
@@ -49,7 +49,7 @@
     <div class="ml-6 flex items-center space-x-6">
       <!-- Compact stats -->
       <div class="flex items-center space-x-4 text-sm">
-        <div class="flex items-center text-gray-600">
+        <div class="flex items-center text-[#8b949e]">
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -60,13 +60,13 @@
           </svg>
           <span>{fileStats.totalFiles}</span>
         </div>
-        <div class="flex items-center text-green-600">
+        <div class="flex items-center text-green-400">
           <span>+{fileStats.totalAdditions}</span>
         </div>
-        <div class="flex items-center text-red-600">
+        <div class="flex items-center text-red-400">
           <span>-{fileStats.totalDeletions}</span>
         </div>
-        <div class="flex items-center text-blue-600">
+        <div class="flex items-center text-blue-400">
           <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -81,11 +81,11 @@
 
       <!-- Status badges -->
       <div class="flex items-center space-x-2">
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-300 border border-green-800/50">
           {pullRequest.state}
         </span>
         {#if pullRequest.draft}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"> Draft </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#30363d]/60 text-[#c9d1d9] border border-[#30363d]"> Draft </span>
         {/if}
       </div>
     </div>
