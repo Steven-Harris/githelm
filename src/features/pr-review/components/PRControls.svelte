@@ -19,6 +19,14 @@
     <DiffViewToggle currentMode={prReview.state.diffViewMode} onModeChange={prReview.saveDiffViewMode} />
     <div class="flex space-x-2">
       <button
+        onclick={() => prReview.toggleFocusSelectedFileOnly()}
+        class="px-3 py-1 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+        aria-label={prReview.state.focusSelectedFileOnly ? 'Show all files' : 'Focus on selected file'}
+        title={prReview.state.focusSelectedFileOnly ? 'Show all files' : 'Focus on selected file'}
+      >
+        {prReview.state.focusSelectedFileOnly ? 'Show All' : 'Focus File'}
+      </button>
+      <button
         onclick={() => prReview.expandAllFiles()}
         class="px-3 py-1 text-sm bg-[#1f6feb]/20 hover:bg-[#1f6feb]/30 text-[#58a6ff] border border-[#1f6feb]/30 rounded-md transition-colors"
         aria-label="Expand all files"

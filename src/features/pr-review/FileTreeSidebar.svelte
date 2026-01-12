@@ -81,7 +81,9 @@
   }
 </script>
 
-<div class="w-64 bg-[#161b22] border-r border-[#30363d] min-h-0 overflow-y-auto text-[#c9d1d9]">
+<div
+  class="w-64 bg-[#161b22] border-r border-[#30363d] min-h-0 overflow-y-auto text-[#c9d1d9] sticky top-4 self-start max-h-[calc(100dvh-8rem)]"
+>
   <div class="p-4 border-b border-[#30363d]">
     <h3 class="text-sm font-medium text-[#f0f6fc]">Files Changed ({files.length})</h3>
   </div>

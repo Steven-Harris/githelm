@@ -12,6 +12,14 @@
 
   let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
 
+  const visibleFiles = $derived(() => {
+    if (prReview.state.focusSelectedFileOnly && prReview.state.selectedFile) {
+      return prReview.state.files.filter((f) => f.filename === prReview.state.selectedFile);
+    }
+
+    return prReview.state.files;
+  });
+
   // Forward the element reference to scroll manager
   $effect(() => {
     if (mainContentElement) {
@@ -28,9 +36,9 @@
 </script>
 
 <div bind:this={mainContentElement} class="flex-1 overflow-y-auto bg-[#0d1117]">
-  {#if prReview.state.files.length > 0}
+  {#if visibleFiles().length > 0}
     <div class="space-y-1">
-      {#each prReview.state.files as file (file.filename)}
+      {#each visibleFiles() as file (file.filename)}
         <div data-filename={file.filename} class="bg-[#161b22] border-b border-[#30363d] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
           <FileDiff
             {file}

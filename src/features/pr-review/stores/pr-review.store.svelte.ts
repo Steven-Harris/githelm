@@ -47,6 +47,7 @@ export interface PullRequestReviewState {
   diffViewMode: 'inline' | 'side-by-side';
   expandFilesOnLoad: boolean;
   preferencesLoaded: boolean;
+  focusSelectedFileOnly: boolean;
   selectedLines: SelectedLine[];
   pendingComments: PendingComment[];
   isSelectingLines: boolean;
@@ -72,6 +73,7 @@ export function createPRReviewState() {
     diffViewMode: 'side-by-side',
     expandFilesOnLoad: true,
     preferencesLoaded: false,
+    focusSelectedFileOnly: false,
     selectedLines: [],
     pendingComments: [],
     isSelectingLines: false,
@@ -279,6 +281,13 @@ export function createPRReviewState() {
 
   const selectFile = (fileName: string | null) => {
     state.selectedFile = fileName;
+
+    if (state.focusSelectedFileOnly && fileName) {
+      // In focus mode, ensure the selected file is expanded.
+      const newExpanded = new Set(state.expandedFiles);
+      newExpanded.add(fileName);
+      state.expandedFiles = newExpanded;
+    }
   };
 
   const selectCommit = (commitSha: string | null) => {
@@ -320,6 +329,17 @@ export function createPRReviewState() {
     state.expandedFiles = new Set<string>();
   };
 
+  const toggleFocusSelectedFileOnly = () => {
+    state.focusSelectedFileOnly = !state.focusSelectedFileOnly;
+
+    if (state.focusSelectedFileOnly && state.selectedFile) {
+      // Ensure the focused file is visible/expanded.
+      const newExpanded = new Set(state.expandedFiles);
+      newExpanded.add(state.selectedFile);
+      state.expandedFiles = newExpanded;
+    }
+  };
+
   const toggleFileExpanded = (filename: string) => {
     const newExpanded = new Set(state.expandedFiles);
     if (newExpanded.has(filename)) {
@@ -329,6 +349,7 @@ export function createPRReviewState() {
     }
     state.expandedFiles = newExpanded;
   };
+
 
   // Line selection and commenting methods with drag support
   const selectLine = (filename: string, lineNumber: number, side: 'left' | 'right', content: string, isExtending: boolean = false) => {
@@ -665,6 +686,7 @@ export function createPRReviewState() {
     expandAllFiles,
     collapseAllFiles,
     toggleFileExpanded,
+    toggleFocusSelectedFileOnly,
 
     // New comment and line selection actions
     selectLine,

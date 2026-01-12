@@ -59,7 +59,7 @@
 
 <section class="mt-5 px-2 md:px-0">
   <div class="mx-auto w-full max-w-none">
-    <div class="hero-card w-full overflow-hidden flex flex-col min-h-0">
+    <div class="hero-card w-full flex flex-col min-h-0" style="overflow: visible;">
       {#if prReview.state.loading}
         <div class="p-6">
           <LoadingState />
@@ -84,7 +84,7 @@
           <PRControls {prReview} />
         </div>
 
-        <div class="flex flex-1 min-h-0 border-t border-[#30363d]">
+        <div class="flex flex-1 min-h-0 border-t border-[#30363d] items-start">
           <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
 
           <FilesList {prReview} {scrollManager} />
