@@ -106,6 +106,7 @@
             onUpdateReviewDraft={prReview.updateReviewDraft}
             onSubmitReview={prReview.submitReview}
             onDeleteSubmittedComment={prReview.deleteSubmittedComment}
+            onSetThreadResolved={prReview.setThreadResolved}
             canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false}
             isAuthenticated={$isAuthenticated}
           />

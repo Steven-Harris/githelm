@@ -53,7 +53,7 @@ export async function fetchData<T = {} | []>(url: string, retryCount = 0, skipLo
 }
 
 export async function executeGraphQLQuery<T = any>(query: string, variables: Record<string, any> = {}, retryCount = 0, skipLoadingIndicator = false): Promise<T> {
-  const cacheKey = `graphql-${JSON.stringify(variables)}`;
+  const cacheKey = `graphql-${hashString(query)}-${JSON.stringify(variables)}`;
   return executeRequest<T>(GITHUB_GRAPHQL_API, {
     method: 'POST',
     body: { query, variables },
@@ -61,6 +61,17 @@ export async function executeGraphQLQuery<T = any>(query: string, variables: Rec
     retryCount,
     skipLoadingIndicator,
   });
+}
+
+function hashString(input: string): string {
+  // Simple stable 32-bit hash (FNV-1a style) for compact cache keys
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  // Convert to unsigned hex
+  return (hash >>> 0).toString(16);
 }
 
 export async function postData(url: string, body: any, skipLoadingIndicator = false): Promise<Response> {

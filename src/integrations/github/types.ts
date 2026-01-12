@@ -106,6 +106,12 @@ export interface ReviewComment {
   subject_type?: 'line' | 'file';
   reactions?: Reaction;
   in_reply_to_id?: number;
+
+  /** GitHub review thread node id (GraphQL) if available */
+  thread_id?: string;
+
+  /** Whether the review thread is resolved (if available) */
+  is_resolved?: boolean;
 }
 
 export interface PullRequestFile {

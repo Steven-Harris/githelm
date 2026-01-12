@@ -279,6 +279,26 @@ export function createPRReviewState() {
     state.activeTab = tab;
   };
 
+  const setThreadResolved = async (threadId: string, resolved: boolean) => {
+    if (!threadId) return;
+
+    try {
+      const { setReviewThreadResolved } = await import('../services/review-api.service');
+      const ok = await setReviewThreadResolved(threadId, resolved);
+      if (!ok) return;
+
+      // Update local state for all comments in the same thread
+      state.reviewComments = state.reviewComments.map((c) => {
+        if (c.thread_id === threadId) {
+          return { ...c, is_resolved: resolved };
+        }
+        return c;
+      });
+    } catch (error) {
+      console.warn('Failed to update thread resolution:', error);
+    }
+  };
+
   const selectFile = (fileName: string | null) => {
     state.selectedFile = fileName;
 
@@ -678,6 +698,7 @@ export function createPRReviewState() {
     saveDiffViewMode,
     loadPullRequest,
     setActiveTab,
+    setThreadResolved,
     selectFile,
     selectCommit,
     toggleResolvedComments,

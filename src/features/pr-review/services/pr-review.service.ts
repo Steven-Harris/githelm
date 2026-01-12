@@ -1,5 +1,55 @@
-import { fetchData, queueApiCallIfNeeded, type CheckRun, type DetailedPullRequest, type PullRequestCommit, type PullRequestFile, type Review, type ReviewComment } from '$integrations/github';
+import { executeGraphQLQuery, fetchData, queueApiCallIfNeeded, type CheckRun, type DetailedPullRequest, type PullRequestCommit, type PullRequestFile, type Review, type ReviewComment } from '$integrations/github';
 import { captureException } from '$integrations/sentry/client';
+
+async function fetchThreadResolutionMap(owner: string, repo: string, prNumber: number): Promise<Map<number, { threadId: string; isResolved: boolean }>> {
+  const map = new Map<number, { threadId: string; isResolved: boolean }>();
+
+  const query = `
+    query($owner: String!, $repo: String!, $number: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $number) {
+          reviewThreads(first: 100) {
+            nodes {
+              id
+              isResolved
+              comments(first: 100) {
+                nodes { databaseId }
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const result = await executeGraphQLQuery<any>(query, { owner, repo, number: prNumber }, 0, true);
+    const threads = result?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
+
+    for (const thread of threads) {
+      if (!thread?.id) continue;
+      const isResolved = !!thread?.isResolved;
+      const comments = thread?.comments?.nodes ?? [];
+      for (const c of comments) {
+        const databaseId = c?.databaseId;
+        if (typeof databaseId === 'number') {
+          map.set(databaseId, { threadId: thread.id, isResolved });
+        }
+      }
+    }
+  } catch (error) {
+    // Non-fatal: resolution info is an enhancement
+    captureException(error, {
+      context: 'PR Review Service',
+      function: 'fetchThreadResolutionMap',
+      owner,
+      repo,
+      prNumber,
+    });
+  }
+
+  return map;
+}
 
 /**
  * Fetches detailed pull request information including all related data
@@ -38,9 +88,20 @@ export async function fetchReviewComments(
 ): Promise<ReviewComment[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const comments = await fetchData<ReviewComment[]>(
-        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/comments`
-      );
+      const [comments, resolutionMap] = await Promise.all([
+        fetchData<ReviewComment[]>(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/comments`),
+        fetchThreadResolutionMap(owner, repo, prNumber),
+      ]);
+
+      // Annotate comment objects with thread info for resolve/unresolve UI
+      for (const comment of comments) {
+        const entry = resolutionMap.get(comment.id);
+        if (entry) {
+          comment.thread_id = entry.threadId;
+          comment.is_resolved = entry.isResolved;
+        }
+      }
+
       return comments;
     } catch (error) {
       captureException(error, {

@@ -25,6 +25,7 @@
     onUpdateReviewDraft?: (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
     onSubmitReview?: () => void;
     onDeleteSubmittedComment?: (commentId: number) => void;
+    onSetThreadResolved?: (threadId: string, resolved: boolean) => void;
     canReview?: boolean;
     isAuthenticated?: boolean;
   }
@@ -46,6 +47,7 @@
     onUpdateReviewDraft,
     onSubmitReview,
     onDeleteSubmittedComment,
+    onSetThreadResolved,
     canReview = false,
     isAuthenticated = false,
   }: Props = $props();
@@ -100,7 +102,13 @@
 
     <OverallCommentsSection reviews={overallComments} />
 
-    <LineCommentsSection comments={lineComments} {onCommentClick} onDeleteComment={onDeleteSubmittedComment} />
+    <LineCommentsSection
+      comments={lineComments}
+      {onCommentClick}
+      onDeleteComment={onDeleteSubmittedComment}
+      onSetThreadResolved={onSetThreadResolved}
+      canResolve={canReview && isAuthenticated}
+    />
 
     {#if approvalReviews.length === 0 && overallComments.length === 0 && lineComments.length === 0}
       <EmptyState />

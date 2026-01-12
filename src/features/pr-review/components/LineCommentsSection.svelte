@@ -6,9 +6,11 @@
     comments: ReviewComment[];
     onCommentClick?: (filename: string, lineNumber: number) => void;
     onDeleteComment?: (commentId: number) => void;
+    onSetThreadResolved?: (threadId: string, resolved: boolean) => void;
+    canResolve?: boolean;
   }
 
-  const { comments, onCommentClick, onDeleteComment }: Props = $props();
+  const { comments, onCommentClick, onDeleteComment, onSetThreadResolved, canResolve = false }: Props = $props();
 
   // Helper function to format dates
   function formatDate(dateString: string): string {
@@ -27,8 +29,18 @@
 
   // Check if a comment is resolved (simplified - you might need to enhance this based on GitHub's API)
   function isCommentResolved(comment: ReviewComment): boolean {
-    // This is a basic implementation - GitHub's actual resolution status might be more complex
-    return comment.subject_type === 'file' || false;
+    return comment.is_resolved === true;
+  }
+
+  function isThreadRoot(comment: ReviewComment): boolean {
+    return !!comment.thread_id && !comment.in_reply_to_id;
+  }
+
+  function handleToggleResolved(e: Event, comment: ReviewComment) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!onSetThreadResolved || !comment.thread_id) return;
+    onSetThreadResolved(comment.thread_id, !(comment.is_resolved === true));
   }
 
   // Handle comment click to scroll to code
@@ -91,6 +103,17 @@
                   </svg>
                   resolved
                 </div>
+              {/if}
+
+              {#if canResolve && isThreadRoot(comment)}
+                <button
+                  class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-[#8b949e] hover:text-[#c9d1d9] underline"
+                  onclick={(e) => handleToggleResolved(e, comment)}
+                  aria-label={isResolved ? 'Unresolve thread' : 'Resolve thread'}
+                  title={isResolved ? 'Unresolve conversation' : 'Resolve conversation'}
+                >
+                  {isResolved ? 'Unresolve' : 'Resolve'}
+                </button>
               {/if}
 
               {#if onDeleteComment}

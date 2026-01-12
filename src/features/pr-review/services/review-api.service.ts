@@ -1,4 +1,5 @@
 import { isAuthenticated } from '$shared/services/auth.state';
+import { executeGraphQLQuery } from '$integrations/github';
 import { getGithubToken } from '$shared/services/storage.service';
 import { get } from 'svelte/store';
 
@@ -438,6 +439,37 @@ export async function deleteComment(
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
   }
+}
+
+export async function setReviewThreadResolved(threadId: string, resolved: boolean): Promise<boolean> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  if (!threadId) return false;
+
+  const mutation = resolved
+    ? `
+      mutation($threadId: ID!) {
+        resolveReviewThread(input: { threadId: $threadId }) {
+          thread { id isResolved }
+        }
+      }
+    `
+    : `
+      mutation($threadId: ID!) {
+        unresolveReviewThread(input: { threadId: $threadId }) {
+          thread { id isResolved }
+        }
+      }
+    `;
+
+  const result = await executeGraphQLQuery<any>(mutation, { threadId }, 0, true);
+  const thread = resolved
+    ? result?.resolveReviewThread?.thread
+    : result?.unresolveReviewThread?.thread;
+
+  return !!thread && thread.id === threadId;
 }
 
 /**
