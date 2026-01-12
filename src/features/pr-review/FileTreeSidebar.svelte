@@ -105,7 +105,7 @@
         <div class="flex flex-col items-start min-w-0 flex-1">
           <span class="truncate text-left w-full">{file.filename.split('/').pop()}</span>
           {#if file.filename.includes('/')}
-            <span class="text-xs text-[#8b949e] truncate w-full">{file.filename.substring(0, file.filename.lastIndexOf('/'))}</span>
+            <span class="text-xs text-[#8b949e] truncate">{file.filename.substring(0, file.filename.lastIndexOf('/'))}</span>
           {/if}
         </div>
         {#if file.additions > 0 || file.deletions > 0}
