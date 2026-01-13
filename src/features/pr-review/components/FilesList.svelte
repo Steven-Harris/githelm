@@ -41,7 +41,7 @@
   });
 </script>
 
-<div bind:this={mainContentElement} class="flex-1 min-w-0 bg-[#0d1117] overflow-x-hidden">
+<div bind:this={mainContentElement} class="flex-1 min-w-0 bg-[#0d1117]">
   <div class="sticky top-0 z-20 bg-[#161b22] border-b border-[#30363d] px-4 py-3">
     <div class="flex items-center justify-between gap-3">
       <div class="flex flex-col min-w-0">
@@ -88,7 +88,7 @@
   </div>
 
   {#if visibleFiles().length > 0}
-    <div class="space-y-1">
+    <div class="space-y-1 overflow-x-hidden">
       {#each visibleFiles() as file (file.filename)}
         <div data-filename={file.filename} class="bg-[#161b22] border-b border-[#30363d] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
           <FileDiff
