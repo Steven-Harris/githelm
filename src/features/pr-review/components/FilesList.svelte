@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ScrollManager } from '../composables/useScrollManager.svelte';
+  import DiffViewToggle from '../DiffViewToggle.svelte';
   import FileDiff from '../FileDiff.svelte';
   import type { PRReviewState } from '../stores/pr-review.store.svelte';
 
@@ -38,6 +39,51 @@
 </script>
 
 <div bind:this={mainContentElement} class="flex-1 overflow-y-auto bg-[#0d1117]">
+  <div class="sticky top-0 z-10 bg-[#0d1117] border-b border-[#30363d] px-4 py-3">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex flex-col min-w-0">
+        <div class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">View</div>
+        <div class="text-sm text-[#c9d1d9] truncate">
+          {#if prReview.state.focusSelectedFileOnly && prReview.state.selectedFile}
+            Focused: {prReview.state.selectedFile.split('/').pop()}
+          {:else}
+            All files
+          {/if}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap justify-end">
+        <DiffViewToggle currentMode={prReview.state.diffViewMode} onModeChange={prReview.saveDiffViewMode} />
+
+        <button
+          onclick={() => prReview.toggleFocusSelectedFileOnly()}
+          class="px-3 py-1.5 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+          aria-label={prReview.state.focusSelectedFileOnly ? 'Show all files' : 'Focus on selected file'}
+          title={prReview.state.focusSelectedFileOnly ? 'Show all files' : 'Focus on selected file'}
+        >
+          {prReview.state.focusSelectedFileOnly ? 'Show All' : 'Focus File'}
+        </button>
+
+        <button
+          onclick={() => prReview.expandAllFiles()}
+          class="px-3 py-1.5 text-sm bg-[#1f6feb]/20 hover:bg-[#1f6feb]/30 text-[#58a6ff] border border-[#1f6feb]/30 rounded-md transition-colors"
+          aria-label="Expand all files"
+          title="Expand all files"
+        >
+          Expand All
+        </button>
+        <button
+          onclick={() => prReview.collapseAllFiles()}
+          class="px-3 py-1.5 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+          aria-label="Collapse all files"
+          title="Collapse all files"
+        >
+          Collapse All
+        </button>
+      </div>
+    </div>
+  </div>
+
   {#if visibleFiles().length > 0}
     <div class="space-y-1">
       {#each visibleFiles() as file (file.filename)}
