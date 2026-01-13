@@ -87,7 +87,7 @@
         <div class="flex flex-1 min-h-0 border-t border-[#30363d] items-start">
           <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
 
-          <FilesList {prReview} {scrollManager} />
+          <FilesList {prReview} {scrollManager} canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false} isAuthenticated={$isAuthenticated} />
 
           <CommentsSidebar
             reviews={prReview.state.reviews}
@@ -97,6 +97,7 @@
             pendingComments={prReview.state.pendingComments}
             activeCommentId={prReview.state.activeCommentId}
             reviewDraft={prReview.state.reviewDraft}
+            viewerLogin={prReview.state.viewerLogin}
             onStartComment={prReview.startCommentOnSelectedLines}
             onAddToReview={prReview.addCommentToReview}
             onPostComment={prReview.postStandaloneComment}
@@ -106,8 +107,11 @@
             onUpdateReviewDraft={prReview.updateReviewDraft}
             onSubmitReview={prReview.submitReview}
             onDeleteSubmittedComment={prReview.deleteSubmittedComment}
+            onUpdateSubmittedComment={prReview.updateSubmittedComment}
+            onReplyToSubmittedComment={prReview.replyToSubmittedComment}
             onSetThreadResolved={prReview.setThreadResolved}
             canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false}
+            canResolveThreads={prReview.state.viewerCanResolveThreads && $isAuthenticated}
             isAuthenticated={$isAuthenticated}
           />
         </div>

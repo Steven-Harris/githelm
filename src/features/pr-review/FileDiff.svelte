@@ -2,6 +2,7 @@
   import type { PullRequestFile, ReviewComment } from '$integrations/github';
   import { detectLanguage, getFileTypeIcon, highlightCode } from '$shared';
   import InlineCommentForm from './components/InlineCommentForm.svelte';
+  import InlineComments from './InlineComments.svelte';
   import type { PendingComment } from './types/pr-review.types.js';
 
   interface Props {
@@ -10,6 +11,15 @@
     onToggle?: (filename: string) => void;
     reviewComments?: ReviewComment[];
     diffViewMode?: 'inline' | 'side-by-side';
+
+    // Submitted comment interactions
+    viewerLogin?: string | null;
+    canResolve?: boolean;
+    canInteract?: boolean;
+    onSetThreadResolved?: (threadId: string, resolved: boolean) => void | Promise<void>;
+    onDeleteSubmittedComment?: (commentId: number) => void | Promise<void>;
+    onUpdateSubmittedComment?: (commentId: number, body: string) => void | Promise<void>;
+    onReplyToSubmittedComment?: (inReplyToId: number, body: string) => void | Promise<void>;
     // New props for line selection and commenting
     onLineClick?: (filename: string, lineNumber: number, side: 'left' | 'right', content: string, isExtending?: boolean) => void;
     isLineSelected?: (filename: string, lineNumber: number, side: 'left' | 'right') => boolean;
@@ -26,6 +36,13 @@
     onToggle,
     reviewComments = [],
     diffViewMode = 'side-by-side',
+    viewerLogin = null,
+    canResolve = false,
+    canInteract = false,
+    onSetThreadResolved,
+    onDeleteSubmittedComment,
+    onUpdateSubmittedComment,
+    onReplyToSubmittedComment,
     onLineClick,
     isLineSelected,
     pendingComments = [],
@@ -326,28 +343,21 @@
                     </tr>
                   {/if}
 
-                  {#each lineComments as comment (comment.id)}
-                    <tr>
-                      <td colspan="4" class="p-4 bg-[#161b22] border-l-4 border-[#1f6feb]">
-                        <div class="flex items-start space-x-3">
-                          <img src={comment.user.avatar_url} alt={comment.user.login} class="w-6 h-6 rounded-full" />
-                          <div class="flex-1">
-                            <div class="flex items-center space-x-2 text-sm text-[#8b949e] mb-1">
-                              <span class="font-medium text-[#c9d1d9]">{comment.user.login}</span>
-                              <span class="text-[#30363d]">•</span>
-                              <time>{new Date(comment.created_at).toLocaleString()}</time>
-                              {#if comment.updated_at !== comment.created_at}
-                                <span class="text-[#8b949e]">(edited)</span>
-                              {/if}
-                            </div>
-                            <div class="prose prose-sm max-w-none text-[#c9d1d9] prose-invert">
-                              {comment.body}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  {/each}
+                  {#if lineComments.length > 0}
+                    <InlineComments
+                      comments={reviewComments}
+                      fileName={file.filename}
+                      lineNumber={line.lineNumber.new}
+                      colspan={4}
+                      {viewerLogin}
+                      {canResolve}
+                      {canInteract}
+                      onSetThreadResolved={onSetThreadResolved}
+                      onDeleteComment={onDeleteSubmittedComment}
+                      onUpdateComment={onUpdateSubmittedComment}
+                      onReplyToComment={onReplyToSubmittedComment}
+                    />
+                  {/if}
                 {/if}
               {:else if line.type === 'deletion'}
                 <tr

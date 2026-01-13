@@ -37,6 +37,8 @@ export interface PullRequestReviewState {
   commits: PullRequestCommit[];
   reviews: Review[];
   checks: CheckRun[];
+  viewerLogin: string | null;
+  viewerCanResolveThreads: boolean;
   loading: boolean;
   error: string | null;
   activeTab: 'overview' | 'files' | 'commits' | 'checks';
@@ -63,6 +65,8 @@ export function createPRReviewState() {
     commits: [],
     reviews: [],
     checks: [],
+    viewerLogin: null,
+    viewerCanResolveThreads: false,
     loading: false,
     error: null,
     activeTab: 'overview',
@@ -246,6 +250,17 @@ export function createPRReviewState() {
     state.loading = true;
     state.error = null;
 
+    // Best-effort: capture viewer login for UI permissions.
+    // This is non-fatal if it fails; ownership checks will fall back to disallow.
+    const viewerLoginPromise = (async () => {
+      try {
+        const { getViewerLogin } = await import('../services/review-api.service');
+        return await getViewerLogin();
+      } catch {
+        return null;
+      }
+    })();
+
     try {
       // Load preferences first if not already loaded
       if (!state.preferencesLoaded) {
@@ -260,6 +275,12 @@ export function createPRReviewState() {
         loading: false,
         error: null
       });
+
+      state.viewerLogin = await viewerLoginPromise;
+
+      // PR authors can typically resolve conversations even if they can't "review".
+      const isAuthor = !!(state.viewerLogin && state.pullRequest?.user?.login && state.viewerLogin === state.pullRequest.user.login);
+      state.viewerCanResolveThreads = !!(state.viewerCanResolveThreads || isAuthor);
 
       // Auto-expand files based on preferences (default to true)
       const { configService } = await import('$integrations/firebase');
@@ -279,23 +300,105 @@ export function createPRReviewState() {
     state.activeTab = tab;
   };
 
-  const setThreadResolved = async (threadId: string, resolved: boolean) => {
+  const setThreadResolved = async (threadId: string, resolved: boolean): Promise<void> => {
     if (!threadId) return;
+
+    const previous = state.reviewComments;
+
+    // Optimistic UI update.
+    state.reviewComments = state.reviewComments.map((c) => {
+      if (c.thread_id === threadId) {
+        return { ...c, is_resolved: resolved };
+      }
+      return c;
+    });
 
     try {
       const { setReviewThreadResolved } = await import('../services/review-api.service');
       const ok = await setReviewThreadResolved(threadId, resolved);
-      if (!ok) return;
 
-      // Update local state for all comments in the same thread
-      state.reviewComments = state.reviewComments.map((c) => {
-        if (c.thread_id === threadId) {
-          return { ...c, is_resolved: resolved };
-        }
-        return c;
-      });
+      if (!ok) {
+        state.reviewComments = previous;
+        throw new Error('Failed to update thread resolution');
+      }
     } catch (error) {
+      state.reviewComments = previous;
       console.warn('Failed to update thread resolution:', error);
+      throw error instanceof Error ? error : new Error('Failed to update thread resolution');
+    }
+  };
+
+  const replyToSubmittedComment = async (inReplyToId: number, body: string): Promise<void> => {
+    if (!state.pullRequest) {
+      console.error('No pull request loaded');
+      throw new Error('No pull request loaded');
+    }
+
+    const trimmed = body.trim();
+    if (!trimmed) return;
+
+    try {
+      const parent = state.reviewComments.find((c: any) => c.id === inReplyToId);
+      if (!parent) {
+        throw new Error('Parent comment not found');
+      }
+
+      const { replyToComment } = await import('../services/review-api.service');
+
+      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
+      const repo = state.pullRequest.head.repo?.name || '';
+
+      const newReply = await replyToComment(owner, repo, state.pullRequest.number, inReplyToId, trimmed);
+
+      // Ensure thread metadata is preserved for UI actions.
+      if (parent.thread_id && !newReply.thread_id) {
+        newReply.thread_id = parent.thread_id;
+      }
+      if (typeof parent.is_resolved === 'boolean' && typeof newReply.is_resolved !== 'boolean') {
+        newReply.is_resolved = parent.is_resolved;
+      }
+
+      state.reviewComments.push(newReply);
+    } catch (error) {
+      console.error('Failed to reply to comment:', error);
+      throw error instanceof Error ? error : new Error('Failed to reply to comment');
+    }
+  };
+
+  const updateSubmittedComment = async (commentId: number, body: string): Promise<void> => {
+    if (!state.pullRequest) {
+      console.error('No pull request loaded');
+      throw new Error('No pull request loaded');
+    }
+
+    const trimmed = body.trim();
+    if (!trimmed) return;
+
+    try {
+      const existing = state.reviewComments.find((c: any) => c.id === commentId);
+      if (!existing) {
+        throw new Error('Comment not found');
+      }
+
+      if (!state.viewerLogin || existing.user?.login !== state.viewerLogin) {
+        throw new Error('You can only edit your own comments');
+      }
+
+      const { updateComment } = await import('../services/review-api.service');
+
+      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
+      const repo = state.pullRequest.head.repo?.name || '';
+
+      const updated = await updateComment(owner, repo, commentId, trimmed);
+
+      // Preserve thread metadata that REST may not include.
+      updated.thread_id = existing.thread_id;
+      updated.is_resolved = existing.is_resolved;
+
+      state.reviewComments = state.reviewComments.map((c: any) => (c.id === commentId ? { ...c, ...updated } : c));
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+      throw error instanceof Error ? error : new Error('Failed to update comment');
     }
   };
 
@@ -326,6 +429,7 @@ export function createPRReviewState() {
       commits: [],
       reviews: [],
       checks: [],
+      viewerLogin: null,
       loading: false,
       error: null,
       activeTab: 'overview' as const,
@@ -648,13 +752,22 @@ export function createPRReviewState() {
     clearLineSelection();
   };
 
-  const deleteSubmittedComment = async (commentId: number) => {
+  const deleteSubmittedComment = async (commentId: number): Promise<void> => {
     if (!state.pullRequest) {
       console.error('No pull request loaded');
-      return;
+      throw new Error('No pull request loaded');
     }
 
     try {
+      const existing = state.reviewComments.find((c: any) => c.id === commentId);
+      if (!existing) {
+        throw new Error('Comment not found');
+      }
+
+      if (!state.viewerLogin || existing.user?.login !== state.viewerLogin) {
+        throw new Error('You can only delete your own comments');
+      }
+
       const { deleteComment } = await import('../services/review-api.service');
 
       const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
@@ -673,7 +786,7 @@ export function createPRReviewState() {
       }
     } catch (error) {
       console.error('Failed to delete comment:', error);
-      state.error = error instanceof Error ? error.message : 'Failed to delete comment';
+      throw error instanceof Error ? error : new Error('Failed to delete comment');
     }
   };
 
@@ -723,6 +836,8 @@ export function createPRReviewState() {
     updateReviewDraft,
     cancelPendingComment,
     deleteSubmittedComment,
+    updateSubmittedComment,
+    replyToSubmittedComment,
     isLineSelected
   };
 }

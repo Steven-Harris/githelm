@@ -1,6 +1,33 @@
 import { executeGraphQLQuery, fetchData, queueApiCallIfNeeded, type CheckRun, type DetailedPullRequest, type PullRequestCommit, type PullRequestFile, type Review, type ReviewComment } from '$integrations/github';
 import { captureException } from '$integrations/sentry/client';
 
+interface RepoPermissions {
+  admin?: boolean;
+  maintain?: boolean;
+  push?: boolean;
+  triage?: boolean;
+  pull?: boolean;
+}
+
+async function fetchRepositoryPermissions(owner: string, repo: string): Promise<RepoPermissions | null> {
+  return queueApiCallIfNeeded(async () => {
+    try {
+      const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
+      const permissions = repoData?.permissions;
+      if (!permissions || typeof permissions !== 'object') return null;
+      return permissions as RepoPermissions;
+    } catch (error) {
+      captureException(error, {
+        context: 'PR Review Service',
+        function: 'fetchRepositoryPermissions',
+        owner,
+        repo,
+      });
+      return null;
+    }
+  });
+}
+
 async function fetchThreadResolutionMap(owner: string, repo: string, prNumber: number): Promise<Map<number, { threadId: string; isResolved: boolean }>> {
   const map = new Map<number, { threadId: string; isResolved: boolean }>();
 
@@ -30,6 +57,7 @@ async function fetchThreadResolutionMap(owner: string, repo: string, prNumber: n
       if (!thread?.id) continue;
       const isResolved = !!thread?.isResolved;
       const comments = thread?.comments?.nodes ?? [];
+
       for (const c of comments) {
         const databaseId = c?.databaseId;
         if (typeof databaseId === 'number') {
@@ -238,13 +266,15 @@ export async function fetchAllPullRequestData(
       reviewComments,
       files,
       commits,
-      reviews
+      reviews,
+      repoPermissions,
     ] = await Promise.all([
       fetchDetailedPullRequest(owner, repo, prNumber),
       fetchReviewComments(owner, repo, prNumber),
       fetchPullRequestFiles(owner, repo, prNumber),
       fetchPullRequestCommits(owner, repo, prNumber),
-      fetchPullRequestReviews(owner, repo, prNumber)
+      fetchPullRequestReviews(owner, repo, prNumber),
+      fetchRepositoryPermissions(owner, repo),
     ]);
 
     if (!pullRequest) {
@@ -254,13 +284,19 @@ export async function fetchAllPullRequestData(
     // Fetch check runs for the head commit
     const checks = await fetchPullRequestChecks(owner, repo, pullRequest.head.sha);
 
+    const viewerCanResolveThreads = !!(
+      repoPermissions &&
+      (repoPermissions.admin || repoPermissions.maintain || repoPermissions.push)
+    );
+
     return {
       pullRequest,
       reviewComments,
       files,
       commits,
       reviews,
-      checks
+      checks,
+      viewerCanResolveThreads,
     };
   } catch (error) {
     captureException(error, {

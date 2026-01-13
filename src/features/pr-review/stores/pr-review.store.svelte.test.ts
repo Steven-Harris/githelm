@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createPRReviewState } from './pr-review.store.svelte';
 
@@ -127,6 +127,10 @@ describe('createPRReviewState submitReview', () => {
 });
 
 describe('createPRReviewState deleteSubmittedComment', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('deletes submitted comment and removes it from state', async () => {
     const prReview = createPRReviewState();
     prReview.state.pullRequest = {
@@ -139,11 +143,32 @@ describe('createPRReviewState deleteSubmittedComment', () => {
       { id: 42, path: 'src/a.ts', body: 'Hello', user: { login: 'me', avatar_url: '' } }
     ] as any;
 
+    prReview.state.viewerLogin = 'me';
+
     await prReview.deleteSubmittedComment(42);
 
     const { deleteComment } = await import('../services/review-api.service');
     expect(deleteComment).toHaveBeenCalledWith('acme', 'widgets', 42);
     // After delete we refresh from server; the mock returns a replacement list.
     expect(prReview.state.reviewComments[0].id).toBe(77);
+  });
+
+  it('does not delete comments authored by others', async () => {
+    const prReview = createPRReviewState();
+    prReview.state.pullRequest = {
+      number: 1,
+      user: { login: 'author' },
+      head: { sha: 'deadbeef', repo: { full_name: 'acme/widgets', name: 'widgets' } }
+    } as any;
+
+    prReview.state.viewerLogin = 'me';
+    prReview.state.reviewComments = [
+      { id: 42, path: 'src/a.ts', body: 'Hello', user: { login: 'someone-else', avatar_url: '' } }
+    ] as any;
+
+    await expect(prReview.deleteSubmittedComment(42)).rejects.toThrow('You can only delete your own comments');
+
+    const { deleteComment } = await import('../services/review-api.service');
+    expect(deleteComment).not.toHaveBeenCalled();
   });
 });

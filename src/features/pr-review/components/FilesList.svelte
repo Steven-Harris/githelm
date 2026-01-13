@@ -6,9 +6,11 @@
   interface Props {
     prReview: PRReviewState;
     scrollManager: ScrollManager;
+    canReview?: boolean;
+    isAuthenticated?: boolean;
   }
 
-  let { prReview, scrollManager }: Props = $props();
+  let { prReview, scrollManager, canReview = false, isAuthenticated = false }: Props = $props();
 
   let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
 
@@ -46,6 +48,13 @@
             onToggle={() => prReview.toggleFileExpanded(file.filename)}
             reviewComments={prReview.state.reviewComments}
             diffViewMode={prReview.state.diffViewMode}
+            viewerLogin={prReview.state.viewerLogin}
+            canResolve={prReview.state.viewerCanResolveThreads && isAuthenticated}
+            canInteract={isAuthenticated}
+            onSetThreadResolved={prReview.setThreadResolved}
+            onDeleteSubmittedComment={prReview.deleteSubmittedComment}
+            onUpdateSubmittedComment={prReview.updateSubmittedComment}
+            onReplyToSubmittedComment={prReview.replyToSubmittedComment}
             onLineClick={(filename, lineNumber, side, content, isExtending = false) => {
               prReview.selectLine(filename, lineNumber, side, content, isExtending);
             }}

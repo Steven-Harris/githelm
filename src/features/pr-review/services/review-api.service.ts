@@ -3,6 +3,37 @@ import { executeGraphQLQuery } from '$integrations/github';
 import { getGithubToken } from '$shared/services/storage.service';
 import { get } from 'svelte/store';
 
+export async function getViewerLogin(): Promise<string> {
+  if (!get(isAuthenticated)) {
+    throw new Error('Not authenticated with GitHub');
+  }
+
+  const token = getGithubToken();
+  if (!token) {
+    throw new Error('GitHub token not available');
+  }
+
+  const response = await fetch('https://api.github.com/user', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github.v3+json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json().catch(() => null);
+  const login = data?.login;
+  if (!login || typeof login !== 'string') {
+    throw new Error('Failed to determine GitHub viewer login');
+  }
+
+  return login;
+}
+
 export interface ReviewSubmission {
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
   body?: string;
@@ -464,12 +495,26 @@ export async function setReviewThreadResolved(threadId: string, resolved: boolea
       }
     `;
 
-  const result = await executeGraphQLQuery<any>(mutation, { threadId }, 0, true);
-  const thread = resolved
-    ? result?.resolveReviewThread?.thread
-    : result?.unresolveReviewThread?.thread;
+  try {
+    const result = await executeGraphQLQuery<any>(mutation, { threadId }, 0, true);
+    const thread = resolved
+      ? result?.resolveReviewThread?.thread
+      : result?.unresolveReviewThread?.thread;
 
-  return !!thread && thread.id === threadId;
+    return !!thread && thread.id === threadId;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isForbidden = message.includes('"type":"FORBIDDEN"') || message.includes('FORBIDDEN');
+    const isIntegrationDenied = message.toLowerCase().includes('resource not accessible by integration');
+
+    if (isForbidden || isIntegrationDenied) {
+      throw new Error(
+        'GitHub denied resolving this conversation. This usually means your account does not have write access to the repository (or you are not the PR author).'
+      );
+    }
+
+    throw error instanceof Error ? error : new Error(message);
+  }
 }
 
 /**
