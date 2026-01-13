@@ -49,7 +49,7 @@
 </script>
 
 {#if selectedLines.length > 0 || pendingComments.length > 0}
-  <div class="p-4 bg-[#0d1117]">
+  <div class="p-4 bg-[#161b22]">
     {#if selectedLines.length > 0}
       <!-- Line selection with immediate comment textarea -->
       <div class="mb-3">
