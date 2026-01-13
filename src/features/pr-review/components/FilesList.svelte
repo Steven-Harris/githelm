@@ -25,21 +25,24 @@
 
   // Forward the element reference to scroll manager
   $effect(() => {
-    if (mainContentElement) {
-      scrollManager.setMainContentElement(mainContentElement);
+    if (!mainContentElement) return;
 
-      const handleScroll = () => scrollManager.handleScrollThrottled(prReview.selectFile, prReview.state.selectedFile);
-      mainContentElement.addEventListener('scroll', handleScroll);
+    const scrollRoot = typeof document !== 'undefined' ? (document.querySelector('main') as HTMLElement | null) : null;
+    const scrollContainer = scrollRoot ?? mainContentElement;
 
-      return () => {
-        mainContentElement?.removeEventListener('scroll', handleScroll);
-      };
-    }
+    scrollManager.setMainContentElement(scrollContainer);
+
+    const handleScroll = () => scrollManager.handleScrollThrottled(prReview.selectFile, prReview.state.selectedFile);
+    scrollContainer.addEventListener('scroll', handleScroll);
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
   });
 </script>
 
-<div bind:this={mainContentElement} class="flex-1 overflow-y-auto bg-[#0d1117]">
-  <div class="sticky top-0 z-10 bg-[#0d1117] border-b border-[#30363d] px-4 py-3">
+<div bind:this={mainContentElement} class="flex-1 bg-[#0d1117]">
+  <div class="sticky top-0 z-20 bg-[#0d1117] border-b border-[#30363d] px-4 py-3">
     <div class="flex items-center justify-between gap-3">
       <div class="flex flex-col min-w-0">
         <div class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">View</div>

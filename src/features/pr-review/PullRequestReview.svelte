@@ -81,9 +81,6 @@
 
         <div class="px-6">
           <ChecksDisplay checks={prReview.state.checks} />
-        </div>
-
-        <div class="sticky top-4 z-20 bg-[#0d1117] px-6 border-b border-[#30363d]">
           <PRControls {prReview} />
         </div>
 

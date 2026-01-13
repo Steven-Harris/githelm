@@ -2,7 +2,7 @@
  * Composable for managing scroll behavior and file navigation in PR review
  */
 export function useScrollManager() {
-  let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
+  let mainContentElement = $state<HTMLElement | undefined>(undefined);
   let isScrollingFromNavigation = $state(false);
   let scrollTimeout: NodeJS.Timeout | null = null;
 
@@ -189,7 +189,7 @@ export function useScrollManager() {
 
   return {
     mainContentElement: () => mainContentElement,
-    setMainContentElement: (element: HTMLDivElement | undefined) => {
+    setMainContentElement: (element: HTMLElement | undefined) => {
       mainContentElement = element;
     },
     scrollToFile,
