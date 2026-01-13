@@ -84,7 +84,7 @@
           <PRControls {prReview} />
         </div>
 
-        <div class="flex flex-1 min-h-0 border-t border-[#30363d] items-start">
+        <div class="flex flex-1 min-h-0 min-w-0 border-t border-[#30363d] items-start">
           <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
 
           <FilesList {prReview} {scrollManager} canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false} isAuthenticated={$isAuthenticated} />

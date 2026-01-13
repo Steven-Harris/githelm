@@ -270,7 +270,7 @@
 
   <!-- File diff content -->
   {#if isExpanded && file.patch}
-    <div class="bg-[#0d1117] overflow-x-auto">
+    <div class="bg-[#0d1117] overflow-x-hidden">
       {#if diffViewMode === 'side-by-side'}
         <!-- Side-by-side view -->
         <table class="w-full text-sm font-mono">
@@ -299,7 +299,7 @@
                   </td>
                   <!-- Old content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
                     onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
                     onmouseup={handleLineMouseUp}
@@ -319,7 +319,7 @@
                   </td>
                   <!-- New content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
                     onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
                     onmouseup={handleLineMouseUp}
@@ -376,7 +376,7 @@
                   </td>
                   <!-- Old content (deleted) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
                     onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
                     onmouseup={handleLineMouseUp}
@@ -389,7 +389,7 @@
                   <!-- New line number (empty) -->
                   <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none bg-[#0d1117]"> </td>
                   <!-- New content (empty) -->
-                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 bg-[#0d1117]"> </td>
+                  <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-[#0d1117]"> </td>
                 </tr>
               {:else if line.type === 'addition'}
                 <tr
@@ -400,7 +400,7 @@
                   <!-- Old line number (empty) -->
                   <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none bg-[#0d1117]"> </td>
                   <!-- Old content (empty) -->
-                  <td class="px-4 py-1 whitespace-pre-wrap w-1/2 border-r border-[#30363d] bg-[#0d1117]"> </td>
+                  <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] bg-[#0d1117]"> </td>
                   <!-- New line number -->
                   <td
                     class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-green-900/30 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
@@ -412,7 +412,7 @@
                   </td>
                   <!-- New content (added) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
                     onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
                     onmouseup={handleLineMouseUp}
@@ -459,7 +459,7 @@
                   </td>
 
                   <!-- Content -->
-                  <td class="px-4 py-1 whitespace-pre-wrap">
+                  <td class="px-4 py-1 whitespace-pre-wrap break-all">
                     <span
                       class={`
                       ${line.type === 'addition' ? 'text-green-300' : ''}

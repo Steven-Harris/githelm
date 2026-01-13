@@ -41,7 +41,7 @@
   });
 </script>
 
-<div bind:this={mainContentElement} class="flex-1 bg-[#0d1117]">
+<div bind:this={mainContentElement} class="flex-1 min-w-0 bg-[#0d1117] overflow-x-hidden">
   <div class="sticky top-0 z-20 bg-[#161b22] border-b border-[#30363d] px-4 py-3">
     <div class="flex items-center justify-between gap-3">
       <div class="flex flex-col min-w-0">

@@ -64,14 +64,24 @@
   const SIDEBAR_WIDTH_KEY = 'PR_REVIEW_SIDEBAR_WIDTH';
   const MIN_SIDEBAR_WIDTH = 280;
   const MAX_SIDEBAR_WIDTH = 720;
+  const MAX_VIEWPORT_FRACTION = 0.42;
 
-  let sidebarWidth = $state<number>(320);
+  let sidebarWidth = $state<number>(300);
+  let maxSidebarWidth = $state<number>(MAX_SIDEBAR_WIDTH);
   let resizing = $state(false);
   let resizeStartX = 0;
   let resizeStartWidth = 0;
 
+  function updateMaxSidebarWidth() {
+    if (typeof window === 'undefined') return;
+
+    const viewportMax = Math.floor(window.innerWidth * MAX_VIEWPORT_FRACTION);
+    maxSidebarWidth = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, viewportMax));
+    sidebarWidth = Math.min(sidebarWidth, maxSidebarWidth);
+  }
+
   function clampWidth(value: number) {
-    return Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, value));
+    return Math.max(MIN_SIDEBAR_WIDTH, Math.min(maxSidebarWidth, value));
   }
 
   function onResizePointerDown(e: PointerEvent) {
@@ -110,6 +120,9 @@
   }
 
   onMount(() => {
+    updateMaxSidebarWidth();
+    window.addEventListener('resize', updateMaxSidebarWidth);
+
     try {
       const stored = localStorage.getItem(SIDEBAR_WIDTH_KEY);
       if (stored) {
@@ -121,11 +134,14 @@
     } catch {
       // Ignore.
     }
+
+    sidebarWidth = clampWidth(sidebarWidth);
   });
 
   onDestroy(() => {
     window.removeEventListener('pointermove', onResizePointerMove);
     window.removeEventListener('pointerup', onResizePointerUp);
+    window.removeEventListener('resize', updateMaxSidebarWidth);
   });
 
   const approvalReviews = $derived(reviews.filter((review) => ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(review.state)));
@@ -149,8 +165,7 @@
 </script>
 
 <div
-  class="relative bg-[#161b22] border-l border-[#30363d] min-h-0 overflow-y-auto text-[#c9d1d9] sticky top-4 self-start max-h-[calc(100dvh-8rem)]"
-  style={`width: ${sidebarWidth}px`}
+  class="relative flex-shrink-0 bg-[#161b22] border-l border-[#30363d] min-h-0 overflow-y-auto text-[#c9d1d9] sticky top-4 self-start max-h-[calc(100dvh-8rem)]"
 >
   <!-- Resizer handle (left edge) -->
   <div

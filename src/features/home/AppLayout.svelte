@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { page } from '$app/stores';
   import { configPageService } from '$features/config/services/config-page.service';
   import { initAuthStateHandling } from '$integrations/github';
   import { Breadcrumb, ReloadPrompt } from '$shared';
   import { repositoryFacade } from '$shared/stores/repository.facade';
+  import { pollingPaused } from '$shared/stores/polling-paused.store';
   import { pwaAssetsHead } from 'virtual:pwa-assets/head';
   import { pwaInfo } from 'virtual:pwa-info';
   import '../../style.css';
@@ -20,6 +22,11 @@
   const authState = homePageService.getAuthState();
   let configsLoaded = $state(false);
   let isLoadingConfigs = $state(false);
+
+  $effect(() => {
+    const pathname = $page.url.pathname;
+    pollingPaused.set(pathname.startsWith('/pr') || pathname.startsWith('/config') || pathname.startsWith('/settings'));
+  });
 
   $effect(() => {
     if ($authState.isAuth === 'authenticated' && !configsLoaded && !isLoadingConfigs) {
