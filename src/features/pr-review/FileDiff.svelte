@@ -137,6 +137,10 @@
   const fileIcon = $derived(getFileTypeIcon(file.filename));
   const detectedLanguage = $derived(detectLanguage(file.filename));
 
+  const isAddedOrRemoved = $derived(file.status === 'added' || file.status === 'removed');
+  const isInlineForced = $derived(diffViewMode === 'side-by-side' && isAddedOrRemoved);
+  const effectiveDiffViewMode = $derived(isInlineForced ? 'inline' : diffViewMode);
+
   // Handle line clicks for commenting with drag support
   let isDragging = $state(false);
   let dragStartLine: { lineNumber: number; side: 'left' | 'right' } | null = $state(null);
@@ -264,6 +268,12 @@
           <span class="text-red-400 font-medium">-{file.deletions}</span>
         {/if}
         <span class="text-[#8b949e]">{file.changes} changes</span>
+
+        {#if isInlineForced}
+          <span class="px-2 py-1 text-xs bg-[#161b22] text-[#8b949e] border border-[#30363d] rounded" title="Added/removed files are shown inline">
+            Inline only
+          </span>
+        {/if}
       </div>
     </div>
   </div>
@@ -271,7 +281,7 @@
   <!-- File diff content -->
   {#if isExpanded && file.patch}
     <div class="bg-[#0d1117] overflow-x-hidden">
-      {#if diffViewMode === 'side-by-side'}
+      {#if effectiveDiffViewMode === 'side-by-side'}
         <!-- Side-by-side view -->
         <table class="w-full text-sm font-mono">
           <tbody>
@@ -439,27 +449,47 @@
                   </td>
                 </tr>
               {:else}
+                {@const interactionSide = line.type === 'deletion' ? 'left' : 'right'}
+                {@const interactionLineNumber = line.type === 'deletion' ? line.lineNumber?.old : line.lineNumber?.new}
+                {@const isSelected = interactionLineNumber ? checkLineSelected(interactionLineNumber, interactionSide) : false}
+
                 <tr
                   class={`
                   ${line.type === 'addition' ? 'bg-green-900/15 hover:bg-green-900/20' : ''}
                   ${line.type === 'deletion' ? 'bg-red-900/15 hover:bg-red-900/20' : ''}
                   ${line.type === 'context' ? 'hover:bg-white/5' : ''}
+                  ${isSelected ? 'bg-[#1f6feb]/15' : ''}
                 `}
                   data-line-old={line.lineNumber?.old}
                   data-line-new={line.lineNumber?.new}
                 >
                   <!-- Old line number -->
-                  <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none">
+                  <td
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none ${interactionSide === 'left' && interactionLineNumber ? 'cursor-pointer hover:bg-white/5' : ''} ${isSelected && interactionSide === 'left' ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => interactionSide === 'left' && interactionLineNumber && handleLineMouseDown(interactionLineNumber, interactionSide, line.content, e)}
+                    onmouseenter={() => interactionSide === 'left' && interactionLineNumber && handleLineMouseEnter(interactionLineNumber, interactionSide, line.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
                     {line.lineNumber?.old || ''}
                   </td>
 
                   <!-- New line number -->
-                  <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none">
+                  <td
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none ${interactionSide === 'right' && interactionLineNumber ? 'cursor-pointer hover:bg-white/5' : ''} ${isSelected && interactionSide === 'right' ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => interactionSide === 'right' && interactionLineNumber && handleLineMouseDown(interactionLineNumber, interactionSide, line.content, e)}
+                    onmouseenter={() => interactionSide === 'right' && interactionLineNumber && handleLineMouseEnter(interactionLineNumber, interactionSide, line.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
                     {line.lineNumber?.new || ''}
                   </td>
 
                   <!-- Content -->
-                  <td class="px-4 py-1 whitespace-pre-wrap break-all">
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap break-all ${interactionLineNumber ? 'cursor-pointer' : ''} ${isSelected ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => interactionLineNumber && handleLineMouseDown(interactionLineNumber, interactionSide, line.content, e)}
+                    onmouseenter={() => interactionLineNumber && handleLineMouseEnter(interactionLineNumber, interactionSide, line.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
                     <span
                       class={`
                       ${line.type === 'addition' ? 'text-green-300' : ''}
@@ -473,6 +503,36 @@
                     </span>
                   </td>
                 </tr>
+
+                {#if interactionLineNumber}
+                  {@const pendingComment = getPendingCommentForLine(interactionLineNumber, interactionSide)}
+                  {#if pendingComment}
+                    <tr>
+                      <td colspan="3" class="p-0">
+                        <InlineCommentForm comment={pendingComment} {handleCommentUpdate} {handleCommentSubmit} {handleCommentCancel} />
+                      </td>
+                    </tr>
+                  {/if}
+
+                  {#if interactionSide === 'right'}
+                    {@const lineComments = getCommentsForLine(interactionLineNumber)}
+                    {#if lineComments.length > 0}
+                      <InlineComments
+                        comments={reviewComments}
+                        fileName={file.filename}
+                        lineNumber={interactionLineNumber}
+                        colspan={3}
+                        {viewerLogin}
+                        {canResolve}
+                        {canInteract}
+                        onSetThreadResolved={onSetThreadResolved}
+                        onDeleteComment={onDeleteSubmittedComment}
+                        onUpdateComment={onUpdateSubmittedComment}
+                        onReplyToComment={onReplyToSubmittedComment}
+                      />
+                    {/if}
+                  {/if}
+                {/if}
               {/if}
             {/each}
           </tbody>
