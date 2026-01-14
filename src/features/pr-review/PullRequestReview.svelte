@@ -45,11 +45,10 @@
     }
   });
 
-  $effect(() => {
-    if (prReview.state.selectedFile) {
-      scrollManager.scrollToFile(prReview.state.selectedFile);
-    }
-  });
+  function handleFileSelect(filename: string) {
+    prReview.selectFile(filename);
+    scrollManager.scrollToFile(filename);
+  }
 
   function handleCommentClick(filename: string, lineNumber: number) {
     prReview.selectFile(filename);
@@ -85,7 +84,7 @@
         </div>
 
         <div class="flex flex-1 min-h-0 min-w-0 border-t border-[#30363d] items-start">
-          <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={prReview.selectFile} />
+          <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={handleFileSelect} />
 
           <FilesList {prReview} {scrollManager} canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false} isAuthenticated={$isAuthenticated} />
 
