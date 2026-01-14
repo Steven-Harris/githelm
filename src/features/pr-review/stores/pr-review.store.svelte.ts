@@ -474,6 +474,40 @@ export function createPRReviewState() {
     state.expandedFiles = newExpanded;
   };
 
+  const findFirstRightSideLineFromPatch = (patch?: string | null): number | null => {
+    if (!patch) return null;
+
+    const lines = patch.split('\n');
+    let newLineNumber = 0;
+    let inHunk = false;
+
+    for (const line of lines) {
+      if (line.startsWith('@@')) {
+        const match = line.match(/@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
+        if (match) {
+          newLineNumber = parseInt(match[1], 10) - 1;
+          inHunk = true;
+        }
+        continue;
+      }
+
+      if (!inHunk) continue;
+
+      // Right-side lines are represented by context (' ') and additions ('+').
+      if (line.startsWith(' ') || line.startsWith('+')) {
+        newLineNumber++;
+        return newLineNumber;
+      }
+
+      // Deletions only advance old line, so we ignore them.
+      if (line.startsWith('-')) {
+        continue;
+      }
+    }
+
+    return null;
+  };
+
 
   // Line selection and commenting methods with drag support
   const selectLine = (filename: string, lineNumber: number, side: 'left' | 'right', content: string, isExtending: boolean = false) => {
@@ -546,6 +580,29 @@ export function createPRReviewState() {
 
     state.pendingComments.push(pendingComment);
     state.activeCommentId = commentId;
+  };
+
+  const startCommentOnFile = (filename: string, isPartOfReview: boolean = false) => {
+    const file = state.files.find(f => f.filename === filename);
+    if (!file) {
+      state.error = `File not found: ${filename}`;
+      return;
+    }
+
+    // Ensure file is expanded so the inline form is visible.
+    const newExpanded = new Set(state.expandedFiles);
+    newExpanded.add(filename);
+    state.expandedFiles = newExpanded;
+
+    const firstLine = findFirstRightSideLineFromPatch(file.patch);
+
+    if (!firstLine) {
+      state.error = 'Cannot start a file comment (no diff available for this file).';
+      return;
+    }
+
+    selectLine(filename, firstLine, 'right', '', false);
+    startCommentOnSelectedLines(isPartOfReview);
   };
 
   const addCommentToReview = (commentId: string) => {
@@ -827,6 +884,7 @@ export function createPRReviewState() {
     extendSelection,
     clearLineSelection,
     startCommentOnSelectedLines,
+    startCommentOnFile,
     addCommentToReview,
     postStandaloneComment,
     submitPendingComment,

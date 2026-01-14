@@ -9,6 +9,7 @@
     file: PullRequestFile;
     isExpanded?: boolean;
     onToggle?: (filename: string) => void;
+    onFileComment?: (filename: string) => void;
     reviewComments?: ReviewComment[];
     diffViewMode?: 'inline' | 'side-by-side';
 
@@ -34,6 +35,7 @@
     file,
     isExpanded = false,
     onToggle,
+    onFileComment,
     reviewComments = [],
     diffViewMode = 'side-by-side',
     viewerLogin = null,
@@ -55,6 +57,17 @@
     if (onToggle) {
       onToggle(file.filename);
     }
+  }
+
+  function startFileComment() {
+    if (!canInteract || !onFileComment) return;
+
+    // Ensure the diff is visible so the inline composer shows.
+    if (!isExpanded && onToggle) {
+      onToggle(file.filename);
+    }
+
+    onFileComment(file.filename);
   }
 
   function getStatusColor(status: string): string {
@@ -261,6 +274,18 @@
       </div>
 
       <div class="flex items-center space-x-4 text-sm">
+        {#if canInteract}
+          <button
+            type="button"
+            onclick={startFileComment}
+            class="px-3 py-1.5 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+            title="Add a comment for this file"
+            aria-label="Add a comment for this file"
+          >
+            Comment
+          </button>
+        {/if}
+
         {#if file.additions > 0}
           <span class="text-green-400 font-medium">+{file.additions}</span>
         {/if}

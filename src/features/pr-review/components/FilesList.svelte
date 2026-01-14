@@ -95,6 +95,7 @@
             {file}
             isExpanded={prReview.state.expandedFiles.has(file.filename)}
             onToggle={() => prReview.toggleFileExpanded(file.filename)}
+            onFileComment={(filename) => prReview.startCommentOnFile(filename)}
             reviewComments={prReview.state.reviewComments}
             diffViewMode={prReview.state.diffViewMode}
             viewerLogin={prReview.state.viewerLogin}
