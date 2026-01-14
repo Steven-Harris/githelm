@@ -25,7 +25,7 @@
     onCancelComment?: (commentId: string) => void;
     onClearSelection?: () => void;
     onUpdateReviewDraft?: (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
-    onSubmitReview?: () => void;
+    onSubmitReview?: (event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
     onDeleteSubmittedComment?: (commentId: number) => void | Promise<void>;
     onUpdateSubmittedComment?: (commentId: number, body: string) => void | Promise<void>;
     onReplyToSubmittedComment?: (inReplyToId: number, body: string) => void | Promise<void>;
@@ -148,8 +148,6 @@
 
   const overallComments = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
 
-  const hasActiveReview = $derived(() => pendingComments.some((c) => c.isPartOfReview) || (reviewDraft && (reviewDraft.body.trim() !== '' || reviewDraft.event !== 'COMMENT')));
-
   const lineComments = $derived(
     reviewComments
       .filter((comment) => !!comment.path && (comment.line || comment.original_line || comment.in_reply_to_id))
@@ -183,20 +181,20 @@
   </div>
 
   <div class="divide-y divide-[#30363d]">
-    <PendingCommentsSection
-      {selectedLines}
-      {pendingComments}
-      {activeCommentId}
-      {onStartComment}
-      {onAddToReview}
-      {onPostComment}
-      {onUpdateComment}
-      {onCancelComment}
-      onCancelSelection={onClearSelection}
-      hasActiveReview={hasActiveReview()}
-    />
-
-    <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={canReview && isAuthenticated} />
+    <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={canReview && isAuthenticated}>
+      {#snippet children()}
+        <PendingCommentsSection
+          {selectedLines}
+          {pendingComments}
+          {activeCommentId}
+          {onStartComment}
+          {onAddToReview}
+          {onUpdateComment}
+          {onCancelComment}
+          onCancelSelection={onClearSelection}
+        />
+      {/snippet}
+    </ReviewSubmissionSection>
 
     <ApprovalsSection reviews={approvalReviews} />
 

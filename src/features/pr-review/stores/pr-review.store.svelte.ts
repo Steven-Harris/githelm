@@ -560,7 +560,7 @@ export function createPRReviewState() {
     }
   };
 
-  const startCommentOnSelectedLines = (isPartOfReview: boolean = false) => {
+  const startCommentOnSelectedLines = (isPartOfReview: boolean = true) => {
     if (state.selectedLines.length === 0) return;
 
     // Create a new comment immediately when lines are selected
@@ -708,7 +708,7 @@ export function createPRReviewState() {
     console.log('Comment saved to pending review:', comment);
   };
 
-  const submitReview = async () => {
+  const submitReview = async (eventOverride?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => {
     if (!state.pullRequest) {
       console.error('No pull request loaded');
       return;
@@ -716,10 +716,20 @@ export function createPRReviewState() {
 
     const reviewCommentsPending = state.pendingComments.filter(c => c.isPartOfReview && c.body.trim());
 
-    // Only allow submit if there's something in the review body OR at least one
-    // comment that has been explicitly added to the review.
-    if (reviewCommentsPending.length === 0 && !state.reviewDraft.body.trim()) {
-      console.error('No comments or review body to submit');
+    const event = eventOverride ?? state.reviewDraft.event;
+    const body = state.reviewDraft.body?.trim() ?? '';
+
+    // Validation rules (match GitHub-like behavior + product requirements)
+    // - APPROVE: allowed with empty body and no inline comments
+    // - COMMENT: requires either an overall body or at least one inline comment
+    // - REQUEST_CHANGES: requires an overall body (cannot submit without)
+    if (event === 'REQUEST_CHANGES' && body.length === 0) {
+      state.error = 'Requesting changes requires an overall comment.';
+      return;
+    }
+
+    if (event === 'COMMENT' && reviewCommentsPending.length === 0 && body.length === 0) {
+      // Nothing to submit
       return;
     }
 
@@ -754,8 +764,8 @@ export function createPRReviewState() {
         repo,
         state.pullRequest.number,
         {
-          event: state.reviewDraft.event,
-          body: state.reviewDraft.body,
+          event,
+          body,
           comments: reviewComments
         }
       );

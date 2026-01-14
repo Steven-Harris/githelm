@@ -4,6 +4,10 @@
 
 This document outlines the comprehensive plan for implementing in-app pull request review functionality in GitHelm. The goal is to enable users to review pull requests directly within the application without redirecting to GitHub, providing a seamless and efficient code review experience.
 
+## Related Plans
+
+- Review workflow redesign: [docs/pr-review-review-workflow-plan.md](docs/pr-review-review-workflow-plan.md)
+
 ## Executive Summary
 
 The implementation involves creating a new PR review interface that leverages GitHub's REST and GraphQL APIs to:

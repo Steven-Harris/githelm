@@ -98,7 +98,7 @@ describe('createPRReviewState submitReview', () => {
     expect(prReview.state.reviews[0].id).toBe(999);
   });
 
-  it('does not submit when there are no review comments and empty body', async () => {
+  it('does not submit COMMENT when there are no review comments and empty body', async () => {
     const prReview = createPRReviewState();
     prReview.state.pullRequest = {
       number: 1,
@@ -123,6 +123,40 @@ describe('createPRReviewState submitReview', () => {
     await prReview.submitReview();
 
     expect(prReview.state.reviews.length).toBe(0);
+  });
+
+  it('submits APPROVE even with empty body and no inline comments', async () => {
+    const prReview = createPRReviewState();
+    prReview.state.pullRequest = {
+      number: 1,
+      user: { login: 'author' },
+      head: { sha: 'deadbeef', repo: { full_name: 'acme/widgets', name: 'widgets' } }
+    } as any;
+
+    prReview.state.pendingComments = [] as any;
+    prReview.state.reviewDraft = { body: '', event: 'COMMENT' } as any;
+
+    await prReview.submitReview('APPROVE');
+
+    const { submitPullRequestReview } = await import('../services/review-api.service');
+    expect(submitPullRequestReview).toHaveBeenCalled();
+  });
+
+  it('does not submit REQUEST_CHANGES without an overall comment', async () => {
+    const prReview = createPRReviewState();
+    prReview.state.pullRequest = {
+      number: 1,
+      user: { login: 'author' },
+      head: { sha: 'deadbeef', repo: { full_name: 'acme/widgets', name: 'widgets' } }
+    } as any;
+
+    prReview.state.pendingComments = [] as any;
+    prReview.state.reviewDraft = { body: '', event: 'COMMENT' } as any;
+
+    await prReview.submitReview('REQUEST_CHANGES');
+
+    expect(prReview.state.reviews.length).toBe(0);
+    expect(prReview.state.error).toContain('requires an overall comment');
   });
 });
 
