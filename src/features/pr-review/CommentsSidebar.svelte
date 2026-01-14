@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { Review, ReviewComment } from '$integrations/github';
-  import ApprovalsSection from './components/ApprovalsSection.svelte';
   import EmptyState from './components/EmptyState.svelte';
   import LineCommentsSection from './components/LineCommentsSection.svelte';
   import OverallCommentsSection from './components/OverallCommentsSection.svelte';
@@ -144,9 +143,17 @@
     window.removeEventListener('resize', updateMaxSidebarWidth);
   });
 
-  const approvalReviews = $derived(reviews.filter((review) => ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(review.state)));
+  const overallReviewReviews = $derived(
+    reviews
+      .filter((review) => review.state !== 'PENDING')
+      .filter(
+        (review) =>
+          ['APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'].includes(review.state) ||
+          (review.body && review.body.trim() !== '')
+      )
+  );
 
-  const overallComments = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
+  const overallCommentReviews = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
 
   const lineComments = $derived(
     reviewComments
@@ -176,29 +183,29 @@
   <div class="p-4 border-b border-[#30363d]">
     <h3 class="text-sm font-medium text-[#f0f6fc]">Reviews & Comments</h3>
     <div class="text-xs text-[#8b949e] mt-1">
-      {approvalReviews.length} approval{approvalReviews.length !== 1 ? 's' : ''} • {overallComments.length + lineComments.length} comment{overallComments.length + lineComments.length !== 1 ? 's' : ''}
+      {overallReviewReviews.length} review{overallReviewReviews.length !== 1 ? 's' : ''} • {overallCommentReviews.length + lineComments.length} comment{overallCommentReviews.length + lineComments.length !== 1 ? 's' : ''}
     </div>
   </div>
 
   <div class="divide-y divide-[#30363d]">
-    <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={canReview && isAuthenticated}>
-      {#snippet children()}
-        <PendingCommentsSection
-          {selectedLines}
-          {pendingComments}
-          {activeCommentId}
-          {onStartComment}
-          {onAddToReview}
-          {onUpdateComment}
-          {onCancelComment}
-          onCancelSelection={onClearSelection}
-        />
-      {/snippet}
-    </ReviewSubmissionSection>
+    {#if isAuthenticated}
+      <PendingCommentsSection
+        {selectedLines}
+        {pendingComments}
+        {activeCommentId}
+        {onStartComment}
+        {onAddToReview}
+        {onUpdateComment}
+        {onCancelComment}
+        onCancelSelection={onClearSelection}
+      />
+    {/if}
 
-    <ApprovalsSection reviews={approvalReviews} />
+    {#if canReview && isAuthenticated}
+      <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={true} />
+    {/if}
 
-    <OverallCommentsSection reviews={overallComments} />
+    <OverallCommentsSection reviews={overallReviewReviews} />
 
     <LineCommentsSection
       comments={lineComments}
@@ -212,7 +219,7 @@
       canInteract={isAuthenticated}
     />
 
-    {#if approvalReviews.length === 0 && overallComments.length === 0 && lineComments.length === 0}
+    {#if overallReviewReviews.length === 0 && lineComments.length === 0}
       <EmptyState />
     {/if}
   </div>

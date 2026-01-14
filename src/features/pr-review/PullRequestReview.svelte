@@ -54,6 +54,12 @@
     prReview.selectFile(filename);
     scrollManager.scrollToFileAndLine(filename, lineNumber, prReview.toggleFileExpanded);
   }
+
+  const canSubmitReview = $derived(() => {
+    if (!prReview.state.pullRequest) return false;
+    // Prefer GitHub viewer login (reliable) and fall back to current user.
+    return canReviewPullRequest(prReview.state.pullRequest, prReview.state.viewerLogin ?? $currentUser);
+  });
 </script>
 
 <section class="mt-5 px-2 md:px-0">
@@ -86,7 +92,7 @@
         <div class="flex flex-1 min-h-0 min-w-0 border-t border-[#30363d] items-start">
           <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={handleFileSelect} />
 
-          <FilesList {prReview} {scrollManager} canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false} isAuthenticated={$isAuthenticated} />
+          <FilesList {prReview} {scrollManager} canReview={canSubmitReview()} isAuthenticated={$isAuthenticated} />
 
           <CommentsSidebar
             reviews={prReview.state.reviews}
@@ -109,7 +115,7 @@
             onUpdateSubmittedComment={prReview.updateSubmittedComment}
             onReplyToSubmittedComment={prReview.replyToSubmittedComment}
             onSetThreadResolved={prReview.setThreadResolved}
-            canReview={prReview.state.pullRequest ? canReviewPullRequest(prReview.state.pullRequest, $currentUser) : false}
+            canReview={canSubmitReview()}
             canResolveThreads={prReview.state.viewerCanResolveThreads && $isAuthenticated}
             isAuthenticated={$isAuthenticated}
           />

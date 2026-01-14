@@ -39,8 +39,13 @@ export interface ReviewSubmission {
   body?: string;
   comments?: Array<{
     path: string;
-    position: number;
     body: string;
+    // GitHub supports either `position` (legacy, derived from the diff) or
+    // `line`/`side` (preferred, avoids diff position calculation issues).
+    // We primarily use `line`/`side`.
+    position?: number;
+    line?: number;
+    side?: 'LEFT' | 'RIGHT';
   }>;
 }
 
@@ -73,6 +78,20 @@ export async function submitPullRequestReview(
 
   console.log('Submitting review with data:', review);
 
+  const trimmedBody = review.body?.trim() ?? '';
+  const payload: Record<string, unknown> = {
+    event: review.event,
+  };
+
+  // Avoid sending an empty string for body unless required.
+  if (trimmedBody.length > 0 || review.event === 'REQUEST_CHANGES') {
+    payload.body = trimmedBody;
+  }
+
+  if (review.comments && review.comments.length > 0) {
+    payload.comments = review.comments;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -80,11 +99,7 @@ export async function submitPullRequestReview(
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      event: review.event,
-      body: review.body || '',
-      comments: review.comments || []
-    })
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) {
@@ -108,55 +123,16 @@ export async function preparePendingCommentsForReview(
   pullNumber: number,
   pendingComments: PendingReviewComment[]
 ): Promise<ReviewSubmission['comments']> {
-  if (!get(isAuthenticated)) {
-    throw new Error('Not authenticated with GitHub');
-  }
-
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  // Get the diff to calculate positions
-  const diffUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/files`;
-  const diffResponse = await fetch(diffUrl, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-    }
-  });
-
-  if (!diffResponse.ok) {
-    throw new Error('Failed to fetch diff data');
-  }
-
-  const files = await diffResponse.json();
-  const reviewComments: ReviewSubmission['comments'] = [];
-
-  for (const comment of pendingComments) {
-    const file = files.find((f: any) => f.filename === comment.path);
-
-    if (!file) {
-      console.warn(`File ${comment.path} not found in diff, skipping comment`);
-      continue;
-    }
-
-    // Calculate position from the patch
-    const position = calculatePositionFromLine(file.patch, comment.line, comment.side);
-
-    if (position === null) {
-      console.warn(`Could not find line ${comment.line} in diff for ${comment.path}, skipping comment`);
-      continue;
-    }
-
-    reviewComments.push({
-      path: comment.path,
-      position,
-      body: comment.body
-    });
-  }
-
-  return reviewComments;
+  // Prefer the newer `line`/`side` shape over legacy diff `position`.
+  // This avoids failures when GitHub truncates `patch` in /pulls/:n/files.
+  return pendingComments
+    .filter((c) => !!c.path && typeof c.line === 'number' && c.line > 0 && !!c.body?.trim())
+    .map((c) => ({
+      path: c.path,
+      line: c.line,
+      side: c.side,
+      body: c.body,
+    }));
 }
 
 /**
@@ -222,7 +198,7 @@ export async function submitLineComment(
     throw new Error('GitHub token not available');
   }
 
-  // First, we need to get the pull request diff to calculate the position
+  // Determine the commit SHA to anchor the comment.
   let commit_id = commitSha;
   if (!commit_id) {
     const prUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}`;
@@ -241,41 +217,15 @@ export async function submitLineComment(
     commit_id = prData.head.sha;
   }
 
-  // Get the diff to calculate the position
-  const diffUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/files`;
-  const diffResponse = await fetch(diffUrl, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-    }
-  });
-
-  if (!diffResponse.ok) {
-    throw new Error('Failed to fetch diff data');
-  }
-
-  const files = await diffResponse.json();
-  const file = files.find((f: any) => f.filename === path);
-
-  if (!file) {
-    throw new Error(`File ${path} not found in diff`);
-  }
-
-  // Calculate position from the patch
-  const position = calculatePositionFromLine(file.patch, line, side);
-
-  if (position === null) {
-    throw new Error(`Could not find line ${line} in diff for ${path}`);
-  }
-
   const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/comments`;
 
-  // Use the legacy API format with position
+  // Prefer the newer API format with `line`/`side`.
   const commentData: any = {
     body,
     commit_id,
     path,
-    position
+    line,
+    side
   };
 
   console.log('Submitting comment with data:', commentData);
@@ -300,57 +250,6 @@ export async function submitLineComment(
   }
 
   return await response.json();
-}
-
-/**
- * Calculate the position in the diff from a line number
- */
-function calculatePositionFromLine(patch: string, targetLine: number, side: 'LEFT' | 'RIGHT'): number | null {
-  if (!patch) return null;
-
-  const lines = patch.split('\n');
-  let position = 0;
-  let oldLineNumber = 0;
-  let newLineNumber = 0;
-
-  for (const line of lines) {
-    // Position counts every line in the patch, including hunk headers.
-    position++;
-
-    if (line.startsWith('@@')) {
-      // Parse the hunk header to get starting line numbers
-      const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
-      if (match) {
-        oldLineNumber = parseInt(match[1]) - 1;
-        newLineNumber = parseInt(match[2]) - 1;
-      }
-      continue;
-    }
-
-    if (line.startsWith('-')) {
-      // Deletion line
-      oldLineNumber++;
-      if (side === 'LEFT' && oldLineNumber === targetLine) {
-        return position;
-      }
-    } else if (line.startsWith('+')) {
-      // Addition line  
-      newLineNumber++;
-      if (side === 'RIGHT' && newLineNumber === targetLine) {
-        return position;
-      }
-    } else if (line.startsWith(' ')) {
-      // Context line
-      oldLineNumber++;
-      newLineNumber++;
-      if ((side === 'LEFT' && oldLineNumber === targetLine) ||
-        (side === 'RIGHT' && newLineNumber === targetLine)) {
-        return position;
-      }
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -466,6 +365,13 @@ export async function deleteComment(
     }
   });
 
+  // GitHub sometimes returns 404 for deletes when the comment is already gone
+  // (stale UI state / eventual consistency) or when the token cannot access it.
+  // For our UX, treat "already deleted" as success.
+  if (response.status === 404) {
+    return;
+  }
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
@@ -562,10 +468,20 @@ export async function addReaction(
  * Check if the current user can review the pull request
  */
 export function canReviewPullRequest(pullRequest: any, currentUser?: any): boolean {
-  if (!currentUser || !pullRequest) return false;
+  if (!pullRequest) return false;
 
-  // Cannot review your own PR
-  if (pullRequest.user?.login === currentUser.login) return false;
+  // `currentUser` might be a Firebase user object (no GitHub login) or a string.
+  const viewerLogin =
+    typeof currentUser === 'string'
+      ? currentUser
+      : (currentUser?.login as string | undefined) ?? (currentUser?.providerData?.[0]?.uid as string | undefined);
+
+  // If we can't determine the viewer's GitHub login, be conservative and
+  // disallow submitting reviews (but the UI can still show data).
+  if (!viewerLogin) return false;
+
+  // Cannot review your own PR (GitHub rejects this with 422).
+  if (pullRequest.user?.login === viewerLogin) return false;
 
   // Can only review open PRs
   if (pullRequest.state !== 'open') return false;

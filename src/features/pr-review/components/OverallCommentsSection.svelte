@@ -35,6 +35,19 @@
         return 'bg-[#30363d]/60 text-[#c9d1d9] border border-[#30363d]';
     }
   }
+
+  function formatStateLabel(state: string): string {
+    switch (state) {
+      case 'APPROVED':
+        return '✓ Approved';
+      case 'CHANGES_REQUESTED':
+        return '✗ Changes requested';
+      case 'DISMISSED':
+        return '⚪ Dismissed';
+      default:
+        return state.replaceAll('_', ' ').toLowerCase();
+    }
+  }
 </script>
 
 {#if reviews.length > 0}
@@ -52,12 +65,16 @@
               </div>
             </div>
             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {getStatusColor(review.state)}">
-              {review.state.replace('_', ' ').toLowerCase()}
+              {formatStateLabel(review.state)}
             </span>
           </div>
-          <div class="gh-markdown text-sm prose prose-sm max-w-none prose-invert leading-relaxed overflow-x-auto">
-            {@html renderMarkdownToHtml(review.body)}
-          </div>
+          {#if review.body && review.body.trim() !== ''}
+            <div class="gh-markdown text-sm prose prose-sm max-w-none prose-invert leading-relaxed overflow-x-auto">
+              {@html renderMarkdownToHtml(review.body)}
+            </div>
+          {:else}
+            <div class="text-xs text-[#8b949e] italic">No comment.</div>
+          {/if}
         </div>
       {/each}
     </div>

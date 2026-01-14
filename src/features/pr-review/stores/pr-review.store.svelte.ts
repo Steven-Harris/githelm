@@ -199,6 +199,15 @@ export function createPRReviewState() {
     }, {} as Record<string, ReviewComment[]>);
   });
 
+  const getApiRepo = () => {
+    const pr: any = state.pullRequest;
+    const fullName: string | undefined = pr?.base?.repo?.full_name ?? pr?.head?.repo?.full_name;
+    const repoName: string | undefined = pr?.base?.repo?.name ?? pr?.head?.repo?.name;
+    const owner = fullName?.split('/')?.[0] ?? pr?.base?.user?.login ?? pr?.head?.user?.login ?? pr?.user?.login ?? '';
+    const repo = repoName ?? '';
+    return { owner, repo };
+  };
+
   // Actions
   const loadPreferences = async () => {
     try {
@@ -345,8 +354,7 @@ export function createPRReviewState() {
 
       const { replyToComment } = await import('../services/review-api.service');
 
-      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
-      const repo = state.pullRequest.head.repo?.name || '';
+      const { owner, repo } = getApiRepo();
 
       const newReply = await replyToComment(owner, repo, state.pullRequest.number, inReplyToId, trimmed);
 
@@ -386,8 +394,7 @@ export function createPRReviewState() {
 
       const { updateComment } = await import('../services/review-api.service');
 
-      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
-      const repo = state.pullRequest.head.repo?.name || '';
+      const { owner, repo } = getApiRepo();
 
       const updated = await updateComment(owner, repo, commentId, trimmed);
 
@@ -648,8 +655,7 @@ export function createPRReviewState() {
       const { submitLineComment } = await import('../services/review-api.service');
 
       // Get owner and repo from the PR data
-      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
-      const repo = state.pullRequest.head.repo?.name || '';
+      const { owner, repo } = getApiRepo();
       const commitSha = state.pullRequest.head.sha;
 
       // Submit the individual comment to GitHub
@@ -714,6 +720,23 @@ export function createPRReviewState() {
       return;
     }
 
+    // Ensure we know who the viewer is (GitHub login) so we can enforce
+    // GitHub's rule: you cannot submit a review on your own PR.
+    if (!state.viewerLogin) {
+      try {
+        const { getViewerLogin } = await import('../services/review-api.service');
+        state.viewerLogin = await getViewerLogin();
+      } catch {
+        // If we can't determine viewer login, fall through; the UI should
+        // already disable review submission, but we won't hard-block here.
+      }
+    }
+
+    if (state.viewerLogin && state.pullRequest.user?.login && state.viewerLogin === state.pullRequest.user.login) {
+      state.error = "You can't submit a review on your own pull request.";
+      return;
+    }
+
     const reviewCommentsPending = state.pendingComments.filter(c => c.isPartOfReview && c.body.trim());
 
     const event = eventOverride ?? state.reviewDraft.event;
@@ -738,8 +761,7 @@ export function createPRReviewState() {
       const { submitPullRequestReview, preparePendingCommentsForReview } = await import('../services/review-api.service');
 
       // Get owner and repo from the PR data
-      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
-      const repo = state.pullRequest.head.repo?.name || '';
+      const { owner, repo } = getApiRepo();
 
       // Prepare pending comments for the review API
       const pendingReviewComments = reviewCommentsPending
@@ -837,8 +859,7 @@ export function createPRReviewState() {
 
       const { deleteComment } = await import('../services/review-api.service');
 
-      const owner = state.pullRequest.head.repo?.full_name?.split('/')[0] || state.pullRequest.user.login;
-      const repo = state.pullRequest.head.repo?.name || '';
+      const { owner, repo } = getApiRepo();
 
       await deleteComment(owner, repo, commentId);
 

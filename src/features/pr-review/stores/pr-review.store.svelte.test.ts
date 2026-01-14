@@ -18,7 +18,7 @@ vi.mock('$shared/services/storage.service', () => {
 vi.mock('../services/review-api.service', () => {
   return {
     preparePendingCommentsForReview: vi.fn(async (_owner: string, _repo: string, _pr: number, pending: any[]) => {
-      return pending.map((c, idx) => ({ path: c.path, position: 10 + idx, body: c.body }));
+      return pending.map((c) => ({ path: c.path, line: c.line, side: c.side, body: c.body }));
     }),
     submitPullRequestReview: vi.fn(async (_owner: string, _repo: string, _pr: number, review: any) => {
       return {
@@ -157,6 +157,26 @@ describe('createPRReviewState submitReview', () => {
 
     expect(prReview.state.reviews.length).toBe(0);
     expect(prReview.state.error).toContain('requires an overall comment');
+  });
+
+  it('does not submit a review on your own PR', async () => {
+    const prReview = createPRReviewState();
+    prReview.state.pullRequest = {
+      number: 1,
+      user: { login: 'author' },
+      head: { sha: 'deadbeef', repo: { full_name: 'acme/widgets', name: 'widgets' } },
+      base: { repo: { full_name: 'acme/widgets', name: 'widgets' } }
+    } as any;
+
+    // Viewer is the author
+    prReview.state.viewerLogin = 'author';
+    prReview.state.pendingComments = [] as any;
+    prReview.state.reviewDraft = { body: 'hi', event: 'COMMENT' } as any;
+
+    await prReview.submitReview('COMMENT');
+
+    expect(prReview.state.reviews.length).toBe(0);
+    expect(prReview.state.error).toContain("can't submit a review");
   });
 });
 

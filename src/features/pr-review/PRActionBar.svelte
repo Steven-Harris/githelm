@@ -14,7 +14,7 @@
   let { pullRequest, currentUser, onApprove, onRequestChanges, onComment }: Props = $props();
 
   // Reactive state for review capabilities
-  let canReview = $derived($isAuthenticated && canReviewPullRequest(pullRequest, currentUser));
+  let canReview = $derived($isAuthenticated && canReviewPullRequest(pullRequest, currentUser?.login ?? currentUser));
 
   // Modal states
   let showApproveModal = $state(false);
