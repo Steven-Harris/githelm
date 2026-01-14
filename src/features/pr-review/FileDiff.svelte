@@ -1,12 +1,15 @@
 <script lang="ts">
   import type { PullRequestFile, ReviewComment } from '$integrations/github';
-  import { detectLanguage, getFileTypeIcon, highlightCode } from '$shared';
+  import { highlightCode } from '$shared';
   import InlineCommentForm from './components/InlineCommentForm.svelte';
   import InlineComments from './InlineComments.svelte';
+  import { getGitHubFileUrl } from './utils/index.js';
   import type { PendingComment } from './types/pr-review.types.js';
 
   interface Props {
     file: PullRequestFile;
+    repoHtmlUrl?: string | null;
+    headRef?: string | null;
     isExpanded?: boolean;
     onToggle?: (filename: string) => void;
     onFileComment?: (filename: string) => void;
@@ -17,6 +20,8 @@
     viewerLogin?: string | null;
     canResolve?: boolean;
     canInteract?: boolean;
+    // Whether the user can create new review comments (GitHub disallows on own PR)
+    canCreateComments?: boolean;
     onSetThreadResolved?: (threadId: string, resolved: boolean) => void | Promise<void>;
     onDeleteSubmittedComment?: (commentId: number) => void | Promise<void>;
     onUpdateSubmittedComment?: (commentId: number, body: string) => void | Promise<void>;
@@ -33,6 +38,8 @@
 
   let {
     file,
+    repoHtmlUrl = null,
+    headRef = null,
     isExpanded = false,
     onToggle,
     onFileComment,
@@ -41,6 +48,7 @@
     viewerLogin = null,
     canResolve = false,
     canInteract = false,
+    canCreateComments = false,
     onSetThreadResolved,
     onDeleteSubmittedComment,
     onUpdateSubmittedComment,
@@ -60,7 +68,7 @@
   }
 
   function startFileComment() {
-    if (!canInteract || !onFileComment) return;
+    if (!canCreateComments || !onFileComment) return;
 
     // Ensure the diff is visible so the inline composer shows.
     if (!isExpanded && onToggle) {
@@ -147,8 +155,14 @@
   }
 
   const parsedPatch = $derived(file.patch ? parsePatch(file.patch) : []);
-  const fileIcon = $derived(getFileTypeIcon(file.filename));
-  const detectedLanguage = $derived(detectLanguage(file.filename));
+  const githubFileUrl = $derived(
+    getGitHubFileUrl({
+      repoHtmlUrl,
+      ref: headRef,
+      path: file.filename,
+      fallbackUrl: file.blob_url,
+    })
+  );
 
   const isAddedOrRemoved = $derived(file.status === 'added' || file.status === 'removed');
   const isInlineForced = $derived(diffViewMode === 'side-by-side' && isAddedOrRemoved);
@@ -261,11 +275,20 @@
           {file.status}
         </span>
 
-        <span class="text-lg mr-2">{fileIcon}</span>
-        <span class="font-mono text-sm text-[#f0f6fc]">{file.filename}</span>
-
-        {#if detectedLanguage}
-          <span class="ml-2 px-2 py-1 text-xs bg-[#161b22] text-[#8b949e] border border-[#30363d] rounded">{detectedLanguage}</span>
+        {#if githubFileUrl}
+          <a
+            href={githubFileUrl}
+            target="_blank"
+            rel="noreferrer"
+            onclick={(e) => e.stopPropagation()}
+            class="font-mono text-sm text-[#f0f6fc] hover:text-[#58a6ff] underline underline-offset-2"
+            aria-label={`Open ${file.filename} on GitHub`}
+            title="Open on GitHub"
+          >
+            {file.filename}
+          </a>
+        {:else}
+          <span class="font-mono text-sm text-[#f0f6fc]">{file.filename}</span>
         {/if}
 
         {#if file.previous_filename && file.status === 'renamed'}
@@ -274,7 +297,7 @@
       </div>
 
       <div class="flex items-center space-x-4 text-sm">
-        {#if canInteract}
+            {#if canCreateComments}
           <button
             type="button"
             onclick={startFileComment}

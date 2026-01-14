@@ -93,6 +93,8 @@
         <div data-filename={file.filename} class="bg-[#161b22] border-b border-[#30363d] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
           <FileDiff
             {file}
+            repoHtmlUrl={prReview.state.pullRequest?.head.repo?.html_url ?? prReview.state.pullRequest?.base.repo.html_url}
+            headRef={prReview.state.pullRequest?.head.ref}
             isExpanded={prReview.state.expandedFiles.has(file.filename)}
             onToggle={() => prReview.toggleFileExpanded(file.filename)}
             onFileComment={(filename) => prReview.startCommentOnFile(filename)}
@@ -101,6 +103,7 @@
             viewerLogin={prReview.state.viewerLogin}
             canResolve={prReview.state.viewerCanResolveThreads && isAuthenticated}
             canInteract={isAuthenticated}
+            canCreateComments={isAuthenticated && canReview}
             onSetThreadResolved={prReview.setThreadResolved}
             onDeleteSubmittedComment={prReview.deleteSubmittedComment}
             onUpdateSubmittedComment={prReview.updateSubmittedComment}

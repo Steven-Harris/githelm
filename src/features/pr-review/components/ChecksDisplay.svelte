@@ -45,6 +45,11 @@
         return '?';
     }
   }
+
+  function getCheckTargetUrl(check: CheckRun): string | null {
+    const url = check.details_url || check.html_url;
+    return url && url.length > 0 ? url : null;
+  }
 </script>
 
 {#if checks.length > 0}
@@ -52,15 +57,32 @@
     <div class="flex items-center space-x-2 flex-wrap gap-y-2">
       <span class="text-sm font-medium text-[#8b949e] mr-2">Checks:</span>
       {#each checks.slice(0, maxVisible) as check}
-        <div
-          class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border {getCheckColor(check.conclusion, check.status)} cursor-help"
-          title="{check.name}: {check.conclusion || check.status}{check.output?.summary ? '\n' + check.output.summary : ''}"
-        >
-          <span class="mr-1 text-xs">{getCheckIcon(check.conclusion, check.status)}</span>
-          <span class="truncate max-w-32">
-            {check.name.replace(/^CI\//, '').replace(/^GitHub Actions\//, '')}
-          </span>
-        </div>
+        {@const checkTargetUrl = getCheckTargetUrl(check)}
+        {#if checkTargetUrl}
+          <a
+            href={checkTargetUrl}
+            target="_blank"
+            rel="noreferrer"
+            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border {getCheckColor(check.conclusion, check.status)} cursor-pointer hover:border-[#6e7681] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1f6feb]/60"
+            title="{check.name}: {check.conclusion || check.status}{check.output?.summary ? '\n' + check.output.summary : ''}"
+            aria-label={`Open check '${check.name}' on GitHub`}
+          >
+            <span class="mr-1 text-xs">{getCheckIcon(check.conclusion, check.status)}</span>
+            <span class="truncate max-w-32">
+              {check.name.replace(/^CI\//, '').replace(/^GitHub Actions\//, '')}
+            </span>
+          </a>
+        {:else}
+          <div
+            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border {getCheckColor(check.conclusion, check.status)} cursor-help"
+            title="{check.name}: {check.conclusion || check.status}{check.output?.summary ? '\n' + check.output.summary : ''}"
+          >
+            <span class="mr-1 text-xs">{getCheckIcon(check.conclusion, check.status)}</span>
+            <span class="truncate max-w-32">
+              {check.name.replace(/^CI\//, '').replace(/^GitHub Actions\//, '')}
+            </span>
+          </div>
+        {/if}
       {/each}
       {#if checks.length > maxVisible}
         <span class="text-xs text-[#8b949e]">

@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { PullRequestFile } from '$integrations/github';
-  import { getFileTypeIcon } from '$shared';
   import FileTreeNode from './FileTreeNode.svelte';
 
   interface FileTreeNodeData {
@@ -95,10 +94,6 @@
       style="padding-left: {level * 16 + 8}px"
       aria-label={`Open file ${node.name}`}
     >
-      <span class="w-4 h-4 flex items-center justify-center mr-2">
-        <span class="text-xs">{getFileTypeIcon(node.name)}</span>
-      </span>
-
       <span class="flex-1 text-[#c9d1d9] truncate">{node.name}</span>
 
       {#if node.file}

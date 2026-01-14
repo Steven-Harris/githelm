@@ -28,6 +28,9 @@ vi.mock('../services/review-api.service', () => {
         comments: undefined
       };
     }),
+    submitLineComment: vi.fn(async () => {
+      return { id: 555, path: 'src/a.ts', body: 'ok', user: { login: 'me', avatar_url: '' } };
+    }),
     deleteComment: vi.fn(async () => {})
   };
 });
@@ -177,6 +180,34 @@ describe('createPRReviewState submitReview', () => {
 
     expect(prReview.state.reviews.length).toBe(0);
     expect(prReview.state.error).toContain("can't submit a review");
+  });
+
+  it('does not allow posting a standalone file comment on your own PR', async () => {
+    const prReview = createPRReviewState();
+    prReview.state.pullRequest = {
+      number: 1,
+      user: { login: 'author' },
+      head: { sha: 'deadbeef', repo: { full_name: 'acme/widgets', name: 'widgets' } },
+      base: { repo: { full_name: 'acme/widgets', name: 'widgets' } }
+    } as any;
+
+    prReview.state.viewerLogin = 'author';
+    prReview.state.pendingComments = [
+      {
+        id: 'c1',
+        filename: 'src/a.ts',
+        startLine: 5,
+        side: 'right',
+        body: 'Hello',
+        isPartOfReview: false
+      }
+    ] as any;
+
+    await prReview.submitPendingComment('c1');
+
+    const { submitLineComment } = await import('../services/review-api.service');
+    expect(submitLineComment).not.toHaveBeenCalled();
+    expect(prReview.state.error).toContain("can't add file comments");
   });
 });
 

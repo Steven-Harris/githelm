@@ -30,7 +30,15 @@
     <div class="flex-1 min-w-0">
       <h1 class="text-xl font-bold text-[#f0f6fc] truncate">
         {pullRequest.title}
-        <span class="text-[#8b949e]">#{pullRequest.number}</span>
+        <a
+          href={pullRequest.html_url}
+          target="_blank"
+          rel="noreferrer"
+          class="text-[#8b949e] hover:text-[#c9d1d9] underline underline-offset-2"
+          aria-label={`Open pull request #${pullRequest.number} on GitHub`}
+        >
+          #{pullRequest.number}
+        </a>
       </h1>
 
       <div class="flex items-center space-x-4 mt-2 text-sm text-[#8b949e]">

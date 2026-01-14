@@ -570,6 +570,12 @@ export function createPRReviewState() {
   const startCommentOnSelectedLines = (isPartOfReview: boolean = true) => {
     if (state.selectedLines.length === 0) return;
 
+    // GitHub does not allow review comments/reviews on your own PR.
+    if (state.viewerLogin && state.pullRequest?.user?.login && state.viewerLogin === state.pullRequest.user.login) {
+      state.error = "You can't add file comments on your own pull request.";
+      return;
+    }
+
     // Create a new comment immediately when lines are selected
     const firstLine = state.selectedLines[0];
     const lastLine = state.selectedLines[state.selectedLines.length - 1];
@@ -590,6 +596,12 @@ export function createPRReviewState() {
   };
 
   const startCommentOnFile = (filename: string, isPartOfReview: boolean = false) => {
+    // GitHub does not allow review comments/reviews on your own PR.
+    if (state.viewerLogin && state.pullRequest?.user?.login && state.viewerLogin === state.pullRequest.user.login) {
+      state.error = "You can't add file comments on your own pull request.";
+      return;
+    }
+
     const file = state.files.find(f => f.filename === filename);
     if (!file) {
       state.error = `File not found: ${filename}`;
@@ -647,6 +659,24 @@ export function createPRReviewState() {
 
     if (!state.pullRequest) {
       console.error('No pull request loaded');
+      return;
+    }
+
+    // Ensure we know who the viewer is (GitHub login) so we can enforce
+    // GitHub's rule: you cannot add review comments on your own PR.
+    if (!state.viewerLogin) {
+      try {
+        const { getViewerLogin } = await import('../services/review-api.service');
+        state.viewerLogin = await getViewerLogin();
+      } catch {
+        // If we can't determine viewer login, be conservative.
+        state.error = 'Unable to determine current GitHub user.';
+        return;
+      }
+    }
+
+    if (state.viewerLogin && state.pullRequest.user?.login && state.viewerLogin === state.pullRequest.user.login) {
+      state.error = "You can't add file comments on your own pull request.";
       return;
     }
 

@@ -471,17 +471,35 @@ export function canReviewPullRequest(pullRequest: any, currentUser?: any): boole
   if (!pullRequest) return false;
 
   // `currentUser` might be a Firebase user object (no GitHub login) or a string.
-  const viewerLogin =
-    typeof currentUser === 'string'
-      ? currentUser
-      : (currentUser?.login as string | undefined) ?? (currentUser?.providerData?.[0]?.uid as string | undefined);
+  // For Firebase GitHub provider users, providerData.uid is the numeric GitHub user id.
+  let viewerLogin: string | undefined;
+  let viewerId: number | undefined;
 
-  // If we can't determine the viewer's GitHub login, be conservative and
-  // disallow submitting reviews (but the UI can still show data).
-  if (!viewerLogin) return false;
+  if (typeof currentUser === 'string') {
+    viewerLogin = currentUser;
+  } else if (currentUser?.login && typeof currentUser.login === 'string') {
+    viewerLogin = currentUser.login;
+  } else {
+    const provider = (currentUser?.providerData as any[] | undefined)?.find((p) => p?.providerId === 'github.com')
+      ?? (currentUser?.providerData as any[] | undefined)?.[0];
+
+    const uid = provider?.uid;
+    if (typeof uid === 'string' && /^\d+$/.test(uid)) {
+      viewerId = Number(uid);
+    }
+
+    const displayName = provider?.displayName;
+    if (typeof displayName === 'string' && displayName.trim().length > 0) {
+      viewerLogin = displayName.trim();
+    }
+  }
+
+  // If we can't determine who the viewer is, be conservative and disallow.
+  if (!viewerLogin && viewerId === undefined) return false;
 
   // Cannot review your own PR (GitHub rejects this with 422).
-  if (pullRequest.user?.login === viewerLogin) return false;
+  if (viewerLogin && pullRequest.user?.login === viewerLogin) return false;
+  if (viewerId !== undefined && typeof pullRequest.user?.id === 'number' && pullRequest.user.id === viewerId) return false;
 
   // Can only review open PRs
   if (pullRequest.state !== 'open') return false;
