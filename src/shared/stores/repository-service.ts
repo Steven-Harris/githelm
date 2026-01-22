@@ -217,7 +217,8 @@ async function refreshActionConfigs(): Promise<void> {
 }
 
 export async function loadRepositoryConfigs(): Promise<void> {
-  // Load configurations from Firebase without triggering data fetching
+  // Load configurations from Firebase without eagerly triggering data fetching.
+  // Polling stores will perform the initial fetch when not paused.
   const configs = await configService.getConfigs();
   
   if (configs.pullRequests?.length) {
@@ -228,12 +229,11 @@ export async function loadRepositoryConfigs(): Promise<void> {
     actionsConfigs.set(configs.actions);
   }
   
-  // Initialize data fetching with a delay to avoid infinite loops
+  // Initialize polling with a delay to avoid infinite loops
   const prConfigs = get(pullRequestConfigs);
   if (prConfigs.length) {
     // Use setTimeout to avoid immediate execution
     setTimeout(() => {
-      refreshPullRequestsData(prConfigs);
       initializePullRequestsPolling({ repoConfigs: prConfigs });
     }, 100);
   }
@@ -241,7 +241,6 @@ export async function loadRepositoryConfigs(): Promise<void> {
   if (actionConfigs.length) {
     // Use setTimeout to avoid immediate execution
     setTimeout(() => {
-      refreshActionsData(actionConfigs);
       initializeActionsPolling(actionConfigs);
     }, 200);
   }
