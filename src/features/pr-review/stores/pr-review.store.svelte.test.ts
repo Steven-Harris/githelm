@@ -257,3 +257,43 @@ describe('createPRReviewState deleteSubmittedComment', () => {
     expect(deleteComment).not.toHaveBeenCalled();
   });
 });
+
+describe('createPRReviewState refreshReviewDiscussion', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('refreshes remote comments/reviews without affecting pending draft state', async () => {
+    const prReview = createPRReviewState();
+
+    prReview.state.pullRequest = {
+      number: 1,
+      user: { login: 'author' },
+      head: { sha: 'deadbeef', repo: { full_name: 'acme/widgets', name: 'widgets' } }
+    } as any;
+
+    prReview.state.pendingComments = [
+      {
+        id: 'pending-1',
+        filename: 'src/a.ts',
+        startLine: 1,
+        side: 'right',
+        body: 'draft',
+        isPartOfReview: true
+      }
+    ] as any;
+    prReview.state.reviewDraft = { body: 'draft body', event: 'COMMENT' } as any;
+
+    await prReview.refreshReviewDiscussion('acme', 'widgets', 1);
+
+    // Remote data updated
+    expect(prReview.state.reviewComments[0].id).toBe(77);
+    expect(prReview.state.reviews[0].id).toBe(999);
+
+    // Local draft state untouched
+    expect(prReview.state.pendingComments.length).toBe(1);
+    expect(prReview.state.pendingComments[0].body).toBe('draft');
+    expect(prReview.state.reviewDraft.body).toBe('draft body');
+    expect(prReview.state.reviewDraft.event).toBe('COMMENT');
+  });
+});

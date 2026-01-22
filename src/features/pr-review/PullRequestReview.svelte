@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { currentUser, isAuthenticated } from '$shared/services/auth.state';
   import CommentsSidebar from './CommentsSidebar.svelte';
   import { useScrollManager } from './composables/useScrollManager.svelte.js';
@@ -27,6 +28,19 @@
     if (owner && repo && prNumber) {
       prReview.loadPullRequest(owner, repo, prNumber);
     }
+  });
+
+  // Refresh review comments in the background so replies show up without
+  // resetting any draft/pending review state.
+  $effect(() => {
+    if (owner && repo && prNumber && $isAuthenticated) {
+      prReview.startReviewCommentsPolling(owner, repo, prNumber);
+      return () => prReview.stopReviewCommentsPolling();
+    }
+  });
+
+  onDestroy(() => {
+    prReview.stopReviewCommentsPolling();
   });
 
   $effect(() => {

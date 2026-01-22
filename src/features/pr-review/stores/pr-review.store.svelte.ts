@@ -95,6 +95,12 @@ export function createPRReviewState() {
     },
   });
 
+  const COMMENTS_POLL_INTERVAL_MS = 10_000;
+
+  let commentsPollHandle: ReturnType<typeof setInterval> | null = null;
+  let commentsRefreshInFlight = false;
+  let commentsLastRefreshKey: string | null = null;
+
   const fileStats = $derived(() => {
     if (!state.files.length) return null;
 
@@ -344,6 +350,70 @@ export function createPRReviewState() {
     }
   };
 
+  const refreshReviewDiscussion = async (owner: string, repo: string, prNumber: number): Promise<void> => {
+    if (!state.pullRequest) return;
+    if (state.pullRequest.number !== prNumber) return;
+
+    // Avoid background refreshes while the tab is hidden.
+    if (typeof document !== 'undefined' && document.hidden) return;
+
+    if (commentsRefreshInFlight) return;
+    commentsRefreshInFlight = true;
+
+    try {
+      const { fetchReviewComments, fetchPullRequestReviews } = await import('../services/pr-review.service');
+
+      const [freshComments, freshReviews] = await Promise.all([
+        fetchReviewComments(owner, repo, prNumber),
+        fetchPullRequestReviews(owner, repo, prNumber)
+      ]);
+
+      // Merge to avoid briefly dropping locally-added items during eventual consistency.
+      const freshById = new Map<number, ReviewComment>();
+      for (const c of freshComments) freshById.set(c.id, c);
+
+      const mergedComments: ReviewComment[] = [...freshComments];
+      for (const existing of state.reviewComments) {
+        if (!freshById.has(existing.id)) {
+          mergedComments.push(existing);
+        }
+      }
+
+      state.reviewComments = mergedComments;
+      state.reviews = freshReviews;
+    } catch (error) {
+      // Non-fatal: background refresh should never disrupt local drafting.
+      console.warn('Failed to refresh review discussion:', error);
+    } finally {
+      commentsRefreshInFlight = false;
+    }
+  };
+
+  const startReviewCommentsPolling = (owner: string, repo: string, prNumber: number, intervalMs = COMMENTS_POLL_INTERVAL_MS) => {
+    const key = `${owner}/${repo}#${prNumber}`;
+
+    // If we're already polling this PR, do nothing.
+    if (commentsPollHandle && commentsLastRefreshKey === key) return;
+
+    stopReviewCommentsPolling();
+    commentsLastRefreshKey = key;
+
+    // Refresh once immediately, then continue in the background.
+    void refreshReviewDiscussion(owner, repo, prNumber);
+
+    commentsPollHandle = setInterval(() => {
+      void refreshReviewDiscussion(owner, repo, prNumber);
+    }, intervalMs);
+  };
+
+  const stopReviewCommentsPolling = () => {
+    if (commentsPollHandle) {
+      clearInterval(commentsPollHandle);
+      commentsPollHandle = null;
+    }
+    commentsLastRefreshKey = null;
+  };
+
   const replyToSubmittedComment = async (inReplyToId: number, body: string): Promise<void> => {
     if (!state.pullRequest) {
       console.error('No pull request loaded');
@@ -436,6 +506,7 @@ export function createPRReviewState() {
   };
 
   const reset = () => {
+    stopReviewCommentsPolling();
     Object.assign(state, {
       pullRequest: null,
       reviewComments: [],
@@ -1011,6 +1082,9 @@ export function createPRReviewState() {
     loadPreferences,
     saveDiffViewMode,
     loadPullRequest,
+    refreshReviewDiscussion,
+    startReviewCommentsPolling,
+    stopReviewCommentsPolling,
     setActiveTab,
     setThreadResolved,
     selectFile,
