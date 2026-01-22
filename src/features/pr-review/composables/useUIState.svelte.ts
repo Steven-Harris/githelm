@@ -6,7 +6,7 @@ import type { UIState } from '../types/pr-review.types';
  */
 export function useUIState() {
   // Reactive UI state
-  let state = $state<UIState>({
+  const state = $state<UIState>({
     activeTab: 'overview',
     selectedFile: null,
     selectedCommit: null,

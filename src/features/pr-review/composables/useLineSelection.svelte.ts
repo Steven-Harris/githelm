@@ -6,7 +6,7 @@ import type { SelectedLine } from '../types/pr-review.types';
  */
 export function useLineSelection() {
   // Reactive state for line selection
-  let state = $state({
+  const state = $state({
     selectedLines: [] as SelectedLine[],
     isSelectingLines: false
   });

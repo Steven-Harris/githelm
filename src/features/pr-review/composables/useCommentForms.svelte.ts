@@ -6,7 +6,7 @@ import type { CommentFormState, PendingComment, SelectedLine } from '../types/pr
  */
 export function useCommentForms() {
   // Reactive state for comment forms
-  let state = $state<CommentFormState>({
+  const state = $state<CommentFormState>({
     selectedLines: [],
     pendingComments: [],
     isSelectingLines: false,
@@ -46,7 +46,7 @@ export function useCommentForms() {
   }
 
   // Update a pending comment
-  function updatePendingComment(commentId: string, body: string, isPartOfReview?: boolean) {
+  const formTexts = $state({
     state.pendingComments = state.pendingComments.map(comment => {
       if (comment.id === commentId) {
         return {

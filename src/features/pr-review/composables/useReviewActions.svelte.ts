@@ -10,13 +10,13 @@ import type { OperationResult, ReviewSubmissionData } from '../types/pr-review.t
  */
 export function useReviewActions() {
   // Loading states for different review actions
-  let loading = $state({
+  const loading = $state({
     submittingReview: false,
     submittingComment: false,
     submittingReaction: false
   });
 
-  let errors = $state({
+  const errors = $state({
     lastError: null as string | null
   });
 

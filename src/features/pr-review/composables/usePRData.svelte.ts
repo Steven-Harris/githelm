@@ -14,7 +14,7 @@ import type { OperationResult, PRReviewData } from '../types/pr-review.types';
  */
 export function usePRData() {
   // Reactive state using Svelte 5 runes
-  let data = $state<PRReviewData>({
+  const data = $state<PRReviewData>({
     pullRequest: null,
     reviewComments: [],
     files: [],
@@ -23,7 +23,7 @@ export function usePRData() {
     checks: []
   });
 
-  let loading = $state({
+  const loading = $state({
     prData: false,
     files: false,
     commits: false,
@@ -31,7 +31,7 @@ export function usePRData() {
     checks: false
   });
 
-  let errors = $state({
+  const errors = $state({
     prData: null as string | null,
     files: null as string | null,
     commits: null as string | null,
@@ -259,7 +259,7 @@ export function usePRData() {
     prNumber: number
   ): Promise<OperationResult> {
     try {
-      const [prResult, filesResult, commitsResult, reviewsResult, commentsResult] =
+      const [prResult, filesResult, _commitsResult, reviewsResult, _commentsResult] =
         await Promise.allSettled([
           loadPullRequest(owner, repo, prNumber),
           loadFiles(owner, repo, prNumber),

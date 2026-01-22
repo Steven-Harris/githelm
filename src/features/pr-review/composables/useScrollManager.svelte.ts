@@ -7,7 +7,7 @@ export function useScrollManager() {
   let scrollTimeout: NodeJS.Timeout | null = null;
 
   // Function to scroll to a specific file and line
-  function scrollToFileAndLine(filename: string, lineNumber: number, onToggleFile: (filename: string) => void) {
+  function scrollToFileAndLine(filename: string, lineNumber: number, _onToggleFile: (filename: string) => void) {
     if (!mainContentElement) return;
 
     isScrollingFromNavigation = true;
