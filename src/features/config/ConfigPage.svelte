@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { RepoConfig } from '$integrations/firebase';
-  import { getStorageObject } from '$shared/services/storage.service';
-  import { repositoryFacade } from '$shared/stores/repository.facade';
+  import { configService } from '$integrations/firebase';
   import { isMobile } from '$shared/stores/mobile.store';
+  import { repositoryFacade } from '$shared/stores/repository.facade';
   import { onMount } from 'svelte';
   import ConfigList from './ConfigList.svelte';
   import OrganizationManager from './OrganizationManager.svelte';
@@ -10,7 +10,6 @@
 
   let configurations = $state<CombinedConfig[]>([]);
   let isLoading = $state(false);
-  let isSaving = $state(false);
 
   onMount(async () => {
     await loadConfigurations();
@@ -19,8 +18,9 @@
   async function loadConfigurations(): Promise<void> {
     isLoading = true;
     try {
-      const prConfigs = getStorageObject<RepoConfig[]>('pull-requests-configs').data || [];
-      const actionConfigs = getStorageObject<RepoConfig[]>('actions-configs').data || [];
+      const configs = await configService.getConfigs();
+      const prConfigs = configs.pullRequests || [];
+      const actionConfigs = configs.actions || [];
 
       const combined = new Map<string, CombinedConfig>();
 
@@ -57,15 +57,15 @@
   }
 
   async function handleConfigUpdate(configs: CombinedConfig[]): Promise<void> {
-    isSaving = true;
+    // Always update the local state immediately for a responsive UI
+    configurations = configs;
+
+    // Save to backend in the background without blocking the UI
     try {
       await repositoryFacade.updateConfigurations(configs);
-
-      configurations = configs;
     } catch (error) {
       console.error('Error saving configurations:', error);
-    } finally {
-      isSaving = false;
+      // Optionally, you could show a toast notification here
     }
   }
 </script>
@@ -84,16 +84,6 @@
             </svg>
           </div>
           <p class="mt-2 text-[#8b949e] text-sm">Loading configurations...</p>
-        </div>
-      {:else if isSaving}
-        <div class="text-center py-8">
-          <div class="animate-spin mx-auto w-8 h-8">
-            <svg class="w-full h-full text-[#3fb950] fill-current" viewBox="0 0 16 16">
-              <path d="M8 16a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
-              <path class="text-[#0d1117] fill-current" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"></path>
-            </svg>
-          </div>
-          <p class="mt-2 text-[#8b949e] text-sm">Saving configurations...</p>
         </div>
       {:else}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">

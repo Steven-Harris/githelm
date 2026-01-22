@@ -20,19 +20,26 @@ export function clearSiteData(): void {
     return;
   }
   localStorage.clear();
+  
+  // Also clear session storage (for GitHub token)
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.clear();
+  }
 }
 
 export function getGithubToken(): string | null {
-  return getItem(GITHUB_TOKEN_KEY);
+  return getSessionItem(GITHUB_TOKEN_KEY);
 }
 
 export function setGithubToken(token: string | undefined): void {
   if (!token) {
-    removeItem(GITHUB_TOKEN_KEY);
+    removeSessionItem(GITHUB_TOKEN_KEY);
     return;
   }
-  setItem(GITHUB_TOKEN_KEY, token);
+  setSessionItem(GITHUB_TOKEN_KEY, token);
 }
+
+
 
 export function getStorageObject<T = {} | []>(key: string): StorageObject<T> {
   const item = getItem(key);
@@ -70,4 +77,26 @@ function removeItem(key: string): void {
     return;
   }
   localStorage.removeItem(key);
+}
+
+// SessionStorage helpers for GitHub token (session-only persistence)
+function getSessionItem(key: string): string | null {
+  if (typeof sessionStorage === 'undefined') {
+    return null;
+  }
+  return sessionStorage.getItem(key);
+}
+
+function setSessionItem(key: string, value: string): void {
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+  sessionStorage.setItem(key, value);
+}
+
+function removeSessionItem(key: string): void {
+  if (typeof sessionStorage === 'undefined') {
+    return;
+  }
+  sessionStorage.removeItem(key);
 }

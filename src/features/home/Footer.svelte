@@ -1,5 +1,5 @@
-<footer class="p-1 bg-[#0d1117] text-[#c9d1d9]">
-  <div class=" bg-[#0d1117] px-2 py-1">
+<footer class="bg-[#0d1117] text-[#c9d1d9]">
+  <div class="bg-[#0d1117] px-4 py-3">
     <div class="h-full flex justify-between items-center text-sm">
       <div class="text-[#8b949e]">
         <span>© 2025 GitHelm</span>
@@ -15,10 +15,10 @@
   footer {
     background-color: var(--primary-color);
     color: white;
-    padding: 0.5rem 1rem;
-    text-align: center;
     position: fixed;
     width: 100%;
     bottom: 0;
+    z-index: 50;
+    border-top: 1px solid #30363d;
   }
 </style>

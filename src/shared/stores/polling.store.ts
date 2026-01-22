@@ -1,4 +1,4 @@
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
+import { memoryCacheService } from '$shared/services/memory-cache.service';
 import { readable } from 'svelte/store';
 import { killSwitch } from './kill-switch.store';
 import { manualTrigger } from './last-updated.store';
@@ -15,8 +15,8 @@ let paused = false;
 const ongoingRequests = new Set<string>();
 
 function createPollingStore<T>(key: string, callback: AsyncCallback<T>) {
-  const storage = getStorageObject<T>(key);
-  const initialData = storage.data || ({} as T);
+  const cachedData = memoryCacheService.get<T>(key);
+  const initialData = cachedData || ({} as T);
   return readable<T>(initialData, (set) => startPolling(key, callback, set));
 }
 
@@ -90,9 +90,9 @@ async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set
   const storage = getStorageObject<T>(key);
   const now = Date.now();
   
-  // Check if we have valid cached data
-  if (storage.data && storage.lastUpdated && storage.lastUpdated + STALE_INTERVAL - 3000 > now) {
-    set(storage.data);
+  // Check if we have valid cached data (memory cache automatically handles expiration)
+  if (cachedData) {
+    set(cachedData);
     return;
   }
 
@@ -109,7 +109,7 @@ async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueS
     
     // Always update the store with fresh data, even if it hasn't changed
     // This ensures UI reactivity is maintained
-    setStorageObject(key, data);
+    memoryCacheService.set(key, data, STALE_INTERVAL);
     set(data);
     
   } catch (error) {
@@ -122,9 +122,9 @@ async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueS
     });
     
     // Try to use cached data on error
-    const storage = getStorageObject<T>(key);
-    if (storage.data) {
-      set(storage.data);
+    const cachedData = memoryCacheService.get<T>(key);
+    if (cachedData) {
+      set(cachedData);
     }
     
     // Retry with exponential backoff

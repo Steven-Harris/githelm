@@ -49,12 +49,12 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
 
     const mouseY = event.clientY;
     const viewportHeight = window.innerHeight;
-    
+
     // Check if mouse is in scroll zones using viewport coordinates
     // Make top zone work even when dragging into header area (negative Y values)
     const inTopZone = mouseY < SCROLL_ZONE_HEIGHT;
     const inBottomZone = mouseY >= (viewportHeight - SCROLL_ZONE_HEIGHT);
-    
+
     // Debug logging
     console.log('Auto-scroll debug:', {
       mouseY,
@@ -66,11 +66,11 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
       bottomZoneThreshold: viewportHeight - SCROLL_ZONE_HEIGHT,
       bottomZoneStart: viewportHeight - SCROLL_ZONE_HEIGHT
     });
-    
+
     // Remove any existing scroll zone classes from both scroll container and document body
     state.scrollContainer.classList.remove('scroll-zone-top', 'scroll-zone-bottom');
     document.body.classList.remove('scroll-zone-top', 'scroll-zone-bottom');
-    
+
     if (!inTopZone && !inBottomZone) {
       stopAutoScroll();
       return;
@@ -95,8 +95,8 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
     } else if (inBottomZone) {
       const distanceFromBottom = mouseY - (viewportHeight - SCROLL_ZONE_HEIGHT);
       scrollDirection = Math.min(SCROLL_SPEED, Math.max(5, distanceFromBottom / 2));
-      console.log('Bottom zone scroll:', { 
-        distanceFromBottom, 
+      console.log('Bottom zone scroll:', {
+        distanceFromBottom,
         scrollDirection,
         mouseY,
         viewportHeight,
@@ -117,17 +117,17 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
           // Use a more direct approach to ensure scrolling works
           const currentScrollY = window.scrollY;
           const newScrollY = currentScrollY + state.currentScrollDirection;
-          
+
           // Ensure we don't scroll beyond bounds
           const maxScrollY = Math.max(
             document.documentElement.scrollHeight - window.innerHeight,
             document.body.scrollHeight - window.innerHeight
           );
           const clampedScrollY = Math.max(0, Math.min(maxScrollY, newScrollY));
-          
+
           // Apply the scroll
           window.scrollTo(0, clampedScrollY);
-          
+
           // If maxScrollY is 0 but we're trying to scroll down, try a different approach
           if (maxScrollY === 0 && state.currentScrollDirection > 0) {
             console.log('maxScrollY is 0, trying alternative scroll method...');
@@ -138,7 +138,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
               windowScrollY: window.scrollY
             });
           }
-          
+
           // Debug scroll application
           console.log('Auto-scrolling:', {
             currentScrollY,
@@ -163,10 +163,10 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
 
     const mouseY = event.clientY;
     const viewportHeight = window.innerHeight;
-    
+
     const inTopZone = mouseY < SCROLL_ZONE_HEIGHT;
     const inBottomZone = mouseY >= (viewportHeight - SCROLL_ZONE_HEIGHT);
-    
+
     if (!inTopZone && !inBottomZone) {
       return;
     }
@@ -190,7 +190,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
       clearInterval(state.autoScrollInterval);
       state.autoScrollInterval = null;
     }
-    
+
     // Remove scroll zone visual feedback from both scroll container and document body
     if (state.scrollContainer) {
       state.scrollContainer.classList.remove('scroll-zone-top', 'scroll-zone-bottom');
@@ -215,16 +215,36 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
     }
   }
 
-  function handleKeyDown(event: KeyboardEvent): void {
-    if (state.isDragging && (event.key === 'ArrowUp' || event.key === 'ArrowDown' || 
-                            event.key === 'PageUp' || event.key === 'PageDown' || 
-                            event.key === 'Home' || event.key === 'End')) {
-      stopAutoScroll();
-      // Don't prevent default to allow keyboard scrolling
+  // Add global handlers to prevent unwanted form submissions during drag
+  function handleFormSubmit(event: Event): void {
+    if (state.isDragging) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      console.log('Prevented form submission during drag operation');
     }
   }
 
-  function createGhostElement(sourceElement: HTMLElement, event: DragEvent): void {
+  function handleClick(event: MouseEvent): void {
+    if (state.isDragging) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      console.log('Prevented click event during drag operation');
+    }
+  }
+
+  function handleKeyDown(event: KeyboardEvent): void {
+    if (state.isDragging && (event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
+      event.key === 'PageUp' || event.key === 'PageDown' ||
+      event.key === 'Home' || event.key === 'End')) {
+      stopAutoScroll();
+      // Don't prevent default to allow keyboard scrolling
+    }
+    // Prevent form submission via Enter key during drag
+    if (state.isDragging && event.key === 'Enter') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  } function createGhostElement(sourceElement: HTMLElement, event: DragEvent): void {
     // Remove any existing ghost element first
     removeGhostElement();
 
@@ -399,6 +419,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
 
   function handleDrop(event: DragEvent): void {
     event.preventDefault();
+    event.stopPropagation();
 
     if (!(event.target instanceof HTMLElement)) return;
 
@@ -471,7 +492,11 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
   node.addEventListener('dragend', handleDragEnd);
   node.addEventListener('wheel', handleWheel); // Add wheel event listener
   node.addEventListener('touchstart', handleTouchStart); // Add touch event listener
-  node.addEventListener('keydown', handleKeyDown); // Add keyboard event listener
+
+  // Add global event listeners to prevent unwanted interactions during drag
+  document.addEventListener('submit', handleFormSubmit, true); // Use capture phase
+  document.addEventListener('click', handleClick, true); // Use capture phase
+  document.addEventListener('keydown', handleKeyDown); // Add keyboard event listener
 
   // Clean up function
   return {
@@ -486,7 +511,11 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
       node.removeEventListener('dragend', handleDragEnd);
       node.removeEventListener('wheel', handleWheel); // Remove wheel event listener
       node.removeEventListener('touchstart', handleTouchStart); // Remove touch event listener
-      node.removeEventListener('keydown', handleKeyDown); // Remove keyboard event listener
+
+      // Remove global event listeners
+      document.removeEventListener('submit', handleFormSubmit, true);
+      document.removeEventListener('click', handleClick, true);
+      document.removeEventListener('keydown', handleKeyDown); // Remove keyboard event listener
     },
   };
 };

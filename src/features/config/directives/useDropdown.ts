@@ -22,7 +22,7 @@ export function useDropdown(node: HTMLElement, { isOpen = false }: { isOpen?: bo
     node.style.overflowY = 'auto';
     node.style.position = 'absolute';
     node.style.width = '100%';
-    node.style.zIndex = '1000';
+    node.style.zIndex = '100';
   }
 
   // Set up resize observer to handle window and container size changes

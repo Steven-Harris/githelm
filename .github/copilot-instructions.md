@@ -10,7 +10,8 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 - **Language**: TypeScript
 - **Authentication**: Firebase Authentication with GitHub provider
 - **Data Storage**: Firebase Firestore
-- **Local Storage**: Browser localStorage for caching API responses
+- **Caching**: In-memory cache for API responses with automatic expiration
+- **Session Storage**: Browser sessionStorage for GitHub authentication tokens
 - **API Integration**: GitHub REST API and GraphQL API
 - **Styling**: TailwindCSS
 - **Deployment**: Client-only deployment to Firebase Hosting
@@ -63,10 +64,9 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
   - `repositories.ts`: Repository metadata handling
 
 - **Storage Utilities** (`/src/integrations/storage.ts`)
-  - Browser localStorage abstraction
-  - Caching mechanisms for API responses
-
-### UI Components
+### Storage Utilities (`/src/shared/services/`)
+- **Memory Cache Service** (`memory-cache.service.ts`): In-memory caching with automatic expiration
+- **Storage Service** (`storage.service.ts`): SessionStorage abstraction for authentication tokens### UI Components
 
 - **Core UI** (`/src/lib/`)
   - `Header.svelte`: Application header with authentication controls
@@ -138,7 +138,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
    - Firebase authentication opens GitHub OAuth popup
    - User grants permissions to the app
    - Firebase returns a user object and GitHub token
-   - Token is stored in localStorage for subsequent requests
+   - Token is stored in sessionStorage for subsequent requests
 
 2. **Token Refresh**:
    - Token validity is checked on startup
@@ -229,7 +229,7 @@ GitHelm is a web application designed to monitor GitHub pull requests and action
 
 ### Authentication Security
 
-- Store tokens securely in localStorage
+- Store tokens securely in sessionStorage
 - Request only necessary GitHub permissions
 - Implement proper token refresh mechanisms
 - Clear sensitive data on logout

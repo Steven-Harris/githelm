@@ -11,29 +11,6 @@ const defaultFilters: Record<RepositoryFilterType, boolean> = {
   without_prs: true,
 };
 
-const loadFiltersFromLocalStorage = (): Record<RepositoryFilterType, boolean> => {
-  try {
-    const savedFilters = localStorage.getItem('repository-filters');
-    if (savedFilters) {
-      const parsed = JSON.parse(savedFilters);
-      // Convert old format to new format if needed
-      if (parsed.with_prs !== undefined || parsed.without_prs !== undefined) {
-        return {
-          with_prs: parsed.with_prs ?? true,
-          without_prs: parsed.without_prs ?? true,
-        };
-      }
-      return parsed;
-    }
-  } catch (error) {
-    captureException(error, {
-      context: 'Repository Filter Store',
-      function: 'loadFiltersFromLocalStorage',
-    });
-  }
-  return { ...defaultFilters };
-};
-
 const loadFiltersFromFirebase = async (): Promise<Record<RepositoryFilterType, boolean> | null> => {
   try {
     const user = get(firebase.user);
@@ -76,20 +53,10 @@ const saveFilters = async (filters: Record<RepositoryFilterType, boolean>): Prom
       function: 'saveFilters - Firebase',
     });
   }
-
-  // Always save to localStorage as backup
-  try {
-    localStorage.setItem('repository-filters', JSON.stringify(filters));
-  } catch (error) {
-    captureException(error, {
-      context: 'Repository Filter Store',
-      function: 'saveFilters - localStorage',
-    });
-  }
 };
 
-// Initialize store with localStorage data, then load from Firebase
-export const repositoryFilters = writable<Record<RepositoryFilterType, boolean>>(loadFiltersFromLocalStorage());
+// Initialize store with default values, then load from Firebase
+export const repositoryFilters = writable<Record<RepositoryFilterType, boolean>>({ ...defaultFilters });
 
 // Initialize Firebase loading on user authentication
 firebase.user.subscribe(async (user) => {
@@ -101,7 +68,7 @@ firebase.user.subscribe(async (user) => {
   }
 });
 
-// Save to both localStorage and Firebase when filters change
+// Save to Firebase when filters change
 repositoryFilters.subscribe((value) => {
   saveFilters(value);
 });

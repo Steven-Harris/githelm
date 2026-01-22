@@ -3,6 +3,7 @@ import { GithubAuthProvider, browserLocalPersistence, getAuth, setPersistence, s
 import { getFirestore } from 'firebase/firestore';
 import { get, writable, type Writable } from 'svelte/store';
 import { clearSiteData, getGithubToken, setGithubToken } from '$shared/services/storage.service';
+import { memoryCacheService } from '$shared/services/memory-cache.service';
 import { setUserInfo, clearUserInfo, captureException } from '$integrations/sentry';
 import { type AuthState } from './types';
 
@@ -287,24 +288,13 @@ class FirebaseAuthClient {
 
   private clearCachedData(): void {
     try {
-      // Clear all GitHub-related cached data
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && (
-          key.startsWith('pull-requests-') ||
-          key.startsWith('actions-') ||
-          key.startsWith('workflow-') ||
-          key.includes('github') ||
-          key.includes('repo')
-        )) {
-          keysToRemove.push(key);
-        }
+      // Clear all GitHub-related cached data from memory cache
+      memoryCacheService.clear();
+
+      // Also clear sessionStorage (includes GitHub token and any other session data)
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.clear();
       }
-      
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
-      });
       
     } catch (error) {
       console.warn('Error clearing cached data:', error);

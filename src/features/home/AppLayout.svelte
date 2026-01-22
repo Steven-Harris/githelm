@@ -64,7 +64,7 @@
 <Header signedIn={$authState.signedIn && $authState.isAuth === 'authenticated'} />
 <Breadcrumb />
 
-<main class="flex-1 overflow-auto md:px-5 bg-gray-900 pb-12">
+<main class="flex-1 overflow-auto md:px-5 bg-gray-900 pb-20">
   <Tabs />
 
   {#if $authState.isAuth === 'error'}
