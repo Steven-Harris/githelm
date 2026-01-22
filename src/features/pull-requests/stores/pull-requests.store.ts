@@ -1,8 +1,8 @@
 import { PullRequestRepository } from '$features/pull-requests/services/pull-request.repository';
-import { type RepoConfig } from '$integrations/firebase';
+import { type RepoConfig, configService } from '$integrations/firebase';
 import { type PullRequest } from '$integrations/github';
 import { captureException } from '$integrations/sentry';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
+import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import createPollingStore from '$shared/stores/polling.store';
 import { initializePullRequestsPolling as initializeRepositoryPullRequestsPolling } from '$shared/stores/repository-service';
 import { derived, writable } from 'svelte/store';
@@ -130,13 +130,9 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
     const pullRequests = await pullRequestRepo.fetchPullRequests(query);
     const result = pullRequests || [];
 
-    try {
-      const cacheKey = `pull-requests-cache-${config.org}/${config.repo}`;
-      localStorage.setItem(cacheKey, JSON.stringify(result));
-    } catch (cacheError) {
-      console.warn('Failed to cache pull requests data:', cacheError);
-    }
-
+    // Cache the result for 60 seconds
+    const cacheKey = memoryCacheService.createKey(CacheKeys.PULL_REQUESTS, config.org, config.repo);
+    memoryCacheService.set(cacheKey, result, 60 * 1000);
     return result;
   } catch (error) {
     const cacheKey = memoryCacheService.createKey(CacheKeys.PULL_REQUESTS, config.org, config.repo);

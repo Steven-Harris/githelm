@@ -1,7 +1,7 @@
 import { allWorkflowRuns, initializeActionsPolling, refreshActionsData } from '$features/actions/stores/actions.store';
 import { type RepoConfig, configService } from '$integrations/firebase';
 import { captureException } from '$integrations/sentry';
-import { getStorageObject, setStorageObject } from '$shared/services/storage.service';
+import { setStorageObject } from '$shared/services/storage.service';
 import { allPullRequests, initializePullRequestsPolling, refreshPullRequestsData } from '$shared/stores/repository-service';
 import { writable } from 'svelte/store';
 

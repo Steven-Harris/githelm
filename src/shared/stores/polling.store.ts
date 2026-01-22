@@ -87,10 +87,9 @@ async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set
   if (kill || paused) {
     return;
   }
-  const storage = getStorageObject<T>(key);
-  const now = Date.now();
-  
+
   // Check if we have valid cached data (memory cache automatically handles expiration)
+  const cachedData = memoryCacheService.get<T>(key);
   if (cachedData) {
     set(cachedData);
     return;
