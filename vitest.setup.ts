@@ -18,19 +18,19 @@ class MockDataTransfer {
   items: DataTransferItemList = {} as DataTransferItemList;
   types: readonly string[] = [];
 
-  clearData(format?: string): void {
+  clearData(_format?: string): void {
     // Mock implementation
   }
 
-  getData(format: string): string {
+  getData(_format: string): string {
     return '';
   }
 
-  setData(format: string, data: string): void {
+  setData(_format: string, _data: string): void {
     // Mock implementation
   }
 
-  setDragImage(image: Element, x: number, y: number): void {
+  setDragImage(_image: Element, _x: number, _y: number): void {
     // Mock implementation
   }
 }

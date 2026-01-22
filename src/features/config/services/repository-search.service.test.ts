@@ -32,7 +32,7 @@ describe('RepositorySearchService', () => {
 
       mockSearchRepositories.mockResolvedValue(mockResults);
 
-      let stateUpdates: any[] = [];
+      const stateUpdates: any[] = [];
       const onStateUpdate = (updates: any) => {
         stateUpdates.push(updates);
       };
@@ -65,7 +65,7 @@ describe('RepositorySearchService', () => {
 
       mockSearchRepositories.mockResolvedValue(mockResults);
 
-      let stateUpdates: any[] = [];
+      const stateUpdates: any[] = [];
       const onStateUpdate = (updates: any) => {
         stateUpdates.push(updates);
       };
@@ -135,7 +135,7 @@ describe('RepositorySearchService', () => {
       const repoName = 'repo';
       const existingRepos = [];
 
-      let stateUpdates: any[] = [];
+      const stateUpdates: any[] = [];
       const onStateUpdate = (updates: any) => {
         stateUpdates.push(updates);
       };
@@ -158,7 +158,7 @@ describe('RepositorySearchService', () => {
 
       mockSearchRepositories.mockRejectedValue(new Error('API Error'));
 
-      let stateUpdates: any[] = [];
+      const stateUpdates: any[] = [];
       const onStateUpdate = (updates: any) => {
         stateUpdates.push(updates);
       };

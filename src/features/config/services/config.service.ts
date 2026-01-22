@@ -1,5 +1,4 @@
 import { captureException } from '$integrations/sentry';
-import { eventBus } from '$shared/stores/event-bus.store';
 import { killSwitch } from '$shared/stores/kill-switch.store';
 import { repositoryFacade } from '$shared/stores/repository.facade';
 import { get } from 'svelte/store';

@@ -2,7 +2,7 @@ import { fetchData, executeGraphQLQuery } from './api-client';
 import { queueApiCallIfNeeded } from './auth';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
-import { type PullRequest, type PullRequests, type RepoInfo, type Review } from './types';
+import { type PullRequest, type RepoInfo, type Review } from './types';
 
 export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {

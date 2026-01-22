@@ -14,7 +14,7 @@ const config = {
     }),
     prerender: {
       handleUnseenRoutes: 'ignore', // Ignore dynamic routes that can't be prerendered
-      handleHttpError: ({ path, referrer, message }) => {
+      handleHttpError: ({ path, message }) => {
         // ignore deliberate link to shiny 404 page
         if (path === '/pr/[owner]/[repo]/[number]') {
           return;

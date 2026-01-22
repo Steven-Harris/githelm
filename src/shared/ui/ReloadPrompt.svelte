@@ -4,8 +4,11 @@
   const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
     immediate: true,
     onRegisteredSW(swUrl, r) {
-      r &&
-        setInterval(
+      if (!r) {
+        return;
+      }
+
+      setInterval(
           async () => {
             if (r.installing || !navigator) return;
 

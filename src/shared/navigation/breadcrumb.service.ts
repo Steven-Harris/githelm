@@ -39,7 +39,7 @@ class BreadcrumbService {
     }
 
     // PR review pages: /pr/{owner}/{repo}/{number}
-    const prMatch = currentPath.match(/^\/pr\/([^\/]+)\/([^\/]+)\/(\d+)$/);
+    const prMatch = currentPath.match(/^\/pr\/([^/]+)\/([^/]+)\/(\d+)$/);
     if (prMatch) {
       const [, owner, repo, number] = prMatch;
 
@@ -55,7 +55,9 @@ class BreadcrumbService {
 
     // Fallback for unknown routes
     return breadcrumbs;
-  }  /**
+  }
+
+  /**
    * Navigate to a breadcrumb item
    */
   navigateTo(item: BreadcrumbItem): void {

@@ -1,5 +1,5 @@
 import { type RepoConfig, configService } from '$integrations/firebase';
-import { fetchMultipleRepositoriesPullRequests, fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
+import { fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
@@ -263,12 +263,7 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
   allPullRequests.set(initialPRs);
 
   unsubscribe('pull-requests-polling');
-  const params = repoConfigs.map((config) => ({
-    org: config.org,
-    repo: config.repo,
-    filters: config.filters || [],
-  }));
-  
+
   // Use PullRequestRepository instead of direct function call
   const pullRequestRepo = PullRequestRepository.getInstance();
   const queries = repoConfigs.map((config) => ({

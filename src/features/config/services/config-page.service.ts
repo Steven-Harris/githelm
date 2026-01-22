@@ -1,4 +1,4 @@
-import { derived, type Readable, get } from 'svelte/store';
+import { derived, type Readable } from 'svelte/store';
 import { eventBus } from '$shared/stores/event-bus.store';
 import { configService } from '$features/config/services/config.service';
 import { repositoryFacade } from '$shared/stores/repository.facade';
@@ -83,7 +83,7 @@ export class ConfigPageService {
   }
 
   getErrorMessage(): Readable<string | null> {
-    return derived(eventBus, ($eventBus) => {
+    return derived(eventBus, (_eventBus) => {
       // This would be enhanced with actual error handling
       return null;
     });
@@ -103,7 +103,7 @@ export class ConfigPageService {
       // Clear loading state on error
       eventBus.set('');
       
-      const errorResult = errorService.handleError(error, {
+      errorService.handleError(error, {
         component: 'ConfigPageService',
         action: 'loadConfigurations',
       });
@@ -130,7 +130,7 @@ export class ConfigPageService {
       // Clear save state on error
       eventBus.set('');
       
-      const errorResult = errorService.handleError(error, {
+      errorService.handleError(error, {
         component: 'ConfigPageService',
         action: 'saveConfigurations',
       });
@@ -147,7 +147,7 @@ export class ConfigPageService {
     try {
       const validation = configService.validateConfigurations(configs);
       return validation.isValid;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

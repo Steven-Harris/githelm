@@ -116,12 +116,12 @@ export function highlightCode(code: string, filename: string): string {
   try {
     const result = hljs.highlight(code, { language });
     return result.value;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to auto-detection if specific language fails
     try {
       const result = hljs.highlightAuto(code);
       return result.value;
-    } catch (autoError) {
+    } catch (_autoError) {
       // Final fallback to escaped HTML
       return escapeHtml(code);
     }

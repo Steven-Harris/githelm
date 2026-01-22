@@ -145,7 +145,7 @@ async function fetchPullRequestsSmartly(config: RepoConfig): Promise<PullRequest
   }
 }
 
-async function checkForNewPullRequests(org: string, repo: string, label: string): Promise<boolean> {
+async function checkForNewPullRequests(_org: string, _repo: string, _label: string): Promise<boolean> {
   return true;
 }
 
