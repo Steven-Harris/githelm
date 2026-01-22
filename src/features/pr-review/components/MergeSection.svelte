@@ -13,7 +13,22 @@
 
   const { pullRequest, mergeContext, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
 
-  const allowedMethods = $derived(() => mergeContext?.allowedMergeMethods ?? []);
+  const inferredAllowedMethods = $derived(() => {
+    const prAny = pullRequest as any;
+    const repoAny = prAny?.base?.repo ?? prAny?.head?.repo;
+    if (!repoAny) return [] as MergeMethod[];
+
+    const methods: MergeMethod[] = [];
+    if (repoAny.allow_merge_commit) methods.push('merge');
+    if (repoAny.allow_squash_merge) methods.push('squash');
+    if (repoAny.allow_rebase_merge) methods.push('rebase');
+    return methods;
+  });
+
+  const allowedMethods = $derived(() => {
+    const fromContext = mergeContext?.allowedMergeMethods ?? [];
+    return fromContext.length ? fromContext : inferredAllowedMethods();
+  });
 
   let selectedMethod = $state<MergeMethod>('merge');
   let bypassReason = $state('');
@@ -40,7 +55,10 @@
   const viewerCanMergeAsAdmin = $derived(() => !!mergeContext?.viewerCanMergeAsAdmin);
 
   const canMergeNormally = $derived(() => {
-    if (mergeStateStatus() !== 'CLEAN') return false;
+    const status = mergeStateStatus();
+    // GitHub can report UNKNOWN while mergeability is still being computed.
+    // Allow attempting a merge in that state; GitHub will enforce server-side rules.
+    if (status !== 'CLEAN' && status !== 'UNKNOWN') return false;
     // If GitHub provides a review decision, require APPROVED to satisfy required approvals/codeowner rules.
     const decision = reviewDecision();
     if (!decision) return true;
@@ -64,6 +82,10 @@
       return 'Not mergeable (closed/draft)';
     }
 
+    if (!mergeContext) {
+      return 'Merge info unavailable';
+    }
+
     const status = mergeStateStatus();
     const decision = reviewDecision();
 
@@ -76,6 +98,8 @@
     switch (status) {
       case 'CLEAN':
         return 'Ready to merge';
+      case 'UNKNOWN':
+        return 'Mergeability still being calculated';
       case 'BLOCKED':
         return 'Blocked by required checks/branch rules';
       case 'UNSTABLE':
@@ -86,7 +110,6 @@
         return 'Merge conflicts';
       case 'DRAFT':
         return 'Draft pull request';
-      case 'UNKNOWN':
       default:
         return status ? `Merge status: ${status}` : 'Merge status unavailable';
     }
@@ -107,7 +130,7 @@
     if (!isAuthenticated) return 'Login required';
     if (!prIsOpen()) return statusText();
     if (!mergeContext) return 'Merge info unavailable';
-    if (allowedMethods().length === 0) return 'Merging disabled for this repository';
+    if (allowedMethods().length === 0) return 'Merge method info unavailable';
     if (!viewerCanMerge() && !viewerCanMergeAsAdmin()) return 'You do not have permission to merge';
     if (!canMergeNormally() && !canBypass()) return statusText();
     return null;

@@ -13,6 +13,38 @@ export interface PullRequestMergeContext {
   reviewDecision: string | null;
 }
 
+function inferAllowedMergeMethodsFromRepo(repoData: any): MergeMethod[] {
+  const allowed: MergeMethod[] = [];
+  if (!repoData || typeof repoData !== 'object') return allowed;
+  if (repoData.allow_merge_commit) allowed.push('merge');
+  if (repoData.allow_squash_merge) allowed.push('squash');
+  if (repoData.allow_rebase_merge) allowed.push('rebase');
+  return allowed;
+}
+
+function mapRestMergeableStateToMergeStateStatus(mergeableState: unknown): string | null {
+  if (typeof mergeableState !== 'string') return null;
+  switch (mergeableState.toLowerCase()) {
+    case 'clean':
+      return 'CLEAN';
+    case 'blocked':
+      return 'BLOCKED';
+    case 'behind':
+      return 'BEHIND';
+    case 'dirty':
+      return 'DIRTY';
+    case 'unstable':
+      return 'UNSTABLE';
+    case 'draft':
+      return 'DRAFT';
+    case 'unknown':
+      return 'UNKNOWN';
+    default:
+      // GitHub REST can return additional states (e.g. has_hooks). Treat as UNKNOWN.
+      return 'UNKNOWN';
+  }
+}
+
 interface RepoPermissions {
   admin?: boolean;
   maintain?: boolean;
@@ -62,25 +94,60 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
     const repository = result?.repository;
     const pr = repository?.pullRequest;
 
-    if (!repository || !pr) return null;
+    if (repository && pr) {
+      const allowedMergeMethods: MergeMethod[] = [];
+      if (repository.mergeCommitAllowed) allowedMergeMethods.push('merge');
+      if (repository.squashMergeAllowed) allowedMergeMethods.push('squash');
+      if (repository.rebaseMergeAllowed) allowedMergeMethods.push('rebase');
+
+      return {
+        allowedMergeMethods,
+        viewerCanMerge: !!pr.viewerCanMerge,
+        viewerCanMergeAsAdmin: !!pr.viewerCanMergeAsAdmin,
+        mergeStateStatus: pr.mergeStateStatus ?? null,
+        reviewDecision: pr.reviewDecision ?? null,
+      };
+    }
+  } catch (error) {
+    // We'll fall back to REST below.
+    captureException(error, {
+      context: 'PR Review Service',
+      function: 'fetchPullRequestMergeContext (GraphQL)',
+      owner,
+      repo,
+      prNumber,
+    });
+  }
+
+  // Fallback: derive merge context from REST endpoints.
+  // This covers cases where GraphQL fields may not be accessible or query errors occur.
+  try {
+    const [repoData, prData] = await Promise.all([
+      fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`),
+      fetchData<any>(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`),
+    ]);
 
     const allowedMergeMethods: MergeMethod[] = [];
-    if (repository.mergeCommitAllowed) allowedMergeMethods.push('merge');
-    if (repository.squashMergeAllowed) allowedMergeMethods.push('squash');
-    if (repository.rebaseMergeAllowed) allowedMergeMethods.push('rebase');
+    if (repoData?.allow_merge_commit) allowedMergeMethods.push('merge');
+    if (repoData?.allow_squash_merge) allowedMergeMethods.push('squash');
+    if (repoData?.allow_rebase_merge) allowedMergeMethods.push('rebase');
+
+    const permissions: RepoPermissions | undefined = repoData?.permissions;
+    const viewerCanMerge = !!(permissions && (permissions.admin || permissions.maintain || permissions.push));
+    const viewerCanMergeAsAdmin = !!permissions?.admin;
 
     return {
       allowedMergeMethods,
-      viewerCanMerge: !!pr.viewerCanMerge,
-      viewerCanMergeAsAdmin: !!pr.viewerCanMergeAsAdmin,
-      mergeStateStatus: pr.mergeStateStatus ?? null,
-      reviewDecision: pr.reviewDecision ?? null,
+      viewerCanMerge,
+      viewerCanMergeAsAdmin,
+      mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prData?.mergeable_state),
+      // REST doesn't expose the same reviewDecision signal; leave null.
+      reviewDecision: null,
     };
   } catch (error) {
-    // Non-fatal: merge UI will be hidden/disabled if we can't fetch this.
     captureException(error, {
       context: 'PR Review Service',
-      function: 'fetchPullRequestMergeContext',
+      function: 'fetchPullRequestMergeContext (REST fallback)',
       owner,
       repo,
       prNumber,
@@ -344,6 +411,42 @@ export async function fetchAllPullRequestData(
       throw new Error('Pull request not found');
     }
 
+    // Ensure we always have a consistent merge context.
+    // GitHub's REST PR payload includes base.repo settings like allow_squash_merge,
+    // which we can use to infer allowed merge methods when needed.
+    const prAny: any = pullRequest as any;
+    const embeddedRepo = prAny?.base?.repo ?? prAny?.head?.repo ?? null;
+    const inferredAllowed = inferAllowedMergeMethodsFromRepo(embeddedRepo);
+
+    let finalMergeContext: PullRequestMergeContext | null = mergeContext;
+    if (finalMergeContext) {
+      if (!finalMergeContext.allowedMergeMethods?.length && inferredAllowed.length) {
+        finalMergeContext = {
+          ...finalMergeContext,
+          allowedMergeMethods: inferredAllowed,
+        };
+      }
+
+      if (!finalMergeContext.mergeStateStatus) {
+        finalMergeContext = {
+          ...finalMergeContext,
+          mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
+        };
+      }
+    } else if (inferredAllowed.length) {
+      const viewerCanMerge = !!(
+        repoPermissions &&
+        (repoPermissions.admin || repoPermissions.maintain || repoPermissions.push)
+      );
+      finalMergeContext = {
+        allowedMergeMethods: inferredAllowed,
+        viewerCanMerge,
+        viewerCanMergeAsAdmin: !!repoPermissions?.admin,
+        mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
+        reviewDecision: null,
+      };
+    }
+
     // Fetch check runs for the head commit
     const checks = await fetchPullRequestChecks(owner, repo, pullRequest.head.sha);
 
@@ -360,7 +463,7 @@ export async function fetchAllPullRequestData(
       reviews,
       checks,
       viewerCanResolveThreads,
-      mergeContext,
+      mergeContext: finalMergeContext,
     };
   } catch (error) {
     captureException(error, {

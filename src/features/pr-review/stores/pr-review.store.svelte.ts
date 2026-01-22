@@ -954,7 +954,14 @@ export function createPRReviewState() {
       return;
     }
 
-    const allowed = state.mergeContext?.allowedMergeMethods ?? [];
+    const allowedFromContext = state.mergeContext?.allowedMergeMethods ?? [];
+    const prAny: any = state.pullRequest as any;
+    const repoAny = prAny?.base?.repo ?? prAny?.head?.repo;
+    const allowedFromRepo: MergeMethod[] = [];
+    if (repoAny?.allow_merge_commit) allowedFromRepo.push('merge');
+    if (repoAny?.allow_squash_merge) allowedFromRepo.push('squash');
+    if (repoAny?.allow_rebase_merge) allowedFromRepo.push('rebase');
+    const allowed = allowedFromContext.length ? allowedFromContext : allowedFromRepo;
     if (!allowed.includes(method)) {
       state.mergeError = 'Selected merge method is not allowed for this repository';
       return;
