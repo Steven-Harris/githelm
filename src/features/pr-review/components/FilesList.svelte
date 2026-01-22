@@ -23,6 +23,12 @@
     return prReview.state.files;
   });
 
+  const visibleReviewComments = $derived(() => {
+    return prReview.state.showResolvedComments
+      ? prReview.state.reviewComments
+      : prReview.state.reviewComments.filter((c) => c.is_resolved !== true);
+  });
+
   // Forward the element reference to scroll manager
   $effect(() => {
     if (!mainContentElement) return;
@@ -98,7 +104,7 @@
             isExpanded={prReview.state.expandedFiles.has(file.filename)}
             onToggle={() => prReview.toggleFileExpanded(file.filename)}
             onFileComment={(filename) => prReview.startCommentOnFile(filename)}
-            reviewComments={prReview.state.reviewComments}
+            reviewComments={visibleReviewComments()}
             diffViewMode={prReview.state.diffViewMode}
             viewerLogin={prReview.state.viewerLogin}
             canResolve={prReview.state.viewerCanResolveThreads && isAuthenticated}

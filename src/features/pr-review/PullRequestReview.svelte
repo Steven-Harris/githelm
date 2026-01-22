@@ -134,6 +134,8 @@
             onUpdateSubmittedComment={prReview.updateSubmittedComment}
             onReplyToSubmittedComment={prReview.replyToSubmittedComment}
             onSetThreadResolved={prReview.setThreadResolved}
+            showResolvedComments={prReview.state.showResolvedComments}
+            onToggleResolvedComments={prReview.toggleResolvedComments}
             canReview={canSubmitReview()}
             canResolveThreads={prReview.state.viewerCanResolveThreads && $isAuthenticated}
             isAuthenticated={$isAuthenticated}

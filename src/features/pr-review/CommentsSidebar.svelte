@@ -36,6 +36,8 @@
     onUpdateSubmittedComment?: (commentId: number, body: string) => void | Promise<void>;
     onReplyToSubmittedComment?: (inReplyToId: number, body: string) => void | Promise<void>;
     onSetThreadResolved?: (threadId: string, resolved: boolean) => void | Promise<void>;
+    showResolvedComments?: boolean;
+    onToggleResolvedComments?: () => void;
     canReview?: boolean;
     canResolveThreads?: boolean;
     isAuthenticated?: boolean;
@@ -67,6 +69,8 @@
     onUpdateSubmittedComment,
     onReplyToSubmittedComment,
     onSetThreadResolved,
+    showResolvedComments = false,
+    onToggleResolvedComments,
     canReview = false,
     canResolveThreads = false,
     isAuthenticated = false,
@@ -168,7 +172,7 @@
   const overallCommentReviews = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
 
   const lineComments = $derived(
-    reviewComments
+    (showResolvedComments ? reviewComments : reviewComments.filter((c) => c.is_resolved !== true))
       .filter((comment) => !!comment.path && (comment.line || comment.original_line || comment.in_reply_to_id))
       .sort((a, b) => {
         const pathCompare = a.path.localeCompare(b.path);
@@ -193,9 +197,25 @@
   ></div>
 
   <div class="p-4 border-b border-[#30363d]">
-    <h3 class="text-sm font-medium text-[#f0f6fc]">Reviews & Comments</h3>
-    <div class="text-xs text-[#8b949e] mt-1">
-      {overallReviewReviews.length} review{overallReviewReviews.length !== 1 ? 's' : ''} • {overallCommentReviews.length + lineComments.length} comment{overallCommentReviews.length + lineComments.length !== 1 ? 's' : ''}
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-sm font-medium text-[#f0f6fc]">Reviews & Comments</h3>
+        <div class="text-xs text-[#8b949e] mt-1">
+          {overallReviewReviews.length} review{overallReviewReviews.length !== 1 ? 's' : ''} • {overallCommentReviews.length + lineComments.length} comment{overallCommentReviews.length + lineComments.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+
+      {#if onToggleResolvedComments}
+        <button
+          type="button"
+          class="text-xs px-2 py-1 rounded border border-[#30363d] bg-[#0d1117] hover:bg-[#21262d] text-[#c9d1d9] transition-colors"
+          onclick={onToggleResolvedComments}
+          aria-pressed={showResolvedComments}
+          title={showResolvedComments ? 'Hide resolved conversations' : 'Show resolved conversations'}
+        >
+          {showResolvedComments ? 'Hide resolved' : 'Show resolved'}
+        </button>
+      {/if}
     </div>
   </div>
 

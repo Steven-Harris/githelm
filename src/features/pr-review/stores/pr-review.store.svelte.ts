@@ -200,7 +200,7 @@ export function createPRReviewState() {
   const commentsByFile = $derived(() => {
     const comments = state.showResolvedComments
       ? state.reviewComments
-      : state.reviewComments; // TODO: filter resolved comments
+      : state.reviewComments.filter((c) => c.is_resolved !== true);
 
     return comments.reduce((acc, comment) => {
       const fileName = comment.path;

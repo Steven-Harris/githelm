@@ -31,7 +31,8 @@ vi.mock('../services/review-api.service', () => {
     submitLineComment: vi.fn(async () => {
       return { id: 555, path: 'src/a.ts', body: 'ok', user: { login: 'me', avatar_url: '' } };
     }),
-    deleteComment: vi.fn(async () => {})
+    deleteComment: vi.fn(async () => {}),
+    setReviewThreadResolved: vi.fn(async () => true)
   };
 });
 
@@ -295,5 +296,41 @@ describe('createPRReviewState refreshReviewDiscussion', () => {
     expect(prReview.state.pendingComments[0].body).toBe('draft');
     expect(prReview.state.reviewDraft.body).toBe('draft body');
     expect(prReview.state.reviewDraft.event).toBe('COMMENT');
+  });
+});
+
+describe('createPRReviewState setThreadResolved', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('optimistically updates is_resolved for all comments in a thread and calls API', async () => {
+    const prReview = createPRReviewState();
+
+    prReview.state.reviewComments = [
+      { id: 1, path: 'src/a.ts', body: 'root', user: { login: 'a', avatar_url: '' }, thread_id: 'T1', is_resolved: false },
+      { id: 2, path: 'src/a.ts', body: 'reply', user: { login: 'b', avatar_url: '' }, thread_id: 'T1', is_resolved: false, in_reply_to_id: 1 }
+    ] as any;
+
+    await prReview.setThreadResolved('T1', true);
+
+    expect(prReview.state.reviewComments.every((c: any) => c.thread_id !== 'T1' || c.is_resolved === true)).toBe(true);
+
+    const { setReviewThreadResolved } = await import('../services/review-api.service');
+    expect(setReviewThreadResolved).toHaveBeenCalledWith('T1', true);
+  });
+
+  it('reverts optimistic update if API call fails', async () => {
+    const prReview = createPRReviewState();
+
+    prReview.state.reviewComments = [
+      { id: 1, path: 'src/a.ts', body: 'root', user: { login: 'a', avatar_url: '' }, thread_id: 'T1', is_resolved: false }
+    ] as any;
+
+    const { setReviewThreadResolved } = await import('../services/review-api.service');
+    (setReviewThreadResolved as any).mockResolvedValueOnce(false);
+
+    await expect(prReview.setThreadResolved('T1', true)).rejects.toThrow();
+    expect(prReview.state.reviewComments[0].is_resolved).toBe(false);
   });
 });
