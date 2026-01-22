@@ -5,13 +5,14 @@
   interface Props {
     pullRequest: DetailedPullRequest;
     mergeContext: PullRequestMergeContext | null;
+    mergeContextError?: string | null;
     isAuthenticated: boolean;
     isMerging: boolean;
     mergeError: string | null;
     onMerge: (method: MergeMethod, bypassReason?: string) => void;
   }
 
-  const { pullRequest, mergeContext, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
+  const { pullRequest, mergeContext, mergeContextError = null, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
 
   const inferredAllowedMethods = $derived(() => {
     const prAny = pullRequest as any;
@@ -48,7 +49,33 @@
     return state === 'open' && !pullRequest.merged && !pullRequest.draft;
   });
 
-  const mergeStateStatus = $derived(() => mergeContext?.mergeStateStatus ?? null);
+  function mapRestMergeableStateToStatus(mergeableState: unknown): string | null {
+    if (typeof mergeableState !== 'string') return null;
+    switch (mergeableState.toLowerCase()) {
+      case 'clean':
+        return 'CLEAN';
+      case 'blocked':
+        return 'BLOCKED';
+      case 'behind':
+        return 'BEHIND';
+      case 'dirty':
+        return 'DIRTY';
+      case 'unstable':
+        return 'UNSTABLE';
+      case 'draft':
+        return 'DRAFT';
+      case 'unknown':
+        return 'UNKNOWN';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+
+  const mergeStateStatus = $derived(() => {
+    if (mergeContext?.mergeStateStatus) return mergeContext.mergeStateStatus;
+    const prAny = pullRequest as any;
+    return mapRestMergeableStateToStatus(prAny?.mergeable_state);
+  });
   const reviewDecision = $derived(() => mergeContext?.reviewDecision ?? null);
 
   const viewerCanMerge = $derived(() => !!mergeContext?.viewerCanMerge);
@@ -58,7 +85,7 @@
     const status = mergeStateStatus();
     // GitHub can report UNKNOWN while mergeability is still being computed.
     // Allow attempting a merge in that state; GitHub will enforce server-side rules.
-    if (status !== 'CLEAN' && status !== 'UNKNOWN') return false;
+    if (status && status !== 'CLEAN' && status !== 'UNKNOWN') return false;
     // If GitHub provides a review decision, require APPROVED to satisfy required approvals/codeowner rules.
     const decision = reviewDecision();
     if (!decision) return true;
@@ -80,10 +107,6 @@
     if (!prIsOpen()) {
       if (pullRequest.merged) return 'Already merged';
       return 'Not mergeable (closed/draft)';
-    }
-
-    if (!mergeContext) {
-      return 'Merge info unavailable';
     }
 
     const status = mergeStateStatus();
@@ -129,9 +152,9 @@
   const disableReason = $derived(() => {
     if (!isAuthenticated) return 'Login required';
     if (!prIsOpen()) return statusText();
-    if (!mergeContext) return 'Merge info unavailable';
     if (allowedMethods().length === 0) return 'Merge method info unavailable';
-    if (!viewerCanMerge() && !viewerCanMergeAsAdmin()) return 'You do not have permission to merge';
+    // If we have explicit permission signals, honor them; otherwise let GitHub enforce on submit.
+    if (mergeContext && !viewerCanMerge() && !viewerCanMergeAsAdmin()) return 'You do not have permission to merge';
     if (!canMergeNormally() && !canBypass()) return statusText();
     return null;
   });
@@ -160,6 +183,12 @@
   {#if mergeError}
     <div class="mt-3 text-xs text-[#f85149] border border-red-800/40 bg-red-900/10 rounded px-3 py-2">
       {mergeError}
+    </div>
+  {/if}
+
+  {#if mergeContextError && allowedMethods().length === 0}
+    <div class="mt-3 text-xs text-[#8b949e] border border-[#30363d] bg-[#161b22] rounded px-3 py-2">
+      Merge debug: {mergeContextError}
     </div>
   {/if}
 

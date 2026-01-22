@@ -53,26 +53,59 @@ interface RepoPermissions {
   pull?: boolean;
 }
 
-async function fetchRepositoryPermissions(owner: string, repo: string): Promise<RepoPermissions | null> {
+interface RepoInfo {
+  permissions: RepoPermissions;
+  allow_merge_commit?: boolean;
+  allow_squash_merge?: boolean;
+  allow_rebase_merge?: boolean;
+}
+
+type RepoInfoResult = { repoInfo: RepoInfo | null; error: string | null };
+
+function formatFetchError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+async function fetchRepositoryInfo(owner: string, repo: string): Promise<RepoInfoResult> {
   return queueApiCallIfNeeded(async () => {
     try {
       const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
       const permissions = repoData?.permissions;
-      if (!permissions || typeof permissions !== 'object') return null;
-      return permissions as RepoPermissions;
+      if (!permissions || typeof permissions !== 'object') {
+        return { repoInfo: null, error: 'Repository permissions missing from response' };
+      }
+      return {
+        repoInfo: {
+          permissions: permissions as RepoPermissions,
+          allow_merge_commit: !!repoData?.allow_merge_commit,
+          allow_squash_merge: !!repoData?.allow_squash_merge,
+          allow_rebase_merge: !!repoData?.allow_rebase_merge,
+        },
+        error: null,
+      };
     } catch (error) {
       captureException(error, {
         context: 'PR Review Service',
-        function: 'fetchRepositoryPermissions',
+        function: 'fetchRepositoryInfo',
         owner,
         repo,
       });
-      return null;
+      return { repoInfo: null, error: formatFetchError(error) };
     }
   });
 }
 
-async function fetchPullRequestMergeContext(owner: string, repo: string, prNumber: number): Promise<PullRequestMergeContext | null> {
+type MergeContextResult = { mergeContext: PullRequestMergeContext | null; error: string | null };
+
+async function fetchPullRequestMergeContext(owner: string, repo: string, prNumber: number): Promise<MergeContextResult> {
+  let graphqlError: string | null = null;
+  let restError: string | null = null;
+
   const query = `
     query($owner: String!, $repo: String!, $number: Int!) {
       repository(owner: $owner, name: $repo) {
@@ -80,6 +113,9 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
         squashMergeAllowed
         rebaseMergeAllowed
         pullRequest(number: $number) {
+          mergeCommitAllowed
+          squashMergeAllowed
+          rebaseMergeAllowed
           viewerCanMerge
           viewerCanMergeAsAdmin
           mergeStateStatus
@@ -95,21 +131,55 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
     const pr = repository?.pullRequest;
 
     if (repository && pr) {
+      // Prefer per-PR allowed merge methods (these can be constrained by branch rules).
+      // Fall back to repository settings if PR-level fields are absent.
       const allowedMergeMethods: MergeMethod[] = [];
-      if (repository.mergeCommitAllowed) allowedMergeMethods.push('merge');
-      if (repository.squashMergeAllowed) allowedMergeMethods.push('squash');
-      if (repository.rebaseMergeAllowed) allowedMergeMethods.push('rebase');
+      const prAllows = {
+        merge: pr.mergeCommitAllowed ?? null,
+        squash: pr.squashMergeAllowed ?? null,
+        rebase: pr.rebaseMergeAllowed ?? null,
+      };
+      const repoAllows = {
+        merge: repository.mergeCommitAllowed ?? null,
+        squash: repository.squashMergeAllowed ?? null,
+        rebase: repository.rebaseMergeAllowed ?? null,
+      };
+
+      const mergeAllowed = prAllows.merge !== null ? !!prAllows.merge : !!repoAllows.merge;
+      const squashAllowed = prAllows.squash !== null ? !!prAllows.squash : !!repoAllows.squash;
+      const rebaseAllowed = prAllows.rebase !== null ? !!prAllows.rebase : !!repoAllows.rebase;
+
+      if (mergeAllowed) allowedMergeMethods.push('merge');
+      if (squashAllowed) allowedMergeMethods.push('squash');
+      if (rebaseAllowed) allowedMergeMethods.push('rebase');
+
+      // If GraphQL returns no allowed methods (unexpected but observed), fall back to REST repo settings.
+      if (allowedMergeMethods.length === 0) {
+        try {
+          const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
+          const restAllowed = inferAllowedMergeMethodsFromRepo(repoData);
+          if (restAllowed.length) {
+            allowedMergeMethods.push(...restAllowed);
+          }
+        } catch {
+          // ignore; we'll return the empty list and let UI show method info unavailable
+        }
+      }
 
       return {
-        allowedMergeMethods,
-        viewerCanMerge: !!pr.viewerCanMerge,
-        viewerCanMergeAsAdmin: !!pr.viewerCanMergeAsAdmin,
-        mergeStateStatus: pr.mergeStateStatus ?? null,
-        reviewDecision: pr.reviewDecision ?? null,
+        mergeContext: {
+          allowedMergeMethods,
+          viewerCanMerge: !!pr.viewerCanMerge,
+          viewerCanMergeAsAdmin: !!pr.viewerCanMergeAsAdmin,
+          mergeStateStatus: pr.mergeStateStatus ?? null,
+          reviewDecision: pr.reviewDecision ?? null,
+        },
+        error: null,
       };
     }
   } catch (error) {
     // We'll fall back to REST below.
+    graphqlError = formatFetchError(error);
     captureException(error, {
       context: 'PR Review Service',
       function: 'fetchPullRequestMergeContext (GraphQL)',
@@ -137,14 +207,18 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
     const viewerCanMergeAsAdmin = !!permissions?.admin;
 
     return {
-      allowedMergeMethods,
-      viewerCanMerge,
-      viewerCanMergeAsAdmin,
-      mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prData?.mergeable_state),
-      // REST doesn't expose the same reviewDecision signal; leave null.
-      reviewDecision: null,
+      mergeContext: {
+        allowedMergeMethods,
+        viewerCanMerge,
+        viewerCanMergeAsAdmin,
+        mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prData?.mergeable_state),
+        // REST doesn't expose the same reviewDecision signal; leave null.
+        reviewDecision: null,
+      },
+      error: graphqlError,
     };
   } catch (error) {
+    restError = formatFetchError(error);
     captureException(error, {
       context: 'PR Review Service',
       function: 'fetchPullRequestMergeContext (REST fallback)',
@@ -152,7 +226,15 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
       repo,
       prNumber,
     });
-    return null;
+
+    const combined = [
+      graphqlError ? `GraphQL: ${graphqlError}` : null,
+      restError ? `REST: ${restError}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    return { mergeContext: null, error: combined || 'Unknown error fetching merge context' };
   }
 }
 
@@ -395,17 +477,20 @@ export async function fetchAllPullRequestData(
       files,
       commits,
       reviews,
-      repoPermissions,
-      mergeContext,
+      repoInfoResult,
+      mergeContextResult,
     ] = await Promise.all([
       fetchDetailedPullRequest(owner, repo, prNumber),
       fetchReviewComments(owner, repo, prNumber),
       fetchPullRequestFiles(owner, repo, prNumber),
       fetchPullRequestCommits(owner, repo, prNumber),
       fetchPullRequestReviews(owner, repo, prNumber),
-      fetchRepositoryPermissions(owner, repo),
+      fetchRepositoryInfo(owner, repo),
       fetchPullRequestMergeContext(owner, repo, prNumber),
     ]);
+
+    const repoInfo = repoInfoResult.repoInfo;
+    const mergeContext = mergeContextResult.mergeContext;
 
     if (!pullRequest) {
       throw new Error('Pull request not found');
@@ -417,6 +502,7 @@ export async function fetchAllPullRequestData(
     const prAny: any = pullRequest as any;
     const embeddedRepo = prAny?.base?.repo ?? prAny?.head?.repo ?? null;
     const inferredAllowed = inferAllowedMergeMethodsFromRepo(embeddedRepo);
+    const inferredAllowedFromRepoInfo = inferAllowedMergeMethodsFromRepo(repoInfo);
 
     let finalMergeContext: PullRequestMergeContext | null = mergeContext;
     if (finalMergeContext) {
@@ -424,6 +510,13 @@ export async function fetchAllPullRequestData(
         finalMergeContext = {
           ...finalMergeContext,
           allowedMergeMethods: inferredAllowed,
+        };
+      }
+
+      if (!finalMergeContext.allowedMergeMethods?.length && inferredAllowedFromRepoInfo.length) {
+        finalMergeContext = {
+          ...finalMergeContext,
+          allowedMergeMethods: inferredAllowedFromRepoInfo,
         };
       }
 
@@ -435,13 +528,25 @@ export async function fetchAllPullRequestData(
       }
     } else if (inferredAllowed.length) {
       const viewerCanMerge = !!(
-        repoPermissions &&
-        (repoPermissions.admin || repoPermissions.maintain || repoPermissions.push)
+        repoInfo?.permissions &&
+        (repoInfo.permissions.admin || repoInfo.permissions.maintain || repoInfo.permissions.push)
       );
       finalMergeContext = {
         allowedMergeMethods: inferredAllowed,
         viewerCanMerge,
-        viewerCanMergeAsAdmin: !!repoPermissions?.admin,
+        viewerCanMergeAsAdmin: !!repoInfo?.permissions?.admin,
+        mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
+        reviewDecision: null,
+      };
+    } else if (inferredAllowedFromRepoInfo.length) {
+      const viewerCanMerge = !!(
+        repoInfo?.permissions &&
+        (repoInfo.permissions.admin || repoInfo.permissions.maintain || repoInfo.permissions.push)
+      );
+      finalMergeContext = {
+        allowedMergeMethods: inferredAllowedFromRepoInfo,
+        viewerCanMerge,
+        viewerCanMergeAsAdmin: !!repoInfo?.permissions?.admin,
         mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
         reviewDecision: null,
       };
@@ -451,9 +556,16 @@ export async function fetchAllPullRequestData(
     const checks = await fetchPullRequestChecks(owner, repo, pullRequest.head.sha);
 
     const viewerCanResolveThreads = !!(
-      repoPermissions &&
-      (repoPermissions.admin || repoPermissions.maintain || repoPermissions.push)
+      repoInfo?.permissions &&
+      (repoInfo.permissions.admin || repoInfo.permissions.maintain || repoInfo.permissions.push)
     );
+
+    const mergeContextError = [
+      mergeContextResult.error ? `mergeContext: ${mergeContextResult.error}` : null,
+      repoInfoResult.error ? `repoInfo: ${repoInfoResult.error}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     return {
       pullRequest,
@@ -464,6 +576,7 @@ export async function fetchAllPullRequestData(
       checks,
       viewerCanResolveThreads,
       mergeContext: finalMergeContext,
+      mergeContextError: mergeContextError || null,
     };
   } catch (error) {
     captureException(error, {

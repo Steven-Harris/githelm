@@ -13,6 +13,7 @@
   interface Props {
     pullRequest: DetailedPullRequest;
     mergeContext: PullRequestMergeContext | null;
+    mergeContextError?: string | null;
     mergeSubmitting?: boolean;
     mergeError?: string | null;
     onMergePullRequest?: (method: MergeMethod, bypassReason?: string) => void;
@@ -46,6 +47,7 @@
   const {
     pullRequest,
     mergeContext,
+    mergeContextError = null,
     mergeSubmitting = false,
     mergeError = null,
     onMergePullRequest,
@@ -223,6 +225,7 @@
     <MergeSection
       {pullRequest}
       {mergeContext}
+      mergeContextError={mergeContextError}
       isAuthenticated={isAuthenticated}
       isMerging={mergeSubmitting}
       mergeError={mergeError}

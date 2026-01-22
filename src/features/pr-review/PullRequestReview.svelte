@@ -111,6 +111,7 @@
           <CommentsSidebar
             pullRequest={prReview.state.pullRequest}
             mergeContext={prReview.state.mergeContext}
+            mergeContextError={prReview.state.mergeContextError}
             mergeSubmitting={prReview.state.mergeSubmitting}
             mergeError={prReview.state.mergeError}
             onMergePullRequest={prReview.mergePullRequest}

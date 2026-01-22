@@ -39,6 +39,7 @@ export interface PullRequestReviewState {
   reviews: Review[];
   checks: CheckRun[];
   mergeContext: PullRequestMergeContext | null;
+  mergeContextError: string | null;
   viewerLogin: string | null;
   viewerCanResolveThreads: boolean;
   loading: boolean;
@@ -70,6 +71,7 @@ export function createPRReviewState() {
     reviews: [],
     checks: [],
     mergeContext: null,
+    mergeContextError: null,
     viewerLogin: null,
     viewerCanResolveThreads: false,
     loading: false,
@@ -1006,6 +1008,7 @@ export function createPRReviewState() {
         state.checks = data.checks;
         state.viewerCanResolveThreads = data.viewerCanResolveThreads;
         state.mergeContext = (data as any).mergeContext ?? null;
+        state.mergeContextError = (data as any).mergeContextError ?? null;
       } catch (refreshError) {
         // Non-fatal: merge succeeded.
         console.warn('Failed to refresh PR data after merge:', refreshError);
