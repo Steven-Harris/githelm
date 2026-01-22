@@ -95,6 +95,11 @@
           <FilesList {prReview} {scrollManager} canReview={canSubmitReview()} isAuthenticated={$isAuthenticated} />
 
           <CommentsSidebar
+            pullRequest={prReview.state.pullRequest}
+            mergeContext={prReview.state.mergeContext}
+            mergeSubmitting={prReview.state.mergeSubmitting}
+            mergeError={prReview.state.mergeError}
+            onMergePullRequest={prReview.mergePullRequest}
             reviews={prReview.state.reviews}
             reviewComments={prReview.state.reviewComments}
             onCommentClick={handleCommentClick}

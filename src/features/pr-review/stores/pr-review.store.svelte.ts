@@ -6,6 +6,7 @@ import type {
   Review,
   ReviewComment
 } from '$integrations/github';
+import type { MergeMethod, PullRequestMergeContext } from '../services/pr-review.service';
 
 export interface SelectedLine {
   filename: string;
@@ -37,10 +38,13 @@ export interface PullRequestReviewState {
   commits: PullRequestCommit[];
   reviews: Review[];
   checks: CheckRun[];
+  mergeContext: PullRequestMergeContext | null;
   viewerLogin: string | null;
   viewerCanResolveThreads: boolean;
   loading: boolean;
   error: string | null;
+  mergeSubmitting: boolean;
+  mergeError: string | null;
   activeTab: 'overview' | 'files' | 'commits' | 'checks';
   selectedFile: string | null;
   selectedCommit: string | null;
@@ -65,10 +69,13 @@ export function createPRReviewState() {
     commits: [],
     reviews: [],
     checks: [],
+    mergeContext: null,
     viewerLogin: null,
     viewerCanResolveThreads: false,
     loading: false,
     error: null,
+    mergeSubmitting: false,
+    mergeError: null,
     activeTab: 'overview',
     selectedFile: null,
     selectedCommit: null,
@@ -436,9 +443,12 @@ export function createPRReviewState() {
       commits: [],
       reviews: [],
       checks: [],
+      mergeContext: null,
       viewerLogin: null,
       loading: false,
       error: null,
+      mergeSubmitting: false,
+      mergeError: null,
       activeTab: 'overview' as const,
       selectedFile: null,
       showResolvedComments: false,
@@ -450,6 +460,10 @@ export function createPRReviewState() {
 
   const clearError = () => {
     state.error = null;
+  };
+
+  const clearMergeError = () => {
+    state.mergeError = null;
   };
 
   const expandAllFiles = () => {
@@ -856,6 +870,75 @@ export function createPRReviewState() {
     }
   };
 
+  const mergePullRequest = async (method: MergeMethod, bypassReason?: string): Promise<void> => {
+    if (!state.pullRequest) {
+      state.mergeError = 'No pull request loaded';
+      return;
+    }
+
+    const pr = state.pullRequest;
+    const stateLower = (pr.state ?? '').toLowerCase();
+    if (stateLower !== 'open' || pr.merged || pr.draft) {
+      state.mergeError = 'Pull request is not mergeable';
+      return;
+    }
+
+    const allowed = state.mergeContext?.allowedMergeMethods ?? [];
+    if (!allowed.includes(method)) {
+      state.mergeError = 'Selected merge method is not allowed for this repository';
+      return;
+    }
+
+    // Guardrails: do not allow bypass attempts when merge conflicts exist.
+    const mergeStateStatus = state.mergeContext?.mergeStateStatus ?? null;
+    if (mergeStateStatus === 'DIRTY') {
+      state.mergeError = 'Pull request has merge conflicts';
+      return;
+    }
+
+    const bypass = (bypassReason ?? '').trim();
+    if (bypass.length > 0 && !state.mergeContext?.viewerCanMergeAsAdmin) {
+      state.mergeError = 'You do not have permission to bypass required checks';
+      return;
+    }
+
+    state.mergeSubmitting = true;
+    state.mergeError = null;
+
+    try {
+      const { owner, repo } = getApiRepo();
+      if (!owner || !repo) {
+        throw new Error('Unable to determine repository for merge');
+      }
+
+      const { mergePullRequest: mergePullRequestApi } = await import('$integrations/github');
+
+      await mergePullRequestApi(owner, repo, pr.number, method, { sha: pr.head?.sha });
+
+      // Refresh PR data after merge so UI updates (merged/closed state, checks, etc.).
+      try {
+        const { fetchAllPullRequestData } = await import('../services/pr-review.service');
+        const data = await fetchAllPullRequestData(owner, repo, pr.number);
+
+        state.pullRequest = data.pullRequest;
+        state.reviewComments = data.reviewComments;
+        state.files = data.files;
+        state.commits = data.commits;
+        state.reviews = data.reviews;
+        state.checks = data.checks;
+        state.viewerCanResolveThreads = data.viewerCanResolveThreads;
+        state.mergeContext = (data as any).mergeContext ?? null;
+      } catch (refreshError) {
+        // Non-fatal: merge succeeded.
+        console.warn('Failed to refresh PR data after merge:', refreshError);
+      }
+    } catch (error) {
+      state.mergeError = error instanceof Error ? error.message : 'Failed to merge pull request';
+    } finally {
+      state.mergeSubmitting = false;
+    }
+  };
+
   const updateReviewDraft = (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => {
     state.reviewDraft.body = body;
     if (event) {
@@ -935,6 +1018,7 @@ export function createPRReviewState() {
     toggleResolvedComments,
     reset,
     clearError,
+    clearMergeError,
     expandAllFiles,
     collapseAllFiles,
     toggleFileExpanded,
@@ -953,6 +1037,7 @@ export function createPRReviewState() {
     savePendingComment,
     submitReview,
     updateReviewDraft,
+    mergePullRequest,
     cancelPendingComment,
     deleteSubmittedComment,
     updateSubmittedComment,

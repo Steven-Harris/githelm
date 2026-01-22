@@ -1,14 +1,21 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { Review, ReviewComment } from '$integrations/github';
+  import type { DetailedPullRequest, Review, ReviewComment } from '$integrations/github';
   import EmptyState from './components/EmptyState.svelte';
   import LineCommentsSection from './components/LineCommentsSection.svelte';
+  import MergeSection from './components/MergeSection.svelte';
   import OverallCommentsSection from './components/OverallCommentsSection.svelte';
   import PendingCommentsSection from './components/PendingCommentsSection.svelte';
   import ReviewSubmissionSection from './components/ReviewSubmissionSection.svelte';
+  import type { MergeMethod, PullRequestMergeContext } from './services/pr-review.service';
   import type { PendingComment, ReviewDraft, SelectedLine } from './stores/pr-review.store.svelte';
 
   interface Props {
+    pullRequest: DetailedPullRequest;
+    mergeContext: PullRequestMergeContext | null;
+    mergeSubmitting?: boolean;
+    mergeError?: string | null;
+    onMergePullRequest?: (method: MergeMethod, bypassReason?: string) => void;
     reviews: Review[];
     reviewComments: ReviewComment[];
     viewerLogin?: string | null;
@@ -35,6 +42,11 @@
   }
 
   const {
+    pullRequest,
+    mergeContext,
+    mergeSubmitting = false,
+    mergeError = null,
+    onMergePullRequest,
     reviews,
     reviewComments,
     viewerLogin = null,
@@ -188,6 +200,15 @@
   </div>
 
   <div class="divide-y divide-[#30363d]">
+    <MergeSection
+      {pullRequest}
+      {mergeContext}
+      isAuthenticated={isAuthenticated}
+      isMerging={mergeSubmitting}
+      mergeError={mergeError}
+      onMerge={(method, bypassReason) => onMergePullRequest && onMergePullRequest(method, bypassReason)}
+    />
+
     {#if isAuthenticated}
       <PendingCommentsSection
         {selectedLines}

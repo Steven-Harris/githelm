@@ -46,16 +46,15 @@ export function useCommentForms() {
   }
 
   // Update a pending comment
-  const formTexts = $state({
-    state.pendingComments = state.pendingComments.map(comment => {
-      if (comment.id === commentId) {
-        return {
-          ...comment,
-          body,
-          ...(isPartOfReview !== undefined && { isPartOfReview })
-        };
-      }
-      return comment;
+  function updatePendingComment(commentId: string, body: string, isPartOfReview?: boolean) {
+    state.pendingComments = state.pendingComments.map((comment) => {
+      if (comment.id !== commentId) return comment;
+
+      return {
+        ...comment,
+        body,
+        ...(isPartOfReview !== undefined ? { isPartOfReview } : {})
+      };
     });
   }
 

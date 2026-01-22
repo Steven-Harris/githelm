@@ -1,8 +1,16 @@
 import { fetchData, executeGraphQLQuery } from './api-client';
-import { queueApiCallIfNeeded } from './auth';
+import { getHeadersAsync, queueApiCallIfNeeded } from './auth';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
 import { type PullRequest, type RepoInfo, type Review } from './types';
+
+export type MergeMethod = 'merge' | 'squash' | 'rebase';
+
+export interface MergePullRequestResponse {
+  sha: string;
+  merged: boolean;
+  message: string;
+}
 
 export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
@@ -227,6 +235,51 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
       });
       return [];
     }
+  });
+}
+
+export async function mergePullRequest(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  mergeMethod: MergeMethod,
+  options: {
+    sha?: string;
+    commitTitle?: string;
+    commitMessage?: string;
+  } = {}
+): Promise<MergePullRequestResponse> {
+  return queueApiCallIfNeeded(async () => {
+    const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/merge`;
+    const headers = await getHeadersAsync();
+
+    const payload: Record<string, unknown> = {
+      merge_method: mergeMethod,
+    };
+    if (options.sha) payload.sha = options.sha;
+    if (options.commitTitle) payload.commit_title = options.commitTitle;
+    if (options.commitMessage) payload.commit_message = options.commitMessage;
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json().catch(() => null)) as MergePullRequestResponse | null;
+    if (!data) {
+      throw new Error('GitHub merge response was empty');
+    }
+
+    return data;
   });
 }
 

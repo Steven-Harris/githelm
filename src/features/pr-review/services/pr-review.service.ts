@@ -1,6 +1,18 @@
 import { executeGraphQLQuery, fetchData, queueApiCallIfNeeded, type CheckRun, type DetailedPullRequest, type PullRequestCommit, type PullRequestFile, type Review, type ReviewComment } from '$integrations/github';
 import { captureException } from '$integrations/sentry/client';
 
+export type MergeMethod = 'merge' | 'squash' | 'rebase';
+
+export interface PullRequestMergeContext {
+  allowedMergeMethods: MergeMethod[];
+  viewerCanMerge: boolean;
+  viewerCanMergeAsAdmin: boolean;
+  /** GitHub GraphQL PullRequest.mergeStateStatus (e.g. CLEAN, BLOCKED, DIRTY, BEHIND, UNSTABLE, DRAFT, UNKNOWN) */
+  mergeStateStatus: string | null;
+  /** GitHub GraphQL PullRequest.reviewDecision (e.g. APPROVED, CHANGES_REQUESTED, REVIEW_REQUIRED) */
+  reviewDecision: string | null;
+}
+
 interface RepoPermissions {
   admin?: boolean;
   maintain?: boolean;
@@ -26,6 +38,55 @@ async function fetchRepositoryPermissions(owner: string, repo: string): Promise<
       return null;
     }
   });
+}
+
+async function fetchPullRequestMergeContext(owner: string, repo: string, prNumber: number): Promise<PullRequestMergeContext | null> {
+  const query = `
+    query($owner: String!, $repo: String!, $number: Int!) {
+      repository(owner: $owner, name: $repo) {
+        mergeCommitAllowed
+        squashMergeAllowed
+        rebaseMergeAllowed
+        pullRequest(number: $number) {
+          viewerCanMerge
+          viewerCanMergeAsAdmin
+          mergeStateStatus
+          reviewDecision
+        }
+      }
+    }
+  `;
+
+  try {
+    const result = await executeGraphQLQuery<any>(query, { owner, repo, number: prNumber }, 0, true);
+    const repository = result?.repository;
+    const pr = repository?.pullRequest;
+
+    if (!repository || !pr) return null;
+
+    const allowedMergeMethods: MergeMethod[] = [];
+    if (repository.mergeCommitAllowed) allowedMergeMethods.push('merge');
+    if (repository.squashMergeAllowed) allowedMergeMethods.push('squash');
+    if (repository.rebaseMergeAllowed) allowedMergeMethods.push('rebase');
+
+    return {
+      allowedMergeMethods,
+      viewerCanMerge: !!pr.viewerCanMerge,
+      viewerCanMergeAsAdmin: !!pr.viewerCanMergeAsAdmin,
+      mergeStateStatus: pr.mergeStateStatus ?? null,
+      reviewDecision: pr.reviewDecision ?? null,
+    };
+  } catch (error) {
+    // Non-fatal: merge UI will be hidden/disabled if we can't fetch this.
+    captureException(error, {
+      context: 'PR Review Service',
+      function: 'fetchPullRequestMergeContext',
+      owner,
+      repo,
+      prNumber,
+    });
+    return null;
+  }
 }
 
 async function fetchThreadResolutionMap(owner: string, repo: string, prNumber: number): Promise<Map<number, { threadId: string; isResolved: boolean }>> {
@@ -268,6 +329,7 @@ export async function fetchAllPullRequestData(
       commits,
       reviews,
       repoPermissions,
+      mergeContext,
     ] = await Promise.all([
       fetchDetailedPullRequest(owner, repo, prNumber),
       fetchReviewComments(owner, repo, prNumber),
@@ -275,6 +337,7 @@ export async function fetchAllPullRequestData(
       fetchPullRequestCommits(owner, repo, prNumber),
       fetchPullRequestReviews(owner, repo, prNumber),
       fetchRepositoryPermissions(owner, repo),
+      fetchPullRequestMergeContext(owner, repo, prNumber),
     ]);
 
     if (!pullRequest) {
@@ -297,6 +360,7 @@ export async function fetchAllPullRequestData(
       reviews,
       checks,
       viewerCanResolveThreads,
+      mergeContext,
     };
   } catch (error) {
     captureException(error, {

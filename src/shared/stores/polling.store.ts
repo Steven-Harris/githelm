@@ -14,6 +14,12 @@ let kill = false;
 let paused = false;
 const ongoingRequests = new Set<string>();
 
+// Keep module-level pause state in sync so stores created later don't race
+// the initial paused value (e.g. when on /pr/* routes).
+pollingPaused.subscribe((isPaused) => {
+  paused = isPaused;
+});
+
 function createPollingStore<T>(key: string, callback: AsyncCallback<T>) {
   const cachedData = memoryCacheService.get<T>(key);
   const initialData = cachedData || ({} as T);
