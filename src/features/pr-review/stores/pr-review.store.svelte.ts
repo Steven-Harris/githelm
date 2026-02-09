@@ -943,7 +943,11 @@ export function createPRReviewState() {
     }
   };
 
-  const mergePullRequest = async (method: MergeMethod, bypassReason?: string): Promise<void> => {
+  const mergePullRequest = async (
+    method: MergeMethod,
+    bypassReason?: string,
+    commit?: { title?: string; message?: string }
+  ): Promise<void> => {
     if (!state.pullRequest) {
       state.mergeError = 'No pull request loaded';
       return;
@@ -960,11 +964,11 @@ export function createPRReviewState() {
     const prAny: any = state.pullRequest as any;
     const repoAny = prAny?.base?.repo ?? prAny?.head?.repo;
     const allowedFromRepo: MergeMethod[] = [];
-    if (repoAny?.allow_merge_commit) allowedFromRepo.push('merge');
-    if (repoAny?.allow_squash_merge) allowedFromRepo.push('squash');
-    if (repoAny?.allow_rebase_merge) allowedFromRepo.push('rebase');
+    if (repoAny?.allow_merge_commit === true) allowedFromRepo.push('merge');
+    if (repoAny?.allow_squash_merge === true) allowedFromRepo.push('squash');
+    if (repoAny?.allow_rebase_merge === true) allowedFromRepo.push('rebase');
     const allowed = allowedFromContext.length ? allowedFromContext : allowedFromRepo;
-    if (!allowed.includes(method)) {
+    if (allowed.length > 0 && !allowed.includes(method)) {
       state.mergeError = 'Selected merge method is not allowed for this repository';
       return;
     }
@@ -993,7 +997,11 @@ export function createPRReviewState() {
 
       const { mergePullRequest: mergePullRequestApi } = await import('$integrations/github');
 
-      await mergePullRequestApi(owner, repo, pr.number, method, { sha: pr.head?.sha });
+      await mergePullRequestApi(owner, repo, pr.number, method, {
+        sha: pr.head?.sha,
+        commitTitle: commit?.title,
+        commitMessage: commit?.message,
+      });
 
       // Refresh PR data after merge so UI updates (merged/closed state, checks, etc.).
       try {

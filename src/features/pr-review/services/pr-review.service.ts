@@ -16,9 +16,9 @@ export interface PullRequestMergeContext {
 function inferAllowedMergeMethodsFromRepo(repoData: any): MergeMethod[] {
   const allowed: MergeMethod[] = [];
   if (!repoData || typeof repoData !== 'object') return allowed;
-  if (repoData.allow_merge_commit) allowed.push('merge');
-  if (repoData.allow_squash_merge) allowed.push('squash');
-  if (repoData.allow_rebase_merge) allowed.push('rebase');
+  if (repoData.allow_merge_commit === true) allowed.push('merge');
+  if (repoData.allow_squash_merge === true) allowed.push('squash');
+  if (repoData.allow_rebase_merge === true) allowed.push('rebase');
   return allowed;
 }
 
@@ -54,10 +54,11 @@ interface RepoPermissions {
 }
 
 interface RepoInfo {
-  permissions: RepoPermissions;
-  allow_merge_commit?: boolean;
-  allow_squash_merge?: boolean;
-  allow_rebase_merge?: boolean;
+  permissions: RepoPermissions | null;
+  // null means "field missing from response" (unknown), boolean means explicit value.
+  allow_merge_commit?: boolean | null;
+  allow_squash_merge?: boolean | null;
+  allow_rebase_merge?: boolean | null;
 }
 
 type RepoInfoResult = { repoInfo: RepoInfo | null; error: string | null };
@@ -75,17 +76,36 @@ async function fetchRepositoryInfo(owner: string, repo: string): Promise<RepoInf
   return queueApiCallIfNeeded(async () => {
     try {
       const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
-      const permissions = repoData?.permissions;
-      if (!permissions || typeof permissions !== 'object') {
-        return { repoInfo: null, error: 'Repository permissions missing from response' };
+      const permissionsRaw = repoData?.permissions;
+      const permissions: RepoPermissions | null =
+        permissionsRaw && typeof permissionsRaw === 'object' ? (permissionsRaw as RepoPermissions) : null;
+
+      const hasAllowMergeCommit = Object.prototype.hasOwnProperty.call(repoData, 'allow_merge_commit');
+      const hasAllowSquashMerge = Object.prototype.hasOwnProperty.call(repoData, 'allow_squash_merge');
+      const hasAllowRebaseMerge = Object.prototype.hasOwnProperty.call(repoData, 'allow_rebase_merge');
+
+      const repoInfo: RepoInfo = {
+        permissions,
+        allow_merge_commit: hasAllowMergeCommit ? !!repoData.allow_merge_commit : null,
+        allow_squash_merge: hasAllowSquashMerge ? !!repoData.allow_squash_merge : null,
+        allow_rebase_merge: hasAllowRebaseMerge ? !!repoData.allow_rebase_merge : null,
+      };
+
+      const warnings: string[] = [];
+      // Some tokens / contexts omit `permissions` even though repo settings are available.
+      if (!permissions) warnings.push('Repository permissions missing from response');
+      // Some payloads may omit merge method flags; preserve as null and surface as warning.
+      const missingAllow: string[] = [];
+      if (!hasAllowMergeCommit) missingAllow.push('allow_merge_commit');
+      if (!hasAllowSquashMerge) missingAllow.push('allow_squash_merge');
+      if (!hasAllowRebaseMerge) missingAllow.push('allow_rebase_merge');
+      if (missingAllow.length) warnings.push(`Repository merge flags missing: ${missingAllow.join(', ')}`);
+
+      if (warnings.length) {
+        return { repoInfo, error: warnings.join(' | ') };
       }
       return {
-        repoInfo: {
-          permissions: permissions as RepoPermissions,
-          allow_merge_commit: !!repoData?.allow_merge_commit,
-          allow_squash_merge: !!repoData?.allow_squash_merge,
-          allow_rebase_merge: !!repoData?.allow_rebase_merge,
-        },
+        repoInfo,
         error: null,
       };
     } catch (error) {
@@ -155,6 +175,7 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
 
       // If GraphQL returns no allowed methods (unexpected but observed), fall back to REST repo settings.
       if (allowedMergeMethods.length === 0) {
+        graphqlError = `graphqlMethodsEmpty: repo={mergeCommitAllowed:${String(repository.mergeCommitAllowed)},squashMergeAllowed:${String(repository.squashMergeAllowed)},rebaseMergeAllowed:${String(repository.rebaseMergeAllowed)}} pr={mergeCommitAllowed:${String(pr.mergeCommitAllowed)},squashMergeAllowed:${String(pr.squashMergeAllowed)},rebaseMergeAllowed:${String(pr.rebaseMergeAllowed)}}`;
         try {
           const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
           const restAllowed = inferAllowedMergeMethodsFromRepo(repoData);
@@ -174,7 +195,7 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
           mergeStateStatus: pr.mergeStateStatus ?? null,
           reviewDecision: pr.reviewDecision ?? null,
         },
-        error: null,
+        error: graphqlError,
       };
     }
   } catch (error) {
@@ -471,35 +492,38 @@ export async function fetchAllPullRequestData(
   prNumber: number
 ) {
   try {
-    const [
-      pullRequest,
-      reviewComments,
-      files,
-      commits,
-      reviews,
-      repoInfoResult,
-      mergeContextResult,
-    ] = await Promise.all([
-      fetchDetailedPullRequest(owner, repo, prNumber),
-      fetchReviewComments(owner, repo, prNumber),
-      fetchPullRequestFiles(owner, repo, prNumber),
-      fetchPullRequestCommits(owner, repo, prNumber),
-      fetchPullRequestReviews(owner, repo, prNumber),
-      fetchRepositoryInfo(owner, repo),
-      fetchPullRequestMergeContext(owner, repo, prNumber),
-    ]);
-
-    const repoInfo = repoInfoResult.repoInfo;
-    const mergeContext = mergeContextResult.mergeContext;
+    // Fetch PR first so we can reliably determine the base repository.
+    // Users can browse PRs from different contexts; merge settings must come from the base repo.
+    const pullRequest = await fetchDetailedPullRequest(owner, repo, prNumber);
 
     if (!pullRequest) {
       throw new Error('Pull request not found');
     }
 
+    const prAny: any = pullRequest as any;
+    const baseFullName: string | undefined = prAny?.base?.repo?.full_name;
+    const baseName: string | undefined = prAny?.base?.repo?.name;
+    const baseOwnerFromFullName = typeof baseFullName === 'string' ? baseFullName.split('/')?.[0] : undefined;
+    const baseRepoFromFullName = typeof baseFullName === 'string' ? baseFullName.split('/')?.[1] : undefined;
+
+    const baseOwner = baseOwnerFromFullName || prAny?.base?.repo?.owner?.login || prAny?.base?.user?.login || owner;
+    const baseRepo = baseRepoFromFullName || baseName || repo;
+
+    const [reviewComments, files, commits, reviews, repoInfoResult, mergeContextResult] = await Promise.all([
+      fetchReviewComments(baseOwner, baseRepo, prNumber),
+      fetchPullRequestFiles(baseOwner, baseRepo, prNumber),
+      fetchPullRequestCommits(baseOwner, baseRepo, prNumber),
+      fetchPullRequestReviews(baseOwner, baseRepo, prNumber),
+      fetchRepositoryInfo(baseOwner, baseRepo),
+      fetchPullRequestMergeContext(baseOwner, baseRepo, prNumber),
+    ]);
+
+    const repoInfo = repoInfoResult.repoInfo;
+    const mergeContext = mergeContextResult.mergeContext;
+
     // Ensure we always have a consistent merge context.
     // GitHub's REST PR payload includes base.repo settings like allow_squash_merge,
     // which we can use to infer allowed merge methods when needed.
-    const prAny: any = pullRequest as any;
     const embeddedRepo = prAny?.base?.repo ?? prAny?.head?.repo ?? null;
     const inferredAllowed = inferAllowedMergeMethodsFromRepo(embeddedRepo);
     const inferredAllowedFromRepoInfo = inferAllowedMergeMethodsFromRepo(repoInfo);
@@ -527,10 +551,8 @@ export async function fetchAllPullRequestData(
         };
       }
     } else if (inferredAllowed.length) {
-      const viewerCanMerge = !!(
-        repoInfo?.permissions &&
-        (repoInfo.permissions.admin || repoInfo.permissions.maintain || repoInfo.permissions.push)
-      );
+      const perms = repoInfo?.permissions;
+      const viewerCanMerge = !!(perms && (perms.admin || perms.maintain || perms.push));
       finalMergeContext = {
         allowedMergeMethods: inferredAllowed,
         viewerCanMerge,
@@ -539,10 +561,8 @@ export async function fetchAllPullRequestData(
         reviewDecision: null,
       };
     } else if (inferredAllowedFromRepoInfo.length) {
-      const viewerCanMerge = !!(
-        repoInfo?.permissions &&
-        (repoInfo.permissions.admin || repoInfo.permissions.maintain || repoInfo.permissions.push)
-      );
+      const perms = repoInfo?.permissions;
+      const viewerCanMerge = !!(perms && (perms.admin || perms.maintain || perms.push));
       finalMergeContext = {
         allowedMergeMethods: inferredAllowedFromRepoInfo,
         viewerCanMerge,
@@ -560,12 +580,41 @@ export async function fetchAllPullRequestData(
       (repoInfo.permissions.admin || repoInfo.permissions.maintain || repoInfo.permissions.push)
     );
 
-    const mergeContextError = [
-      mergeContextResult.error ? `mergeContext: ${mergeContextResult.error}` : null,
-      repoInfoResult.error ? `repoInfo: ${repoInfoResult.error}` : null,
-    ]
-      .filter(Boolean)
-      .join(' | ');
+    const mergeContextErrorParts: string[] = [];
+    if (baseOwner !== owner || baseRepo !== repo) {
+      mergeContextErrorParts.push(`repoMismatch: route=${owner}/${repo} base=${baseOwner}/${baseRepo}`);
+    }
+    if (mergeContextResult.error) mergeContextErrorParts.push(`mergeContext: ${mergeContextResult.error}`);
+    if (repoInfoResult.error) mergeContextErrorParts.push(`repoInfo: ${repoInfoResult.error}`);
+
+    // If we still can't determine allowed merge methods, add structured debug context.
+    // This helps diagnose cases where GitHub returns unexpected payloads without throwing.
+    if (!finalMergeContext?.allowedMergeMethods?.length) {
+      const embeddedAllow = {
+        allow_merge_commit: {
+          present: !!(embeddedRepo && Object.prototype.hasOwnProperty.call(embeddedRepo, 'allow_merge_commit')),
+          value: !!embeddedRepo?.allow_merge_commit,
+        },
+        allow_squash_merge: {
+          present: !!(embeddedRepo && Object.prototype.hasOwnProperty.call(embeddedRepo, 'allow_squash_merge')),
+          value: !!embeddedRepo?.allow_squash_merge,
+        },
+        allow_rebase_merge: {
+          present: !!(embeddedRepo && Object.prototype.hasOwnProperty.call(embeddedRepo, 'allow_rebase_merge')),
+          value: !!embeddedRepo?.allow_rebase_merge,
+        },
+      };
+      const repoInfoAllow = {
+        allow_merge_commit: repoInfo?.allow_merge_commit ?? null,
+        allow_squash_merge: repoInfo?.allow_squash_merge ?? null,
+        allow_rebase_merge: repoInfo?.allow_rebase_merge ?? null,
+      };
+      mergeContextErrorParts.push(
+        `mergeMethodsEmpty: embeddedRepo=${JSON.stringify(embeddedAllow)} repoInfo=${JSON.stringify(repoInfoAllow)}`
+      );
+    }
+
+    const mergeContextError = mergeContextErrorParts.join(' | ');
 
     return {
       pullRequest,

@@ -16,7 +16,7 @@
     mergeContextError?: string | null;
     mergeSubmitting?: boolean;
     mergeError?: string | null;
-    onMergePullRequest?: (method: MergeMethod, bypassReason?: string) => void;
+    onMergePullRequest?: (method: MergeMethod, bypassReason?: string, commit?: { title?: string; message?: string }) => void;
     reviews: Review[];
     reviewComments: ReviewComment[];
     viewerLogin?: string | null;
@@ -229,7 +229,7 @@
       isAuthenticated={isAuthenticated}
       isMerging={mergeSubmitting}
       mergeError={mergeError}
-      onMerge={(method, bypassReason) => onMergePullRequest && onMergePullRequest(method, bypassReason)}
+      onMerge={(method, bypassReason, commit) => onMergePullRequest && onMergePullRequest(method, bypassReason, commit)}
     />
 
     {#if isAuthenticated}

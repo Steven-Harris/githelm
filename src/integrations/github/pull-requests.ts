@@ -271,7 +271,127 @@ export async function mergePullRequest(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
+
+      const message = (errorData && typeof errorData.message === 'string') ? errorData.message : '';
+
+      // Some tokens (notably GitHub App / integration tokens) can read data but cannot merge via REST.
+      // Attempt GraphQL merge as a fallback; this aligns with GitHub's own UI behavior.
+      if (response.status === 403 && message.includes('Resource not accessible by integration')) {
+        try {
+          const methodMap: Record<MergeMethod, 'MERGE' | 'SQUASH' | 'REBASE'> = {
+            merge: 'MERGE',
+            squash: 'SQUASH',
+            rebase: 'REBASE',
+          };
+
+          const idQuery = `
+            query($owner: String!, $repo: String!, $number: Int!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequest(number: $number) { id }
+              }
+            }
+          `;
+
+          const idResult: any = await executeGraphQLQuery(idQuery, { owner, repo, number: pullNumber });
+          const prId: string | undefined = idResult?.repository?.pullRequest?.id;
+          if (!prId) {
+            throw new Error('Unable to resolve pull request id for GraphQL merge');
+          }
+
+          const mutation = `
+            mutation(
+              $pullRequestId: ID!
+              $mergeMethod: PullRequestMergeMethod!
+              $commitHeadline: String
+              $commitBody: String
+              $expectedHeadOid: GitObjectID
+            ) {
+              mergePullRequest(
+                input: {
+                  pullRequestId: $pullRequestId
+                  mergeMethod: $mergeMethod
+                  commitHeadline: $commitHeadline
+                  commitBody: $commitBody
+                  expectedHeadOid: $expectedHeadOid
+                }
+              ) {
+                pullRequest { merged }
+                mergeCommit { oid }
+              }
+            }
+          `;
+
+          const commitHeadline = options.commitTitle;
+          const commitBody = options.commitMessage;
+
+          const mergeResult: any = await executeGraphQLQuery(mutation, {
+            pullRequestId: prId,
+            mergeMethod: methodMap[mergeMethod],
+            commitHeadline,
+            commitBody,
+            expectedHeadOid: options.sha,
+          });
+
+          const merged = !!mergeResult?.mergePullRequest?.pullRequest?.merged;
+          const oid: string | undefined = mergeResult?.mergePullRequest?.mergeCommit?.oid;
+
+          // GitHub can be eventually consistent on `pullRequest.merged` in the mutation payload.
+          // If we got a merge commit OID back, treat as success and let the UI refresh confirm state.
+          if (oid) {
+            return {
+              sha: oid,
+              merged: true,
+              message: 'Merged via GraphQL',
+            };
+          }
+
+          if (merged) {
+            return {
+              sha: options.sha || '',
+              merged: true,
+              message: 'Merged via GraphQL',
+            };
+          }
+
+          // Follow-up query to determine if merge completed but payload was stale.
+          const statusQuery = `
+            query($owner: String!, $repo: String!, $number: Int!) {
+              repository(owner: $owner, name: $repo) {
+                pullRequest(number: $number) {
+                  merged
+                  state
+                  mergeStateStatus
+                  viewerCanMerge
+                  reviewDecision
+                }
+              }
+            }
+          `;
+          const status: any = await executeGraphQLQuery(statusQuery, { owner, repo, number: pullNumber });
+          if (!status || !status.repository) {
+            throw new Error('GraphQL status query returned no data');
+          }
+          const prStatus = status?.repository?.pullRequest;
+          if (prStatus?.merged) {
+            return {
+              sha: options.sha || '',
+              merged: true,
+              message: 'Merged via GraphQL',
+            };
+          }
+
+          throw new Error(
+            `GraphQL merge did not complete (state=${String(prStatus?.state)}, mergeStateStatus=${String(prStatus?.mergeStateStatus)}, reviewDecision=${String(prStatus?.reviewDecision)}, viewerCanMerge=${String(prStatus?.viewerCanMerge)})`
+          );
+        } catch (fallbackError) {
+          const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+          throw new Error(
+            `GitHub merge failed (403 integration) and GraphQL fallback also failed: ${fallbackMessage}`
+          );
+        }
+      }
+
+      throw new Error(message || `GitHub API error: ${response.status} ${response.statusText}`);
     }
 
     const data = (await response.json().catch(() => null)) as MergePullRequestResponse | null;

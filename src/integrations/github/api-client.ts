@@ -148,7 +148,12 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
     const token = await getTokenSafely();
     const headers: Record<string, string> = {
       Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
     };
+
+    // GitHub recommends specifying an API version for consistent behavior.
+    // Safe for all current REST calls and ignored by GraphQL.
+    headers['X-GitHub-Api-Version'] = '2022-11-28';
 
     if (body) {
       headers['Content-Type'] = 'application/json';
@@ -178,7 +183,7 @@ async function executeRequest<T>(url: string, options: RequestOptions = {}): Pro
 
       if (response.status === 401) {
         firebase.reLogin();
-        return;
+        throw new Error('GitHub API unauthorized (401). Re-authentication triggered.');
       }
 
       // Handle rate limiting with smart backoff

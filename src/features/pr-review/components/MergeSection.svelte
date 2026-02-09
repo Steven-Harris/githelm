@@ -9,7 +9,7 @@
     isAuthenticated: boolean;
     isMerging: boolean;
     mergeError: string | null;
-    onMerge: (method: MergeMethod, bypassReason?: string) => void;
+    onMerge: (method: MergeMethod, bypassReason?: string, commit?: { title?: string; message?: string }) => void;
   }
 
   const { pullRequest, mergeContext, mergeContextError = null, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
@@ -28,11 +28,37 @@
 
   const allowedMethods = $derived(() => {
     const fromContext = mergeContext?.allowedMergeMethods ?? [];
-    return fromContext.length ? fromContext : inferredAllowedMethods();
+    const inferred = inferredAllowedMethods();
+    if (fromContext.length) return fromContext;
+    if (inferred.length) return inferred;
+    // Fallback: if APIs omit method flags, still let the user try.
+    // GitHub will enforce allowed methods server-side.
+    return ['merge', 'squash', 'rebase'] as MergeMethod[];
+  });
+
+  const mergeDebug = $derived(() => {
+    return {
+      error: mergeContextError,
+      hasMergeContext: !!mergeContext,
+      contextMethodCount: mergeContext?.allowedMergeMethods?.length ?? 0,
+      inferredMethodCount: inferredAllowedMethods().length,
+    };
   });
 
   let selectedMethod = $state<MergeMethod>('merge');
   let bypassReason = $state('');
+  let commitTitle = $state('');
+  let commitMessage = $state('');
+
+  $effect(() => {
+    // Provide a sensible default headline like GitHub's UI.
+    if (!commitTitle) {
+      const prTitle = (pullRequest.title ?? '').trim();
+      if (prTitle) {
+        commitTitle = `${prTitle} (#${pullRequest.number})`;
+      }
+    }
+  });
 
   $effect(() => {
     const methods = allowedMethods();
@@ -109,6 +135,12 @@
       return 'Not mergeable (closed/draft)';
     }
 
+    // If we couldn't detect merge methods, show a softer warning.
+    // (We still allow attempting merge; GitHub enforces server-side.)
+    if ((mergeContext?.allowedMergeMethods?.length ?? 0) === 0 && inferredAllowedMethods().length === 0) {
+      return 'Merge method availability unknown (API did not provide flags)';
+    }
+
     const status = mergeStateStatus();
     const decision = reviewDecision();
 
@@ -152,7 +184,6 @@
   const disableReason = $derived(() => {
     if (!isAuthenticated) return 'Login required';
     if (!prIsOpen()) return statusText();
-    if (allowedMethods().length === 0) return 'Merge method info unavailable';
     // If we have explicit permission signals, honor them; otherwise let GitHub enforce on submit.
     if (mergeContext && !viewerCanMerge() && !viewerCanMergeAsAdmin()) return 'You do not have permission to merge';
     if (!canMergeNormally() && !canBypass()) return statusText();
@@ -161,14 +192,20 @@
 
   function handleMergeClick() {
     if (disableReason()) return;
-    onMerge(selectedMethod, undefined);
+    onMerge(selectedMethod, undefined, {
+      title: commitTitle.trim() || undefined,
+      message: commitMessage.trim() || undefined,
+    });
   }
 
   function handleBypassMergeClick() {
     if (disableReason()) return;
     const reason = bypassReason.trim();
     if (!reason) return;
-    onMerge(selectedMethod, reason);
+    onMerge(selectedMethod, reason, {
+      title: commitTitle.trim() || undefined,
+      message: commitMessage.trim() || undefined,
+    });
   }
 </script>
 
@@ -186,9 +223,9 @@
     </div>
   {/if}
 
-  {#if mergeContextError && allowedMethods().length === 0}
+  {#if allowedMethods().length === 0}
     <div class="mt-3 text-xs text-[#8b949e] border border-[#30363d] bg-[#161b22] rounded px-3 py-2">
-      Merge debug: {mergeContextError}
+        Merge methods unavailable. Debug: error={mergeDebug().error ?? 'none'}; ctx={mergeDebug().hasMergeContext ? 'yes' : 'no'}; ctxMethods={mergeDebug().contextMethodCount}; inferredMethods={mergeDebug().inferredMethodCount}
     </div>
   {/if}
 
@@ -220,6 +257,32 @@
       {isMerging ? 'Merging…' : `${methodLabel(selectedMethod)} pull request`}
     </button>
   </div>
+
+  <!-- Commit message (supported for merge/squash; ignored for rebase) -->
+  {#if isAuthenticated && prIsOpen() && (selectedMethod === 'merge' || selectedMethod === 'squash')}
+    <div class="mt-3 border border-[#30363d] rounded-lg p-3 bg-[#161b22]">
+      <div class="text-xs font-medium text-[#8b949e] mb-2">Commit message</div>
+
+      <label class="block text-xs text-[#8b949e] mb-1" for="commit-title">Title</label>
+      <input
+        id="commit-title"
+        value={commitTitle}
+        oninput={(e) => (commitTitle = (e.target as HTMLInputElement).value)}
+        class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+        placeholder="Commit title"
+      />
+
+      <label class="block text-xs text-[#8b949e] mb-1 mt-2" for="commit-message">Description</label>
+      <textarea
+        id="commit-message"
+        value={commitMessage}
+        oninput={(e) => (commitMessage = (e.target as HTMLTextAreaElement).value)}
+        class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+        placeholder="Optional commit message body"
+        rows="3"
+      ></textarea>
+    </div>
+  {/if}
 
   <!-- Bypass flow (admin) -->
   {#if isAuthenticated && prIsOpen() && !canMergeNormally() && canBypass() && allowedMethods().length > 0}
