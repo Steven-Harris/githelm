@@ -1,21 +1,13 @@
 <script lang="ts">
-  import type { ScrollManager } from '../composables/useScrollManager.svelte';
   import DiffViewToggle from '../DiffViewToggle.svelte';
   import FileDiff from '../FileDiff.svelte';
-  import type { PRReviewState } from '../stores/pr-review.store.svelte';
+  import { getPRReviewContext } from '../stores/context';
 
-  interface Props {
-    prReview: PRReviewState;
-    scrollManager: ScrollManager;
-    canReview?: boolean;
-    isAuthenticated?: boolean;
-  }
-
-  let { prReview, scrollManager, canReview = false, isAuthenticated = false }: Props = $props();
+  const { prReview, scrollManager, canReview, isAuthenticated } = getPRReviewContext();
 
   let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
 
-  const visibleFiles = $derived(() => {
+  const visibleFiles = $derived.by(() => {
     if (prReview.state.focusSelectedFileOnly && prReview.state.selectedFile) {
       return prReview.state.files.filter((f) => f.filename === prReview.state.selectedFile);
     }
@@ -23,7 +15,7 @@
     return prReview.state.files;
   });
 
-  const visibleReviewComments = $derived(() => {
+  const visibleReviewComments = $derived.by(() => {
     return prReview.state.showResolvedComments
       ? prReview.state.reviewComments
       : prReview.state.reviewComments.filter((c) => c.is_resolved !== true);
@@ -93,9 +85,9 @@
     </div>
   </div>
 
-  {#if visibleFiles().length > 0}
+  {#if visibleFiles.length > 0}
     <div class="space-y-1 overflow-x-hidden">
-      {#each visibleFiles() as file (file.filename)}
+      {#each visibleFiles as file (file.filename)}
         <div data-filename={file.filename} class="bg-[#161b22] border-b border-[#30363d] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
           <FileDiff
             {file}
@@ -104,7 +96,7 @@
             isExpanded={prReview.state.expandedFiles.has(file.filename)}
             onToggle={() => prReview.toggleFileExpanded(file.filename)}
             onFileComment={(filename) => prReview.startCommentOnFile(filename)}
-            reviewComments={visibleReviewComments()}
+            reviewComments={visibleReviewComments}
             diffViewMode={prReview.state.diffViewMode}
             viewerLogin={prReview.state.viewerLogin}
             canResolve={prReview.state.viewerCanResolveThreads && isAuthenticated}

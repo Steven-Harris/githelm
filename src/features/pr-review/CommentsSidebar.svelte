@@ -1,82 +1,20 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { DetailedPullRequest, Review, ReviewComment } from '$integrations/github';
   import EmptyState from './components/EmptyState.svelte';
   import LineCommentsSection from './components/LineCommentsSection.svelte';
   import MergeSection from './components/MergeSection.svelte';
   import OverallCommentsSection from './components/OverallCommentsSection.svelte';
   import PendingCommentsSection from './components/PendingCommentsSection.svelte';
   import ReviewSubmissionSection from './components/ReviewSubmissionSection.svelte';
-  import type { MergeMethod, PullRequestMergeContext } from './services/pr-review.service';
-  import type { PendingComment, ReviewDraft, SelectedLine } from './stores/pr-review.store.svelte';
+  import { getPRReviewContext } from './stores/context';
 
   interface Props {
-    pullRequest: DetailedPullRequest;
-    mergeContext: PullRequestMergeContext | null;
-    mergeContextError?: string | null;
-    mergeSubmitting?: boolean;
-    mergeError?: string | null;
-    onMergePullRequest?: (method: MergeMethod, bypassReason?: string, commit?: { title?: string; message?: string }) => void;
-    reviews: Review[];
-    reviewComments: ReviewComment[];
-    viewerLogin?: string | null;
     onCommentClick?: (filename: string, lineNumber: number) => void;
-    selectedLines?: SelectedLine[];
-    pendingComments?: PendingComment[];
-    activeCommentId?: string | null;
-    reviewDraft?: ReviewDraft;
-    onStartComment?: () => void;
-    onAddToReview?: (commentId: string) => void;
-    onPostComment?: (commentId: string) => void;
-    onUpdateComment?: (commentId: string, body: string, isPartOfReview?: boolean) => void;
-    onCancelComment?: (commentId: string) => void;
-    onClearSelection?: () => void;
-    onUpdateReviewDraft?: (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
-    onSubmitReview?: (event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
-    onDeleteSubmittedComment?: (commentId: number) => void | Promise<void>;
-    onUpdateSubmittedComment?: (commentId: number, body: string) => void | Promise<void>;
-    onReplyToSubmittedComment?: (inReplyToId: number, body: string) => void | Promise<void>;
-    onSetThreadResolved?: (threadId: string, resolved: boolean) => void | Promise<void>;
-    showResolvedComments?: boolean;
-    onToggleResolvedComments?: () => void;
-    canReview?: boolean;
-    canResolveThreads?: boolean;
-    isAuthenticated?: boolean;
   }
 
-  const {
-    pullRequest,
-    mergeContext,
-    mergeContextError = null,
-    mergeSubmitting = false,
-    mergeError = null,
-    onMergePullRequest,
-    reviews,
-    reviewComments,
-    viewerLogin = null,
-    onCommentClick,
-    selectedLines = [],
-    pendingComments = [],
-    activeCommentId = null,
-    reviewDraft = { body: '', event: 'COMMENT' },
-    onStartComment,
-    onAddToReview,
-    onPostComment,
-    onUpdateComment,
-    onCancelComment,
-    onClearSelection,
-    onUpdateReviewDraft,
-    onSubmitReview,
-    onDeleteSubmittedComment,
-    onUpdateSubmittedComment,
-    onReplyToSubmittedComment,
-    onSetThreadResolved,
-    showResolvedComments = false,
-    onToggleResolvedComments,
-    canReview = false,
-    canResolveThreads = false,
-    isAuthenticated = false,
-  }: Props = $props();
+  const { onCommentClick }: Props = $props();
+
+  const { prReview, canReview, isAuthenticated } = getPRReviewContext();
 
   const SIDEBAR_WIDTH_KEY = 'PR_REVIEW_SIDEBAR_WIDTH';
   const MIN_SIDEBAR_WIDTH = 280;
@@ -162,7 +100,7 @@
   });
 
   const overallReviewReviews = $derived(
-    reviews
+    prReview.state.reviews
       .filter((review) => review.state !== 'PENDING')
       .filter(
         (review) =>
@@ -171,10 +109,10 @@
       )
   );
 
-  const overallCommentReviews = $derived(reviews.filter((review) => review.body && review.body.trim() !== ''));
+  const overallCommentReviews = $derived(prReview.state.reviews.filter((review) => review.body && review.body.trim() !== ''));
 
   const lineComments = $derived(
-    (showResolvedComments ? reviewComments : reviewComments.filter((c) => c.is_resolved !== true))
+    (prReview.state.showResolvedComments ? prReview.state.reviewComments : prReview.state.reviewComments.filter((c) => c.is_resolved !== true))
       .filter((comment) => !!comment.path && (comment.line || comment.original_line || comment.in_reply_to_id))
       .sort((a, b) => {
         const pathCompare = a.path.localeCompare(b.path);
@@ -185,6 +123,8 @@
         return lineA - lineB;
       })
   );
+
+  const canResolveThreads = $derived(prReview.state.viewerCanResolveThreads && isAuthenticated);
 </script>
 
 <div
@@ -207,46 +147,50 @@
         </div>
       </div>
 
-      {#if onToggleResolvedComments}
-        <button
-          type="button"
-          class="text-xs px-2 py-1 rounded border border-[#30363d] bg-[#0d1117] hover:bg-[#21262d] text-[#c9d1d9] transition-colors"
-          onclick={onToggleResolvedComments}
-          aria-pressed={showResolvedComments}
-          title={showResolvedComments ? 'Hide resolved conversations' : 'Show resolved conversations'}
-        >
-          {showResolvedComments ? 'Hide resolved' : 'Show resolved'}
-        </button>
-      {/if}
+      <button
+        type="button"
+        class="text-xs px-2 py-1 rounded border border-[#30363d] bg-[#0d1117] hover:bg-[#21262d] text-[#c9d1d9] transition-colors"
+        onclick={prReview.toggleResolvedComments}
+        aria-pressed={prReview.state.showResolvedComments}
+        title={prReview.state.showResolvedComments ? 'Hide resolved conversations' : 'Show resolved conversations'}
+      >
+        {prReview.state.showResolvedComments ? 'Hide resolved' : 'Show resolved'}
+      </button>
     </div>
   </div>
 
   <div class="divide-y divide-[#30363d]">
     <MergeSection
-      {pullRequest}
-      {mergeContext}
-      mergeContextError={mergeContextError}
+      pullRequest={prReview.state.pullRequest}
+      mergeContext={prReview.state.mergeContext}
+      mergeContextError={prReview.state.mergeContextError}
       isAuthenticated={isAuthenticated}
-      isMerging={mergeSubmitting}
-      mergeError={mergeError}
-      onMerge={(method, bypassReason, commit) => onMergePullRequest && onMergePullRequest(method, bypassReason, commit)}
+      isMerging={prReview.state.mergeSubmitting}
+      mergeError={prReview.state.mergeError}
+      onMerge={prReview.mergePullRequest}
     />
 
     {#if isAuthenticated}
       <PendingCommentsSection
-        {selectedLines}
-        {pendingComments}
-        {activeCommentId}
-        {onStartComment}
-        {onAddToReview}
-        {onUpdateComment}
-        {onCancelComment}
-        onCancelSelection={onClearSelection}
+        selectedLines={prReview.state.selectedLines}
+        pendingComments={prReview.state.pendingComments}
+        activeCommentId={prReview.state.activeCommentId}
+        onStartComment={prReview.startCommentOnSelectedLines}
+        onAddToReview={prReview.addCommentToReview}
+        onUpdateComment={prReview.updatePendingComment}
+        onCancelComment={prReview.cancelPendingComment}
+        onCancelSelection={prReview.clearLineSelection}
       />
     {/if}
 
     {#if canReview && isAuthenticated}
-      <ReviewSubmissionSection {pendingComments} {reviewDraft} {onUpdateReviewDraft} {onSubmitReview} canSubmit={true} />
+      <ReviewSubmissionSection
+        pendingComments={prReview.state.pendingComments}
+        reviewDraft={prReview.state.reviewDraft}
+        onUpdateReviewDraft={prReview.updateReviewDraft}
+        onSubmitReview={prReview.submitReview}
+        canSubmit={true}
+      />
     {/if}
 
     <OverallCommentsSection reviews={overallReviewReviews} />
@@ -254,12 +198,12 @@
     <LineCommentsSection
       comments={lineComments}
       {onCommentClick}
-      onDeleteComment={onDeleteSubmittedComment}
-      onUpdateComment={onUpdateSubmittedComment}
-      onReplyToComment={onReplyToSubmittedComment}
-      onSetThreadResolved={onSetThreadResolved}
+      onDeleteComment={prReview.deleteSubmittedComment}
+      onUpdateComment={prReview.updateSubmittedComment}
+      onReplyToComment={prReview.replyToSubmittedComment}
+      onSetThreadResolved={prReview.setThreadResolved}
       canResolve={canResolveThreads}
-      viewerLogin={viewerLogin}
+      viewerLogin={prReview.state.viewerLogin}
       canInteract={isAuthenticated}
     />
 

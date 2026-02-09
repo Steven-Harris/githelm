@@ -103,7 +103,7 @@ export function createPRReviewState() {
   let commentsRefreshInFlight = false;
   let commentsLastRefreshKey: string | null = null;
 
-  const fileStats = $derived(() => {
+  const fileStats = $derived.by(() => {
     if (!state.files.length) return null;
 
     return {
@@ -117,7 +117,7 @@ export function createPRReviewState() {
     };
   });
 
-  const reviewSummary = $derived(() => {
+  const reviewSummary = $derived.by(() => {
     if (!state.reviews.length) return null;
 
     const summary = {
@@ -151,7 +151,7 @@ export function createPRReviewState() {
     return summary;
   });
 
-  const checksSummary = $derived(() => {
+  const checksSummary = $derived.by(() => {
     if (!state.checks.length) return null;
 
     const summary = {
@@ -199,7 +199,7 @@ export function createPRReviewState() {
     return summary;
   });
 
-  const commentsByFile = $derived(() => {
+  const commentsByFile = $derived.by(() => {
     const comments = state.showResolvedComments
       ? state.reviewComments
       : state.reviewComments.filter((c) => c.is_resolved !== true);
@@ -418,7 +418,6 @@ export function createPRReviewState() {
 
   const replyToSubmittedComment = async (inReplyToId: number, body: string): Promise<void> => {
     if (!state.pullRequest) {
-      console.error('No pull request loaded');
       throw new Error('No pull request loaded');
     }
 
@@ -447,14 +446,12 @@ export function createPRReviewState() {
 
       state.reviewComments.push(newReply);
     } catch (error) {
-      console.error('Failed to reply to comment:', error);
       throw error instanceof Error ? error : new Error('Failed to reply to comment');
     }
   };
 
   const updateSubmittedComment = async (commentId: number, body: string): Promise<void> => {
     if (!state.pullRequest) {
-      console.error('No pull request loaded');
       throw new Error('No pull request loaded');
     }
 
@@ -483,7 +480,6 @@ export function createPRReviewState() {
 
       state.reviewComments = state.reviewComments.map((c: any) => (c.id === commentId ? { ...c, ...updated } : c));
     } catch (error) {
-      console.error('Failed to update comment:', error);
       throw error instanceof Error ? error : new Error('Failed to update comment');
     }
   };
@@ -713,14 +709,8 @@ export function createPRReviewState() {
 
   const addCommentToReview = (commentId: string) => {
     const comment = state.pendingComments.find(c => c.id === commentId);
-    console.log('addCommentToReview called:', {
-      commentId,
-      comment: comment ? { id: comment.id, isPartOfReview: comment.isPartOfReview, hasBody: !!comment.body.trim() } : null,
-      allPendingComments: state.pendingComments.map(c => ({ id: c.id, isPartOfReview: c.isPartOfReview, hasBody: !!c.body.trim() }))
-    });
 
     if (!comment || !comment.body.trim()) {
-      console.log('Early return - no comment or empty body');
       return;
     }
 
@@ -728,16 +718,8 @@ export function createPRReviewState() {
     comment.isPartOfReview = true;
     state.activeCommentId = null;
 
-    console.log('Comment marked as part of review:', { id: comment.id, isPartOfReview: comment.isPartOfReview });
-
     // Clear line selection so user can select new lines for next comment
     clearLineSelection();
-
-    console.log('After clearLineSelection - Updated pending comments:', state.pendingComments.map(c => ({
-      id: c.id,
-      isPartOfReview: c.isPartOfReview,
-      hasBody: !!c.body.trim()
-    })));
   };
 
   const postStandaloneComment = async (commentId: string) => {
@@ -745,7 +727,6 @@ export function createPRReviewState() {
     if (!comment || !comment.body.trim()) return;
 
     if (!state.pullRequest) {
-      console.error('No pull request loaded');
       return;
     }
 
@@ -794,10 +775,7 @@ export function createPRReviewState() {
       state.pendingComments = state.pendingComments.filter(c => c.id !== commentId);
       state.activeCommentId = null;
       clearLineSelection();
-
-      console.log('Standalone comment posted successfully:', newComment);
     } catch (error) {
-      console.error('Failed to post comment:', error);
       state.error = error instanceof Error ? error.message : 'Failed to post comment';
     }
   };
@@ -827,13 +805,11 @@ export function createPRReviewState() {
     comment.isPartOfReview = true;
     state.activeCommentId = null;
     // Don't clear line selection - user might want to add another comment on same lines
-
-    console.log('Comment saved to pending review:', comment);
   };
 
   const submitReview = async (eventOverride?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => {
     if (!state.pullRequest) {
-      console.error('No pull request loaded');
+      state.error = 'No pull request loaded';
       return;
     }
 
@@ -938,7 +914,6 @@ export function createPRReviewState() {
 
       // Success
     } catch (error) {
-      console.error('Failed to submit review:', error);
       state.error = error instanceof Error ? error.message : 'Failed to submit review';
     }
   };
@@ -1045,7 +1020,6 @@ export function createPRReviewState() {
 
   const deleteSubmittedComment = async (commentId: number): Promise<void> => {
     if (!state.pullRequest) {
-      console.error('No pull request loaded');
       throw new Error('No pull request loaded');
     }
 
@@ -1075,7 +1049,6 @@ export function createPRReviewState() {
         console.warn('Failed to refresh comments after delete:', refreshError);
       }
     } catch (error) {
-      console.error('Failed to delete comment:', error);
       throw error instanceof Error ? error : new Error('Failed to delete comment');
     }
   };

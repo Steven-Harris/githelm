@@ -10,7 +10,7 @@
   const { files, selectedFile, onFileSelect }: Props = $props();
 
   // Build file tree structure
-  const fileTree = $derived(() => {
+  const fileTree = $derived.by(() => {
     const tree: Record<string, any> = {};
 
     files.forEach((file) => {

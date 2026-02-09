@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { PullRequestCommit } from '$integrations/github';
+  import { formatDate } from './utils/format';
 
   interface Props {
     commits: PullRequestCommit[];
@@ -8,16 +9,6 @@
   }
 
   const { commits, selectedCommit, onCommitChange }: Props = $props();
-
-  // Helper function to format dates
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
 </script>
 
 <div class="flex items-center space-x-4">

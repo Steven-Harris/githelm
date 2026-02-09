@@ -14,7 +14,7 @@
 
   const { pullRequest, mergeContext, mergeContextError = null, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
 
-  const inferredAllowedMethods = $derived(() => {
+  const inferredAllowedMethods = $derived.by(() => {
     const prAny = pullRequest as any;
     const repoAny = prAny?.base?.repo ?? prAny?.head?.repo;
     if (!repoAny) return [] as MergeMethod[];
@@ -26,9 +26,9 @@
     return methods;
   });
 
-  const allowedMethods = $derived(() => {
+  const allowedMethods = $derived.by(() => {
     const fromContext = mergeContext?.allowedMergeMethods ?? [];
-    const inferred = inferredAllowedMethods();
+    const inferred = inferredAllowedMethods;
     if (fromContext.length) return fromContext;
     if (inferred.length) return inferred;
     // Fallback: if APIs omit method flags, still let the user try.
@@ -36,12 +36,12 @@
     return ['merge', 'squash', 'rebase'] as MergeMethod[];
   });
 
-  const mergeDebug = $derived(() => {
+  const mergeDebug = $derived.by(() => {
     return {
       error: mergeContextError,
       hasMergeContext: !!mergeContext,
       contextMethodCount: mergeContext?.allowedMergeMethods?.length ?? 0,
-      inferredMethodCount: inferredAllowedMethods().length,
+      inferredMethodCount: inferredAllowedMethods.length,
     };
   });
 
@@ -61,7 +61,7 @@
   });
 
   $effect(() => {
-    const methods = allowedMethods();
+    const methods = allowedMethods;
     if (methods.length > 0 && !methods.includes(selectedMethod)) {
       selectedMethod = methods[0];
     }
@@ -70,7 +70,7 @@
     }
   });
 
-  const prIsOpen = $derived(() => {
+  const prIsOpen = $derived.by(() => {
     const state = (pullRequest.state ?? '').toLowerCase();
     return state === 'open' && !pullRequest.merged && !pullRequest.draft;
   });
@@ -97,30 +97,30 @@
     }
   }
 
-  const mergeStateStatus = $derived(() => {
+  const mergeStateStatus = $derived.by(() => {
     if (mergeContext?.mergeStateStatus) return mergeContext.mergeStateStatus;
     const prAny = pullRequest as any;
     return mapRestMergeableStateToStatus(prAny?.mergeable_state);
   });
-  const reviewDecision = $derived(() => mergeContext?.reviewDecision ?? null);
+  const reviewDecision = $derived.by(() => mergeContext?.reviewDecision ?? null);
 
-  const viewerCanMerge = $derived(() => !!mergeContext?.viewerCanMerge);
-  const viewerCanMergeAsAdmin = $derived(() => !!mergeContext?.viewerCanMergeAsAdmin);
+  const viewerCanMerge = $derived.by(() => !!mergeContext?.viewerCanMerge);
+  const viewerCanMergeAsAdmin = $derived.by(() => !!mergeContext?.viewerCanMergeAsAdmin);
 
-  const canMergeNormally = $derived(() => {
-    const status = mergeStateStatus();
+  const canMergeNormally = $derived.by(() => {
+    const status = mergeStateStatus;
     // GitHub can report UNKNOWN while mergeability is still being computed.
     // Allow attempting a merge in that state; GitHub will enforce server-side rules.
     if (status && status !== 'CLEAN' && status !== 'UNKNOWN') return false;
     // If GitHub provides a review decision, require APPROVED to satisfy required approvals/codeowner rules.
-    const decision = reviewDecision();
+    const decision = reviewDecision;
     if (!decision) return true;
     return decision === 'APPROVED';
   });
 
-  const canBypass = $derived(() => {
-    const status = mergeStateStatus();
-    if (!viewerCanMergeAsAdmin()) return false;
+  const canBypass = $derived.by(() => {
+    const status = mergeStateStatus;
+    if (!viewerCanMergeAsAdmin) return false;
     if (!status) return false;
     // Admin bypass does not help if there are merge conflicts.
     if (status === 'DIRTY') return false;
@@ -129,20 +129,20 @@
     return true;
   });
 
-  const statusText = $derived(() => {
-    if (!prIsOpen()) {
+  const statusText = $derived.by(() => {
+    if (!prIsOpen) {
       if (pullRequest.merged) return 'Already merged';
       return 'Not mergeable (closed/draft)';
     }
 
     // If we couldn't detect merge methods, show a softer warning.
     // (We still allow attempting merge; GitHub enforces server-side.)
-    if ((mergeContext?.allowedMergeMethods?.length ?? 0) === 0 && inferredAllowedMethods().length === 0) {
+    if ((mergeContext?.allowedMergeMethods?.length ?? 0) === 0 && inferredAllowedMethods.length === 0) {
       return 'Merge method availability unknown (API did not provide flags)';
     }
 
-    const status = mergeStateStatus();
-    const decision = reviewDecision();
+    const status = mergeStateStatus;
+    const decision = reviewDecision;
 
     if (decision && decision !== 'APPROVED') {
       if (decision === 'REVIEW_REQUIRED') return 'Approvals required';
@@ -181,17 +181,17 @@
     }
   }
 
-  const disableReason = $derived(() => {
+  const disableReason = $derived.by(() => {
     if (!isAuthenticated) return 'Login required';
-    if (!prIsOpen()) return statusText();
+    if (!prIsOpen) return statusText;
     // If we have explicit permission signals, honor them; otherwise let GitHub enforce on submit.
-    if (mergeContext && !viewerCanMerge() && !viewerCanMergeAsAdmin()) return 'You do not have permission to merge';
-    if (!canMergeNormally() && !canBypass()) return statusText();
+    if (mergeContext && !viewerCanMerge && !viewerCanMergeAsAdmin) return 'You do not have permission to merge';
+    if (!canMergeNormally && !canBypass) return statusText;
     return null;
   });
 
   function handleMergeClick() {
-    if (disableReason()) return;
+    if (disableReason) return;
     onMerge(selectedMethod, undefined, {
       title: commitTitle.trim() || undefined,
       message: commitMessage.trim() || undefined,
@@ -199,7 +199,7 @@
   }
 
   function handleBypassMergeClick() {
-    if (disableReason()) return;
+    if (disableReason) return;
     const reason = bypassReason.trim();
     if (!reason) return;
     onMerge(selectedMethod, reason, {
@@ -213,7 +213,7 @@
   <div class="flex items-center justify-between gap-3">
     <div>
       <h4 class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">Merge</h4>
-      <div class="text-xs text-[#8b949e] mt-1">{statusText()}</div>
+      <div class="text-xs text-[#8b949e] mt-1">{statusText}</div>
     </div>
   </div>
 
@@ -223,15 +223,15 @@
     </div>
   {/if}
 
-  {#if allowedMethods().length === 0}
+  {#if allowedMethods.length === 0}
     <div class="mt-3 text-xs text-[#8b949e] border border-[#30363d] bg-[#161b22] rounded px-3 py-2">
-        Merge methods unavailable. Debug: error={mergeDebug().error ?? 'none'}; ctx={mergeDebug().hasMergeContext ? 'yes' : 'no'}; ctxMethods={mergeDebug().contextMethodCount}; inferredMethods={mergeDebug().inferredMethodCount}
+        Merge methods unavailable. Debug: error={mergeDebug.error ?? 'none'}; ctx={mergeDebug.hasMergeContext ? 'yes' : 'no'}; ctxMethods={mergeDebug.contextMethodCount}; inferredMethods={mergeDebug.inferredMethodCount}
     </div>
   {/if}
 
-  {#if allowedMethods().length > 1}
+  {#if allowedMethods.length > 1}
     <div class="mt-3 inline-flex w-full rounded-lg border border-[#30363d] overflow-hidden">
-      {#each allowedMethods() as method}
+      {#each allowedMethods as method}
         <button
           type="button"
           onclick={() => (selectedMethod = method)}
@@ -250,8 +250,8 @@
     <button
       type="button"
       onclick={handleMergeClick}
-      disabled={!!disableReason() || isMerging || !canMergeNormally()}
-      title={disableReason() ?? (canMergeNormally() ? 'Merge pull request' : statusText())}
+      disabled={!!disableReason || isMerging || !canMergeNormally}
+      title={disableReason ?? (canMergeNormally ? 'Merge pull request' : statusText)}
       class="w-full bg-[#2ea043] text-white px-3 py-2 rounded text-sm font-medium hover:bg-[#3fb950] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {isMerging ? 'Merging…' : `${methodLabel(selectedMethod)} pull request`}
@@ -259,7 +259,7 @@
   </div>
 
   <!-- Commit message (supported for merge/squash; ignored for rebase) -->
-  {#if isAuthenticated && prIsOpen() && (selectedMethod === 'merge' || selectedMethod === 'squash')}
+  {#if isAuthenticated && prIsOpen && (selectedMethod === 'merge' || selectedMethod === 'squash')}
     <div class="mt-3 border border-[#30363d] rounded-lg p-3 bg-[#161b22]">
       <div class="text-xs font-medium text-[#8b949e] mb-2">Commit message</div>
 
@@ -285,7 +285,7 @@
   {/if}
 
   <!-- Bypass flow (admin) -->
-  {#if isAuthenticated && prIsOpen() && !canMergeNormally() && canBypass() && allowedMethods().length > 0}
+  {#if isAuthenticated && prIsOpen && !canMergeNormally && canBypass && allowedMethods.length > 0}
     <div class="mt-3 border border-[#30363d] rounded-lg p-3 bg-[#161b22]">
       <label class="block text-xs font-medium text-[#8b949e] mb-2" for="bypass-reason">
         Bypass reason (required)
@@ -302,7 +302,7 @@
       <button
         type="button"
         onclick={handleBypassMergeClick}
-        disabled={!!disableReason() || isMerging || !bypassReason.trim()}
+        disabled={!!disableReason || isMerging || !bypassReason.trim()}
         class="mt-2 w-full bg-[#a37100] text-white px-3 py-2 rounded text-sm font-medium hover:bg-[#bb8009] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         title="Merge even if requirements are not satisfied"
       >

@@ -11,7 +11,7 @@
   let expanded = $state(false);
 
   // Check if this looks like a dependabot or automated PR
-  const isAutomatedPR = $derived(() => {
+  const isAutomatedPR = $derived.by(() => {
     const lowerTitle = title.toLowerCase();
     const lowerBody = body.toLowerCase();
     return (
@@ -25,12 +25,12 @@
   });
 
   // For automated PRs, show a much shorter preview
-  const previewLength = $derived(() => (isAutomatedPR() ? 100 : 200));
-  const shouldShowToggle = $derived(() => body.length > previewLength());
+  const previewLength = $derived.by(() => (isAutomatedPR ? 100 : 200));
+  const shouldShowToggle = $derived.by(() => body.length > previewLength);
 
-  const displayText = $derived(() => {
-    if (!shouldShowToggle() || expanded) return body;
-    return body.substring(0, previewLength()) + '...';
+  const displayText = $derived.by(() => {
+    if (!shouldShowToggle || expanded) return body;
+    return body.substring(0, previewLength) + '...';
   });
 
   // Simple markdown-to-text converter for preview
@@ -53,22 +53,22 @@
     gfm: true, // GitHub Flavored Markdown
   });
 
-  const cleanText = $derived(() => stripMarkdown(displayText()));
-  const renderedMarkdown = $derived(() => {
+  const cleanText = $derived.by(() => stripMarkdown(displayText));
+  const renderedMarkdown = $derived.by(() => {
     // Always render markdown when expanded, or when there's no toggle needed
-    if ((expanded && shouldShowToggle()) || !shouldShowToggle()) {
+    if ((expanded && shouldShowToggle) || !shouldShowToggle) {
       try {
-        return marked.parse(displayText());
+        return marked.parse(displayText);
       } catch (error) {
         console.error('Error rendering markdown:', error);
-        return displayText();
+        return displayText;
       }
     }
     return null;
   });
 
   // Check if the content has markdown formatting
-  const hasMarkdown = $derived(() => {
+  const hasMarkdown = $derived.by(() => {
     return (
       body.includes('**') || // Bold
       body.includes('*') || // Italic
@@ -84,18 +84,18 @@
 </script>
 
 <div class="mt-3">
-  {#if hasMarkdown() && (renderedMarkdown() || (!shouldShowToggle() && !expanded))}
+  {#if hasMarkdown && (renderedMarkdown || (!shouldShowToggle && !expanded))}
     <!-- Render markdown when there's markdown content -->
     <div class="gh-markdown prose prose-sm max-w-none prose-invert">
-      {@html renderedMarkdown()}
+      {@html renderedMarkdown}
     </div>
   {:else}
     <!-- Show plain text when no markdown or in preview mode -->
     <div class="text-sm text-[#c9d1d9] whitespace-pre-line">
-      {cleanText()}
+      {cleanText}
     </div>
   {/if}
-  {#if shouldShowToggle()}
+  {#if shouldShowToggle}}
     <button onclick={() => (expanded = !expanded)} class="text-blue-600 hover:text-blue-800 text-sm mt-1 font-medium">
       {expanded ? 'Show less' : 'Show more'}
     </button>

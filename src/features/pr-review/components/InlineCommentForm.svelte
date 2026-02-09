@@ -79,7 +79,7 @@
   }
 
   // Display information about the selected lines
-  const lineInfo = $derived(() => {
+  const lineInfo = $derived.by(() => {
     if (comment.endLine && comment.endLine !== comment.startLine) {
       return `Lines ${comment.startLine}-${comment.endLine}`;
     }

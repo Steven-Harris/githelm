@@ -4,6 +4,7 @@
   import InlineCommentForm from './components/InlineCommentForm.svelte';
   import InlineComments from './InlineComments.svelte';
   import { getGitHubFileUrl } from './utils/index.js';
+  import { getFileStatusColor, getFileStatusIcon } from './utils/format';
   import type { PendingComment } from './types/pr-review.types.js';
 
   interface Props {
@@ -76,36 +77,6 @@
     }
 
     onFileComment(file.filename);
-  }
-
-  function getStatusColor(status: string): string {
-    switch (status) {
-      case 'added':
-        return 'text-green-300 bg-green-900/20 border-green-800/50';
-      case 'removed':
-        return 'text-red-300 bg-red-900/20 border-red-800/50';
-      case 'modified':
-        return 'text-yellow-300 bg-yellow-900/20 border-yellow-800/50';
-      case 'renamed':
-        return 'text-blue-300 bg-blue-900/20 border-blue-800/50';
-      default:
-        return 'text-[#8b949e] bg-[#0d1117] border-[#30363d]';
-    }
-  }
-
-  function getStatusIcon(status: string): string {
-    switch (status) {
-      case 'added':
-        return '+';
-      case 'removed':
-        return '-';
-      case 'modified':
-        return '~';
-      case 'renamed':
-        return '→';
-      default:
-        return '?';
-    }
   }
 
   // Parse the patch to show line-by-line diff
@@ -211,10 +182,11 @@
     }
   }
 
-  // Add global mouse up listener
-  if (typeof window !== 'undefined') {
+  // Add global mouse up listener with cleanup
+  $effect(() => {
     window.addEventListener('mouseup', handleGlobalMouseUp);
-  }
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  });
 
   // Check if a line is selected
   function checkLineSelected(lineNumber: number, side: 'left' | 'right'): boolean {
@@ -270,8 +242,8 @@
           {/if}
         </button>
 
-        <span class={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getStatusColor(file.status)}`}>
-          {getStatusIcon(file.status)}
+        <span class={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getFileStatusColor(file.status)}`}>
+          {getFileStatusIcon(file.status)}
           {file.status}
         </span>
 

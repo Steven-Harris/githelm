@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { DetailedPullRequest } from '$integrations/github';
+  import { formatDateFull } from '../utils/format';
 
   interface Props {
     pullRequest: DetailedPullRequest;
@@ -12,16 +13,6 @@
   }
 
   let { pullRequest, fileStats, commitCount }: Props = $props();
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
 </script>
 
 <div class="bg-[#161b22] shadow-sm border-b border-[#30363d] px-6 py-4 flex-shrink-0">
@@ -47,9 +38,9 @@
           <span class="text-[#c9d1d9]">{pullRequest.user.login}</span>
         </div>
         <span class="text-[#30363d]">•</span>
-        <span>created {formatDate(pullRequest.created_at)}</span>
+        <span>created {formatDateFull(pullRequest.created_at)}</span>
         <span class="text-[#30363d]">•</span>
-        <span>updated {formatDate(pullRequest.updated_at)}</span>
+        <span>updated {formatDateFull(pullRequest.updated_at)}</span>
       </div>
     </div>
 

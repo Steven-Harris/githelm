@@ -14,23 +14,23 @@
   const { pendingComments = [], reviewDraft = { body: '', event: 'COMMENT' }, onUpdateReviewDraft, onSubmitReview, canSubmit = true, children }: Props = $props();
 
   // Count pending comments that are part of review
-  const reviewCommentsCount = $derived(() => pendingComments.filter((c) => c.isPartOfReview && c.body.trim()).length);
+  const reviewCommentsCount = $derived.by(() => pendingComments.filter((c) => c.isPartOfReview && c.body.trim()).length);
 
-  const body = $derived(() => reviewDraft.body?.trim() ?? '');
+  const body = $derived.by(() => reviewDraft.body?.trim() ?? '');
 
   // Button enablement rules
   // - Approve: always allowed when canSubmit
   // - Comment: requires either overall body or at least one pending inline comment
   // - Request changes: requires overall body (per product requirement)
-  const canComment = $derived(() => body().length > 0 || reviewCommentsCount() > 0);
-  const canRequestChanges = $derived(() => body().length > 0);
+  const canComment = $derived.by(() => body.length > 0 || reviewCommentsCount > 0);
+  const canRequestChanges = $derived.by(() => body.length > 0);
 </script>
 
 <div class="border-t border-[#30363d] bg-[#0d1117] p-4 text-[#c9d1d9]">
   <h4 class="text-sm font-medium text-[#f0f6fc] mb-1">Review</h4>
   <div class="text-xs text-[#8b949e] mb-3">
-    {#if reviewCommentsCount() > 0}
-      {reviewCommentsCount()} pending inline comment{reviewCommentsCount() !== 1 ? 's' : ''}
+    {#if reviewCommentsCount > 0}
+      {reviewCommentsCount} pending inline comment{reviewCommentsCount !== 1 ? 's' : ''}
     {:else}
       Add an overall comment and/or inline comments.
     {/if}
@@ -53,18 +53,18 @@
   <div class="flex items-center justify-end gap-2">
     <button
       onclick={() => onSubmitReview && onSubmitReview('REQUEST_CHANGES')}
-      disabled={!canSubmit || !canRequestChanges()}
+      disabled={!canSubmit || !canRequestChanges}
       class="px-3 py-2 text-sm bg-[#da3633] text-white rounded font-medium hover:bg-[#f85149] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      title={canRequestChanges() ? 'Request changes' : 'Request changes requires an overall comment'}
+      title={canRequestChanges ? 'Request changes' : 'Request changes requires an overall comment'}
     >
       Request changes
     </button>
 
     <button
       onclick={() => onSubmitReview && onSubmitReview('COMMENT')}
-      disabled={!canSubmit || !canComment()}
+      disabled={!canSubmit || !canComment}
       class="px-3 py-2 text-sm bg-[#1f6feb] text-white rounded font-medium hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      title={canComment() ? 'Comment' : 'Add an overall comment or inline comments to submit'}
+      title={canComment ? 'Comment' : 'Add an overall comment or inline comments to submit'}
     >
       Comment
     </button>
@@ -79,7 +79,7 @@
     </button>
   </div>
 
-  {#if !canRequestChanges()}
+  {#if !canRequestChanges}
     <p class="text-xs text-[#8b949e] mt-2">Request changes requires an overall comment.</p>
   {/if}
 
