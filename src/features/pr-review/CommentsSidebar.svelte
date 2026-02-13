@@ -163,7 +163,6 @@
     <MergeSection
       pullRequest={prReview.state.pullRequest}
       mergeContext={prReview.state.mergeContext}
-      mergeContextError={prReview.state.mergeContextError}
       isAuthenticated={isAuthenticated}
       isMerging={prReview.state.mergeSubmitting}
       mergeError={prReview.state.mergeError}

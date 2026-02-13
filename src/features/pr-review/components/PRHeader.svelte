@@ -80,9 +80,19 @@
 
       <!-- Status badges -->
       <div class="flex items-center space-x-2">
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-300 border border-green-800/50">
-          {pullRequest.state}
-        </span>
+        {#if pullRequest.merged}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-900/30 text-purple-300 border border-purple-800/50">
+            Merged
+          </span>
+        {:else if pullRequest.state?.toLowerCase() === 'closed'}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-300 border border-red-800/50">
+            Closed
+          </span>
+        {:else}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-300 border border-green-800/50">
+            Open
+          </span>
+        {/if}
         {#if pullRequest.draft}
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#30363d]/60 text-[#c9d1d9] border border-[#30363d]"> Draft </span>
         {/if}

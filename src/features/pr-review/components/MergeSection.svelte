@@ -5,14 +5,13 @@
   interface Props {
     pullRequest: DetailedPullRequest;
     mergeContext: PullRequestMergeContext | null;
-    mergeContextError?: string | null;
     isAuthenticated: boolean;
     isMerging: boolean;
     mergeError: string | null;
     onMerge: (method: MergeMethod, bypassReason?: string, commit?: { title?: string; message?: string }) => void;
   }
 
-  const { pullRequest, mergeContext, mergeContextError = null, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
+  const { pullRequest, mergeContext, isAuthenticated, isMerging, mergeError, onMerge }: Props = $props();
 
   const inferredAllowedMethods = $derived.by(() => {
     const prAny = pullRequest as any;
@@ -34,15 +33,6 @@
     // Fallback: if APIs omit method flags, still let the user try.
     // GitHub will enforce allowed methods server-side.
     return ['merge', 'squash', 'rebase'] as MergeMethod[];
-  });
-
-  const mergeDebug = $derived.by(() => {
-    return {
-      error: mergeContextError,
-      hasMergeContext: !!mergeContext,
-      contextMethodCount: mergeContext?.allowedMergeMethods?.length ?? 0,
-      inferredMethodCount: inferredAllowedMethods.length,
-    };
   });
 
   let selectedMethod = $state<MergeMethod>('merge');
@@ -219,14 +209,13 @@
 
   {#if mergeError}
     <div class="mt-3 text-xs text-[#f85149] border border-red-800/40 bg-red-900/10 rounded px-3 py-2 max-w-sm">
-       {mergeError}
       {mergeError}
     </div>
   {/if}
 
   {#if allowedMethods.length === 0}
     <div class="mt-3 text-xs text-[#8b949e] border border-[#30363d] bg-[#161b22] rounded px-3 py-2">
-        Merge methods unavailable. Debug: error={mergeDebug.error ?? 'none'}; ctx={mergeDebug.hasMergeContext ? 'yes' : 'no'}; ctxMethods={mergeDebug.contextMethodCount}; inferredMethods={mergeDebug.inferredMethodCount}
+      Merge methods unavailable.
     </div>
   {/if}
 
