@@ -5,7 +5,9 @@
   // Using proper Svelte 5 syntax with page data
   let { data }: { data: PageData } = $props();
 
-  const { owner, repo, prNumber } = data;
+  const owner = $derived(data.owner);
+  const repo = $derived(data.repo);
+  const prNumber = $derived(data.prNumber);
 </script>
 
 <svelte:head>

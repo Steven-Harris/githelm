@@ -87,7 +87,7 @@ const config: UserConfig = defineConfig({
 
   // Enhanced dependency optimization
   optimizeDeps: {
-    include: ['graphql'],
+    include: [],
     exclude: [],
     esbuildOptions: {
       target: 'es2020',

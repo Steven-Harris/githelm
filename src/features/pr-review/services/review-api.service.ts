@@ -1,6 +1,5 @@
 import { isAuthenticated } from '$shared/services/auth.state';
-import { executeGraphQLQuery } from '$integrations/github';
-import { getGithubToken } from '$shared/services/storage.service';
+import { githubGraphql, githubRequest } from '$integrations/github';
 import { get } from 'svelte/store';
 
 export async function getViewerLogin(): Promise<string> {
@@ -8,24 +7,7 @@ export async function getViewerLogin(): Promise<string> {
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const response = await fetch('https://api.github.com/user', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: 'application/vnd.github.v3+json',
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
-  }
-
-  const data = await response.json().catch(() => null);
+  const data = await githubRequest<{ login?: string }>('GET /user');
   const login = data?.login;
   if (!login || typeof login !== 'string') {
     throw new Error('Failed to determine GitHub viewer login');
@@ -69,13 +51,6 @@ export async function submitPullRequestReview(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`;
-
   console.log('Submitting review with data:', review);
 
   const trimmedBody = review.body?.trim() ?? '';
@@ -92,26 +67,12 @@ export async function submitPullRequestReview(
     payload.comments = review.comments;
   }
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload)
+  return await githubRequest<any>('POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews', {
+    owner,
+    repo,
+    pull_number: pullNumber,
+    ...payload,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('GitHub API Error Details:', errorData);
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return await response.json();
 }
 
 /**
@@ -148,32 +109,12 @@ export async function submitPullRequestComment(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/issues/${pullNumber}/comments`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ body })
+  return await githubRequest<any>('POST /repos/{owner}/{repo}/issues/{issue_number}/comments', {
+    owner,
+    repo,
+    issue_number: pullNumber,
+    body,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return await response.json();
 }
 
 /**
@@ -193,31 +134,20 @@ export async function submitLineComment(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
   // Determine the commit SHA to anchor the comment.
   let commit_id = commitSha;
   if (!commit_id) {
-    const prUrl = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}`;
-    const prResponse = await fetch(prUrl, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Accept': 'application/vnd.github.v3+json',
-      }
+    const prData = await githubRequest<any>('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+      owner,
+      repo,
+      pull_number: pullNumber,
     });
-
-    if (!prResponse.ok) {
-      throw new Error('Failed to fetch pull request data');
-    }
-
-    const prData = await prResponse.json();
-    commit_id = prData.head.sha;
+    commit_id = prData?.head?.sha;
   }
 
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/comments`;
+  if (!commit_id) {
+    throw new Error('Failed to determine commit SHA for line comment');
+  }
 
   // Prefer the newer API format with `line`/`side`.
   const commentData: any = {
@@ -225,31 +155,17 @@ export async function submitLineComment(
     commit_id,
     path,
     line,
-    side
+    side,
   };
 
   console.log('Submitting comment with data:', commentData);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(commentData)
+  return await githubRequest<any>('POST /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
+    owner,
+    repo,
+    pull_number: pullNumber,
+    ...commentData,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('GitHub API Error Details:', errorData);
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return await response.json();
 }
 
 /**
@@ -266,35 +182,13 @@ export async function replyToComment(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/comments`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      body,
-      in_reply_to: inReplyTo
-    })
+  return await githubRequest<any>('POST /repos/{owner}/{repo}/pulls/{pull_number}/comments', {
+    owner,
+    repo,
+    pull_number: pullNumber,
+    body,
+    in_reply_to: inReplyTo,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return await response.json();
 }
 
 /**
@@ -310,32 +204,12 @@ export async function updateComment(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/comments/${commentId}`;
-
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ body })
+  return await githubRequest<any>('PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}', {
+    owner,
+    repo,
+    comment_id: commentId,
+    body,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return await response.json();
 }
 
 /**
@@ -350,31 +224,18 @@ export async function deleteComment(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/pulls/comments/${commentId}`;
-
-  const response = await fetch(url, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-    }
-  });
-
-  // GitHub sometimes returns 404 for deletes when the comment is already gone
-  // (stale UI state / eventual consistency) or when the token cannot access it.
-  // For our UX, treat "already deleted" as success.
-  if (response.status === 404) {
-    return;
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `GitHub API error: ${response.status} ${response.statusText}`);
+  try {
+    await githubRequest<void>('DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}', {
+      owner,
+      repo,
+      comment_id: commentId,
+    });
+  } catch (error: any) {
+    // GitHub sometimes returns 404 for deletes when the comment is already gone
+    // (stale UI state / eventual consistency) or when the token cannot access it.
+    // For our UX, treat "already deleted" as success.
+    if (error?.status === 404) return;
+    throw error;
   }
 }
 
@@ -402,7 +263,7 @@ export async function setReviewThreadResolved(threadId: string, resolved: boolea
     `;
 
   try {
-    const result = await executeGraphQLQuery<any>(mutation, { threadId }, 0, true);
+    const result = await githubGraphql<any>(mutation, { threadId }, { skipLoadingIndicator: true });
     const thread = resolved
       ? result?.resolveReviewThread?.thread
       : result?.unresolveReviewThread?.thread;
@@ -436,32 +297,12 @@ export async function addReaction(
     throw new Error('Not authenticated with GitHub');
   }
 
-  const token = getGithubToken();
-  if (!token) {
-    throw new Error('GitHub token not available');
-  }
-
-  const url = `https://api.github.com/repos/${owner}/${repo}/issues/comments/${commentId}/reactions`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ content: reaction })
+  return await githubRequest<any>('POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions', {
+    owner,
+    repo,
+    comment_id: commentId,
+    content: reaction,
   });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message ||
-      `GitHub API error: ${response.status} ${response.statusText}`
-    );
-  }
-
-  return await response.json();
 }
 
 /**

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { useDraggable } from './useDraggable';
 
 // Mock console methods to avoid clutter during tests
@@ -9,7 +10,7 @@ vi.mock('console', () => ({
 
 describe('useDraggable', () => {
   let container: HTMLElement;
-  let mockOnReorder: ReturnType<typeof vi.fn>;
+  let mockOnReorder: Mock<(fromIndex: number, toIndex: number) => void>;
   let directive: ReturnType<typeof useDraggable>;
 
   beforeEach(() => {
@@ -23,7 +24,7 @@ describe('useDraggable', () => {
     document.body.appendChild(container);
 
     // Mock the onReorder callback
-    mockOnReorder = vi.fn();
+    mockOnReorder = vi.fn<(fromIndex: number, toIndex: number) => void>();
 
     // Initialize the directive
     directive = useDraggable(container, { onReorder: mockOnReorder });

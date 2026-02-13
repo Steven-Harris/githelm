@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-
   interface Props {
     repoKey: string;
     type: 'pullRequests' | 'actions';
@@ -11,13 +9,20 @@
 
   let { repoKey, type, count, iconType, label }: Props = $props();
   
-  let previousCount = $state(count);
+  let previousCount = $state<number | null>(null);
   let isAnimating = $state(false);
   let changeDirection: 'increase' | 'decrease' | null = $state(null);
 
   $effect(() => {
-    if (previousCount !== count) {
-      changeDirection = count > previousCount ? 'increase' : 'decrease';
+    const currentCount = count;
+
+    if (previousCount === null) {
+      previousCount = currentCount;
+      return;
+    }
+
+    if (previousCount !== currentCount) {
+      changeDirection = currentCount > previousCount ? 'increase' : 'decrease';
       isAnimating = true;
       
       // Stop animation after 2 seconds
@@ -26,7 +31,7 @@
         changeDirection = null;
       }, 2000);
       
-      previousCount = count;
+      previousCount = currentCount;
     }
   });
 </script>

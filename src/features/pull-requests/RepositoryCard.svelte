@@ -5,7 +5,7 @@
 
   let { org, repo, isLoaded, hasPRs, pullRequests = [], filterHint = '' } = $props();
 
-  const repoKey = `${org}/${repo}`;
+  const repoKey = $derived(`${org}/${repo}`);
 
   function toggleCollapse() {
     repositoryCollapseStore.toggle(repoKey);
