@@ -1,4 +1,4 @@
-import { executeGraphQLQuery, fetchData, queueApiCallIfNeeded, type CheckRun, type DetailedPullRequest, type PullRequestCommit, type PullRequestFile, type Review, type ReviewComment } from '$integrations/github';
+import { githubGraphql, githubRequest, queueApiCallIfNeeded, type CheckRun, type DetailedPullRequest, type PullRequestCommit, type PullRequestFile, type Review, type ReviewComment } from '$integrations/github';
 import { captureException } from '$integrations/sentry/client';
 
 export type MergeMethod = 'merge' | 'squash' | 'rebase';
@@ -63,6 +63,33 @@ interface RepoInfo {
 
 type RepoInfoResult = { repoInfo: RepoInfo | null; error: string | null };
 
+async function fetchAllPages<T>(
+  route: string,
+  parameters: Record<string, unknown>,
+  options: { skipLoadingIndicator?: boolean } = {}
+): Promise<T[]> {
+  const perPage = typeof parameters.per_page === 'number' ? (parameters.per_page as number) : 100;
+  const results: T[] = [];
+
+  for (let page = 1; page <= 50; page++) {
+    const pageData = await githubRequest<T[]>(
+      route,
+      {
+        ...parameters,
+        per_page: perPage,
+        page,
+      },
+      options
+    );
+
+    results.push(...pageData);
+
+    if (pageData.length < perPage) break;
+  }
+
+  return results;
+}
+
 function formatFetchError(error: unknown): string {
   if (error instanceof Error) return error.message;
   try {
@@ -75,7 +102,7 @@ function formatFetchError(error: unknown): string {
 async function fetchRepositoryInfo(owner: string, repo: string): Promise<RepoInfoResult> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
+      const repoData = await githubRequest<any>('GET /repos/{owner}/{repo}', { owner, repo }, { skipLoadingIndicator: true });
       const permissionsRaw = repoData?.permissions;
       const permissions: RepoPermissions | null =
         permissionsRaw && typeof permissionsRaw === 'object' ? (permissionsRaw as RepoPermissions) : null;
@@ -146,7 +173,7 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
   `;
 
   try {
-    const result = await executeGraphQLQuery<any>(query, { owner, repo, number: prNumber }, 0, true);
+    const result = await githubGraphql<any>(query, { owner, repo, number: prNumber }, { skipLoadingIndicator: true, cacheTtlMs: 0 });
     const repository = result?.repository;
     const pr = repository?.pullRequest;
 
@@ -177,7 +204,7 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
       if (allowedMergeMethods.length === 0) {
         graphqlError = `graphqlMethodsEmpty: repo={mergeCommitAllowed:${String(repository.mergeCommitAllowed)},squashMergeAllowed:${String(repository.squashMergeAllowed)},rebaseMergeAllowed:${String(repository.rebaseMergeAllowed)}} pr={mergeCommitAllowed:${String(pr.mergeCommitAllowed)},squashMergeAllowed:${String(pr.squashMergeAllowed)},rebaseMergeAllowed:${String(pr.rebaseMergeAllowed)}}`;
         try {
-          const repoData = await fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`);
+          const repoData = await githubRequest<any>('GET /repos/{owner}/{repo}', { owner, repo }, { skipLoadingIndicator: true });
           const restAllowed = inferAllowedMergeMethodsFromRepo(repoData);
           if (restAllowed.length) {
             allowedMergeMethods.push(...restAllowed);
@@ -214,8 +241,8 @@ async function fetchPullRequestMergeContext(owner: string, repo: string, prNumbe
   // This covers cases where GraphQL fields may not be accessible or query errors occur.
   try {
     const [repoData, prData] = await Promise.all([
-      fetchData<any>(`https://api.github.com/repos/${owner}/${repo}`),
-      fetchData<any>(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`),
+      githubRequest<any>('GET /repos/{owner}/{repo}', { owner, repo }, { skipLoadingIndicator: true }),
+      githubRequest<any>('GET /repos/{owner}/{repo}/pulls/{pull_number}', { owner, repo, pull_number: prNumber }, { skipLoadingIndicator: true }),
     ]);
 
     const allowedMergeMethods: MergeMethod[] = [];
@@ -281,7 +308,7 @@ async function fetchThreadResolutionMap(owner: string, repo: string, prNumber: n
   `;
 
   try {
-    const result = await executeGraphQLQuery<any>(query, { owner, repo, number: prNumber }, 0, true);
+    const result = await githubGraphql<any>(query, { owner, repo, number: prNumber }, { skipLoadingIndicator: true, cacheTtlMs: 0 });
     const threads = result?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
 
     for (const thread of threads) {
@@ -320,8 +347,9 @@ export async function fetchDetailedPullRequest(
 ): Promise<DetailedPullRequest | null> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const pr = await fetchData<DetailedPullRequest>(
-        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`
+      const pr = await githubRequest<DetailedPullRequest>(
+        'GET /repos/{owner}/{repo}/pulls/{pull_number}',
+        { owner, repo, pull_number: prNumber }
       );
       return pr;
     } catch (error) {
@@ -348,7 +376,11 @@ export async function fetchReviewComments(
   return queueApiCallIfNeeded(async () => {
     try {
       const [comments, resolutionMap] = await Promise.all([
-        fetchData<ReviewComment[]>(`https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/comments`),
+        fetchAllPages<ReviewComment>(
+          'GET /repos/{owner}/{repo}/pulls/{pull_number}/comments',
+          { owner, repo, pull_number: prNumber },
+          { skipLoadingIndicator: true }
+        ),
         fetchThreadResolutionMap(owner, repo, prNumber),
       ]);
 
@@ -385,8 +417,10 @@ export async function fetchPullRequestFiles(
 ): Promise<PullRequestFile[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const files = await fetchData<PullRequestFile[]>(
-        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/files`
+      const files = await fetchAllPages<PullRequestFile>(
+        'GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
+        { owner, repo, pull_number: prNumber },
+        { skipLoadingIndicator: true }
       );
       return files;
     } catch (error) {
@@ -412,8 +446,10 @@ export async function fetchPullRequestCommits(
 ): Promise<PullRequestCommit[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const commits = await fetchData<PullRequestCommit[]>(
-        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`
+      const commits = await fetchAllPages<PullRequestCommit>(
+        'GET /repos/{owner}/{repo}/pulls/{pull_number}/commits',
+        { owner, repo, pull_number: prNumber },
+        { skipLoadingIndicator: true }
       );
       return commits;
     } catch (error) {
@@ -439,8 +475,10 @@ export async function fetchPullRequestReviews(
 ): Promise<Review[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const reviews = await fetchData<Review[]>(
-        `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/reviews`
+      const reviews = await fetchAllPages<Review>(
+        'GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews',
+        { owner, repo, pull_number: prNumber },
+        { skipLoadingIndicator: true }
       );
       return reviews;
     } catch (error) {
@@ -466,8 +504,10 @@ export async function fetchPullRequestChecks(
 ): Promise<CheckRun[]> {
   return queueApiCallIfNeeded(async () => {
     try {
-      const response = await fetchData<{ check_runs: CheckRun[] }>(
-        `https://api.github.com/repos/${owner}/${repo}/commits/${ref}/check-runs`
+      const response = await githubRequest<{ check_runs: CheckRun[] }>(
+        'GET /repos/{owner}/{repo}/commits/{ref}/check-runs',
+        { owner, repo, ref, per_page: 100 },
+        { skipLoadingIndicator: true }
       );
       return response.check_runs;
     } catch (error) {

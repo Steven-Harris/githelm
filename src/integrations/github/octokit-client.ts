@@ -143,9 +143,14 @@ export interface GithubGraphqlOptions {
 
 export async function githubGraphql<T>(query: string, variables: Record<string, any> = {}, options: GithubGraphqlOptions = {}): Promise<T> {
   return queueApiCallIfNeeded(async () => {
+    const cacheTtlMs = options.cacheTtlMs ?? 60 * 1000;
+    const shouldCache = cacheTtlMs > 0;
+
     const cacheKey = `octokit-graphql-${hashString(query)}-${JSON.stringify(variables)}`;
-    const cached = memoryCacheService.get<T>(cacheKey);
-    if (cached) return cached;
+    if (shouldCache) {
+      const cached = memoryCacheService.get<T>(cacheKey);
+      if (cached) return cached;
+    }
 
     const skipLoadingIndicator = options.skipLoadingIndicator ?? false;
     const octokit = await getOctokit(skipLoadingIndicator);
@@ -154,7 +159,9 @@ export async function githubGraphql<T>(query: string, variables: Record<string, 
       if (!skipLoadingIndicator) startRequest();
       const result = (await octokit.graphql(query, variables)) as T;
       setLastUpdated();
-      memoryCacheService.set(cacheKey, result, options.cacheTtlMs ?? 60 * 1000);
+      if (shouldCache) {
+        memoryCacheService.set(cacheKey, result, cacheTtlMs);
+      }
       return result;
     } catch (error: any) {
       const message = normalizeErrorMessage(error);
