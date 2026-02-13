@@ -218,7 +218,8 @@
   </div>
 
   {#if mergeError}
-    <div class="mt-3 text-xs text-[#f85149] border border-red-800/40 bg-red-900/10 rounded px-3 py-2">
+    <div class="mt-3 text-xs text-[#f85149] border border-red-800/40 bg-red-900/10 rounded px-3 py-2 max-w-sm">
+       {mergeError}
       {mergeError}
     </div>
   {/if}

@@ -1,5 +1,5 @@
 import { captureException } from '$integrations/sentry';
-import { fetchData } from './api-client';
+import { githubRequest } from './octokit-client';
 
 export interface SearchRepositoryResult {
   name: string;
@@ -10,20 +10,14 @@ export interface SearchRepositoryResult {
 export async function searchRepositories(org: string, searchTerm: string): Promise<SearchRepositoryResult[]> {
 
   try {
-    let url: string;
+    const trimmed = searchTerm.trim();
+    const q = trimmed.length > 0 ? `${trimmed} org:${org}` : `org:${org}`;
 
-    // If we have a search term, use GitHub's search to find repositories that match
-    if (searchTerm.trim() && searchTerm.trim().length > 0) {
-      // Encode the search term to handle special characters
-      const encodedSearchTerm = encodeURIComponent(searchTerm.trim());
-      // Use GitHub's search API to find repositories matching the search term in the organization
-      url = `https://api.github.com/search/repositories?q=${encodedSearchTerm}+org:${org}&per_page=50&sort=updated`;
-    } else {
-      // If no search term, get recent repositories from the organization
-      url = `https://api.github.com/search/repositories?q=org:${org}&per_page=50&sort=updated`;
-    }
-
-    const data = await fetchData<{ items: any[] }>(url, 0, true);
+    const data = await githubRequest<{ items: any[] }>(
+      'GET /search/repositories',
+      { q, per_page: 50, sort: 'updated' },
+      { skipLoadingIndicator: true }
+    );
 
     if (!data?.items || !Array.isArray(data.items)) {
       return [];
@@ -52,7 +46,11 @@ export async function searchRepositories(org: string, searchTerm: string): Promi
 
 export async function fetchRepositoryLabels(owner: string, repo: string): Promise<string[]> {
   try {
-    const labels = await fetchData<{ name: string }[]>(`https://api.github.com/repos/${owner}/${repo}/labels?per_page=100`, 0, true);
+    const labels = await githubRequest<{ name: string }[]>(
+      'GET /repos/{owner}/{repo}/labels',
+      { owner, repo, per_page: 100 },
+      { skipLoadingIndicator: true }
+    );
 
     if (!Array.isArray(labels)) {
       return [];
@@ -76,7 +74,11 @@ export async function fetchRepositoryLabels(owner: string, repo: string): Promis
 
 export async function fetchRepositoryWorkflows(owner: string, repo: string): Promise<string[]> {
   try {
-    const workflows = await fetchData<{ workflows: { path: string }[] }>(`https://api.github.com/repos/${owner}/${repo}/actions/workflows`, 0, true);
+    const workflows = await githubRequest<{ workflows: { path: string }[] }>(
+      'GET /repos/{owner}/{repo}/actions/workflows',
+      { owner, repo, per_page: 100 },
+      { skipLoadingIndicator: true }
+    );
 
     if (!workflows?.workflows || !Array.isArray(workflows.workflows)) {
       return [];

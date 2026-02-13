@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchData } from './api-client';
+import { githubRequest } from './octokit-client';
 import { searchRepositories } from './repositories';
 
-// Mock the api-client
-vi.mock('./api-client', () => ({
-  fetchData: vi.fn(),
+// Mock octokit wrapper
+vi.mock('./octokit-client', () => ({
+  githubRequest: vi.fn(),
 }));
 
 // Mock sentry
@@ -12,7 +12,7 @@ vi.mock('$integrations/sentry', () => ({
   captureException: vi.fn(),
 }));
 
-const mockFetchData = vi.mocked(fetchData);
+const mockGithubRequest = vi.mocked(githubRequest);
 
 describe('searchRepositories', () => {
   beforeEach(() => {
@@ -39,16 +39,16 @@ describe('searchRepositories', () => {
         ],
       };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       await searchRepositories(org, searchTerm);
 
       // Assert
-      expect(mockFetchData).toHaveBeenCalledWith(
-        'https://api.github.com/search/repositories?q=my-repo+org:test-org&per_page=50&sort=updated',
-        0,
-        true
+      expect(mockGithubRequest).toHaveBeenCalledWith(
+        'GET /search/repositories',
+        { q: 'my-repo org:test-org', per_page: 50, sort: 'updated' },
+        { skipLoadingIndicator: true }
       );
     });
 
@@ -58,16 +58,16 @@ describe('searchRepositories', () => {
       const searchTerm = 'my-repo@special';
       const mockResponse = { items: [] };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       await searchRepositories(org, searchTerm);
 
       // Assert
-      expect(mockFetchData).toHaveBeenCalledWith(
-        'https://api.github.com/search/repositories?q=my-repo%40special+org:test-org&per_page=50&sort=updated',
-        0,
-        true
+      expect(mockGithubRequest).toHaveBeenCalledWith(
+        'GET /search/repositories',
+        { q: 'my-repo@special org:test-org', per_page: 50, sort: 'updated' },
+        { skipLoadingIndicator: true }
       );
     });
 
@@ -77,16 +77,16 @@ describe('searchRepositories', () => {
       const searchTerm = '  my-repo  ';
       const mockResponse = { items: [] };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       await searchRepositories(org, searchTerm);
 
       // Assert
-      expect(mockFetchData).toHaveBeenCalledWith(
-        'https://api.github.com/search/repositories?q=my-repo+org:test-org&per_page=50&sort=updated',
-        0,
-        true
+      expect(mockGithubRequest).toHaveBeenCalledWith(
+        'GET /search/repositories',
+        { q: 'my-repo org:test-org', per_page: 50, sort: 'updated' },
+        { skipLoadingIndicator: true }
       );
     });
   });
@@ -98,16 +98,16 @@ describe('searchRepositories', () => {
       const searchTerm = '';
       const mockResponse = { items: [] };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       await searchRepositories(org, searchTerm);
 
       // Assert
-      expect(mockFetchData).toHaveBeenCalledWith(
-        'https://api.github.com/search/repositories?q=org:test-org&per_page=50&sort=updated',
-        0,
-        true
+      expect(mockGithubRequest).toHaveBeenCalledWith(
+        'GET /search/repositories',
+        { q: 'org:test-org', per_page: 50, sort: 'updated' },
+        { skipLoadingIndicator: true }
       );
     });
 
@@ -117,16 +117,16 @@ describe('searchRepositories', () => {
       const searchTerm = '   ';
       const mockResponse = { items: [] };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       await searchRepositories(org, searchTerm);
 
       // Assert
-      expect(mockFetchData).toHaveBeenCalledWith(
-        'https://api.github.com/search/repositories?q=org:test-org&per_page=50&sort=updated',
-        0,
-        true
+      expect(mockGithubRequest).toHaveBeenCalledWith(
+        'GET /search/repositories',
+        { q: 'org:test-org', per_page: 50, sort: 'updated' },
+        { skipLoadingIndicator: true }
       );
     });
   });
@@ -151,7 +151,7 @@ describe('searchRepositories', () => {
         ],
       };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       const result = await searchRepositories(org, searchTerm);
@@ -177,7 +177,7 @@ describe('searchRepositories', () => {
       const searchTerm = 'nonexistent';
       const mockResponse = { items: [] };
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       const result = await searchRepositories(org, searchTerm);
@@ -192,7 +192,7 @@ describe('searchRepositories', () => {
       const searchTerm = 'test';
       const mockResponse = {};
 
-      mockFetchData.mockResolvedValue(mockResponse);
+      mockGithubRequest.mockResolvedValue(mockResponse);
 
       // Act
       const result = await searchRepositories(org, searchTerm);
@@ -206,7 +206,7 @@ describe('searchRepositories', () => {
       const org = 'test-org';
       const searchTerm = 'test';
 
-      mockFetchData.mockRejectedValue(new Error('API Error'));
+      mockGithubRequest.mockRejectedValue(new Error('API Error'));
 
       // Act
       const result = await searchRepositories(org, searchTerm);
@@ -220,7 +220,7 @@ describe('searchRepositories', () => {
       const org = 'test-org';
       const searchTerm = 'test';
 
-      mockFetchData.mockRejectedValue(new Error('Rate limit exceeded'));
+      mockGithubRequest.mockRejectedValue(new Error('Rate limit exceeded'));
 
       // Act
       const result = await searchRepositories(org, searchTerm);
