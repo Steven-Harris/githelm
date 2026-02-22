@@ -149,7 +149,7 @@ async function fetchRepositoryInfo(owner: string, repo: string): Promise<RepoInf
 
 type MergeContextResult = { mergeContext: PullRequestMergeContext | null; error: string | null };
 
-async function fetchPullRequestMergeContext(owner: string, repo: string, prNumber: number): Promise<MergeContextResult> {
+export async function fetchPullRequestMergeContext(owner: string, repo: string, prNumber: number): Promise<MergeContextResult> {
   let graphqlError: string | null = null;
   let restError: string | null = null;
 

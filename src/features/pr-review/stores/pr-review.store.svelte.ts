@@ -381,8 +381,19 @@ export function createPRReviewState() {
         }
       }
 
+      // Merge to avoid briefly dropping locally-added reviews during eventual consistency.
+      const freshReviewsById = new Map<number, Review>();
+      for (const r of freshReviews) freshReviewsById.set(r.id, r);
+
+      const mergedReviews: Review[] = [...freshReviews];
+      for (const existing of state.reviews) {
+        if (!freshReviewsById.has(existing.id)) {
+          mergedReviews.unshift(existing);
+        }
+      }
+
       state.reviewComments = mergedComments;
-      state.reviews = freshReviews;
+      state.reviews = mergedReviews;
     } catch (error) {
       // Non-fatal: background refresh should never disrupt local drafting.
       console.warn('Failed to refresh review discussion:', error);
@@ -890,14 +901,35 @@ export function createPRReviewState() {
 
       // Refresh server truth: the review creation response does not reliably include
       // the newly-created inline comments, so we refetch them.
+      // Also refresh merge context since the review decision may have changed.
       try {
-        const { fetchReviewComments, fetchPullRequestReviews } = await import('../services/pr-review.service');
-        const [freshComments, freshReviews] = await Promise.all([
+        const { fetchReviewComments, fetchPullRequestReviews, fetchPullRequestMergeContext } = await import('../services/pr-review.service');
+        const [freshComments, freshReviews, mergeContextResult] = await Promise.all([
           fetchReviewComments(owner, repo, state.pullRequest.number),
-          fetchPullRequestReviews(owner, repo, state.pullRequest.number)
+          fetchPullRequestReviews(owner, repo, state.pullRequest.number),
+          fetchPullRequestMergeContext(owner, repo, state.pullRequest.number)
         ]);
         state.reviewComments = freshComments;
-        state.reviews = freshReviews;
+
+        // Merge reviews to avoid the optimistic review disappearing if the
+        // /reviews endpoint is briefly stale.
+        const freshById = new Map<number, Review>();
+        for (const r of freshReviews) freshById.set(r.id, r);
+
+        const mergedReviews: Review[] = [...freshReviews];
+        for (const existing of state.reviews) {
+          if (!freshById.has(existing.id)) {
+            mergedReviews.unshift(existing);
+          }
+        }
+        state.reviews = mergedReviews;
+
+        if (mergeContextResult.mergeContext) {
+          state.mergeContext = mergeContextResult.mergeContext;
+        }
+        if (mergeContextResult.error) {
+          state.mergeContextError = mergeContextResult.error;
+        }
       } catch (refreshError) {
         // If refresh fails, we still keep the optimistic review push above.
         console.warn('Failed to refresh review data after submit:', refreshError);
