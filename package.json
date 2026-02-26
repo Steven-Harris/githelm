@@ -61,7 +61,7 @@
     "@tailwindcss/vite": "^4.2.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.3.1",
-    "@tsconfig/svelte": "5.0.6",
+    "@tsconfig/svelte": "5.0.8",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "@vite-pwa/assets-generator": "^1.0.2",
