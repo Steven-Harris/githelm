@@ -10,9 +10,30 @@
       totalDeletions: number;
     };
     commitCount: number;
+    reviewDecision?: string | null;
   }
 
-  let { pullRequest, fileStats, commitCount }: Props = $props();
+  let { pullRequest, fileStats, commitCount, reviewDecision = null }: Props = $props();
+
+  const reviewStatus = $derived.by(() => {
+    if (pullRequest.merged) {
+      return { label: 'Merged', color: 'bg-purple-900/30 text-purple-300 border-purple-800/50' };
+    }
+    if (pullRequest.state?.toLowerCase() === 'closed') {
+      return { label: 'Closed', color: 'bg-red-900/30 text-red-300 border-red-800/50' };
+    }
+    if (reviewDecision === 'APPROVED') {
+      return { label: 'Approved', color: 'bg-green-900/30 text-green-300 border-green-800/50' };
+    }
+    if (reviewDecision === 'CHANGES_REQUESTED') {
+      return { label: 'Changes requested', color: 'bg-orange-900/30 text-orange-300 border-orange-800/50' };
+    }
+    if (reviewDecision === 'REVIEW_REQUIRED') {
+      return { label: 'Needs review', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };
+    }
+    // Default for open PRs with no explicit review decision
+    return { label: 'Needs review', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };
+  });
 </script>
 
 <div class="bg-[#161b22] shadow-sm border-b border-[#30363d] px-6 py-4 flex-shrink-0">
@@ -33,6 +54,10 @@
       </h1>
 
       <div class="flex items-center space-x-4 mt-2 text-sm text-[#8b949e]">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {reviewStatus.color}">
+          {reviewStatus.label}
+        </span>
+        <span class="text-[#30363d]">•</span>
         <div class="flex items-center">
           <img src={pullRequest.user.avatar_url} alt={pullRequest.user.login} class="w-5 h-5 rounded-full mr-2" />
           <span class="text-[#c9d1d9]">{pullRequest.user.login}</span>

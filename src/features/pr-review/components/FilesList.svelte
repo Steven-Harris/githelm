@@ -3,7 +3,11 @@
   import FileDiff from '../FileDiff.svelte';
   import { getPRReviewContext } from '../stores/context';
 
-  const { prReview, scrollManager, canReview, isAuthenticated } = getPRReviewContext();
+  const ctx = getPRReviewContext();
+  const prReview = $derived(ctx.prReview);
+  const scrollManager = $derived(ctx.scrollManager);
+  const canReview = $derived(ctx.canReview);
+  const isAuthenticated = $derived(ctx.isAuthenticated);
 
   let mainContentElement = $state<HTMLDivElement | undefined>(undefined);
 

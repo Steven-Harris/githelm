@@ -84,7 +84,7 @@
           <ErrorState error={prReview.state.error} onRetry={() => prReview.loadPullRequest(owner, repo, prNumber)} />
         </div>
       {:else if prReview.state.pullRequest}
-        <PRHeader pullRequest={prReview.state.pullRequest} commitCount={prReview.state.commits.length} fileStats={prReview.fileStats} />
+        <PRHeader pullRequest={prReview.state.pullRequest} commitCount={prReview.state.commits.length} fileStats={prReview.fileStats} reviewDecision={prReview.state.mergeContext?.reviewDecision} />
 
         {#if prReview.state.pullRequest.body}
           <div class="px-6 pt-4">

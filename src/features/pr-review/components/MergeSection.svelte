@@ -99,13 +99,25 @@
 
   const canMergeNormally = $derived.by(() => {
     const status = mergeStateStatus;
+    const decision = reviewDecision;
+
+    // If GitHub provides a review decision, require APPROVED to satisfy required approvals/codeowner rules.
+    const isApproved = decision === 'APPROVED';
+
     // GitHub can report UNKNOWN while mergeability is still being computed.
     // Allow attempting a merge in that state; GitHub will enforce server-side rules.
-    if (status && status !== 'CLEAN' && status !== 'UNKNOWN') return false;
-    // If GitHub provides a review decision, require APPROVED to satisfy required approvals/codeowner rules.
-    const decision = reviewDecision;
+    // BLOCKED often means "waiting for required reviews"; if we just approved,
+    // treat it as mergeable — GitHub will re-evaluate server-side.
+    if (status && status !== 'CLEAN' && status !== 'UNKNOWN') {
+      if (status === 'BLOCKED' && isApproved) {
+        // Approval satisfies the block; allow merge attempt.
+        return true;
+      }
+      return false;
+    }
+
     if (!decision) return true;
-    return decision === 'APPROVED';
+    return isApproved;
   });
 
   const canBypass = $derived.by(() => {

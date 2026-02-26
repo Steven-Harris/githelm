@@ -14,7 +14,10 @@
 
   const { onCommentClick }: Props = $props();
 
-  const { prReview, canReview, isAuthenticated } = getPRReviewContext();
+  const ctx = getPRReviewContext();
+  const prReview = $derived(ctx.prReview);
+  const canReview = $derived(ctx.canReview);
+  const isAuthenticated = $derived(ctx.isAuthenticated);
 
   const SIDEBAR_WIDTH_KEY = 'PR_REVIEW_SIDEBAR_WIDTH';
   const MIN_SIDEBAR_WIDTH = 280;
