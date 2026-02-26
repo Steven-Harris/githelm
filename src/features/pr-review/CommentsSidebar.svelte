@@ -160,15 +160,6 @@
   </div>
 
   <div class="divide-y divide-[#30363d]">
-    <MergeSection
-      pullRequest={prReview.state.pullRequest}
-      mergeContext={prReview.state.mergeContext}
-      isAuthenticated={isAuthenticated}
-      isMerging={prReview.state.mergeSubmitting}
-      mergeError={prReview.state.mergeError}
-      onMerge={prReview.mergePullRequest}
-    />
-
     {#if isAuthenticated}
       <PendingCommentsSection
         selectedLines={prReview.state.selectedLines}
@@ -182,14 +173,26 @@
       />
     {/if}
 
-    {#if canReview && isAuthenticated}
+    {#if isAuthenticated}
       <ReviewSubmissionSection
         pendingComments={prReview.state.pendingComments}
         reviewDraft={prReview.state.reviewDraft}
         onUpdateReviewDraft={prReview.updateReviewDraft}
         onSubmitReview={prReview.submitReview}
         canSubmit={true}
-      />
+        canReview={canReview}
+      >
+        {#snippet children()}
+          <MergeSection
+            pullRequest={prReview.state.pullRequest}
+            mergeContext={prReview.state.mergeContext}
+            {isAuthenticated}
+            isMerging={prReview.state.mergeSubmitting}
+            mergeError={prReview.state.mergeError}
+            onMerge={prReview.mergePullRequest}
+          />
+        {/snippet}
+      </ReviewSubmissionSection>
     {/if}
 
     <OverallCommentsSection reviews={overallReviewReviews} />

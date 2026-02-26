@@ -8,10 +8,11 @@
     onUpdateReviewDraft?: (body: string, event?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
     onSubmitReview?: (event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
     canSubmit?: boolean;
+    canReview?: boolean;
     children?: Snippet;
   }
 
-  const { pendingComments = [], reviewDraft = { body: '', event: 'COMMENT' }, onUpdateReviewDraft, onSubmitReview, canSubmit = true, children }: Props = $props();
+  const { pendingComments = [], reviewDraft = { body: '', event: 'COMMENT' }, onUpdateReviewDraft, onSubmitReview, canSubmit = true, canReview = true, children }: Props = $props();
 
   // Count pending comments that are part of review
   const reviewCommentsCount = $derived.by(() => pendingComments.filter((c) => c.isPartOfReview && c.body.trim()).length);
@@ -27,6 +28,7 @@
 </script>
 
 <div class="border-t border-[#30363d] bg-[#0d1117] p-4 text-[#c9d1d9]">
+  {#if canReview}
   <h4 class="text-sm font-medium text-[#f0f6fc] mb-1">Review</h4>
   <div class="text-xs text-[#8b949e] mb-3">
     {#if reviewCommentsCount > 0}
@@ -81,6 +83,7 @@
 
   {#if !canRequestChanges}
     <p class="text-xs text-[#8b949e] mt-2">Request changes requires an overall comment.</p>
+  {/if}
   {/if}
 
   {@render children?.()}

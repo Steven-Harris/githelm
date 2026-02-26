@@ -36,7 +36,7 @@
   });
 
   let selectedMethod = $state<MergeMethod>('merge');
-  let bypassReason = $state('');
+  let forceChecked = $state(false);
   let commitTitle = $state('');
   let commitMessage = $state('');
 
@@ -171,35 +171,32 @@
     }
   }
 
+  const canMerge = $derived.by(() => {
+    if (canMergeNormally) return true;
+    if (canBypass && forceChecked) return true;
+    return false;
+  });
+
   const disableReason = $derived.by(() => {
     if (!isAuthenticated) return 'Login required';
     if (!prIsOpen) return statusText;
     // If we have explicit permission signals, honor them; otherwise let GitHub enforce on submit.
     if (mergeContext && !viewerCanMerge && !viewerCanMergeAsAdmin) return 'You do not have permission to merge';
-    if (!canMergeNormally && !canBypass) return statusText;
+    if (!canMerge) return statusText;
     return null;
   });
 
   function handleMergeClick() {
     if (disableReason) return;
-    onMerge(selectedMethod, undefined, {
-      title: commitTitle.trim() || undefined,
-      message: commitMessage.trim() || undefined,
-    });
-  }
-
-  function handleBypassMergeClick() {
-    if (disableReason) return;
-    const reason = bypassReason.trim();
-    if (!reason) return;
-    onMerge(selectedMethod, reason, {
+    const bypass = !canMergeNormally && forceChecked ? 'Force merge via admin bypass' : undefined;
+    onMerge(selectedMethod, bypass, {
       title: commitTitle.trim() || undefined,
       message: commitMessage.trim() || undefined,
     });
   }
 </script>
 
-<div class="p-4 bg-[#0d1117]">
+<div class="mt-4 pt-4 border-t border-[#21262d]">
   <div class="flex items-center justify-between gap-3">
     <div>
       <h4 class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">Merge</h4>
@@ -213,6 +210,7 @@
     </div>
   {/if}
 
+  {#if !pullRequest.merged}
   {#if allowedMethods.length === 0}
     <div class="mt-3 text-xs text-[#8b949e] border border-[#30363d] bg-[#161b22] rounded px-3 py-2">
       Merge methods unavailable.
@@ -235,14 +233,31 @@
     </div>
   {/if}
 
-  <!-- Normal merge (all requirements satisfied) -->
+  <!-- Force merge checkbox (admin bypass) -->
+  {#if isAuthenticated && prIsOpen && !canMergeNormally && canBypass && allowedMethods.length > 0}
+    <label class="mt-3 flex items-center gap-2 cursor-pointer select-none">
+      <input
+        type="checkbox"
+        bind:checked={forceChecked}
+        disabled={isMerging}
+        class="accent-[#a37100] w-4 h-4 rounded cursor-pointer"
+      />
+      <span class="text-xs text-[#d29922]">Force merge (bypass requirements)</span>
+    </label>
+  {/if}
+
+  <!-- Merge button -->
   <div class="mt-3">
     <button
       type="button"
       onclick={handleMergeClick}
-      disabled={!!disableReason || isMerging || !canMergeNormally}
-      title={disableReason ?? (canMergeNormally ? 'Merge pull request' : statusText)}
-      class="w-full bg-[#2ea043] text-white px-3 py-2 rounded text-sm font-medium hover:bg-[#3fb950] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      disabled={!!disableReason || isMerging}
+      title={disableReason ?? 'Merge pull request'}
+      class={`w-full text-white px-3 py-2 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+        !canMergeNormally && forceChecked
+          ? 'bg-[#a37100] hover:bg-[#bb8009]'
+          : 'bg-[#2ea043] hover:bg-[#3fb950]'
+      }`}
     >
       {isMerging ? 'Merging…' : `${methodLabel(selectedMethod)} pull request`}
     </button>
@@ -273,31 +288,7 @@
       ></textarea>
     </div>
   {/if}
-
-  <!-- Bypass flow (admin) -->
-  {#if isAuthenticated && prIsOpen && !canMergeNormally && canBypass && allowedMethods.length > 0}
-    <div class="mt-3 border border-[#30363d] rounded-lg p-3 bg-[#161b22]">
-      <label class="block text-xs font-medium text-[#8b949e] mb-2" for="bypass-reason">
-        Bypass reason (required)
-      </label>
-      <textarea
-        id="bypass-reason"
-        value={bypassReason}
-        oninput={(e) => (bypassReason = (e.target as HTMLTextAreaElement).value)}
-        placeholder="Why are you bypassing required checks/reviews?"
-        class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
-        rows="3"
-      ></textarea>
-
-      <button
-        type="button"
-        onclick={handleBypassMergeClick}
-        disabled={!!disableReason || isMerging || !bypassReason.trim()}
-        class="mt-2 w-full bg-[#a37100] text-white px-3 py-2 rounded text-sm font-medium hover:bg-[#bb8009] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        title="Merge even if requirements are not satisfied"
-      >
-        {isMerging ? 'Merging…' : 'Merge anyway (admin)'}
-      </button>
-    </div>
   {/if}
+
+
 </div>

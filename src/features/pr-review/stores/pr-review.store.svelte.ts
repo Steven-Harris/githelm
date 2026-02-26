@@ -6,6 +6,8 @@ import type {
   Review,
   ReviewComment
 } from '$integrations/github';
+import { memoryCacheService } from '$shared/services/memory-cache.service';
+import { eventBus } from '$shared/stores/event-bus.store';
 import type { MergeMethod, PullRequestMergeContext } from '../services/pr-review.service';
 
 export interface SelectedLine {
@@ -221,6 +223,19 @@ export function createPRReviewState() {
     const owner = fullName?.split('/')?.[0] ?? pr?.base?.user?.login ?? pr?.head?.user?.login ?? pr?.user?.login ?? '';
     const repo = repoName ?? '';
     return { owner, repo };
+  };
+
+  /**
+   * Invalidate dashboard pull request caches for a given repo so that
+   * navigating back to the dashboard triggers a fresh fetch.
+   */
+  const invalidatePullRequestCaches = (owner: string, repo: string) => {
+    // Invalidate any cached pull-request data for this repo.
+    memoryCacheService.invalidatePattern(`pull-requests.*${owner}.*${repo}`);
+    // Also invalidate GraphQL caches that may contain stale PR data.
+    memoryCacheService.invalidatePattern(`octokit-graphql`);
+    // Signal the dashboard event bus to trigger an immediate refresh.
+    eventBus.set('pr-state-changed');
   };
 
   // Actions
@@ -899,41 +914,60 @@ export function createPRReviewState() {
       // Add the new review to our state
       state.reviews.push(newReview);
 
+      // Optimistically update merge context to reflect the review decision
+      // so the UI shows the correct state without waiting for GitHub to propagate.
+      if (state.mergeContext) {
+        if (event === 'APPROVE') {
+          state.mergeContext = { ...state.mergeContext, reviewDecision: 'APPROVED' };
+        } else if (event === 'REQUEST_CHANGES') {
+          state.mergeContext = { ...state.mergeContext, reviewDecision: 'CHANGES_REQUESTED' };
+        }
+      }
+
+      // Invalidate dashboard cache so navigating back shows fresh data.
+      invalidatePullRequestCaches(owner, repo);
+
       // Refresh server truth: the review creation response does not reliably include
       // the newly-created inline comments, so we refetch them.
       // Also refresh merge context since the review decision may have changed.
-      try {
-        const { fetchReviewComments, fetchPullRequestReviews, fetchPullRequestMergeContext } = await import('../services/pr-review.service');
-        const [freshComments, freshReviews, mergeContextResult] = await Promise.all([
-          fetchReviewComments(owner, repo, state.pullRequest.number),
-          fetchPullRequestReviews(owner, repo, state.pullRequest.number),
-          fetchPullRequestMergeContext(owner, repo, state.pullRequest.number)
-        ]);
-        state.reviewComments = freshComments;
+      const refreshReviewData = async () => {
+        try {
+          const { fetchReviewComments, fetchPullRequestReviews, fetchPullRequestMergeContext } = await import('../services/pr-review.service');
+          const [freshComments, freshReviews, mergeContextResult] = await Promise.all([
+            fetchReviewComments(owner, repo, state.pullRequest!.number),
+            fetchPullRequestReviews(owner, repo, state.pullRequest!.number),
+            fetchPullRequestMergeContext(owner, repo, state.pullRequest!.number)
+          ]);
+          state.reviewComments = freshComments;
 
-        // Merge reviews to avoid the optimistic review disappearing if the
-        // /reviews endpoint is briefly stale.
-        const freshById = new Map<number, Review>();
-        for (const r of freshReviews) freshById.set(r.id, r);
+          // Merge reviews to avoid the optimistic review disappearing if the
+          // /reviews endpoint is briefly stale.
+          const freshById = new Map<number, Review>();
+          for (const r of freshReviews) freshById.set(r.id, r);
 
-        const mergedReviews: Review[] = [...freshReviews];
-        for (const existing of state.reviews) {
-          if (!freshById.has(existing.id)) {
-            mergedReviews.unshift(existing);
+          const mergedReviews: Review[] = [...freshReviews];
+          for (const existing of state.reviews) {
+            if (!freshById.has(existing.id)) {
+              mergedReviews.unshift(existing);
+            }
           }
-        }
-        state.reviews = mergedReviews;
+          state.reviews = mergedReviews;
 
-        if (mergeContextResult.mergeContext) {
-          state.mergeContext = mergeContextResult.mergeContext;
+          if (mergeContextResult.mergeContext) {
+            state.mergeContext = mergeContextResult.mergeContext;
+          }
+          if (mergeContextResult.error) {
+            state.mergeContextError = mergeContextResult.error;
+          }
+        } catch (refreshError) {
+          // If refresh fails, we still keep the optimistic review push above.
+          console.warn('Failed to refresh review data after submit:', refreshError);
         }
-        if (mergeContextResult.error) {
-          state.mergeContextError = mergeContextResult.error;
-        }
-      } catch (refreshError) {
-        // If refresh fails, we still keep the optimistic review push above.
-        console.warn('Failed to refresh review data after submit:', refreshError);
-      }
+      };
+
+      // Refresh immediately, then again after a short delay to beat GitHub eventual consistency.
+      await refreshReviewData();
+      setTimeout(() => void refreshReviewData(), 3000);
 
       // Clear pending state
       state.pendingComments = [];
@@ -1010,24 +1044,55 @@ export function createPRReviewState() {
         commitMessage: commit?.message,
       });
 
-      // Refresh PR data after merge so UI updates (merged/closed state, checks, etc.).
-      try {
-        const { fetchAllPullRequestData } = await import('../services/pr-review.service');
-        const data = await fetchAllPullRequestData(owner, repo, pr.number);
-
-        state.pullRequest = data.pullRequest;
-        state.reviewComments = data.reviewComments;
-        state.files = data.files;
-        state.commits = data.commits;
-        state.reviews = data.reviews;
-        state.checks = data.checks;
-        state.viewerCanResolveThreads = data.viewerCanResolveThreads;
-        state.mergeContext = (data as any).mergeContext ?? null;
-        state.mergeContextError = (data as any).mergeContextError ?? null;
-      } catch (refreshError) {
-        // Non-fatal: merge succeeded.
-        console.warn('Failed to refresh PR data after merge:', refreshError);
+      // Optimistically update the PR state so the UI reflects the merge immediately
+      // without waiting for GitHub eventual consistency.
+      if (state.pullRequest) {
+        state.pullRequest = {
+          ...state.pullRequest,
+          state: 'closed',
+          merged: true,
+          merged_at: new Date().toISOString(),
+        };
       }
+      if (state.mergeContext) {
+        state.mergeContext = {
+          ...state.mergeContext,
+          mergeStateStatus: 'CLEAN',
+        };
+      }
+
+      // Invalidate dashboard cache so navigating back shows fresh data.
+      invalidatePullRequestCaches(owner, repo);
+
+      // Refresh PR data after merge so UI updates with full server truth.
+      const refreshAfterMerge = async () => {
+        try {
+          const { fetchAllPullRequestData } = await import('../services/pr-review.service');
+          const data = await fetchAllPullRequestData(owner, repo, pr.number);
+
+          // Only apply server data if it reflects the merged state.
+          // Otherwise, keep optimistic state and retry later.
+          const serverPR = data.pullRequest;
+          if (serverPR.merged || serverPR.state === 'closed') {
+            state.pullRequest = data.pullRequest;
+            state.reviewComments = data.reviewComments;
+            state.files = data.files;
+            state.commits = data.commits;
+            state.reviews = data.reviews;
+            state.checks = data.checks;
+            state.viewerCanResolveThreads = data.viewerCanResolveThreads;
+            state.mergeContext = (data as any).mergeContext ?? null;
+            state.mergeContextError = (data as any).mergeContextError ?? null;
+          }
+        } catch (refreshError) {
+          // Non-fatal: merge succeeded.
+          console.warn('Failed to refresh PR data after merge:', refreshError);
+        }
+      };
+
+      // Refresh immediately, then again after a delay to handle GitHub eventual consistency.
+      await refreshAfterMerge();
+      setTimeout(() => void refreshAfterMerge(), 3000);
     } catch (error) {
       state.mergeError = error instanceof Error ? error.message : 'Failed to merge pull request';
     } finally {

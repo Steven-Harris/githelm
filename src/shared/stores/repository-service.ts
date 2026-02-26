@@ -67,6 +67,14 @@ eventBus.subscribe(async (event) => {
   if (event === 'config-updated') {
     await refreshConfigurations();
   }
+  if (event === 'pr-state-changed') {
+    // A PR was approved, merged, or otherwise changed on the review page.
+    // Refresh pull request data so the dashboard shows the current state.
+    const prConfigs = get(pullRequestConfigs);
+    if (prConfigs.length) {
+      await refreshPullRequestsData(prConfigs);
+    }
+  }
 });
 
 // Repository configuration management functions
