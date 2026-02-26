@@ -5,7 +5,8 @@
 
   let { org, repo, workflowRuns = [] } = $props();
   
-  const repoKey = `${org}/${repo}`;
+  const repoKey = $derived(`${org}/${repo}`);
+  const isCollapsed = $derived(repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore));
   
   function toggleCollapse() {
     repositoryCollapseStore.toggle(repoKey);
@@ -19,9 +20,9 @@
         <button 
           onclick={toggleCollapse}
           class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
-          title={repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore) ? 'Expand repository' : 'Collapse repository'}
+          title={isCollapsed ? 'Expand repository' : 'Collapse repository'}
         >
-          {#if repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore)}
+          {#if isCollapsed}
             <!-- Expand icon (chevron right) -->
             <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z"/>
@@ -50,7 +51,7 @@
       </div>
     </div>
 
-    {#if !repositoryCollapseStore.isCollapsed(repoKey, $repositoryCollapseStore)}
+    {#if !isCollapsed}
       {#if workflowRuns?.length > 0}
         <div class="divide-y divide-[#21262d]">
           {#each workflowRuns as run, index (index)}

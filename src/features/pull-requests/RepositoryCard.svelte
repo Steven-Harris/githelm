@@ -1,12 +1,12 @@
 <script lang="ts">
-  import Reviews from './Reviews.svelte';
   import { repositoryCollapseStore } from '$shared/stores/repository-collapse.store';
   import CountBadge from '$shared/ui/CountBadge.svelte';
+  import Reviews from './Reviews.svelte';
 
   let { org, repo, isLoaded, hasPRs, pullRequests = [], filterHint = '' } = $props();
-  
-  const repoKey = `${org}/${repo}`;
-  
+
+  const repoKey = $derived(`${org}/${repo}`);
+
   function toggleCollapse() {
     repositoryCollapseStore.toggle(repoKey);
   }
@@ -17,20 +17,16 @@
 <div class="hero-card">
   <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
     <div class="flex items-center gap-3">
-      <button 
-        onclick={toggleCollapse}
-        class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
-        title={isCollapsed ? 'Expand repository' : 'Collapse repository'}
-      >
+      <button onclick={toggleCollapse} class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]" title={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-label={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-pressed={!isCollapsed}>
         {#if isCollapsed}
           <!-- Expand icon (chevron right) -->
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z"/>
+            <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z" />
           </svg>
         {:else}
           <!-- Collapse icon (chevron down) -->
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
           </svg>
         {/if}
       </button>
@@ -42,17 +38,13 @@
     </div>
     <div class="flex items-center gap-3">
       {#if isLoaded}
-        <CountBadge 
-          repoKey={repoKey}
-          type="pullRequests"
-          count={pullRequests.length}
-          iconType="pullRequest"
-          label="PR"
-        />
+        <CountBadge {repoKey} type="pullRequests" count={pullRequests.length} iconType="pullRequest" label="PR" />
       {:else}
         <div class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
           <svg class="fill-[#8b949e]" height="16" viewBox="0 0 16 16" version="1.1" width="16">
-            <path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"></path>
+            <path
+              d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"
+            ></path>
           </svg>
           <span class="text-[#8b949e]">Loading...</span>
         </div>
@@ -79,25 +71,30 @@
           <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + index * 0.05}s">
             <div class="flex justify-between items-start">
               <div class="flex-1 min-w-0">
-                <div class="flex items">
+                <div class="flex items-center">
                   {#if pr.user?.avatar_url}
                     <img src={pr.user.avatar_url} class="avatar mt-1 mr-2" alt={`Avatar of ${pr.user.login || 'User'}`} />
                   {:else}
                     <div class="avatar mt-1 mr-2 bg-[#30363d] flex items-center justify-center">
                       <svg class="w-4 h-4 text-[#8b949e]" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                        <path
+                          d="M8 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"
+                        />
                       </svg>
                     </div>
                   {/if}
-                  <a href={pr.html_url} target="_blank" class="text-[#58a6ff] hover:text-[#79c0ff] text-lg font-medium hover:underline block truncate">
-                    {pr.title}
-                  </a>
-                </div>
-                <div class="text-sm text-[#8b949e] mt-1">
-                  #{pr.number} opened {pr.createdAt} by
-                  <a href={`https://github.com/${pr.user?.login || 'unknown'}`} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff]">
-                    {pr.user?.login || 'Unknown User'}
-                  </a>
+                  <div class="flex flex-col min-w-0 flex-1">
+                    <a href={`/pr/${org}/${repo}/${pr.number}`} data-sveltekit-preload-data class="text-[#58a6ff] hover:text-[#79c0ff] text-lg font-medium hover:underline block truncate">
+                      {pr.title}
+                    </a>
+                    <div class="text-sm text-[#8b949e] mt-1">
+                      #{pr.number} opened {pr.createdAt} by
+                      <a href={`https://github.com/${pr.user?.login || 'unknown'}`} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff]">
+                        {pr.user?.login || 'Unknown User'}
+                      </a>
+                      • <a href={pr.html_url} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff] text-xs">View on GitHub ↗</a>
+                    </div>
+                  </div>
                 </div>
                 {#if pr.labels?.length > 0}
                   <div class="mt-2 flex flex-wrap gap-1">

@@ -1,41 +1,38 @@
-import { type RepoConfig } from '$integrations/firebase';
-import { type CombinedConfig } from '$features/config/stores/config.store';
-import { 
-  updatePullRequestConfigs,
+import {
+  actionRepos,
+  actionsConfigs,
+  clearActionsStores,
+  initializeActionsPolling,
+  refreshActionsData,
+  updateActionsConfigs
+} from '$features/actions/stores/actions.store';
+import { clearConfigStores, type CombinedConfig } from '$features/config/stores/config.store';
+import {
   clearPullRequestStores,
   pullRequestConfigs,
-  pullRequestRepos
+  pullRequestRepos,
+  updatePullRequestConfigs
 } from '$features/pull-requests/stores/pull-requests.store';
-import { 
-  initializeActionsPolling, 
-  refreshActionsData,
-  updateActionsConfigs,
-  clearActionsStores,
-  actionsConfigs,
-  actionRepos
-} from '$features/actions/stores/actions.store';
-import { 
-  loadRepositoryConfigs, 
-  getCombinedConfigs, 
-  updateRepositoryConfigs,
-  refreshConfigurations,
-  pullRequestConfigs as configPullRequestConfigs,
-  actionsConfigs as configActionsConfigs,
-  initializePullRequestsPolling,
-  refreshPullRequestsData,
+import { configService, type RepoConfig } from '$integrations/firebase';
+import { setStorageObject } from '$shared/services/storage.service';
+import {
   allPullRequests,
+  allWorkflowJobs,
   allWorkflowRuns,
-  allWorkflowJobs
+  actionsConfigs as configActionsConfigs,
+  pullRequestConfigs as configPullRequestConfigs,
+  getCombinedConfigs,
+  initializePullRequestsPolling,
+  loadRepositoryConfigs,
+  refreshConfigurations,
+  refreshPullRequestsData,
+  updateRepositoryConfigs
 } from '$shared/stores/repository-service';
-import { 
-  clearConfigStores
-} from '$features/config/stores/config.store';
-import { configService } from '$integrations/firebase';
 
 export class RepositoryFacade {
   private static instance: RepositoryFacade;
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): RepositoryFacade {
     if (!RepositoryFacade.instance) {
@@ -48,14 +45,18 @@ export class RepositoryFacade {
     // Load configurations from Firebase/localStorage without triggering data fetching
     try {
       const configs = await configService.getConfigs();
-      
+
       // Update stores with configs
       pullRequestConfigs.set(configs.pullRequests || []);
       actionsConfigs.set(configs.actions || []);
-      
+
+      // Update local storage
+      setStorageObject('pull-requests-configs', configs.pullRequests || []);
+      setStorageObject('actions-configs', configs.actions || []);
+
       // Now call our modified loadRepositoryConfigs to initialize empty data
       await loadRepositoryConfigs();
-      
+
     } catch (error) {
       console.error('❌ Failed to load configurations:', error);
       throw error;

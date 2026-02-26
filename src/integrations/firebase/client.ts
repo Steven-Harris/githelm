@@ -259,7 +259,36 @@ class FirebaseAuthClient {
     try {
       await signOut(this.auth);
       setGithubToken(undefined);
-      await this.signIn();
+      // Perform sign-in inline instead of calling this.signIn() which would
+      // bail out because authInProgress is already true.
+      const result = await signInWithPopup(this.auth, this.provider);
+      const credential = GithubAuthProvider.credentialFromResult(result);
+
+      if (credential?.accessToken) {
+        setGithubToken(credential.accessToken);
+        this.authInProgress = false;
+        await this.startTokenRefresh(result.user);
+        authState.set('authenticated');
+        return;
+      }
+
+      if (!result.user) {
+        captureException(new Error('No credential or user returned from reLogin'));
+        authState.set('error');
+        return;
+      }
+
+      const additionalUserInfo = (result as any)._tokenResponse;
+      if (!additionalUserInfo?.oauthAccessToken) {
+        captureException(new Error('No GitHub token found in reLogin response'));
+        authState.set('error');
+        return;
+      }
+
+      setGithubToken(additionalUserInfo.oauthAccessToken);
+      this.authInProgress = false;
+      await this.startTokenRefresh(result.user);
+      authState.set('authenticated');
     } catch (error) {
       captureException(error, { action: 'reLogin' });
       authState.set('error');

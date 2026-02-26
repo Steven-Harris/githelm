@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/sveltekit';
-import type { Breadcrumb } from '@sentry/sveltekit';
 
 /**
  * Utility functions for Sentry error tracking and monitoring

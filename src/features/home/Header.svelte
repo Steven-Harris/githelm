@@ -8,6 +8,7 @@
   import { authService } from '$shared/services/auth.service';
   import { killSwitch } from '$shared/stores/kill-switch.store';
   import { lastUpdatedStore, manualTrigger } from '$shared/stores/last-updated.store';
+  import { pollingPaused } from '$shared/stores/polling-paused.store';
   import { isLoading } from '$shared/stores/loading.store';
   import { isMobile } from '$shared/stores/mobile.store';
   import { timeAgoInSeconds } from '$shared/utils/date-utils';
@@ -26,10 +27,6 @@
 
   function logout() {
     authService.signOut();
-  }
-
-  function backToDashboard() {
-    configService.navigateToDashboard();
   }
 
   function navigateToConfig() {
@@ -71,9 +68,6 @@
       <div class="flex items-center">
         {#if signedIn}
           {#if page.url.pathname === '/config'}
-            <button class="nav-button" onclick={backToDashboard} aria-label="dashboard" title="Dashboard">
-              <span>Dashboard</span>
-            </button>
             <!-- Profile dropdown -->
             <div class="relative ml-2" bind:this={menuRef}>
               <button class="avatar-button tooltip-container" onclick={toggleMenu} aria-label="user menu" title="User menu">
@@ -105,31 +99,35 @@
               {/if}
             </div>
           {:else}
-            <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
-              {#if $lastUpdated > 0}
-                <span class="mr-2">Updated:</span>
-                <span>{timeAgoInSeconds($lastUpdated)}</span>
-                <span class="ml-1">ago</span>
-              {:else if $killSwitch}
-                <span class="mr-2">Updating paused</span>
-              {:else}
-                <span class="mr-2">Updating...</span>
-              {/if}
-            </div>
-            <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
-              {#if $isLoading}
-                <div class="animate-spin">
+            {#if !$pollingPaused}
+              <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
+                {#if $lastUpdated > 0}
+                  <span class="mr-2">Updated:</span>
+                  <span>{timeAgoInSeconds($lastUpdated)}</span>
+                  <span class="ml-1">ago</span>
+                {:else if $killSwitch}
+                  <span class="mr-2">Updating paused</span>
+                {:else}
+                  <span class="mr-2">Updating...</span>
+                {/if}
+              </div>
+            {/if}
+            {#if !$pollingPaused}
+              <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
+                {#if $isLoading}
+                  <div class="animate-spin">
+                    <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
+                  </div>
+                {:else}
                   <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
-                </div>
-              {:else}
-                <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
-              {/if}
-              {#if !$isMobile}
-                <span class="ml-1">{$isLoading ? 'Loading...' : 'Refresh'}</span>
-              {:else}
-                <span class="tooltip">{$isLoading ? 'Loading...' : 'Refresh'}</span>
-              {/if}
-            </button>
+                {/if}
+                {#if !$isMobile}
+                  <span class="ml-1">{$isLoading ? 'Loading...' : 'Refresh'}</span>
+                {:else}
+                  <span class="tooltip">{$isLoading ? 'Loading...' : 'Refresh'}</span>
+                {/if}
+              </button>
+            {/if}
 
             <!-- Profile dropdown -->
             <div class="relative ml-2" bind:this={menuRef}>

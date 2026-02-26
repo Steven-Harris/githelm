@@ -1,8 +1,16 @@
-import { fetchData, executeGraphQLQuery } from './api-client';
-import { queueApiCallIfNeeded } from './auth';
+import { githubGraphql, githubRequest } from './octokit-client';
+import { queueApiCallIfNeeded, getTokenSafely } from './auth';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import { captureException } from '$integrations/sentry';
-import { type PullRequest, type PullRequests, type RepoInfo, type Review } from './types';
+import { type PullRequest, type RepoInfo, type Review } from './types';
+
+export type MergeMethod = 'merge' | 'squash' | 'rebase';
+
+export interface MergePullRequestResponse {
+  sha: string;
+  merged: boolean;
+  message: string;
+}
 
 export async function fetchPullRequestsWithGraphQL(org: string, repo: string, filters: string[] = []): Promise<PullRequest[]> {
   return queueApiCallIfNeeded(async () => {
@@ -63,7 +71,7 @@ export async function fetchPullRequestsWithGraphQL(org: string, repo: string, fi
     const variables = { owner: org, repo: repo };
 
     try {
-      const data = await executeGraphQLQuery(query, variables);
+      const data = await githubGraphql<any>(query, variables);
       return transformGraphQLPullRequests(data);
     } catch (error) {
       // Don't report rate limit errors to Sentry - they're expected behavior
@@ -215,7 +223,11 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
         }
       }
 
-      const reviews = await fetchData<Review[]>(`https://api.github.com/repos/${org}/${repo}/pulls/${prNumber}/reviews`);
+      const reviews = await githubRequest<Review[]>(
+        'GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews',
+        { owner: org, repo, pull_number: prNumber, per_page: 100 },
+        { skipLoadingIndicator: true }
+      );
       return squashReviewsByAuthor(reviews);
     } catch (error) {
       captureException(error, {
@@ -227,6 +239,53 @@ export async function fetchReviews(org: string, repo: string, prNumber: number):
       });
       return [];
     }
+  });
+}
+
+export async function mergePullRequest(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  mergeMethod: MergeMethod,
+  options: {
+    sha?: string;
+    commitTitle?: string;
+    commitMessage?: string;
+  } = {}
+): Promise<MergePullRequestResponse> {
+  return queueApiCallIfNeeded(async () => {
+    const token = await getTokenSafely();
+
+    const restPayload: Record<string, unknown> = {
+      merge_method: mergeMethod,
+    };
+    if (options.sha) restPayload.sha = options.sha;
+    if (options.commitTitle) restPayload.commit_title = options.commitTitle;
+    if (options.commitMessage) restPayload.commit_message = options.commitMessage;
+
+    // Use direct fetch instead of Octokit so we control the Authorization header exactly.
+    const restUrl = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/pulls/${pullNumber}/merge`;
+
+    const restResponse = await fetch(restUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: JSON.stringify(restPayload),
+    });
+
+    if (restResponse.ok) {
+      const data = await restResponse.json();
+      return data as MergePullRequestResponse;
+    }
+
+    const restBody = await restResponse.json().catch(() => ({}));
+    const restMessage: string = typeof restBody?.message === 'string' ? restBody.message : '';
+
+    throw new Error(restMessage || `GitHub API error: ${restResponse.status}`);
   });
 }
 
@@ -299,7 +358,7 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
   `;
 
   try {
-    const data = await executeGraphQLQuery(query);
+    const data = await githubGraphql<any>(query);
     return transformMultiRepositoryPullRequests(data, configs);
   } catch (error) {
     // Don't report rate limit errors to Sentry - they're expected behavior
@@ -404,7 +463,7 @@ export async function searchRepositoryLabels(owner: string, repo: string): Promi
   `;
 
   try {
-    const data = await executeGraphQLQuery(query, { owner, repo });
+    const data = await githubGraphql<any>(query, { owner, repo });
 
     if (!data?.repository?.labels?.nodes) {
       return [];

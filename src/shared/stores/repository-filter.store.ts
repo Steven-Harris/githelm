@@ -1,7 +1,6 @@
-import { writable, get } from 'svelte/store';
-import { firebase } from '$integrations/firebase';
-import { configService } from '$integrations/firebase';
+import { configService, firebase } from '$integrations/firebase';
 import { captureException } from '$integrations/sentry';
+import { get, writable } from 'svelte/store';
 
 // Define filter types
 export type RepositoryFilterType = 'with_prs' | 'without_prs';
@@ -45,6 +44,7 @@ const saveFilters = async (filters: Record<RepositoryFilterType, boolean>): Prom
           queued: true,
           pending: true,
         },
+        ...(preferences?.diffView && { diffView: preferences.diffView }),
       });
     }
   } catch (error) {

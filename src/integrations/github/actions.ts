@@ -1,4 +1,4 @@
-import { fetchData } from './api-client';
+import { githubRequest } from './octokit-client';
 import { queueApiCallIfNeeded } from './auth';
 import { captureException } from '../sentry';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
@@ -22,7 +22,11 @@ export async function checkForNewWorkflowRuns(org: string, repo: string, action:
     const latestCachedRunId = cached.workflow_runs[0].id;
     
     // Fetch just the latest run to compare
-    const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+    const data = await githubRequest<Workflow>(
+      'GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs',
+      { owner: org, repo, workflow_id: action, per_page: 1 },
+      { skipLoadingIndicator: true }
+    );
     
     if (!data?.workflow_runs || data.workflow_runs.length === 0) {
       return false; // No runs available, no need to update
@@ -124,7 +128,11 @@ async function fetchSingleWorkflowOptimized(org: string, repo: string, action: s
 
 async function fetchSingleWorkflow(org: string, repo: string, action: string): Promise<Workflow> {
   try {
-    const data = await fetchData<Workflow>(`https://api.github.com/repos/${org}/${repo}/actions/workflows/${action}/runs?per_page=1`);
+    const data = await githubRequest<Workflow>(
+      'GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs',
+      { owner: org, repo, workflow_id: action, per_page: 1 },
+      { skipLoadingIndicator: true }
+    );
 
     // Validate that the response has the expected structure
     if (!data) {
@@ -240,7 +248,11 @@ export async function fetchWorkflowJobs(org: string, repo: string, runId: string
     }
 
     try {
-      const workflows = await fetchData<WorkflowJobs>(`https://api.github.com/repos/${org}/${repo}/actions/runs/${runId}/jobs`);
+      const workflows = await githubRequest<WorkflowJobs>(
+        'GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs',
+        { owner: org, repo, run_id: Number(runId), per_page: 100 },
+        { skipLoadingIndicator: true }
+      );
 
       // Validate that the response has the expected structure
       if (!workflows) {

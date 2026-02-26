@@ -72,13 +72,6 @@ function setItem(key: string, value: string): void {
   localStorage.setItem(key, value);
 }
 
-function removeItem(key: string): void {
-  if (typeof localStorage === 'undefined') {
-    return;
-  }
-  localStorage.removeItem(key);
-}
-
 // SessionStorage helpers for GitHub token (session-only persistence)
 function getSessionItem(key: string): string | null {
   if (typeof sessionStorage === 'undefined') {

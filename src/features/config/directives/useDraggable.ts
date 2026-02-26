@@ -36,7 +36,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
   const SCROLL_SPEED = 30; // Pixels per frame for auto-scroll (increased from 15)
   const SCROLL_INTERVAL = 16; // Milliseconds between scroll updates (60fps)
 
-  function findScrollContainer(element: HTMLElement): HTMLElement | null {
+  function findScrollContainer(_element: HTMLElement): HTMLElement | null {
     // For auto-scroll, we always want to use window scrolling when the list is long
     // So we'll return document.body to indicate we should use window.scrollBy
     return document.body;
@@ -199,7 +199,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
   }
 
   // Add wheel event listener to stop auto-scroll when user manually scrolls
-  function handleWheel(event: WheelEvent): void {
+  function handleWheel(_event: WheelEvent): void {
     if (state.isDragging) {
       stopAutoScroll();
       // Don't prevent default to allow manual scrolling
@@ -208,7 +208,7 @@ export const useDraggable: Action<HTMLElement, DraggableOptions> = (node, option
   }
 
   // Add touch event listeners for mobile scrolling
-  function handleTouchStart(event: TouchEvent): void {
+  function handleTouchStart(_event: TouchEvent): void {
     if (state.isDragging) {
       stopAutoScroll();
       // Don't prevent default to allow manual scrolling

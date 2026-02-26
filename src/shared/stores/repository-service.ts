@@ -1,5 +1,5 @@
 import { type RepoConfig, configService } from '$integrations/firebase';
-import { fetchMultipleRepositoriesPullRequests, fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
+import { fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
 import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
@@ -66,6 +66,14 @@ function unsubscribe(key: string): void {
 eventBus.subscribe(async (event) => {
   if (event === 'config-updated') {
     await refreshConfigurations();
+  }
+  if (event === 'pr-state-changed') {
+    // A PR was approved, merged, or otherwise changed on the review page.
+    // Refresh pull request data so the dashboard shows the current state.
+    const prConfigs = get(pullRequestConfigs);
+    if (prConfigs.length) {
+      await refreshPullRequestsData(prConfigs);
+    }
   }
 });
 
@@ -217,7 +225,8 @@ async function refreshActionConfigs(): Promise<void> {
 }
 
 export async function loadRepositoryConfigs(): Promise<void> {
-  // Load configurations from Firebase without triggering data fetching
+  // Load configurations from Firebase without eagerly triggering data fetching.
+  // Polling stores will perform the initial fetch when not paused.
   const configs = await configService.getConfigs();
   
   if (configs.pullRequests?.length) {
@@ -228,12 +237,11 @@ export async function loadRepositoryConfigs(): Promise<void> {
     actionsConfigs.set(configs.actions);
   }
   
-  // Initialize data fetching with a delay to avoid infinite loops
+  // Initialize polling with a delay to avoid infinite loops
   const prConfigs = get(pullRequestConfigs);
   if (prConfigs.length) {
     // Use setTimeout to avoid immediate execution
     setTimeout(() => {
-      refreshPullRequestsData(prConfigs);
       initializePullRequestsPolling({ repoConfigs: prConfigs });
     }, 100);
   }
@@ -241,7 +249,6 @@ export async function loadRepositoryConfigs(): Promise<void> {
   if (actionConfigs.length) {
     // Use setTimeout to avoid immediate execution
     setTimeout(() => {
-      refreshActionsData(actionConfigs);
       initializeActionsPolling(actionConfigs);
     }, 200);
   }
@@ -263,12 +270,7 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
   allPullRequests.set(initialPRs);
 
   unsubscribe('pull-requests-polling');
-  const params = repoConfigs.map((config) => ({
-    org: config.org,
-    repo: config.repo,
-    filters: config.filters || [],
-  }));
-  
+
   // Use PullRequestRepository instead of direct function call
   const pullRequestRepo = PullRequestRepository.getInstance();
   const queries = repoConfigs.map((config) => ({

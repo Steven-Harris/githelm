@@ -1,7 +1,6 @@
-import { writable, get } from 'svelte/store';
-import { firebase } from '$integrations/firebase';
-import { configService } from '$integrations/firebase';
+import { configService, firebase } from '$integrations/firebase';
 import { captureException } from '$integrations/sentry';
+import { get, writable } from 'svelte/store';
 
 // Define all possible workflow statuses
 export type WorkflowStatus = 'success' | 'failure' | 'in_progress' | 'queued' | 'pending';
@@ -47,6 +46,7 @@ const saveFilters = async (filters: Record<WorkflowStatus, boolean>): Promise<vo
           without_prs: true,
         },
         workflowStatusFilters: filters,
+        ...(preferences?.diffView && { diffView: preferences.diffView }),
       });
     }
   } catch (error) {

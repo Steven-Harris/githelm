@@ -3,6 +3,7 @@ import { readable } from 'svelte/store';
 import { killSwitch } from './kill-switch.store';
 import { manualTrigger } from './last-updated.store';
 import { captureException } from '$integrations/sentry';
+import { pollingPaused } from './polling-paused.store';
 
 type ValueSetter<T> = (value: T) => void;
 type AsyncCallback<T> = () => Promise<T>;
@@ -10,7 +11,14 @@ type AsyncCallback<T> = () => Promise<T>;
 const STALE_INTERVAL = 60 * 1000; // 60 seconds
 const RANDOM_RETRY_INTERVAL = () => Math.floor(Math.random() * 10) * 1000; // random wait between 1 and 10 seconds
 let kill = false;
+let paused = false;
 const ongoingRequests = new Set<string>();
+
+// Keep module-level pause state in sync so stores created later don't race
+// the initial paused value (e.g. when on /pr/* routes).
+pollingPaused.subscribe((isPaused) => {
+  paused = isPaused;
+});
 
 function createPollingStore<T>(key: string, callback: AsyncCallback<T>) {
   const cachedData = memoryCacheService.get<T>(key);
@@ -22,6 +30,9 @@ function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSett
   let interval: NodeJS.Timeout;
 
   const startInterval = () => {
+    if (kill || paused) {
+      return;
+    }
     interval = setInterval(() => checkAndFetchData(key, callback, set), STALE_INTERVAL);
   };
 
@@ -31,6 +42,10 @@ function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSett
 
   const unsubscribeManualTrigger = manualTrigger.subscribe((trigger) => {
     if (!trigger) {
+      return;
+    }
+    if (paused) {
+      manualTrigger.set(false);
       return;
     }
     stopInterval();
@@ -48,20 +63,39 @@ function startPolling<T>(key: string, callback: AsyncCallback<T>, set: ValueSett
     }
   });
 
-  checkAndFetchData(key, callback, set);
-  startInterval();
+  const unsubscribePollingPaused = pollingPaused.subscribe((isPaused) => {
+    paused = isPaused;
+    if (isPaused) {
+      stopInterval();
+      return;
+    }
+
+    // On resume, run a single check immediately so the dashboard catches up.
+    checkAndFetchData(key, callback, set);
+    startInterval();
+  });
+
+  // Only kick off polling immediately if we're not paused.
+  if (!paused) {
+    checkAndFetchData(key, callback, set);
+    startInterval();
+  }
 
   return () => {
     stopInterval();
     unsubscribeManualTrigger();
     unsubscribeKillSwitch();
+    unsubscribePollingPaused();
   };
 }
 
 async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
-  const cachedData = memoryCacheService.get<T>(key);
-  
+  if (kill || paused) {
+    return;
+  }
+
   // Check if we have valid cached data (memory cache automatically handles expiration)
+  const cachedData = memoryCacheService.get<T>(key);
   if (cachedData) {
     set(cachedData);
     return;
@@ -71,7 +105,7 @@ async function checkAndFetchData<T>(key: string, callback: AsyncCallback<T>, set
 }
 
 async function fetchData<T>(key: string, callback: AsyncCallback<T>, set: ValueSetter<T>) {
-  if (kill || ongoingRequests.has(key)) {
+  if (kill || paused || ongoingRequests.has(key)) {
     return;
   }
   ongoingRequests.add(key);

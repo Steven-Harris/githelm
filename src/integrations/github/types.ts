@@ -46,6 +46,8 @@ export interface PullRequest {
   comments: number;
   draft: boolean;
   body: string | null;
+  created_at: string;
+  updated_at: string;
   reactions: Reaction;
   state_reason: any;
   reviews?: Review[];
@@ -56,13 +58,255 @@ export interface Review {
   node_id: string;
   user: User;
   body: string;
-  state: string;
+  state: 'PENDING' | 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED';
   html_url: string;
   pull_request_url: string;
   author_association: string;
-  _links: Links;
   submitted_at: string;
   commit_id: string;
+  _links: {
+    html: {
+      href: string;
+    };
+    pull_request: {
+      href: string;
+    };
+  };
+}
+
+// Extended types for detailed PR review
+export interface ReviewComment {
+  id: number;
+  node_id: string;
+  url: string;
+  diff_hunk: string;
+  path: string;
+  position: number | null;
+  original_position: number | null;
+  commit_id: string;
+  original_commit_id: string;
+  user: User;
+  body: string;
+  created_at: string;
+  updated_at: string;
+  html_url: string;
+  pull_request_url: string;
+  author_association: string;
+  _links: {
+    self: { href: string };
+    html: { href: string };
+    pull_request: { href: string };
+  };
+  start_line?: number | null;
+  original_start_line?: number | null;
+  start_side?: 'LEFT' | 'RIGHT' | null;
+  line?: number | null;
+  original_line?: number | null;
+  side?: 'LEFT' | 'RIGHT';
+  subject_type?: 'line' | 'file';
+  reactions?: Reaction;
+  in_reply_to_id?: number;
+
+  /** GitHub review thread node id (GraphQL) if available */
+  thread_id?: string;
+
+  /** Whether the review thread is resolved (if available) */
+  is_resolved?: boolean;
+}
+
+export interface PullRequestFile {
+  sha: string;
+  filename: string;
+  status: 'added' | 'removed' | 'modified' | 'renamed' | 'copied' | 'changed' | 'unchanged';
+  additions: number;
+  deletions: number;
+  changes: number;
+  blob_url: string;
+  raw_url: string;
+  contents_url: string;
+  patch?: string;
+  previous_filename?: string;
+}
+
+export interface PullRequestCommit {
+  sha: string;
+  node_id: string;
+  commit: {
+    author: {
+      name: string;
+      email: string;
+      date: string;
+    };
+    committer: {
+      name: string;
+      email: string;
+      date: string;
+    };
+    message: string;
+    tree: {
+      sha: string;
+      url: string;
+    };
+    url: string;
+    comment_count: number;
+    verification: {
+      verified: boolean;
+      reason: string;
+      signature: string | null;
+      payload: string | null;
+    };
+  };
+  url: string;
+  html_url: string;
+  comments_url: string;
+  author: User | null;
+  committer: User | null;
+  parents: Array<{
+    sha: string;
+    url: string;
+    html_url: string;
+  }>;
+}
+
+export interface DetailedPullRequest extends PullRequest {
+  created_at: string;
+  updated_at: string;
+  mergeable: boolean | null;
+  mergeable_state: string;
+  merged_by: User | null;
+  merge_commit_sha: string | null;
+  review_comments: number;
+  maintainer_can_modify: boolean;
+  commits: number;
+  additions: number;
+  deletions: number;
+  changed_files: number;
+  head: {
+    label: string;
+    ref: string;
+    sha: string;
+    user: User;
+    repo: Repository | null;
+  };
+  base: {
+    label: string;
+    ref: string;
+    sha: string;
+    user: User;
+    repo: Repository;
+  };
+  auto_merge: {
+    enabled_by: User;
+    merge_method: 'merge' | 'squash' | 'rebase';
+    commit_title: string;
+    commit_message: string;
+  } | null;
+  active_lock_reason: string | null;
+  merged: boolean;
+  merged_at: string | null;
+  closed_at: string | null;
+  assignees: User[];
+  requested_reviewers: User[];
+  requested_teams: Array<{
+    id: number;
+    node_id: string;
+    name: string;
+    slug: string;
+    description: string;
+    privacy: string;
+    url: string;
+    html_url: string;
+    members_url: string;
+    repositories_url: string;
+  }>;
+  milestone: {
+    id: number;
+    node_id: string;
+    number: number;
+    state: 'open' | 'closed';
+    title: string;
+    description: string;
+    creator: User;
+    open_issues: number;
+    closed_issues: number;
+    created_at: string;
+    updated_at: string;
+    closed_at: string | null;
+    due_on: string | null;
+  } | null;
+}
+
+export interface CheckRun {
+  id: number;
+  node_id: string;
+  head_sha: string;
+  external_id: string;
+  url: string;
+  html_url: string;
+  details_url: string;
+  status: 'queued' | 'in_progress' | 'completed';
+  conclusion: 'success' | 'failure' | 'neutral' | 'cancelled' | 'skipped' | 'timed_out' | 'action_required' | null;
+  started_at: string;
+  completed_at: string | null;
+  output: {
+    title: string;
+    summary: string;
+    text: string;
+    annotations_count: number;
+    annotations_url: string;
+  };
+  name: string;
+  check_suite: {
+    id: number;
+    node_id: string;
+    head_branch: string;
+    head_sha: string;
+    status: string;
+    conclusion: string;
+    url: string;
+    before: string;
+    after: string;
+    pull_requests: Array<{
+      url: string;
+      id: number;
+      number: number;
+      head: { ref: string; sha: string; repo: { id: number; name: string; url: string } };
+      base: { ref: string; sha: string; repo: { id: number; name: string; url: string } };
+    }>;
+    app: {
+      id: number;
+      slug: string;
+      node_id: string;
+      owner: User;
+      name: string;
+      description: string;
+      external_url: string;
+      html_url: string;
+      created_at: string;
+      updated_at: string;
+    };
+    created_at: string;
+    updated_at: string;
+  };
+  app: {
+    id: number;
+    slug: string;
+    node_id: string;
+    owner: User;
+    name: string;
+    description: string;
+    external_url: string;
+    html_url: string;
+    created_at: string;
+    updated_at: string;
+  };
+  pull_requests: Array<{
+    url: string;
+    id: number;
+    number: number;
+    head: { ref: string; sha: string; repo: { id: number; name: string; url: string } };
+    base: { ref: string; sha: string; repo: { id: number; name: string; url: string } };
+  }>;
 }
 
 export interface Links {
