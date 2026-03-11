@@ -125,7 +125,86 @@
     return result;
   }
 
+  interface SideBySideRow {
+    type: 'header' | 'context' | 'deletion' | 'addition' | 'modified';
+    header?: string;
+    left?: { lineNumber: number; content: string };
+    right?: { lineNumber: number; content: string };
+  }
+
+  // Pair consecutive deletions with additions so modified lines appear side-by-side
+  function buildSideBySideRows(
+    lines: Array<{ type: 'context' | 'addition' | 'deletion' | 'header'; content: string; lineNumber?: { old: number | null; new: number | null } }>
+  ): SideBySideRow[] {
+    const rows: SideBySideRow[] = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      if (line.type === 'header') {
+        rows.push({ type: 'header', header: line.content });
+        i++;
+      } else if (line.type === 'context') {
+        rows.push({
+          type: 'context',
+          left: { lineNumber: line.lineNumber!.old!, content: line.content },
+          right: { lineNumber: line.lineNumber!.new!, content: line.content },
+        });
+        i++;
+      } else if (line.type === 'deletion') {
+        // Collect consecutive deletions
+        const deletions: typeof lines = [];
+        while (i < lines.length && lines[i].type === 'deletion') {
+          deletions.push(lines[i]);
+          i++;
+        }
+        // Collect consecutive additions that follow
+        const additions: typeof lines = [];
+        while (i < lines.length && lines[i].type === 'addition') {
+          additions.push(lines[i]);
+          i++;
+        }
+        // Pair deletions with additions
+        const maxLen = Math.max(deletions.length, additions.length);
+        for (let j = 0; j < maxLen; j++) {
+          const del = j < deletions.length ? deletions[j] : null;
+          const add = j < additions.length ? additions[j] : null;
+          if (del && add) {
+            rows.push({
+              type: 'modified',
+              left: { lineNumber: del.lineNumber!.old!, content: del.content },
+              right: { lineNumber: add.lineNumber!.new!, content: add.content },
+            });
+          } else if (del) {
+            rows.push({
+              type: 'deletion',
+              left: { lineNumber: del.lineNumber!.old!, content: del.content },
+            });
+          } else if (add) {
+            rows.push({
+              type: 'addition',
+              right: { lineNumber: add.lineNumber!.new!, content: add.content },
+            });
+          }
+        }
+      } else if (line.type === 'addition') {
+        // Standalone addition (not preceded by deletions)
+        rows.push({
+          type: 'addition',
+          right: { lineNumber: line.lineNumber!.new!, content: line.content },
+        });
+        i++;
+      } else {
+        i++;
+      }
+    }
+
+    return rows;
+  }
+
   const parsedPatch = $derived(file.patch ? parsePatch(file.patch) : []);
+  const sideBySideRows = $derived(buildSideBySideRows(parsedPatch));
   const githubFileUrl = $derived(
     getGitHubFileUrl({
       repoHtmlUrl,
@@ -305,65 +384,65 @@
         <!-- Side-by-side view -->
         <table class="w-full text-sm font-mono">
           <tbody>
-            {#each parsedPatch as line, index (index)}
-              {#if line.type === 'header'}
+            {#each sideBySideRows as row, index (index)}
+              {#if row.type === 'header'}
                 <tr class="bg-[#161b22]">
                   <td colspan="4" class="px-4 py-2 text-[#8b949e] text-xs border-t border-[#30363d]">
-                    {line.content}
+                    {row.header}
                   </td>
                 </tr>
-              {:else if line.type === 'context'}
+              {:else if row.type === 'context'}
                 <tr
-                  class={`hover:bg-white/5 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-[#1f6feb]/15' : ''} ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-[#1f6feb]/15' : ''}`}
-                  data-line-old={line.lineNumber?.old}
-                  data-line-new={line.lineNumber?.new}
+                  class={`hover:bg-white/5 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#1f6feb]/15' : ''} ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#1f6feb]/15' : ''}`}
+                  data-line-old={row.left?.lineNumber}
+                  data-line-new={row.right?.lineNumber}
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    {line.lineNumber?.old || ''}
+                    {row.left?.lineNumber}
                   </td>
                   <!-- Old content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
                     <span class="text-[#c9d1d9]">
-                      {@html highlightCode(line.content, file.filename)}
+                      {@html highlightCode(row.left!.content, file.filename)}
                     </span>
                   </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    {line.lineNumber?.new || ''}
+                    {row.right?.lineNumber}
                   </td>
                   <!-- New content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
                     <span class="text-[#c9d1d9]">
-                      {@html highlightCode(line.content, file.filename)}
+                      {@html highlightCode(row.right!.content, file.filename)}
                     </span>
                   </td>
                 </tr>
 
                 <!-- Comments and forms for context lines -->
-                {#if line.lineNumber?.new}
-                  {@const lineComments = getCommentsForLine(line.lineNumber.new)}
-                  {@const pendingComment = getPendingCommentForLine(line.lineNumber.new, 'right')}
+                {#if row.right}
+                  {@const lineComments = getCommentsForLine(row.right.lineNumber)}
+                  {@const pendingComment = getPendingCommentForLine(row.right.lineNumber, 'right')}
 
                   {#if pendingComment}
                     <tr>
@@ -377,7 +456,7 @@
                     <InlineComments
                       comments={reviewComments}
                       fileName={file.filename}
-                      lineNumber={line.lineNumber.new}
+                      lineNumber={row.right.lineNumber}
                       colspan={4}
                       {viewerLogin}
                       {canResolve}
@@ -389,43 +468,111 @@
                     />
                   {/if}
                 {/if}
-              {:else if line.type === 'deletion'}
+              {:else if row.type === 'modified'}
+                <!-- Modified line: old on left (red), new on right (green) -->
                 <tr
-                  class={`bg-red-900/15 hover:bg-red-900/20 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-900/30' : ''}`}
-                  data-line-old={line.lineNumber?.old}
-                  data-line-new={line.lineNumber?.new}
+                  data-line-old={row.left?.lineNumber}
+                  data-line-new={row.right?.lineNumber}
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-red-900/30 ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer bg-red-900/15 hover:bg-red-900/30 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    {line.lineNumber?.old || ''}
+                    {row.left?.lineNumber}
                   </td>
                   <!-- Old content (deleted) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(line.lineNumber?.old || 0, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.old && handleLineMouseDown(line.lineNumber.old, 'left', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.old && handleLineMouseEnter(line.lineNumber.old, 'left', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] bg-red-900/15 cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-red-300">
-                      -
-                      {@html highlightCode(line.content, file.filename)}
-                    </span>
+                    <span class="text-red-300">{@html highlightCode(row.left!.content, file.filename)}</span>
+                  </td>
+                  <!-- New line number -->
+                  <td
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer bg-green-900/15 hover:bg-green-900/30 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
+                    {row.right?.lineNumber}
+                  </td>
+                  <!-- New content (added) -->
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-green-900/15 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
+                    <span class="text-green-300">{@html highlightCode(row.right!.content, file.filename)}</span>
+                  </td>
+                </tr>
+
+                <!-- Comments and forms for modified lines -->
+                {#if row.right}
+                  {@const lineComments = getCommentsForLine(row.right.lineNumber)}
+                  {@const pendingComment = getPendingCommentForLine(row.right.lineNumber, 'right')}
+
+                  {#if pendingComment}
+                    <tr>
+                      <td colspan="4" class="p-0">
+                        <InlineCommentForm comment={pendingComment} {handleCommentUpdate} {handleCommentSubmit} {handleCommentCancel} />
+                      </td>
+                    </tr>
+                  {/if}
+
+                  {#if lineComments.length > 0}
+                    <InlineComments
+                      comments={reviewComments}
+                      fileName={file.filename}
+                      lineNumber={row.right.lineNumber}
+                      colspan={4}
+                      {viewerLogin}
+                      {canResolve}
+                      {canInteract}
+                      onSetThreadResolved={onSetThreadResolved}
+                      onDeleteComment={onDeleteSubmittedComment}
+                      onUpdateComment={onUpdateSubmittedComment}
+                      onReplyToComment={onReplyToSubmittedComment}
+                    />
+                  {/if}
+                {/if}
+              {:else if row.type === 'deletion'}
+                <tr
+                  class={`bg-red-900/15 hover:bg-red-900/20 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/30' : ''}`}
+                  data-line-old={row.left?.lineNumber}
+                >
+                  <!-- Old line number -->
+                  <td
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-red-900/30 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
+                    {row.left?.lineNumber}
+                  </td>
+                  <!-- Old content (deleted) -->
+                  <td
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
+                    onmouseup={handleLineMouseUp}
+                  >
+                    <span class="text-red-300">{@html highlightCode(row.left!.content, file.filename)}</span>
                   </td>
                   <!-- New line number (empty) -->
                   <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none bg-[#0d1117]"> </td>
                   <!-- New content (empty) -->
                   <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-[#0d1117]"> </td>
                 </tr>
-              {:else if line.type === 'addition'}
+              {:else if row.type === 'addition'}
                 <tr
-                  class={`bg-green-900/15 hover:bg-green-900/20 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-900/30' : ''}`}
-                  data-line-old={line.lineNumber?.old}
-                  data-line-new={line.lineNumber?.new}
+                  class={`bg-green-900/15 hover:bg-green-900/20 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/30' : ''}`}
+                  data-line-new={row.right?.lineNumber}
                 >
                   <!-- Old line number (empty) -->
                   <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none bg-[#0d1117]"> </td>
@@ -433,26 +580,53 @@
                   <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] bg-[#0d1117]"> </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-green-900/30 ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-green-900/30 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    {line.lineNumber?.new || ''}
+                    {row.right?.lineNumber}
                   </td>
                   <!-- New content (added) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(line.lineNumber?.new || 0, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
-                    onmousedown={(e) => line.lineNumber?.new && handleLineMouseDown(line.lineNumber.new, 'right', line.content, e)}
-                    onmouseenter={() => line.lineNumber?.new && handleLineMouseEnter(line.lineNumber.new, 'right', line.content)}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
+                    onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-green-300">
-                      +
-                      {@html highlightCode(line.content, file.filename)}
-                    </span>
+                    <span class="text-green-300">{@html highlightCode(row.right!.content, file.filename)}</span>
                   </td>
                 </tr>
+
+                <!-- Comments and forms for addition lines -->
+                {#if row.right}
+                  {@const lineComments = getCommentsForLine(row.right.lineNumber)}
+                  {@const pendingComment = getPendingCommentForLine(row.right.lineNumber, 'right')}
+
+                  {#if pendingComment}
+                    <tr>
+                      <td colspan="4" class="p-0">
+                        <InlineCommentForm comment={pendingComment} {handleCommentUpdate} {handleCommentSubmit} {handleCommentCancel} />
+                      </td>
+                    </tr>
+                  {/if}
+
+                  {#if lineComments.length > 0}
+                    <InlineComments
+                      comments={reviewComments}
+                      fileName={file.filename}
+                      lineNumber={row.right.lineNumber}
+                      colspan={4}
+                      {viewerLogin}
+                      {canResolve}
+                      {canInteract}
+                      onSetThreadResolved={onSetThreadResolved}
+                      onDeleteComment={onDeleteSubmittedComment}
+                      onUpdateComment={onUpdateSubmittedComment}
+                      onReplyToComment={onReplyToSubmittedComment}
+                    />
+                  {/if}
+                {/if}
               {/if}
             {/each}
           </tbody>
