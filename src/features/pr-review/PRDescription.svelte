@@ -10,42 +10,9 @@
 
   let expanded = $state(false);
 
-  // Check if this looks like a dependabot or automated PR
-  const isAutomatedPR = $derived.by(() => {
-    const lowerTitle = title.toLowerCase();
-    const lowerBody = body.toLowerCase();
-    return (
-      lowerTitle.includes('dependabot') ||
-      lowerTitle.includes('bump') ||
-      lowerBody.includes('dependabot') ||
-      body.includes('## ') || // Has markdown headers
-      body.includes('| ') || // Has tables
-      body.length > 500
-    ); // Very long description
-  });
+  const COLLAPSED_HEIGHT = 150; // px
 
-  // For automated PRs, show a much shorter preview
-  const previewLength = $derived.by(() => (isAutomatedPR ? 100 : 200));
-  const shouldShowToggle = $derived.by(() => body.length > previewLength);
-
-  const displayText = $derived.by(() => {
-    if (!shouldShowToggle || expanded) return body;
-    return body.substring(0, previewLength) + '...';
-  });
-
-  // Simple markdown-to-text converter for preview
-  function stripMarkdown(text: string): string {
-    return text
-      .replace(/#{1,6}\s/g, '') // Remove headers
-      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-      .replace(/\*(.*?)\*/g, '$1') // Remove italic
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1') // Remove links, keep text
-      .replace(/`(.*?)`/g, '$1') // Remove code formatting
-      .replace(/\|.*\|/g, '') // Remove table rows
-      .replace(/---+/g, '') // Remove horizontal rules
-      .replace(/\n{3,}/g, '\n\n') // Normalize line breaks
-      .trim();
-  }
+  const shouldShowToggle = $derived.by(() => body.length > 200);
 
   // Configure marked options for security and styling
   marked.setOptions({
@@ -53,13 +20,13 @@
     gfm: true, // GitHub Flavored Markdown
   });
 
-  const cleanText = $derived.by(() => stripMarkdown(displayText));
+  // Always render the full markdown so tables/structure are never broken
   const renderedMarkdown = $derived.by(() => {
     try {
-      return marked.parse(displayText);
+      return marked.parse(body);
     } catch (error) {
       console.error('Error rendering markdown:', error);
-      return displayText;
+      return body;
     }
   });
 
@@ -80,18 +47,43 @@
 </script>
 
 <div class="mt-3">
-  {#if hasMarkdown}
-    <div class="gh-markdown prose prose-sm max-w-none prose-invert">
-      {@html renderedMarkdown}
-    </div>
-  {:else}
-    <div class="text-sm text-[#c9d1d9] whitespace-pre-line">
-      {cleanText}
-    </div>
-  {/if}
-  {#if shouldShowToggle}}
+  <div
+    class="relative"
+    class:collapsed={shouldShowToggle && !expanded}
+  >
+    {#if hasMarkdown}
+      <div class="gh-markdown prose prose-sm max-w-none prose-invert">
+        {@html renderedMarkdown}
+      </div>
+    {:else}
+      <div class="text-sm text-[#c9d1d9] whitespace-pre-line">
+        {body}
+      </div>
+    {/if}
+    {#if shouldShowToggle && !expanded}
+      <div class="collapsed-fade"></div>
+    {/if}
+  </div>
+  {#if shouldShowToggle}
     <button onclick={() => (expanded = !expanded)} class="text-blue-600 hover:text-blue-800 text-sm mt-1 font-medium">
       {expanded ? 'Show less' : 'Show more'}
     </button>
   {/if}
 </div>
+
+<style>
+  .collapsed {
+    max-height: 150px;
+    overflow: hidden;
+  }
+
+  .collapsed-fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(to bottom, transparent, var(--color-bg, #0d1117));
+    pointer-events: none;
+  }
+</style>
