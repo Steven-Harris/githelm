@@ -52,11 +52,11 @@
   </div>
 
   <!-- Action buttons -->
-  <div class="flex items-center justify-end gap-2">
+  <div class="flex gap-2">
     <button
       onclick={() => onSubmitReview && onSubmitReview('REQUEST_CHANGES')}
       disabled={!canSubmit || !canRequestChanges}
-      class="px-3 py-2 text-sm bg-[#da3633] text-white rounded font-medium hover:bg-[#f85149] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="flex-[2] px-3 py-2 text-sm bg-[#da3633] text-white rounded font-medium hover:bg-[#f85149] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
       title={canRequestChanges ? 'Request changes' : 'Request changes requires an overall comment'}
     >
       Request changes
@@ -65,7 +65,7 @@
     <button
       onclick={() => onSubmitReview && onSubmitReview('COMMENT')}
       disabled={!canSubmit || !canComment}
-      class="px-3 py-2 text-sm bg-[#1f6feb] text-white rounded font-medium hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="flex-1 px-3 py-2 text-sm bg-[#1f6feb] text-white rounded font-medium hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title={canComment ? 'Comment' : 'Add an overall comment or inline comments to submit'}
     >
       Comment
@@ -74,7 +74,7 @@
     <button
       onclick={() => onSubmitReview && onSubmitReview('APPROVE')}
       disabled={!canSubmit}
-      class="px-3 py-2 text-sm bg-[#2ea043] text-white rounded font-medium hover:bg-[#3fb950] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="flex-1 px-3 py-2 text-sm bg-[#2ea043] text-white rounded font-medium hover:bg-[#3fb950] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title="Approve"
     >
       Approve

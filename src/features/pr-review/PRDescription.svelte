@@ -55,16 +55,12 @@
 
   const cleanText = $derived.by(() => stripMarkdown(displayText));
   const renderedMarkdown = $derived.by(() => {
-    // Always render markdown when expanded, or when there's no toggle needed
-    if ((expanded && shouldShowToggle) || !shouldShowToggle) {
-      try {
-        return marked.parse(displayText);
-      } catch (error) {
-        console.error('Error rendering markdown:', error);
-        return displayText;
-      }
+    try {
+      return marked.parse(displayText);
+    } catch (error) {
+      console.error('Error rendering markdown:', error);
+      return displayText;
     }
-    return null;
   });
 
   // Check if the content has markdown formatting
@@ -84,13 +80,11 @@
 </script>
 
 <div class="mt-3">
-  {#if hasMarkdown && (renderedMarkdown || (!shouldShowToggle && !expanded))}
-    <!-- Render markdown when there's markdown content -->
+  {#if hasMarkdown}
     <div class="gh-markdown prose prose-sm max-w-none prose-invert">
       {@html renderedMarkdown}
     </div>
   {:else}
-    <!-- Show plain text when no markdown or in preview mode -->
     <div class="text-sm text-[#c9d1d9] whitespace-pre-line">
       {cleanText}
     </div>
