@@ -41,10 +41,31 @@ export const allPullRequests = writable<Record<string, PullRequest[]>>({});
 export const allWorkflowRuns = writable<Record<string, WorkflowRun[]>>({});
 export const allWorkflowJobs = writable<Record<string, Job[]>>({});
 
+// Repos whose pull request data has actually come back from GitHub. Because
+// results now arrive in batches, this is what drives per-repo skeletons.
+export const loadedPullRequestRepos = writable<Set<string>>(new Set());
+
 export const pullRequestConfigs = writable<RepoConfig[]>([]);
 export const actionsConfigs = writable<RepoConfig[]>([]);
 
 const pollingUnsubscribers = new Map<string, () => void>();
+
+// Guards against a stale in-flight fetch writing results after the configs changed.
+let pullRequestFetchGeneration = 0;
+
+function mergePullRequestBatch(partial: Record<string, PullRequest[]>, allowedKeys: Set<string>, generation: number): void {
+  if (generation !== pullRequestFetchGeneration) return;
+
+  const filtered = Object.entries(partial).filter(([key]) => allowedKeys.has(key));
+  if (!filtered.length) return;
+
+  allPullRequests.update((curr) => ({ ...curr, ...Object.fromEntries(filtered) }));
+  loadedPullRequestRepos.update((curr) => {
+    const next = new Set(curr);
+    filtered.forEach(([key]) => next.add(key));
+    return next;
+  });
+}
 
 export const pullRequestRepos = derived([pullRequestConfigs, allPullRequests], ([$configs, $prs]) => $configs.filter((config) => !!$prs[getRepoKey(config)]?.length));
 
@@ -252,6 +273,7 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
   if (!repoConfigs?.length) {
     unsubscribe('pull-requests-polling');
     allPullRequests.set({});
+    loadedPullRequestRepos.set(new Set());
     return;
   }
 
@@ -262,6 +284,7 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     initialPRs[key] = [];
   });
   allPullRequests.set(initialPRs);
+  loadedPullRequestRepos.set(new Set());
 
   unsubscribe('pull-requests-polling');
 
@@ -275,8 +298,15 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
   
   const storeKey = 'all-pull-requests';
   unsubscribe(storeKey);
-  
-  const store = createPollingStore<Record<string, PullRequest[]>>(storeKey, () => pullRequestRepo.fetchPullRequestsForMultiple(queries));
+
+  const allowedKeys = new Set(repoConfigs.map(getRepoKey));
+
+  const store = createPollingStore<Record<string, PullRequest[]>>(storeKey, () => {
+    const generation = ++pullRequestFetchGeneration;
+    return pullRequestRepo.fetchPullRequestsForMultiple(queries, {
+      onBatchResult: (partial) => mergePullRequestBatch(partial, allowedKeys, generation),
+    });
+  });
   pollingUnsubscribers.set(storeKey, store.subscribe((data) => {
     if (!data) return;
     const processedData = repoConfigs.reduce(
@@ -288,12 +318,14 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
       {} as Record<string, PullRequest[]>
     );
     allPullRequests.set(processedData);
+    loadedPullRequestRepos.set(new Set(Object.keys(processedData)));
   }));
 }
 
 export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promise<void> {
   if (!repoConfigs?.length) {
     allPullRequests.set({});
+    loadedPullRequestRepos.set(new Set());
     return;
   }
   const queries = repoConfigs.map((config) => ({
@@ -301,9 +333,14 @@ export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promis
     repo: config.repo,
     filters: { labels: config.filters || [] }
   }));
+  const allowedKeys = new Set(repoConfigs.map(getRepoKey));
+  const generation = ++pullRequestFetchGeneration;
   try {
     const pullRequestRepo = PullRequestRepository.getInstance();
-    const data = await pullRequestRepo.fetchPullRequestsForMultiple(queries);
+    const data = await pullRequestRepo.fetchPullRequestsForMultiple(queries, {
+      onBatchResult: (partial) => mergePullRequestBatch(partial, allowedKeys, generation),
+    });
+    if (generation !== pullRequestFetchGeneration) return;
     const processedData = repoConfigs.reduce(
       (acc, config) => {
         const key = getRepoKey(config);
@@ -313,6 +350,7 @@ export async function refreshPullRequestsData(repoConfigs: RepoConfig[]): Promis
       {} as Record<string, PullRequest[]>
     );
     allPullRequests.set(processedData);
+    loadedPullRequestRepos.set(new Set(Object.keys(processedData)));
   } catch (error) {
     captureException(error, {
       action: 'refreshPullRequestsData',
@@ -411,6 +449,7 @@ export function clearAllStores(): void {
     allPullRequests.set({});
     allWorkflowRuns.set({});
     allWorkflowJobs.set({});
+    loadedPullRequestRepos.set(new Set());
     pullRequestConfigs.set([]);
     actionsConfigs.set([]);
     

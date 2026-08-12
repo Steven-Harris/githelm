@@ -291,12 +291,71 @@ export async function mergePullRequest(
 
 // Removed fetchPullRequests REST API function - using GraphQL only
 
-export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[]): Promise<Record<string, PullRequest[]>> {
-  
+// Batching keeps each GraphQL request small so the first repositories render
+// quickly instead of waiting on one large query for every configured repo.
+export const DEFAULT_PR_BATCH_SIZE = 5;
+export const DEFAULT_PR_BATCH_CONCURRENCY = 4;
+
+export interface FetchMultipleRepositoriesOptions {
+  /** Number of repositories requested per GraphQL call. */
+  batchSize?: number;
+  /** Maximum number of GraphQL calls in flight at once. */
+  concurrency?: number;
+  /** Invoked as each batch resolves so the UI can render progressively. */
+  onBatchResult?: (partialResults: Record<string, PullRequest[]>, batchIndex: number, batchCount: number) => void;
+}
+
+function chunkConfigs(configs: RepoInfo[], size: number): RepoInfo[][] {
+  const batches: RepoInfo[][] = [];
+  for (let i = 0; i < configs.length; i += size) {
+    batches.push(configs.slice(i, i + size));
+  }
+  return batches;
+}
+
+export async function fetchMultipleRepositoriesPullRequests(
+  configs: RepoInfo[],
+  options: FetchMultipleRepositoriesOptions = {}
+): Promise<Record<string, PullRequest[]>> {
   if (!configs || configs.length === 0) {
     return {};
   }
 
+  const batchSize = Math.max(1, options.batchSize ?? DEFAULT_PR_BATCH_SIZE);
+  const batches = chunkConfigs(configs, batchSize);
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? DEFAULT_PR_BATCH_CONCURRENCY, batches.length));
+
+  const results: Record<string, PullRequest[]> = {};
+  let nextBatchIndex = 0;
+
+  // Workers pull batches in order, so the top-of-list repositories are always
+  // requested first and land in the UI before the rest.
+  const worker = async (): Promise<void> => {
+    while (true) {
+      const batchIndex = nextBatchIndex++;
+      if (batchIndex >= batches.length) return;
+
+      const batchResults = await fetchRepositoryBatchPullRequests(batches[batchIndex]);
+      Object.assign(results, batchResults);
+
+      try {
+        options.onBatchResult?.(batchResults, batchIndex, batches.length);
+      } catch (error) {
+        captureException(error, {
+          context: 'GitHub Pull Requests',
+          function: 'fetchMultipleRepositoriesPullRequests.onBatchResult',
+          batchIndex,
+        });
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: concurrency }, worker));
+
+  return results;
+}
+
+async function fetchRepositoryBatchPullRequests(configs: RepoInfo[]): Promise<Record<string, PullRequest[]>> {
   const query = `
     query FetchMultipleRepositoriesPullRequests {
       ${configs
@@ -365,13 +424,13 @@ export async function fetchMultipleRepositoriesPullRequests(configs: RepoInfo[])
     if (!(error instanceof Error && error.message === 'Rate limit exceeded')) {
       captureException(error, {
         context: 'GitHub Pull Requests',
-        function: 'fetchMultipleRepositoriesPullRequests',
+        function: 'fetchRepositoryBatchPullRequests',
         configCount: configs.length,
         repositories: configs.map((c) => `${c.org}/${c.repo}`),
       });
     }
 
-    // Return empty results for all repositories to maintain GraphQL-only approach
+    // Return empty results for this batch so one failing batch doesn't block the rest.
     const results: Record<string, PullRequest[]> = {};
     configs.forEach((config) => {
       results[`${config.org}/${config.repo}`] = [];

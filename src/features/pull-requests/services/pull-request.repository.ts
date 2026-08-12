@@ -1,6 +1,6 @@
 import { fetchPullRequestsWithGraphQL, fetchMultipleRepositoriesPullRequests } from '$integrations/github';
 import { captureException } from '$integrations/sentry';
-import type { PullRequest, RepoInfo } from '$integrations/github';
+import type { FetchMultipleRepositoriesOptions, PullRequest, RepoInfo } from '$integrations/github';
 
 export interface PullRequestFilters {
   labels?: string[];
@@ -48,7 +48,8 @@ export class PullRequestRepository {
   }
 
   async fetchPullRequestsForMultiple(
-    queries: PullRequestQuery[]
+    queries: PullRequestQuery[],
+    options: FetchMultipleRepositoriesOptions = {}
   ): Promise<Record<string, PullRequest[]>> {
     try {
       const repoInfos: RepoInfo[] = queries.map(query => ({
@@ -57,7 +58,7 @@ export class PullRequestRepository {
         filters: query.filters?.labels || []
       }));
 
-      const results = await fetchMultipleRepositoriesPullRequests(repoInfos);
+      const results = await fetchMultipleRepositoriesPullRequests(repoInfos, options);
       return results;
     } catch (error) {
       captureException(error, {
