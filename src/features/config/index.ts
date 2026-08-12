@@ -1,6 +1,6 @@
 
 // Utilities
-export { useDraggable } from './directives/useDraggable';
+export { useSortable } from './directives/useSortable';
 export { useDropdown } from './directives/useDropdown';
 export { useKeyboardNavigation } from './directives/useKeyboardNavigation';
 
