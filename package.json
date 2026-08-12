@@ -36,7 +36,7 @@
   "homepage": "https://githelm.com",
   "engines": {
     "node": ">=20.19.0 || >=22.12.0",
-    "pnpm": ">=9.0.0"
+    "pnpm": ">=10.0.0"
   },
   "dependencies": {
     "@octokit/core": "^7.0.6",
