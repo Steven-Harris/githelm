@@ -35,9 +35,9 @@
   --text-faint: #6e7d96;
 
   /* ---- Structure ---- */
-  --line: rgba(148, 168, 205, 0.13);
-  --line-strong: rgba(148, 168, 205, 0.26);
-  --sheen: rgba(255, 255, 255, 0.06);
+  --line: rgba(170, 190, 228, 0.28);
+  --line-strong: rgba(170, 190, 228, 0.46);
+  --sheen: rgba(255, 255, 255, 0.09);
   --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -12px rgba(0, 0, 0, 0.7);
   --shadow-pop: 0 2px 4px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.8);
   --radius: 14px;
@@ -160,15 +160,15 @@ body::after {
   --tw-prose-bold: #ffffff;
   --tw-prose-counters: #e9eefb;
   --tw-prose-bullets: #e9eefb;
-  --tw-prose-hr: rgba(148, 168, 205, 0.2);
+  --tw-prose-hr: var(--line);
   --tw-prose-quotes: #e9eefb;
-  --tw-prose-quote-borders: rgba(148, 168, 205, 0.2);
+  --tw-prose-quote-borders: var(--line);
   --tw-prose-captions: #9dabc4;
   --tw-prose-code: #e9eefb;
   --tw-prose-pre-code: #e9eefb;
   --tw-prose-pre-bg: #0a0e17;
-  --tw-prose-th-borders: rgba(148, 168, 205, 0.2);
-  --tw-prose-td-borders: rgba(148, 168, 205, 0.2);
+  --tw-prose-th-borders: var(--line);
+  --tw-prose-td-borders: var(--line);
 
   /* prosa-invert uses a separate set of variables */
   --tw-prose-invert-body: #e9eefb;
@@ -178,15 +178,15 @@ body::after {
   --tw-prose-invert-bold: #ffffff;
   --tw-prose-invert-counters: #e9eefb;
   --tw-prose-invert-bullets: #e9eefb;
-  --tw-prose-invert-hr: rgba(148, 168, 205, 0.2);
+  --tw-prose-invert-hr: var(--line);
   --tw-prose-invert-quotes: #e9eefb;
-  --tw-prose-invert-quote-borders: rgba(148, 168, 205, 0.2);
+  --tw-prose-invert-quote-borders: var(--line);
   --tw-prose-invert-captions: #9dabc4;
   --tw-prose-invert-code: #e9eefb;
   --tw-prose-invert-pre-code: #e9eefb;
   --tw-prose-invert-pre-bg: #0a0e17;
-  --tw-prose-invert-th-borders: rgba(148, 168, 205, 0.2);
-  --tw-prose-invert-td-borders: rgba(148, 168, 205, 0.2);
+  --tw-prose-invert-th-borders: var(--line);
+  --tw-prose-invert-td-borders: var(--line);
 }
 
 /* Make wide markdown tables usable in narrow sidebars */
@@ -202,7 +202,7 @@ body::after {
 }
 
 .gh-markdown :where(pre) {
-  border: 1px solid rgba(148, 168, 205, 0.2);
+  border: 1px solid var(--line);
 }
 
 .gh-markdown :where(h1, h2, h3, h4, h5, h6) {
@@ -472,7 +472,7 @@ textarea::placeholder {
 input:hover:not(:disabled),
 select:hover:not(:disabled),
 textarea:hover:not(:disabled) {
-  border-color: rgba(148, 168, 205, 0.34);
+  border-color: var(--line-strong);
 }
 
 input:focus,
