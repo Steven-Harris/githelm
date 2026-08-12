@@ -87,10 +87,10 @@
   });
 </script>
 
-<div class="inline-comment-form bg-[#161b22] border border-[#30363d] rounded-lg shadow-sm p-4 my-2 text-[#c9d1d9]">
+<div class="inline-comment-form bg-[#121826] border border-[#243044] rounded-lg shadow-sm p-4 my-2 text-[#e9eefb]">
   <!-- Comment header -->
   <div class="flex items-center justify-between mb-3">
-    <div class="flex items-center space-x-2 text-sm text-[#8b949e]">
+    <div class="flex items-center space-x-2 text-sm text-[#9dabc4]">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
@@ -100,14 +100,14 @@
         />
       </svg>
       <span class="font-medium">{comment.filename}</span>
-      <span class="text-[#30363d]">•</span>
+      <span class="text-[#243044]">•</span>
       <span>{lineInfo} ({comment.side === 'left' ? 'old' : 'new'})</span>
     </div>
 
     {#if showReviewToggle}
       <label class="flex items-center space-x-2 text-sm">
-        <input type="checkbox" checked={comment.isPartOfReview} onchange={handleReviewToggleChange} class="rounded border-[#30363d] bg-[#0d1117] text-[#58a6ff] focus:ring-[#58a6ff]" />
-        <span class="text-[#8b949e]">Add to review</span>
+        <input type="checkbox" checked={comment.isPartOfReview} onchange={handleReviewToggleChange} class="rounded border-[#243044] bg-[#0a0e17] text-[#79b8ff] focus:ring-[#79b8ff]" />
+        <span class="text-[#9dabc4]">Add to review</span>
       </label>
     {/if}
   </div>
@@ -120,23 +120,23 @@
       oninput={handleInput}
       onkeydown={handleKeydown}
       placeholder="Add a comment..."
-      class="w-full p-3 bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded-md resize-none focus:ring-2 focus:ring-[#58a6ff] focus:border-[#58a6ff]"
+      class="w-full p-3 bg-[#0a0e17] text-[#e9eefb] placeholder:text-[#9dabc4] border border-[#243044] rounded-md resize-none focus:ring-2 focus:ring-[#79b8ff] focus:border-[#79b8ff]"
       rows="3"
     ></textarea>
   </div>
 
   <!-- Comment actions -->
   <div class="flex items-center justify-between">
-    <div class="text-xs text-[#8b949e]">
-      <kbd class="px-1 py-0.5 bg-[#0d1117] border border-[#30363d] rounded">Ctrl</kbd> +
-      <kbd class="px-1 py-0.5 bg-[#0d1117] border border-[#30363d] rounded">Enter</kbd> to submit,
-      <kbd class="px-1 py-0.5 bg-[#0d1117] border border-[#30363d] rounded">Esc</kbd> to cancel
+    <div class="text-xs text-[#9dabc4]">
+      <kbd class="px-1 py-0.5 bg-[#0a0e17] border border-[#243044] rounded">Ctrl</kbd> +
+      <kbd class="px-1 py-0.5 bg-[#0a0e17] border border-[#243044] rounded">Enter</kbd> to submit,
+      <kbd class="px-1 py-0.5 bg-[#0a0e17] border border-[#243044] rounded">Esc</kbd> to cancel
     </div>
 
     <div class="flex items-center space-x-2">
       <button
         onclick={handleCancel}
-        class="px-3 py-1.5 text-sm text-[#c9d1d9] hover:text-[#f0f6fc] border border-[#30363d] rounded-md hover:bg-white/5 focus:ring-2 focus:ring-[#58a6ff] focus:ring-offset-1 focus:ring-offset-[#161b22]"
+        class="px-3 py-1.5 text-sm text-[#e9eefb] hover:text-[#e9eefb] border border-[#243044] rounded-md hover:bg-white/5 focus:ring-2 focus:ring-[#79b8ff] focus:ring-offset-1 focus:ring-offset-[#121826]"
         type="button"
       >
         Cancel
@@ -145,7 +145,7 @@
       <button
         onclick={handleSubmit}
         disabled={!comment.body.trim() || !canSubmit || submitting}
-        class="px-3 py-1.5 text-sm text-white bg-[#2ea043] hover:bg-[#3fb950] disabled:bg-[#30363d] disabled:cursor-not-allowed rounded-md focus:ring-2 focus:ring-[#3fb950] focus:ring-offset-1 focus:ring-offset-[#161b22] flex items-center space-x-1"
+        class="px-3 py-1.5 text-sm text-white bg-[#3fd382] hover:bg-[#3fd382] disabled:bg-[#243044] disabled:cursor-not-allowed rounded-md focus:ring-2 focus:ring-[#3fd382] focus:ring-offset-1 focus:ring-offset-[#121826] flex items-center space-x-1"
         type="button"
       >
         {#if submitting}

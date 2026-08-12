@@ -3,11 +3,11 @@
   import { onMount } from 'svelte';
 
   const statusColors = {
-    success: 'bg-[#2ea043] border-[#238636]',
-    failure: 'bg-[#f85149] border-[#da3633]',
-    in_progress: 'bg-[#3fb950] border-[#2ea043]',
-    queued: 'bg-[#bf8700] border-[#9e6a03]',
-    pending: 'bg-[#bf8700] border-[#9e6a03]',
+    success: 'var(--success)',
+    failure: 'var(--danger)',
+    in_progress: 'var(--beacon)',
+    queued: 'var(--warn)',
+    pending: 'var(--warn)',
   };
 
   const statusNames = {
@@ -41,31 +41,25 @@
 </script>
 
 <div class="relative" id="workflow-status-dropdown">
-  <button
-    type="button"
-    class="px-2 py-1 rounded text-xs border transition flex items-center gap-1
-           bg-[#21262d] hover:bg-[#30363d] text-[#c9d1d9] border-[#30363d]"
-    onclick={() => (isDropdownOpen = !isDropdownOpen)}
-    title="Filter workflows by status"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+  <button type="button" class="ghost-button filter-trigger" onclick={() => (isDropdownOpen = !isDropdownOpen)} aria-expanded={isDropdownOpen} title="Filter workflows by status">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
       <path
         d="M.75 3h14.5a.75.75 0 0 1 0 1.5H.75a.75.75 0 0 1 0-1.5ZM3 7.75A.75.75 0 0 1 3.75 7h8.5a.75.75 0 0 1 0 1.5h-8.5A.75.75 0 0 1 3 7.75Zm3 4a.75.75 0 0 1 .75-.75h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1-.75-.75Z"
       ></path>
     </svg>
     <span>Filter</span>
     {#if activeFilterCount < Object.keys(statusNames).length}
-      <span class="ml-1 px-1.5 py-0.5 bg-blue-500 rounded-full text-[0.65rem] font-medium text-white">{activeFilterCount}</span>
+      <span class="filter-count">{activeFilterCount}</span>
     {/if}
   </button>
 
   {#if isDropdownOpen}
-    <div class="absolute top-full mt-1 z-10 min-w-[200px] right-0 bg-[#161b22] border border-[#30363d] rounded shadow-lg py-1">
-      <div class="px-3 py-2 border-b border-[#30363d] flex justify-between items-center">
-        <span class="text-xs font-medium text-[#c9d1d9]">Filter by status</span>
+    <div class="dropdown menu-surface">
+      <div class="dropdown-head">
+        <span>Filter by status</span>
         <button
           type="button"
-          class="text-xs text-[#58a6ff] hover:underline"
+          class="reset-link"
           onclick={() => {
             resetWorkflowStatusFilters();
             isDropdownOpen = false;
@@ -77,13 +71,99 @@
 
       <div class="py-1">
         {#each Object.entries($workflowStatusFilters) as [status, enabled]}
-          <label class="flex items-center px-3 py-1.5 hover:bg-[#21262d] cursor-pointer">
-            <input type="checkbox" class="mr-2" checked={enabled} onchange={() => toggleWorkflowStatusFilter(status as WorkflowStatus)} />
-            <span class={`w-2 h-2 rounded-full mr-2 ${statusColors[status as WorkflowStatus]}`}></span>
-            <span class="text-xs text-[#c9d1d9]">{statusNames[status as WorkflowStatus]}</span>
+          <label class="option">
+            <input type="checkbox" checked={enabled} onchange={() => toggleWorkflowStatusFilter(status as WorkflowStatus)} />
+            <span class="status-dot" style="color: {statusColors[status as WorkflowStatus]}"></span>
+            <span>{statusNames[status as WorkflowStatus]}</span>
           </label>
         {/each}
       </div>
     </div>
   {/if}
 </div>
+
+<style>
+  .filter-trigger {
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+  }
+
+  .filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.125rem;
+    height: 1.125rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: rgba(47, 212, 193, 0.18);
+    color: var(--beacon-bright);
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+
+  .dropdown {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    right: 0;
+    z-index: 20;
+    min-width: 13rem;
+    padding: 0.25rem;
+    animation: drop-in 160ms var(--ease);
+  }
+
+  @keyframes drop-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .dropdown-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid var(--line);
+    font-size: 0.75rem;
+    color: var(--text-faint);
+  }
+
+  .reset-link {
+    background: none;
+    border: none;
+    color: var(--beacon);
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .reset-link:hover {
+    text-decoration: underline;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4375rem 0.625rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8125rem;
+    color: var(--text-dim);
+    transition: background-color 150ms var(--ease);
+  }
+
+  .option:hover {
+    background: rgba(148, 168, 205, 0.1);
+    color: var(--text);
+  }
+
+  .option input {
+    accent-color: var(--beacon);
+  }
+</style>

@@ -48,11 +48,14 @@
 
 {#if showModal}
   <div class="modal-overlay" onclick={dismissModal} tabindex="0" role="button" aria-label="Close rate limit modal" onkeydown={handleOverlayKeydown}>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rate-limit-title" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
-      <h2 id="rate-limit-title">Rate Limit Exceeded</h2>
-      <p>Unfortunately, GitHub's Rate Limit has been hit. If you're feeling lucky you can try again or re-logging in.</p>
-      <button onclick={dismissModal} aria-label="Try again">I'm feeling lucky</button>
-      <button onclick={reLogin} aria-label="Re-login with GitHub">Re-Login</button>
+    <div class="modal menu-surface" role="dialog" aria-modal="true" aria-labelledby="rate-limit-title" tabindex="-1" onclick={stopPropagation} onkeydown={stopPropagation}>
+      <span class="pill mb-4" style="color: var(--warn)"><span class="status-dot"></span>Updates paused</span>
+      <h2 id="rate-limit-title">GitHub is rate limiting us</h2>
+      <p>You've hit GitHub's API request limit, so GitHelm stopped polling. Wait a few minutes and retry, or sign in again to refresh your token.</p>
+      <div class="actions">
+        <button class="ghost-button" onclick={dismissModal}>Retry now</button>
+        <button class="beacon-button" onclick={reLogin}>Sign in again</button>
+      </div>
     </div>
   </div>
 {/if}
@@ -60,48 +63,69 @@
 <style>
   .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: rgba(5, 7, 13, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 1.5rem;
     z-index: 1000;
+    animation: overlay-in 200ms var(--ease);
+  }
+
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .modal {
-    background: var(--primary-color);
-    padding: 20px;
-    max-width: 40vw;
-    border-radius: 0.5rem;
-    text-align: center;
+    padding: 1.75rem;
+    max-width: 26rem;
+    width: 100%;
+    text-align: left;
+    animation: modal-in 260ms var(--ease);
   }
 
-  @media (max-width: 768px) {
-    .modal {
-      max-width: 80vw;
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   }
 
   h2 {
-    font-size: 1.5rem;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 0.5rem;
   }
 
-  button {
-    margin-top: 20px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    background: var(--primary-color);
-    color: white;
-    margin-right: 0.5rem;
+  p {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    line-height: 1.55;
   }
 
-  button:hover {
-    background: var(--primary-accent-color);
-    color: white;
+  .actions {
+    display: flex;
+    gap: 0.625rem;
+    margin-top: 1.5rem;
+  }
+
+  .actions :global(.beacon-button) {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
   }
 </style>

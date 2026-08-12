@@ -2,8 +2,8 @@
   // No props needed - this is a purely static component
 </script>
 
-<div class="p-8 text-center text-gray-500">
-  <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="p-8 text-center text-[#6e7d96]">
+  <svg class="w-12 h-12 mx-auto mb-3 text-[#9dabc4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
       stroke-linecap="round"
       stroke-linejoin="round"
@@ -12,5 +12,5 @@
     />
   </svg>
   <p class="text-sm font-medium">No reviews or comments yet</p>
-  <p class="text-xs text-gray-400 mt-1">Reviews and comments will appear here as they are added</p>
+  <p class="text-xs text-[#9dabc4] mt-1">Reviews and comments will appear here as they are added</p>
 </div>

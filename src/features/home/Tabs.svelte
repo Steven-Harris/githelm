@@ -21,8 +21,8 @@
 </script>
 
 {#if $isMobile && page.url.pathname !== '/config'}
-  <div id="tabs" class="flex justify-center w-full mb-4 md:hidden sticky top-0 z-10 bg-gray-900">
-    <div role="tablist" aria-label="Main tabs">
+  <div id="tabs" class="flex justify-center w-full mb-4 md:hidden sticky top-16 z-10">
+    <div role="tablist" aria-label="Main tabs" class="segmented">
       <button id="tab-pull-requests" type="button" role="tab" aria-selected={$activeTab === pullRequestsTab} class="tab-button {pullRequestsTabActive()}" onclick={() => switchTab(pullRequestsTab)} aria-controls="panel-pull-requests">
         Pull Requests
       </button>
@@ -35,6 +35,19 @@
 
 <style>
   #tabs {
-    background-color: var(--primary-color);
+    background: rgba(8, 11, 19, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    padding: 0.5rem 0;
+  }
+
+  .segmented {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: rgba(148, 168, 205, 0.05);
   }
 </style>

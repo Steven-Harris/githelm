@@ -3,7 +3,6 @@
   import { configService } from '$features/config/services/config.service';
   import type { SaveEventData } from '$features/config/services/repository-form.service';
   import type { CombinedConfig } from '$features/config/stores/config.store';
-  import { isMobile } from '$shared/stores/mobile.store';
   import { useDraggable } from './directives/useDraggable';
   import RepositoryForm from './RepositoryForm.svelte';
 
@@ -55,75 +54,59 @@
             }}
           />
         {:else}
-          <div
-            class="config-item flex items-center justify-between p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md hover:border-[#388bfd44] transition-colors cursor-grab active:cursor-grabbing mb-1"
-            draggable="true"
-            role="button"
-            tabindex="0"
-            onmousedown={handleMouseDown}
-            data-index={i}
-          >
-            <div class="flex justify-between items-center w-full overflow-hidden">
-              <div class="flex items-center min-w-0 flex-shrink flex-1">
-                <span class="{$isMobile ? 'mr-1' : 'mr-2'} text-gray-400 opacity-70 drag-handle flex-shrink-0">☰</span>
-                <div class="flex flex-col min-w-0 flex-1">
-                  <strong class="text-[#e6edf3] {$isMobile ? 'text-sm' : ''} truncate">
-                    {config.org}/<span class="text-[#58a6ff]">{config.repo}</span>
-                  </strong>
-                  <div class="{$isMobile ? 'text-xs' : 'text-sm'} flex flex-wrap gap-2 mt-1">
-                    {#if config.pullRequests?.length > 0}
-                      <div class="flex items-center">
-                        <span class="text-[#58a6ff] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">PRs:</span>
-                        <div class="flex flex-wrap gap-1">
-                          {#each config.pullRequests as filter, i (i)}
-                            <span class="chip">{filter}</span>
-                          {/each}
-                        </div>
-                      </div>
-                    {:else if config.pullRequests}
-                      <div class="flex items-center">
-                        <span class="text-[#58a6ff] font-medium">PRs: All Labels</span>
-                      </div>
-                    {/if}
+          <div class="config-item" draggable="true" role="button" tabindex="0" onmousedown={handleMouseDown} data-index={i}>
+            <span class="drag-handle" aria-hidden="true">
+              <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor">
+                <circle cx="4" cy="3" r="1.3" /><circle cx="8" cy="3" r="1.3" />
+                <circle cx="4" cy="7" r="1.3" /><circle cx="8" cy="7" r="1.3" />
+                <circle cx="4" cy="11" r="1.3" /><circle cx="8" cy="11" r="1.3" />
+              </svg>
+            </span>
 
-                    {#if config.actions && config.actions.length > 0}
-                      <div class="flex items-center">
-                        <span class="text-[#3fb950] font-medium {$isMobile ? 'mr-0.5' : 'mr-1'}">Actions:</span>
-                        <div class="flex flex-wrap gap-1">
-                          {#each config.actions as filter, i (i)}
-                            <span class="chip">{filter.replace(/\.(ya?ml)$/, '')}</span>
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
+            <div class="flex flex-col min-w-0 flex-1 gap-1.5">
+              <strong class="config-name truncate">
+                <span class="config-org">{config.org}/</span>{config.repo}
+              </strong>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                {#if config.pullRequests?.length > 0}
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="filter-label">PRs</span>
+                    {#each config.pullRequests as filter, i (i)}
+                      <span class="chip">{filter}</span>
+                    {/each}
                   </div>
-                </div>
-              </div>
+                {:else if config.pullRequests}
+                  <span class="filter-label">PRs · all labels</span>
+                {/if}
 
-              <div class="flex items-center {$isMobile ? 'ml-2' : 'ml-3'} flex-shrink-0">
-                <button
-                  class="text-[#8b949e] hover:text-[#58a6ff] transition-colors duration-200 no-drag cursor-pointer flex items-center justify-center {$isMobile ? 'w-8 h-8' : ''}"
-                  type="button"
-                  aria-label="edit {config.org}/{config.repo}"
-                  title="Edit repository configuration"
-                  onclick={() => (editingIndex = i)}
-                >
-                  <img src={editSVG} alt="edit" width={$isMobile ? '16' : '15'} height={$isMobile ? '16' : '15'} />
-                </button>
+                {#if config.actions && config.actions.length > 0}
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="filter-label filter-label-actions">Actions</span>
+                    {#each config.actions as filter, i (i)}
+                      <span class="chip chip-actions">{filter.replace(/\.(ya?ml)$/, '')}</span>
+                    {/each}
+                  </div>
+                {/if}
               </div>
             </div>
+
+            <button class="config-edit no-drag" type="button" aria-label="Edit {config.org}/{config.repo}" title="Edit repository configuration" onclick={() => (editingIndex = i)}>
+              <img src={editSVG} alt="" width="15" height="15" />
+            </button>
           </div>
         {/if}
       {/each}
     </div>
   {:else}
-    <p class="text-[#8b949e] mb-4">No repositories configured. Add one below.</p>
+    <p class="text-sm text-[var(--text-faint)] mb-4">No repositories yet. Add one below.</p>
   {/if}
 
   {#if editingIndex === -1}
-    <button class="flex items-center {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] w-full mb-4 transition-all duration-200" onclick={() => (editingIndex = -2)} aria-label="Add configuration">
-      <span class="text-xl mr-1 text-[#3fb950]">+</span>
-      <span>Add Repository</span>
+    <button class="ghost-button w-full justify-center mb-4" onclick={() => (editingIndex = -2)} aria-label="Add repository">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d="M7.25 1.25a.75.75 0 0 1 1.5 0V7.25h6a.75.75 0 0 1 0 1.5h-6v6a.75.75 0 0 1-1.5 0v-6h-6a.75.75 0 0 1 0-1.5h6V1.25Z" />
+      </svg>
+      <span>Add repository</span>
     </button>
   {/if}
 
@@ -134,26 +117,90 @@
 
 <style>
   :global(.chip) {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    background-color: rgba(88, 166, 255, 0.15);
-    color: var(--secondary-accent-color);
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    border: 1px solid rgba(88, 166, 255, 0.4);
+    background-color: rgba(121, 184, 255, 0.13);
+    color: #a9d1ff;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    border: 1px solid rgba(121, 184, 255, 0.3);
+    margin: 0;
+  }
+
+  :global(.chip.chip-actions) {
+    background-color: rgba(63, 211, 130, 0.12);
+    color: #8fe8b8;
+    border-color: rgba(63, 211, 130, 0.28);
   }
 
   :global(.chip > button) {
     margin-left: 4px;
   }
 
+  .filter-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
   .config-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    background: rgba(148, 168, 205, 0.05);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    cursor: grab;
     transition:
-      transform 0.15s ease,
-      opacity 0.15s ease,
-      background-color 0.15s ease,
-      box-shadow 0.15s ease;
+      transform 0.15s var(--ease),
+      opacity 0.15s var(--ease),
+      background-color 0.15s var(--ease),
+      border-color 0.15s var(--ease),
+      box-shadow 0.15s var(--ease);
+  }
+
+  .config-item:hover {
+    border-color: var(--line-strong);
+    background: rgba(148, 168, 205, 0.08);
+  }
+
+  .config-name {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .config-org {
+    color: var(--text-faint);
+    font-weight: 400;
+  }
+
+  .config-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.55;
+    transition:
+      opacity 160ms var(--ease),
+      background-color 160ms var(--ease);
+  }
+
+  .config-edit:hover {
+    opacity: 1;
+    background: rgba(148, 168, 205, 0.14);
   }
 
   :global(.config-item.dragging) {
@@ -162,8 +209,8 @@
 
   :global(.config-item.drag-over) {
     transform: translateY(6px);
-    border: 1px dashed var(--border-color);
-    background-color: rgba(33, 38, 45, 0.8);
+    border: 1px dashed var(--beacon);
+    background-color: rgba(47, 212, 193, 0.06);
     position: relative;
   }
 
@@ -174,8 +221,8 @@
     left: 0;
     right: 0;
     height: 2px;
-    background-color: #58a6ff;
-    opacity: 0.6;
+    background-color: var(--beacon);
+    opacity: 0.7;
   }
 
   .config-item button {
@@ -183,6 +230,11 @@
   }
 
   .drag-handle {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--text-faint);
+    opacity: 0.6;
     cursor: grab;
   }
 
@@ -196,24 +248,17 @@
 
   :global(.ghost-element) {
     transition: transform 0.05s ease-out;
-    box-shadow:
-      0 12px 28px rgba(0, 0, 0, 0.5),
-      0 8px 10px rgba(0, 0, 0, 0.3);
-    border-radius: 6px;
-    border: 1px solid rgba(88, 166, 255, 0.3);
-    background-color: #0d1117;
+    box-shadow: var(--shadow-pop);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(47, 212, 193, 0.35);
+    background-color: var(--panel-raised);
     pointer-events: none;
     will-change: transform;
-    opacity: 0.7 !important;
+    opacity: 0.75 !important;
     z-index: 9999 !important;
   }
 
   @media (max-width: 768px) {
-    :global(.chip) {
-      padding: 1px 6px;
-      font-size: 0.7rem;
-    }
-
     .config-item button {
       min-height: 32px;
       min-width: 32px;
@@ -231,11 +276,11 @@
   :global(body.scroll-zone-top::before) {
     content: '';
     position: fixed;
-    top: 60px; /* Start below header */
+    top: 64px;
     left: 0;
     right: 0;
-    height: 120px; /* Match the scroll zone height */
-    background: linear-gradient(to bottom, rgba(88, 166, 255, 0.15) 0%, transparent 100%);
+    height: 120px;
+    background: linear-gradient(to bottom, rgba(47, 212, 193, 0.14) 0%, transparent 100%);
     pointer-events: none;
     z-index: 9998;
   }
@@ -247,11 +292,11 @@
   :global(body.scroll-zone-bottom::after) {
     content: '';
     position: fixed;
-    bottom: 60px; /* End above footer */
+    bottom: 60px;
     left: 0;
     right: 0;
-    height: 120px; /* Match the scroll zone height */
-    background: linear-gradient(to top, rgba(88, 166, 255, 0.15) 0%, transparent 100%);
+    height: 120px;
+    background: linear-gradient(to top, rgba(47, 212, 193, 0.14) 0%, transparent 100%);
     pointer-events: none;
     z-index: 9998;
   }

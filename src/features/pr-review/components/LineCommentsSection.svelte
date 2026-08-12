@@ -228,32 +228,32 @@
 
 {#if comments.length > 0}
   <div class="p-4">
-    <h4 class="text-xs font-medium text-[#8b949e] uppercase tracking-wide mb-3">Code Comments</h4>
+    <h4 class="text-xs font-medium text-[#9dabc4] uppercase tracking-wide mb-3">Code Comments</h4>
     {#if actionError}
-      <div class="mb-3 text-xs text-red-200 bg-red-900/20 border border-red-900/40 rounded px-2 py-1">
+      <div class="mb-3 text-xs text-[#ffb3ae] bg-[rgba(255,107,98,0.20)] border border-[rgba(255,107,98,0.40)] rounded px-2 py-1">
         {actionError}
       </div>
     {/if}
 
     <div class="space-y-3">
       {#each threads as thread (thread.key)}
-        <div class="border border-[#30363d] rounded-lg overflow-hidden {thread.isResolved ? 'opacity-70' : ''}">
+        <div class="border border-[#243044] rounded-lg overflow-hidden {thread.isResolved ? 'opacity-70' : ''}">
           <!-- Thread header -->
-          <div class="flex items-center justify-between px-3 py-2 bg-[#0d1117] border-b border-[#30363d]">
+          <div class="flex items-center justify-between px-3 py-2 bg-[#0a0e17] border-b border-[#243044]">
             <button
               type="button"
-              class="min-w-0 text-left text-xs text-[#8b949e] hover:text-[#c9d1d9] transition-colors"
+              class="min-w-0 text-left text-xs text-[#9dabc4] hover:text-[#e9eefb] transition-colors"
               onclick={() => handleCommentClick(thread.root)}
               title="Scroll to code"
             >
               <span class="font-medium">{getFileName(thread.path)}</span>
-              <span class="mx-1 text-[#30363d]">:</span>
-              <span class="text-[#58a6ff] font-medium">line {thread.lineNumber}</span>
+              <span class="mx-1 text-[#243044]">:</span>
+              <span class="text-[#79b8ff] font-medium">line {thread.lineNumber}</span>
             </button>
 
             <div class="flex items-center gap-2">
               {#if thread.isResolved}
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-[#161b22] border border-[#30363d] text-[#8b949e]">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-[#121826] border border-[#243044] text-[#9dabc4]">
                   Resolved
                 </span>
               {/if}
@@ -261,7 +261,7 @@
           </div>
 
           <!-- Thread comments -->
-          <div class="divide-y divide-[#30363d]">
+          <div class="divide-y divide-[#243044]">
             {#each thread.comments as comment (comment.id)}
               <div class="px-3 py-3">
                 <div class="flex items-start justify-between gap-2">
@@ -269,9 +269,9 @@
                     <img src={comment.user.avatar_url} alt={comment.user.login} class="w-5 h-5 rounded-full mr-2 flex-shrink-0" />
                     <div class="min-w-0">
                       <div class="flex items-center text-xs min-w-0">
-                        <span class="font-medium text-[#f0f6fc] truncate">{comment.user.login}</span>
-                        <span class="mx-1 text-[#30363d]">•</span>
-                        <span class="text-[#8b949e]">{formatDate(comment.created_at)}</span>
+                        <span class="font-medium text-[#e9eefb] truncate">{comment.user.login}</span>
+                        <span class="mx-1 text-[#243044]">•</span>
+                        <span class="text-[#9dabc4]">{formatDate(comment.created_at)}</span>
                       </div>
                     </div>
                   </div>
@@ -281,7 +281,7 @@
                       {#if onUpdateComment && isOwnComment(comment)}
                         <button
                           type="button"
-                          class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]"
+                          class="text-[#9dabc4] hover:text-[#e9eefb] transition-colors p-1 rounded hover:bg-[#171e2e]"
                           onclick={(e) => startEdit(e, comment)}
                           title="Edit comment"
                           aria-label="Edit comment"
@@ -300,7 +300,7 @@
                       {#if onDeleteComment && isOwnComment(comment)}
                         <button
                           type="button"
-                          class="text-red-200 hover:text-red-100 transition-colors p-1 rounded hover:bg-red-900/20 disabled:opacity-50"
+                          class="text-[#ffb3ae] hover:text-[#ffd0cd] transition-colors p-1 rounded hover:bg-[rgba(255,107,98,0.20)] disabled:opacity-50"
                           onclick={(e) => handleDeleteClick(e, comment)}
                           title="Delete comment"
                           aria-label="Delete comment"
@@ -324,7 +324,7 @@
                 {#if editingId === comment.id}
                   <div class="mt-2">
                     <textarea
-                      class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+                      class="w-full bg-[#0a0e17] text-[#e9eefb] placeholder:text-[#9dabc4] border border-[#243044] rounded px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#79b8ff] focus:border-transparent"
                       rows="4"
                       bind:value={editBody}
                       placeholder="Edit comment..."
@@ -332,14 +332,14 @@
                     <div class="flex items-center justify-end gap-2 mt-2">
                       <button
                         type="button"
-                        class="text-xs px-2 py-1 rounded border border-[#30363d] bg-transparent hover:bg-[#21262d] text-[#8b949e] transition-colors"
+                        class="text-xs px-2 py-1 rounded border border-[#243044] bg-transparent hover:bg-[#171e2e] text-[#9dabc4] transition-colors"
                         onclick={cancelInlineAction}
                       >
                         Cancel
                       </button>
                       <button
                         type="button"
-                        class="text-xs px-2 py-1 rounded border border-[#1f6feb]/50 bg-[#1f6feb] hover:bg-[#388bfd] text-white transition-colors disabled:opacity-50"
+                        class="text-xs px-2 py-1 rounded border border-[#2f6fd4]/50 bg-[#2f6fd4] hover:bg-[#4f8fe0] text-white transition-colors disabled:opacity-50"
                         disabled={busyCommentId === comment.id || !editBody.trim()}
                         onclick={(e) => submitEdit(e, comment.id)}
                       >
@@ -358,13 +358,13 @@
           </div>
 
           {#if (canResolve && thread.threadId) || (canInteract && onReplyToComment)}
-            <div class="px-3 py-2 bg-[#0d1117] border-t border-[#30363d]">
+            <div class="px-3 py-2 bg-[#0a0e17] border-t border-[#243044]">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   {#if canResolve && thread.threadId}
                     <button
                       type="button"
-                      class="inline-flex items-center gap-1 text-xs text-[#8b949e] hover:text-[#c9d1d9] transition-colors px-2 py-1 rounded hover:bg-[#21262d]"
+                      class="inline-flex items-center gap-1 text-xs text-[#9dabc4] hover:text-[#e9eefb] transition-colors px-2 py-1 rounded hover:bg-[#171e2e]"
                       onclick={(e) => handleToggleResolved(e, thread.threadId as string, thread.isResolved)}
                       aria-label={thread.isResolved ? 'Unresolve conversation' : 'Resolve conversation'}
                       title={thread.isResolved ? 'Unresolve conversation' : 'Resolve conversation'}
@@ -398,7 +398,7 @@
                   {#if canInteract && onReplyToComment}
                     <button
                       type="button"
-                      class="inline-flex items-center gap-1 text-xs text-[#8b949e] hover:text-[#c9d1d9] transition-colors px-2 py-1 rounded hover:bg-[#21262d]"
+                      class="inline-flex items-center gap-1 text-xs text-[#9dabc4] hover:text-[#e9eefb] transition-colors px-2 py-1 rounded hover:bg-[#171e2e]"
                       onclick={(e) => startReply(e, thread.root)}
                       title="Reply"
                       aria-label="Reply"
@@ -420,7 +420,7 @@
               {#if replyToId === thread.root.id}
                 <div class="mt-3">
                   <textarea
-                    class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+                    class="w-full bg-[#0a0e17] text-[#e9eefb] placeholder:text-[#9dabc4] border border-[#243044] rounded px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[#79b8ff] focus:border-transparent"
                     rows="3"
                     bind:value={replyBody}
                     placeholder="Write a reply..."
@@ -428,14 +428,14 @@
                   <div class="flex items-center justify-end gap-2 mt-2">
                     <button
                       type="button"
-                      class="text-xs px-2 py-1 rounded border border-[#30363d] bg-transparent hover:bg-[#21262d] text-[#8b949e] transition-colors"
+                      class="text-xs px-2 py-1 rounded border border-[#243044] bg-transparent hover:bg-[#171e2e] text-[#9dabc4] transition-colors"
                       onclick={cancelInlineAction}
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
-                      class="text-xs px-2 py-1 rounded border border-[#1f6feb]/50 bg-[#1f6feb] hover:bg-[#388bfd] text-white transition-colors disabled:opacity-50"
+                      class="text-xs px-2 py-1 rounded border border-[#2f6fd4]/50 bg-[#2f6fd4] hover:bg-[#4f8fe0] text-white transition-colors disabled:opacity-50"
                       disabled={busyCommentId === thread.root.id || !replyBody.trim()}
                       onclick={(e) => submitReply(e, thread.root.id)}
                     >

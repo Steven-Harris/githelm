@@ -57,150 +57,101 @@
 
 <svelte:window on:click={handleWindowClick} on:keydown={handleKeydown} />
 
-<header class="sticky top-0 z-50 glass-nav-header w-full">
-  <div class="bg-[#0d1117] border-b border-[#30363d] shadow-sm">
-    <div class="h-full px-4 py-2 flex justify-between items-center">
-      <div class="flex items-center">
-        <img src={helmSVG} alt="GitHelm logo" class="w-10 h-10 mr-2" />
-        <h1 class="text-2xl font-bold text-[#f0f6fc]">GitHelm</h1>
-      </div>
+<header class="sticky top-0 z-50 w-full app-header">
+  <div class="px-4 sm:px-6 h-16 flex justify-between items-center gap-4">
+    <a href="/" class="flex items-center gap-2.5 group" aria-label="GitHelm home">
+      <img src={helmSVG} alt="" class="w-8 h-8 helm-mark" />
+      <span class="brand-word">GitHelm</span>
+    </a>
 
-      <div class="flex items-center">
-        {#if signedIn}
-          {#if page.url.pathname === '/config'}
-            <!-- Profile dropdown -->
-            <div class="relative ml-2" bind:this={menuRef}>
-              <button class="avatar-button tooltip-container" onclick={toggleMenu} aria-label="user menu" title="User menu">
-                {#if $user?.photoURL}
-                  <img src={$user.photoURL} alt="profile" class="avatar-img" />
-                {:else}
-                  <div class="avatar-fallback">{$user?.displayName?.charAt(0) || 'U'}</div>
-                {/if}
-              </button>
-              {#if menuOpen}
-                <div class="menu" role="menu">
-                  <button
-                    class="menu-item"
-                    role="menuitem"
-                    onclick={() => {
-                      navigateToConfig();
-                      closeMenu();
-                    }}>Settings</button
-                  >
-                  <button
-                    class="menu-item"
-                    role="menuitem"
-                    onclick={() => {
-                      logout();
-                      closeMenu();
-                    }}>Logout</button
-                  >
-                </div>
+    <div class="flex items-center gap-2">
+      {#if signedIn}
+        {#if page.url.pathname !== '/config'}
+          {#if !$pollingPaused}
+            <div class="hidden sm:flex items-center gap-2 pill" aria-live="polite">
+              {#if $killSwitch}
+                <span class="status-dot" style="color: var(--warn)"></span>
+                <span>Updates paused</span>
+              {:else if $lastUpdated > 0}
+                <span class="status-dot beacon-live" style="color: var(--beacon)"></span>
+                <span>Live · {timeAgoInSeconds($lastUpdated)} ago</span>
+              {:else}
+                <span class="status-dot beacon-live" style="color: var(--beacon)"></span>
+                <span>Syncing…</span>
               {/if}
             </div>
-          {:else}
-            {#if !$pollingPaused}
-              <div class="hidden md:flex items-center mr-4 text-sm text-[#8b949e]">
-                {#if $lastUpdated > 0}
-                  <span class="mr-2">Updated:</span>
-                  <span>{timeAgoInSeconds($lastUpdated)}</span>
-                  <span class="ml-1">ago</span>
-                {:else if $killSwitch}
-                  <span class="mr-2">Updating paused</span>
-                {:else}
-                  <span class="mr-2">Updating...</span>
-                {/if}
-              </div>
-            {/if}
-            {#if !$pollingPaused}
-              <button class="nav-button ml-2 tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="refresh data" title="Refresh data">
-                {#if $isLoading}
-                  <div class="animate-spin">
-                    <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
-                  </div>
-                {:else}
-                  <img src={refreshSVG} alt="refresh" class="w-5 h-5 mx-auto" />
-                {/if}
-                {#if !$isMobile}
-                  <span class="ml-1">{$isLoading ? 'Loading...' : 'Refresh'}</span>
-                {:else}
-                  <span class="tooltip">{$isLoading ? 'Loading...' : 'Refresh'}</span>
-                {/if}
-              </button>
-            {/if}
 
-            <!-- Profile dropdown -->
-            <div class="relative ml-2" bind:this={menuRef}>
-              <button class="avatar-button tooltip-container" onclick={toggleMenu} aria-label="user menu" title="User menu">
-                {#if $user?.photoURL}
-                  <img src={$user.photoURL} alt="profile" class="avatar-img" />
-                {:else}
-                  <div class="avatar-fallback">{$user?.displayName?.charAt(0) || 'U'}</div>
-                {/if}
-              </button>
-              {#if menuOpen}
-                <div class="menu" role="menu">
-                  <button
-                    class="menu-item"
-                    role="menuitem"
-                    onclick={() => {
-                      navigateToConfig();
-                      closeMenu();
-                    }}>Settings</button
-                  >
-                  <button
-                    class="menu-item"
-                    role="menuitem"
-                    onclick={() => {
-                      logout();
-                      closeMenu();
-                    }}>Logout</button
-                  >
-                </div>
+            <button class="ghost-button tooltip-container" onclick={manualRefresh} disabled={$isLoading || $killSwitch} aria-label="Refresh data" title="Refresh data">
+              <img src={refreshSVG} alt="" class="w-4 h-4 {$isLoading ? 'animate-spin' : ''}" />
+              {#if !$isMobile}
+                <span>{$isLoading ? 'Refreshing' : 'Refresh'}</span>
+              {:else}
+                <span class="tooltip">{$isLoading ? 'Refreshing' : 'Refresh'}</span>
               {/if}
-            </div>
+            </button>
           {/if}
         {/if}
-      </div>
+
+        <!-- Profile dropdown -->
+        <div class="relative" bind:this={menuRef}>
+          <button class="avatar-button" onclick={toggleMenu} aria-label="User menu" aria-haspopup="menu" aria-expanded={menuOpen} title="User menu">
+            {#if $user?.photoURL}
+              <img src={$user.photoURL} alt="" class="avatar-img" />
+            {:else}
+              <div class="avatar-fallback">{$user?.displayName?.charAt(0) || 'U'}</div>
+            {/if}
+          </button>
+          {#if menuOpen}
+            <div class="menu menu-surface" role="menu">
+              {#if $user?.displayName}
+                <div class="menu-heading">{$user.displayName}</div>
+              {/if}
+              <button
+                class="menu-item"
+                role="menuitem"
+                onclick={() => {
+                  navigateToConfig();
+                  closeMenu();
+                }}>Settings</button
+              >
+              <button
+                class="menu-item"
+                role="menuitem"
+                onclick={() => {
+                  logout();
+                  closeMenu();
+                }}>Sign out</button
+              >
+            </div>
+          {/if}
+        </div>
+      {/if}
     </div>
   </div>
 </header>
 
 <style>
-  .nav-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    background-color: rgba(33, 38, 45, 0.8);
-    color: var(--primary-text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 0.875rem;
-    transition: all 200ms ease;
+  .app-header {
+    background: rgba(8, 11, 19, 0.72);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border-bottom: 1px solid var(--line);
   }
 
-  .nav-button:hover {
-    background-color: rgba(48, 54, 61, 0.8);
-    border-color: #8b949e;
+  .brand-word {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
   }
 
-  .nav-button:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.4);
+  .helm-mark {
+    transition: transform 700ms var(--ease);
   }
 
-  .nav-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 768px) {
-    .nav-button {
-      width: 4rem;
-      height: 2.5rem;
-      padding: 0.5rem;
-    }
+  .group:hover .helm-mark {
+    transform: rotate(72deg);
   }
 
   /* Tooltip styles */
@@ -214,19 +165,19 @@
     top: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(22, 27, 34, 0.95);
-    color: #c9d1d9;
+    background-color: rgba(18, 24, 38, 0.96);
+    color: var(--text-dim);
     text-align: center;
     padding: 4px 8px;
     border-radius: 6px;
     font-size: 0.75rem;
     white-space: nowrap;
-    margin-top: 6px;
+    margin-top: 8px;
     z-index: 10;
-    border: 1px solid #30363d;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-panel);
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.2s;
   }
 
   .tooltip-container:hover .tooltip {
@@ -234,67 +185,78 @@
     opacity: 1;
   }
 
-  /* Add a little arrow to the tooltip */
-  .tooltip::after {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent transparent rgba(22, 27, 34, 0.95) transparent;
-  }
-
   /* Avatar dropdown */
   .avatar-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2.25rem;
+    height: 2.25rem;
     padding: 0;
-    background-color: rgba(33, 38, 45, 0.8);
-    border: 1px solid var(--border-color);
+    background-color: rgba(148, 168, 205, 0.06);
+    border: 1px solid var(--line);
     border-radius: 9999px;
-    transition: all 200ms ease;
+    cursor: pointer;
+    transition:
+      border-color 200ms var(--ease),
+      box-shadow 200ms var(--ease);
   }
 
   .avatar-button:hover {
-    background-color: rgba(48, 54, 61, 0.8);
-    border-color: #8b949e;
+    border-color: rgba(47, 212, 193, 0.5);
+    box-shadow: 0 0 0 3px rgba(47, 212, 193, 0.12);
   }
 
   .avatar-img {
-    width: 2rem;
-    height: 2rem;
+    width: 1.875rem;
+    height: 1.875rem;
     border-radius: 9999px;
   }
 
   .avatar-fallback {
-    width: 2rem;
-    height: 2rem;
+    width: 1.875rem;
+    height: 1.875rem;
     border-radius: 9999px;
-    background-color: #30363d;
-    color: #c9d1d9;
+    background: linear-gradient(140deg, rgba(47, 212, 193, 0.3), rgba(122, 108, 255, 0.3));
+    color: var(--text);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 600;
+    font-size: 0.875rem;
   }
 
   .menu {
     position: absolute;
     right: 0;
-    top: calc(100% + 0.5rem);
-    background-color: rgba(22, 27, 34, 0.98);
-    color: #c9d1d9;
-    border: 1px solid #30363d;
-    border-radius: 8px;
+    top: calc(100% + 0.625rem);
+    color: var(--text-dim);
     min-width: 12rem;
-    padding: 0.25rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    padding: 0.3125rem;
     z-index: 100;
+    animation: menu-in 180ms var(--ease);
+  }
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .menu-heading {
+    padding: 0.5rem 0.75rem 0.375rem;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .menu-item {
@@ -306,10 +268,14 @@
     color: inherit;
     border: none;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    transition:
+      background-color 150ms var(--ease),
+      color 150ms var(--ease);
   }
 
   .menu-item:hover {
-    background-color: rgba(48, 54, 61, 0.8);
+    background-color: rgba(148, 168, 205, 0.1);
+    color: var(--text);
   }
 </style>

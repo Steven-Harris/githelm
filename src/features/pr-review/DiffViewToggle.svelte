@@ -14,11 +14,11 @@
   }
 </script>
 
-<div class={`flex items-center space-x-1 bg-[#0d1117] border border-[#30363d] rounded-lg ${compact ? 'p-0.5' : 'p-1'}`}>
+<div class={`flex items-center space-x-1 bg-[#0a0e17] border border-[#243044] rounded-lg ${compact ? 'p-0.5' : 'p-1'}`}>
   <button
     onclick={() => handleToggle('inline')}
     class={`${compact ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'} font-medium rounded-md transition-colors flex items-center ${compact ? '' : 'space-x-1.5'} ${
-      currentMode === 'inline' ? 'bg-[#161b22] text-[#f0f6fc]' : 'text-[#8b949e] hover:text-[#c9d1d9] hover:bg-white/5'
+      currentMode === 'inline' ? 'bg-[#121826] text-[#e9eefb]' : 'text-[#9dabc4] hover:text-[#e9eefb] hover:bg-white/5'
     }`}
     aria-label="Inline diff view"
     title="Show changes inline"
@@ -34,7 +34,7 @@
   <button
     onclick={() => handleToggle('side-by-side')}
     class={`${compact ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'} font-medium rounded-md transition-colors flex items-center ${compact ? '' : 'space-x-1.5'} ${
-      currentMode === 'side-by-side' ? 'bg-[#161b22] text-[#f0f6fc]' : 'text-[#8b949e] hover:text-[#c9d1d9] hover:bg-white/5'
+      currentMode === 'side-by-side' ? 'bg-[#121826] text-[#e9eefb]' : 'text-[#9dabc4] hover:text-[#e9eefb] hover:bg-white/5'
     }`}
     aria-label="Side-by-side diff view"
     title="Show changes side-by-side"

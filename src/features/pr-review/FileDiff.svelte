@@ -302,12 +302,12 @@
   }
 </script>
 
-<div class="border border-[#30363d] rounded-lg overflow-hidden text-[#c9d1d9]">
+<div class="border border-[#243044] rounded-lg overflow-hidden text-[#e9eefb]">
   <!-- File header -->
-  <div class="bg-[#0d1117] px-4 py-3 border-b border-[#30363d]">
+  <div class="bg-[#0a0e17] px-4 py-3 border-b border-[#243044]">
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <button onclick={toggleExpanded} class="text-[#8b949e] hover:text-[#c9d1d9]" title={isExpanded ? 'Collapse file' : 'Expand file'} aria-label={isExpanded ? 'Collapse file' : 'Expand file'}>
+        <button onclick={toggleExpanded} class="text-[#9dabc4] hover:text-[#e9eefb]" title={isExpanded ? 'Collapse file' : 'Expand file'} aria-label={isExpanded ? 'Collapse file' : 'Expand file'}>
           {#if isExpanded}
             <!-- Collapse icon -->
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -332,18 +332,18 @@
             target="_blank"
             rel="noreferrer"
             onclick={(e) => e.stopPropagation()}
-            class="font-mono text-sm text-[#f0f6fc] hover:text-[#58a6ff] underline underline-offset-2"
+            class="font-mono text-sm text-[#e9eefb] hover:text-[#79b8ff] underline underline-offset-2"
             aria-label={`Open ${file.filename} on GitHub`}
             title="Open on GitHub"
           >
             {file.filename}
           </a>
         {:else}
-          <span class="font-mono text-sm text-[#f0f6fc]">{file.filename}</span>
+          <span class="font-mono text-sm text-[#e9eefb]">{file.filename}</span>
         {/if}
 
         {#if file.previous_filename && file.status === 'renamed'}
-          <span class="text-[#8b949e] text-sm">← {file.previous_filename}</span>
+          <span class="text-[#9dabc4] text-sm">← {file.previous_filename}</span>
         {/if}
       </div>
 
@@ -352,7 +352,7 @@
           <button
             type="button"
             onclick={startFileComment}
-            class="px-3 py-1.5 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+            class="px-3 py-1.5 text-sm bg-[#243044]/30 hover:bg-[#243044]/50 text-[#e9eefb] border border-[#243044] rounded-md transition-colors"
             title="Add a comment for this file"
             aria-label="Add a comment for this file"
           >
@@ -361,15 +361,15 @@
         {/if}
 
         {#if file.additions > 0}
-          <span class="text-green-400 font-medium">+{file.additions}</span>
+          <span class="text-[#3fd382] font-medium">+{file.additions}</span>
         {/if}
         {#if file.deletions > 0}
-          <span class="text-red-400 font-medium">-{file.deletions}</span>
+          <span class="text-[#ff6b62] font-medium">-{file.deletions}</span>
         {/if}
-        <span class="text-[#8b949e]">{file.changes} changes</span>
+        <span class="text-[#9dabc4]">{file.changes} changes</span>
 
         {#if isInlineForced}
-          <span class="px-2 py-1 text-xs bg-[#161b22] text-[#8b949e] border border-[#30363d] rounded" title="Added/removed files are shown inline">
+          <span class="px-2 py-1 text-xs bg-[#121826] text-[#9dabc4] border border-[#243044] rounded" title="Added/removed files are shown inline">
             Inline only
           </span>
         {/if}
@@ -379,27 +379,27 @@
 
   <!-- File diff content -->
   {#if isExpanded && file.patch}
-    <div class="bg-[#0d1117] overflow-x-hidden">
+    <div class="bg-[#0a0e17] overflow-x-hidden">
       {#if effectiveDiffViewMode === 'side-by-side'}
         <!-- Side-by-side view -->
         <table class="w-full text-sm font-mono">
           <tbody>
             {#each sideBySideRows as row, index (index)}
               {#if row.type === 'header'}
-                <tr class="bg-[#161b22]">
-                  <td colspan="4" class="px-4 py-2 text-[#8b949e] text-xs border-t border-[#30363d]">
+                <tr class="bg-[#121826]">
+                  <td colspan="4" class="px-4 py-2 text-[#9dabc4] text-xs border-t border-[#243044]">
                     {row.header}
                   </td>
                 </tr>
               {:else if row.type === 'context'}
                 <tr
-                  class={`hover:bg-white/5 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#1f6feb]/15' : ''} ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#1f6feb]/15' : ''}`}
+                  class={`hover:bg-white/5 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#79b8ff]/15' : ''} ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#79b8ff]/15' : ''}`}
                   data-line-old={row.left?.lineNumber}
                   data-line-new={row.right?.lineNumber}
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#79b8ff]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
@@ -408,18 +408,18 @@
                   </td>
                   <!-- Old content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#243044] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[#79b8ff]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-[#c9d1d9]">
+                    <span class="text-[#e9eefb]">
                       {@html highlightCode(row.left!.content, file.filename)}
                     </span>
                   </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none cursor-pointer hover:bg-white/5 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#79b8ff]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
@@ -428,12 +428,12 @@
                   </td>
                   <!-- New content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[#79b8ff]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-[#c9d1d9]">
+                    <span class="text-[#e9eefb]">
                       {@html highlightCode(row.right!.content, file.filename)}
                     </span>
                   </td>
@@ -476,7 +476,7 @@
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer bg-red-900/15 hover:bg-red-900/30 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none cursor-pointer bg-[rgba(255,107,98,0.15)] hover:bg-[rgba(255,107,98,0.30)] ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[rgba(255,107,98,0.40)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
@@ -485,16 +485,16 @@
                   </td>
                   <!-- Old content (deleted) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] bg-red-900/15 cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#243044] bg-[rgba(255,107,98,0.15)] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[rgba(255,107,98,0.20)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-red-300">{@html highlightCode(row.left!.content, file.filename)}</span>
+                    <span class="text-[#ffb3ae]">{@html highlightCode(row.left!.content, file.filename)}</span>
                   </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer bg-green-900/15 hover:bg-green-900/30 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none cursor-pointer bg-[rgba(63,211,130,0.15)] hover:bg-[rgba(63,211,130,0.30)] ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[rgba(63,211,130,0.40)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
@@ -503,12 +503,12 @@
                   </td>
                   <!-- New content (added) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-green-900/15 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-[rgba(63,211,130,0.15)] cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[rgba(63,211,130,0.20)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-green-300">{@html highlightCode(row.right!.content, file.filename)}</span>
+                    <span class="text-[#8fe8b8]">{@html highlightCode(row.right!.content, file.filename)}</span>
                   </td>
                 </tr>
 
@@ -543,12 +543,12 @@
                 {/if}
               {:else if row.type === 'deletion'}
                 <tr
-                  class={`bg-red-900/15 hover:bg-red-900/20 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/30' : ''}`}
+                  class={`bg-[rgba(255,107,98,0.15)] hover:bg-[rgba(255,107,98,0.20)] ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[rgba(255,107,98,0.30)]' : ''}`}
                   data-line-old={row.left?.lineNumber}
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-red-900/30 ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none cursor-pointer hover:bg-[rgba(255,107,98,0.30)] ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[rgba(255,107,98,0.40)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
@@ -557,30 +557,30 @@
                   </td>
                   <!-- Old content (deleted) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-red-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#243044] cursor-pointer ${checkLineSelected(row.left!.lineNumber, 'left') ? 'bg-[rgba(255,107,98,0.20)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.left!.lineNumber, 'left', row.left!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.left!.lineNumber, 'left', row.left!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-red-300">{@html highlightCode(row.left!.content, file.filename)}</span>
+                    <span class="text-[#ffb3ae]">{@html highlightCode(row.left!.content, file.filename)}</span>
                   </td>
                   <!-- New line number (empty) -->
-                  <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none bg-[#0d1117]"> </td>
+                  <td class="px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none bg-[#0a0e17]"> </td>
                   <!-- New content (empty) -->
-                  <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-[#0d1117]"> </td>
+                  <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 bg-[#0a0e17]"> </td>
                 </tr>
               {:else if row.type === 'addition'}
                 <tr
-                  class={`bg-green-900/15 hover:bg-green-900/20 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/30' : ''}`}
+                  class={`bg-[rgba(63,211,130,0.15)] hover:bg-[rgba(63,211,130,0.20)] ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[rgba(63,211,130,0.30)]' : ''}`}
                   data-line-new={row.right?.lineNumber}
                 >
                   <!-- Old line number (empty) -->
-                  <td class="px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none bg-[#0d1117]"> </td>
+                  <td class="px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none bg-[#0a0e17]"> </td>
                   <!-- Old content (empty) -->
-                  <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#30363d] bg-[#0d1117]"> </td>
+                  <td class="px-4 py-1 whitespace-pre-wrap break-all w-1/2 border-r border-[#243044] bg-[#0a0e17]"> </td>
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none cursor-pointer hover:bg-green-900/30 ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/40' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none cursor-pointer hover:bg-[rgba(63,211,130,0.30)] ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[rgba(63,211,130,0.40)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
@@ -589,12 +589,12 @@
                   </td>
                   <!-- New content (added) -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-green-900/20' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all w-1/2 cursor-pointer ${checkLineSelected(row.right!.lineNumber, 'right') ? 'bg-[rgba(63,211,130,0.20)]' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => handleLineMouseDown(row.right!.lineNumber, 'right', row.right!.content, e)}
                     onmouseenter={() => handleLineMouseEnter(row.right!.lineNumber, 'right', row.right!.content)}
                     onmouseup={handleLineMouseUp}
                   >
-                    <span class="text-green-300">{@html highlightCode(row.right!.content, file.filename)}</span>
+                    <span class="text-[#8fe8b8]">{@html highlightCode(row.right!.content, file.filename)}</span>
                   </td>
                 </tr>
 
@@ -637,8 +637,8 @@
           <tbody>
             {#each parsedPatch as line, index (index)}
               {#if line.type === 'header'}
-                <tr class="bg-[#161b22]">
-                  <td colspan="3" class="px-4 py-2 text-[#8b949e] text-xs border-t border-[#30363d]">
+                <tr class="bg-[#121826]">
+                  <td colspan="3" class="px-4 py-2 text-[#9dabc4] text-xs border-t border-[#243044]">
                     {line.content}
                   </td>
                 </tr>
@@ -649,17 +649,17 @@
 
                 <tr
                   class={`
-                  ${line.type === 'addition' ? 'bg-green-900/15 hover:bg-green-900/20' : ''}
-                  ${line.type === 'deletion' ? 'bg-red-900/15 hover:bg-red-900/20' : ''}
+                  ${line.type === 'addition' ? 'bg-[rgba(63,211,130,0.15)] hover:bg-[rgba(63,211,130,0.20)]' : ''}
+                  ${line.type === 'deletion' ? 'bg-[rgba(255,107,98,0.15)] hover:bg-[rgba(255,107,98,0.20)]' : ''}
                   ${line.type === 'context' ? 'hover:bg-white/5' : ''}
-                  ${isSelected ? 'bg-[#1f6feb]/15' : ''}
+                  ${isSelected ? 'bg-[#79b8ff]/15' : ''}
                 `}
                   data-line-old={line.lineNumber?.old}
                   data-line-new={line.lineNumber?.new}
                 >
                   <!-- Old line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none ${interactionSide === 'left' && interactionLineNumber ? 'cursor-pointer hover:bg-white/5' : ''} ${isSelected && interactionSide === 'left' ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none ${interactionSide === 'left' && interactionLineNumber ? 'cursor-pointer hover:bg-white/5' : ''} ${isSelected && interactionSide === 'left' ? 'bg-[#79b8ff]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => interactionSide === 'left' && interactionLineNumber && handleLineMouseDown(interactionLineNumber, interactionSide, line.content, e)}
                     onmouseenter={() => interactionSide === 'left' && interactionLineNumber && handleLineMouseEnter(interactionLineNumber, interactionSide, line.content)}
                     onmouseup={handleLineMouseUp}
@@ -669,7 +669,7 @@
 
                   <!-- New line number -->
                   <td
-                    class={`px-2 py-1 text-[#8b949e] text-xs text-right border-r border-[#30363d] w-12 select-none ${interactionSide === 'right' && interactionLineNumber ? 'cursor-pointer hover:bg-white/5' : ''} ${isSelected && interactionSide === 'right' ? 'bg-[#1f6feb]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-2 py-1 text-[#9dabc4] text-xs text-right border-r border-[#243044] w-12 select-none ${interactionSide === 'right' && interactionLineNumber ? 'cursor-pointer hover:bg-white/5' : ''} ${isSelected && interactionSide === 'right' ? 'bg-[#79b8ff]/25' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => interactionSide === 'right' && interactionLineNumber && handleLineMouseDown(interactionLineNumber, interactionSide, line.content, e)}
                     onmouseenter={() => interactionSide === 'right' && interactionLineNumber && handleLineMouseEnter(interactionLineNumber, interactionSide, line.content)}
                     onmouseup={handleLineMouseUp}
@@ -679,16 +679,16 @@
 
                   <!-- Content -->
                   <td
-                    class={`px-4 py-1 whitespace-pre-wrap break-all ${interactionLineNumber ? 'cursor-pointer' : ''} ${isSelected ? 'bg-[#1f6feb]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
+                    class={`px-4 py-1 whitespace-pre-wrap break-all ${interactionLineNumber ? 'cursor-pointer' : ''} ${isSelected ? 'bg-[#79b8ff]/10' : ''} ${isDragging ? 'user-select-none' : ''}`}
                     onmousedown={(e) => interactionLineNumber && handleLineMouseDown(interactionLineNumber, interactionSide, line.content, e)}
                     onmouseenter={() => interactionLineNumber && handleLineMouseEnter(interactionLineNumber, interactionSide, line.content)}
                     onmouseup={handleLineMouseUp}
                   >
                     <span
                       class={`
-                      ${line.type === 'addition' ? 'text-green-300' : ''}
-                      ${line.type === 'deletion' ? 'text-red-300' : ''}
-                      ${line.type === 'context' ? 'text-[#c9d1d9]' : ''}
+                      ${line.type === 'addition' ? 'text-[#8fe8b8]' : ''}
+                      ${line.type === 'deletion' ? 'text-[#ffb3ae]' : ''}
+                      ${line.type === 'context' ? 'text-[#e9eefb]' : ''}
                     `}
                     >
                       {#if line.type === 'addition'}+{/if}
@@ -735,7 +735,7 @@
     </div>
   {:else if isExpanded && !file.patch}
     <!-- No patch available (binary file or no changes to show) -->
-    <div class="p-4 text-center text-[#8b949e]">
+    <div class="p-4 text-center text-[#9dabc4]">
       {#if file.status === 'added'}
         <p>New file created</p>
       {:else if file.status === 'removed'}
@@ -743,7 +743,7 @@
       {:else if file.status === 'renamed'}
         <p>
           File renamed from
-          <code class="bg-[#161b22] border border-[#30363d] px-1 rounded">{file.previous_filename}</code>
+          <code class="bg-[#121826] border border-[#243044] px-1 rounded">{file.previous_filename}</code>
         </p>
       {:else}
         <p>Binary file or no diff available</p>

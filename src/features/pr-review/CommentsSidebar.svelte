@@ -131,28 +131,28 @@
 </script>
 
 <div
-  class="relative flex-shrink-0 bg-[#161b22] border-l border-[#30363d] min-h-0 overflow-y-auto text-[#c9d1d9] sticky top-4 self-start max-h-[calc(100dvh-8rem)]"
+  class="relative flex-shrink-0 bg-[#121826] border-l border-[#243044] min-h-0 overflow-y-auto text-[#e9eefb] sticky top-4 self-start max-h-[calc(100dvh-8rem)]"
 >
   <!-- Resizer handle (left edge) -->
   <div
-    class={`absolute left-0 top-0 bottom-0 w-1 ${resizing ? 'bg-[#1f6feb]/50' : 'bg-transparent hover:bg-[#30363d]'} cursor-col-resize`}
+    class={`absolute left-0 top-0 bottom-0 w-1 ${resizing ? 'bg-[#2f6fd4]/50' : 'bg-transparent hover:bg-[#243044]'} cursor-col-resize`}
     role="separator"
     aria-label="Resize comments sidebar"
     onpointerdown={onResizePointerDown}
   ></div>
 
-  <div class="p-4 border-b border-[#30363d]">
+  <div class="p-4 border-b border-[#243044]">
     <div class="flex items-start justify-between gap-3">
       <div>
-        <h3 class="text-sm font-medium text-[#f0f6fc]">Reviews & Comments</h3>
-        <div class="text-xs text-[#8b949e] mt-1">
+        <h3 class="text-sm font-medium text-[#e9eefb]">Reviews & Comments</h3>
+        <div class="text-xs text-[#9dabc4] mt-1">
           {overallReviewReviews.length} review{overallReviewReviews.length !== 1 ? 's' : ''} • {overallCommentReviews.length + lineComments.length} comment{overallCommentReviews.length + lineComments.length !== 1 ? 's' : ''}
         </div>
       </div>
 
       <button
         type="button"
-        class="text-xs px-2 py-1 rounded border border-[#30363d] bg-[#0d1117] hover:bg-[#21262d] text-[#c9d1d9] transition-colors"
+        class="text-xs px-2 py-1 rounded border border-[#243044] bg-[#0a0e17] hover:bg-[#171e2e] text-[#e9eefb] transition-colors"
         onclick={prReview.toggleResolvedComments}
         aria-pressed={prReview.state.showResolvedComments}
         title={prReview.state.showResolvedComments ? 'Hide resolved conversations' : 'Show resolved conversations'}
@@ -162,7 +162,7 @@
     </div>
   </div>
 
-  <div class="divide-y divide-[#30363d]">
+  <div class="divide-y divide-[#243044]">
     {#if isAuthenticated}
       <PendingCommentsSection
         selectedLines={prReview.state.selectedLines}

@@ -90,12 +90,12 @@
 </script>
 
 <div>
-  <h5 class="text-sm font-medium mb-2 text-[#c9d1d9]">
-    {title} Filters {labelFilterService.isWorkflowRequired(title) ? '(required)' : '(optional)'}
+  <h5 class="filter-heading">
+    {title} filters <span class="filter-optional">{labelFilterService.isWorkflowRequired(title) ? 'required' : 'optional'}</span>
   </h5>
 
   {#if filters.length > 0}
-    <div class="flex flex-wrap gap-2 mb-2">
+    <div class="flex flex-wrap gap-1.5 mb-2">
       {#each filters as filter, i (i)}
         <span class="chip">
           {getDisplayName(filter)}
@@ -104,17 +104,17 @@
       {/each}
     </div>
   {:else if labelFilterService.isWorkflowRequired(title) && showValidationError}
-    <p class="text-xs text-[#f97583] mb-2">At least one workflow must be selected.</p>
+    <p class="text-xs text-[var(--danger)] mb-2">Pick at least one workflow.</p>
   {:else if !labelFilterService.isWorkflowRequired(title)}
-    <p class="text-xs text-[#8b949e] mb-2">
-      No filters set. All {title.toLowerCase()} will be displayed.
+    <p class="text-xs text-[var(--text-faint)] mb-2">
+      No filters — all {title.toLowerCase()}s are shown.
     </p>
   {/if}
 
   {#if noOptionsAvailable && labelFilterService.isWorkflowRequired(title)}
-    <div class="p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded mb-2">
-      <p class="text-sm text-[#f0883e]">No workflows found in this repository.</p>
-      <p class="text-xs text-[#8b949e] mt-1">Create a workflow file in the repository's .github/workflows directory, then refresh here.</p>
+    <div class="empty-note">
+      <p class="text-sm text-[#f5d79b]">No workflows in this repository.</p>
+      <p class="text-xs text-[var(--text-faint)] mt-1">Add a file under <code>.github/workflows</code>, then refresh.</p>
     </div>
   {:else}
     <div class="relative">
@@ -127,22 +127,16 @@
         onfocus={() => {
           if (filterState.newFilter.trim() && availableOptions.length > 0) filterState.showResults = true;
         }}
-        class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200"
+        class="w-full"
         placeholder={`Add ${title.toLowerCase()} filter`}
         aria-label="New filter"
       />
 
       {#if filterState.showResults && filterState.filteredOptions.length > 0}
-        <div class="absolute z-10 w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div class="menu-surface absolute z-30 w-full mt-1.5 p-1 max-h-60 overflow-y-auto">
           {#each filterState.filteredOptions as option, i (i)}
-            <button
-              type="button"
-              class="filter-option w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9]"
-              onclick={() => selectOption(option)}
-              onkeydown={(e) => handleOptionKeydown(e, option, i)}
-              tabindex="0"
-            >
-              <div class="font-medium">{getDisplayName(option)}</div>
+            <button type="button" class="filter-option" onclick={() => selectOption(option)} onkeydown={(e) => handleOptionKeydown(e, option, i)} tabindex="0">
+              {getDisplayName(option)}
             </button>
           {/each}
         </div>
@@ -151,29 +145,110 @@
   {/if}
 
   {#if loading}
-    <p class="text-xs text-[#8b949e] mt-1">Loading {title.toLowerCase()}...</p>
+    <p class="text-xs text-[var(--text-faint)] mt-1.5">Loading {title.toLowerCase()}s…</p>
   {:else if noOptionsAvailable}
-    <button type="button" class="text-xs text-[#58a6ff] mt-1 hover:underline" onclick={onLoadOptions} aria-label={`Load ${title} options`}>
+    <button type="button" class="refresh-link" onclick={onLoadOptions} aria-label={`Reload ${title} options`}>
       Refresh {title.toLowerCase()} list
     </button>
   {/if}
 </div>
 
 <style>
-  .chip {
-    display: flex;
-    align-items: center;
-    background-color: rgba(56, 139, 253, 0.15);
-    color: #58a6ff;
-    padding: 2px 8px;
-    border-radius: 14px;
+  .filter-heading {
     font-size: 0.75rem;
-    border: 1px solid rgba(56, 139, 253, 0.4);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 0.5rem;
+  }
+
+  .filter-optional {
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.75;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    background-color: rgba(121, 184, 255, 0.13);
+    color: #a9d1ff;
+    padding: 1px 4px 1px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    border: 1px solid rgba(121, 184, 255, 0.3);
   }
 
   .chip > button {
-    margin-left: 4px;
-    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 3px;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    font-size: 13px;
     line-height: 1;
+    cursor: pointer;
+    opacity: 0.65;
+    transition:
+      opacity 140ms var(--ease),
+      background-color 140ms var(--ease);
+  }
+
+  .chip > button:hover {
+    opacity: 1;
+    background: rgba(121, 184, 255, 0.24);
+  }
+
+  .filter-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.4375rem 0.625rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: background-color 140ms var(--ease);
+  }
+
+  .filter-option:hover,
+  .filter-option:focus-visible {
+    background: rgba(47, 212, 193, 0.1);
+    outline: none;
+  }
+
+  .empty-note {
+    padding: 0.625rem 0.75rem;
+    border-radius: var(--radius-sm);
+    background: rgba(242, 181, 68, 0.09);
+    border: 1px solid rgba(242, 181, 68, 0.26);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-note code {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(148, 168, 205, 0.14);
+  }
+
+  .refresh-link {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    color: var(--beacon);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .refresh-link:hover {
+    text-decoration: underline;
   }
 </style>

@@ -7,18 +7,61 @@
   let { error, onRetry }: Props = $props();
 </script>
 
-<div class="bg-red-50 border border-red-200 rounded-md p-4 m-4">
-  <div class="flex">
-    <div class="ml-3">
-      <h3 class="text-sm font-medium text-red-800">Error loading pull request</h3>
-      <div class="mt-2 text-sm text-red-700">
-        {error}
-      </div>
-      {#if onRetry}
-        <div class="mt-4">
-          <button onclick={onRetry} class="bg-red-100 px-3 py-2 text-sm font-medium text-red-800 rounded-md hover:bg-red-200" aria-label="Retry loading pull request"> Try Again </button>
-        </div>
-      {/if}
-    </div>
+<div class="error-shell" role="alert">
+  <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path stroke-linecap="round" d="M12 7.5v5.25M12 16.25h.01" />
+  </svg>
+  <div class="error-body">
+    <h3 class="error-title">Couldn't load this pull request</h3>
+    <p class="error-detail">{error}</p>
+    {#if onRetry}
+      <button onclick={onRetry} class="ghost-button error-retry" aria-label="Retry loading pull request">Try again</button>
+    {/if}
   </div>
 </div>
+
+<style>
+  .error-shell {
+    display: flex;
+    gap: 0.875rem;
+    margin: 1.5rem;
+    padding: 1.125rem 1.25rem;
+    border: 1px solid color-mix(in srgb, var(--danger) 34%, transparent);
+    background: color-mix(in srgb, var(--danger) 9%, var(--panel));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .error-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.0625rem;
+    color: var(--danger);
+  }
+
+  .error-body {
+    min-width: 0;
+  }
+
+  .error-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .error-detail {
+    margin-top: 0.375rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+    overflow-wrap: anywhere;
+  }
+
+  .error-retry {
+    margin-top: 0.875rem;
+  }
+</style>

@@ -114,14 +114,14 @@
           <PRControls {prReview} />
         </div>
 
-        <div class="flex flex-1 min-h-0 min-w-0 border-t border-[#30363d] items-start">
+        <div class="flex flex-1 min-h-0 min-w-0 border-t border-[#243044] items-start">
           <FileTreeSidebar files={prReview.state.files} selectedFile={prReview.state.selectedFile} onFileSelect={handleFileSelect} />
           <FilesList />
           <CommentsSidebar onCommentClick={handleCommentClick} />
         </div>
       {:else}
         <div class="p-6 text-center">
-          <div class="text-[#8b949e]">No pull request data available</div>
+          <div class="text-[#9dabc4]">No pull request data available</div>
         </div>
       {/if}
     </div>

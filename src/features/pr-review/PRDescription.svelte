@@ -56,7 +56,7 @@
         {@html renderedMarkdown}
       </div>
     {:else}
-      <div class="text-sm text-[#c9d1d9] whitespace-pre-line">
+      <div class="text-sm text-[#e9eefb] whitespace-pre-line">
         {body}
       </div>
     {/if}
@@ -65,7 +65,7 @@
     {/if}
   </div>
   {#if shouldShowToggle}
-    <button onclick={() => (expanded = !expanded)} class="text-blue-600 hover:text-blue-800 text-sm mt-1 font-medium">
+    <button onclick={() => (expanded = !expanded)} class="text-[#79b8ff] hover:text-[#a9d1ff] text-sm mt-1 font-medium">
       {expanded ? 'Show less' : 'Show more'}
     </button>
   {/if}
@@ -83,7 +83,7 @@
     left: 0;
     right: 0;
     height: 50px;
-    background: linear-gradient(to bottom, transparent, var(--color-bg, #0d1117));
+    background: linear-gradient(to bottom, transparent, var(--color-bg, #0a0e17));
     pointer-events: none;
   }
 </style>
