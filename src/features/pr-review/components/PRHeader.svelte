@@ -11,9 +11,11 @@
     };
     commitCount: number;
     reviewDecision?: string | null;
+    approvalCount?: number;
+    changesRequestedCount?: number;
   }
 
-  let { pullRequest, fileStats, commitCount, reviewDecision = null }: Props = $props();
+  let { pullRequest, fileStats, commitCount, reviewDecision = null, approvalCount = 0, changesRequestedCount = 0 }: Props = $props();
 
   const reviewStatus = $derived.by(() => {
     if (pullRequest.merged) {
@@ -22,14 +24,16 @@
     if (pullRequest.state?.toLowerCase() === 'closed') {
       return { label: 'Closed', color: 'bg-red-900/30 text-red-300 border-red-800/50' };
     }
-    if (reviewDecision === 'APPROVED') {
-      return { label: 'Approved', color: 'bg-green-900/30 text-green-300 border-green-800/50' };
-    }
     if (reviewDecision === 'CHANGES_REQUESTED') {
-      return { label: 'Changes requested', color: 'bg-orange-900/30 text-orange-300 border-orange-800/50' };
+      const suffix = changesRequestedCount > 1 ? ` (${changesRequestedCount})` : '';
+      return { label: `Changes requested${suffix}`, color: 'bg-orange-900/30 text-orange-300 border-orange-800/50' };
+    }
+    if (reviewDecision === 'APPROVED') {
+      const suffix = approvalCount > 1 ? ` (${approvalCount})` : '';
+      return { label: `Approved${suffix}`, color: 'bg-green-900/30 text-green-300 border-green-800/50' };
     }
     if (reviewDecision === 'REVIEW_REQUIRED') {
-      return { label: 'Needs review', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };
+      return { label: 'Review required', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };
     }
     // Default for open PRs with no explicit review decision
     return { label: 'Needs review', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };

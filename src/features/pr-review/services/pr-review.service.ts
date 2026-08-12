@@ -3,14 +3,105 @@ import { captureException } from '$integrations/sentry/client';
 
 export type MergeMethod = 'merge' | 'squash' | 'rebase';
 
+export type ReviewDecision = 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED';
+
 export interface PullRequestMergeContext {
   allowedMergeMethods: MergeMethod[];
   viewerCanMerge: boolean;
   viewerCanMergeAsAdmin: boolean;
   /** GitHub GraphQL PullRequest.mergeStateStatus (e.g. CLEAN, BLOCKED, DIRTY, BEHIND, UNSTABLE, DRAFT, UNKNOWN) */
   mergeStateStatus: string | null;
-  /** GitHub GraphQL PullRequest.reviewDecision (e.g. APPROVED, CHANGES_REQUESTED, REVIEW_REQUIRED) */
-  reviewDecision: string | null;
+  /**
+   * Effective review decision.
+   *
+   * GitHub only populates `PullRequest.reviewDecision` when the base branch has a
+   * required-reviews rule. For repositories without branch protection it stays `null`
+   * even after someone approves, so we derive the decision from the latest
+   * opinionated review per reviewer instead.
+   */
+  reviewDecision: ReviewDecision | null;
+  /** Raw GitHub `reviewDecision`; non-null only when reviews are actually required. */
+  requiredReviewDecision: ReviewDecision | null;
+  /** GitHub GraphQL PullRequest.mergeable (MERGEABLE | CONFLICTING | UNKNOWN) */
+  mergeable: string | null;
+  /** Number of distinct reviewers whose latest opinionated review is an approval. */
+  approvalCount: number;
+  /** Number of distinct reviewers whose latest opinionated review requests changes. */
+  changesRequestedCount: number;
+  /** True when the signed-in user opened the pull request. */
+  viewerDidAuthor: boolean;
+  /** State of the signed-in user's latest review (APPROVED, CHANGES_REQUESTED, COMMENTED, ...). */
+  viewerLatestReviewState: string | null;
+  /**
+   * Where this context came from. Viewer-specific signals (`viewerDidAuthor`,
+   * `viewerLatestReviewState`) are only meaningful for the `graphql` source.
+   */
+  source: 'graphql' | 'rest';
+}
+
+function normalizeReviewDecision(value: unknown): ReviewDecision | null {
+  if (typeof value !== 'string') return null;
+  const upper = value.toUpperCase();
+  if (upper === 'APPROVED' || upper === 'CHANGES_REQUESTED' || upper === 'REVIEW_REQUIRED') {
+    return upper;
+  }
+  return null;
+}
+
+/**
+ * Derive a review decision from the latest opinionated review of each reviewer.
+ * Mirrors GitHub's own precedence: any outstanding "changes requested" wins,
+ * otherwise any approval marks the PR approved.
+ */
+function deriveReviewDecision(latestOpinionatedReviews: any[]): {
+  decision: ReviewDecision | null;
+  approvalCount: number;
+  changesRequestedCount: number;
+} {
+  let approvalCount = 0;
+  let changesRequestedCount = 0;
+
+  for (const review of latestOpinionatedReviews ?? []) {
+    const reviewState = typeof review?.state === 'string' ? review.state.toUpperCase() : '';
+    if (reviewState === 'APPROVED') approvalCount++;
+    else if (reviewState === 'CHANGES_REQUESTED') changesRequestedCount++;
+  }
+
+  let decision: ReviewDecision | null = null;
+  if (changesRequestedCount > 0) decision = 'CHANGES_REQUESTED';
+  else if (approvalCount > 0) decision = 'APPROVED';
+
+  return { decision, approvalCount, changesRequestedCount };
+}
+
+/** Latest review state per reviewer, derived from the REST reviews list. */
+export function deriveReviewDecisionFromReviews(reviews: Review[] | undefined | null): {
+  decision: ReviewDecision | null;
+  approvalCount: number;
+  changesRequestedCount: number;
+} {
+  const latestByReviewer = new Map<string, string>();
+
+  for (const review of reviews ?? []) {
+    const login = (review as any)?.user?.login;
+    const reviewState = typeof review?.state === 'string' ? review.state.toUpperCase() : '';
+    if (!login) continue;
+    // Only APPROVED / CHANGES_REQUESTED / DISMISSED change a reviewer's standing.
+    // COMMENTED and PENDING reviews leave the previous decision intact.
+    if (reviewState === 'APPROVED' || reviewState === 'CHANGES_REQUESTED') {
+      latestByReviewer.set(login, reviewState);
+    } else if (reviewState === 'DISMISSED') {
+      latestByReviewer.delete(login);
+    }
+  }
+
+  return deriveReviewDecision([...latestByReviewer.values()].map((s) => ({ state: s })));
+}
+
+function permissionAllowsMerge(viewerPermission: unknown): boolean {
+  if (typeof viewerPermission !== 'string') return false;
+  const permission = viewerPermission.toUpperCase();
+  return permission === 'ADMIN' || permission === 'MAINTAIN' || permission === 'WRITE';
 }
 
 function inferAllowedMergeMethodsFromRepo(repoData: any): MergeMethod[] {
@@ -148,120 +239,172 @@ async function fetchRepositoryInfo(owner: string, repo: string): Promise<RepoInf
 }
 
 type MergeContextResult = { mergeContext: PullRequestMergeContext | null; error: string | null };
+const MERGE_CONTEXT_QUERY = `
+  query($owner: String!, $repo: String!, $number: Int!) {
+    repository(owner: $owner, name: $repo) {
+      viewerPermission
+      mergeCommitAllowed
+      squashMergeAllowed
+      rebaseMergeAllowed
+      pullRequest(number: $number) {
+        number
+        state
+        isDraft
+        merged
+        mergeable
+        mergeStateStatus
+        reviewDecision
+        viewerCanMergeAsAdmin
+        viewerDidAuthor
+        viewerLatestReview {
+          state
+        }
+        latestOpinionatedReviews(first: 100) {
+          nodes {
+            state
+            author {
+              login
+            }
+          }
+        }
+      }
+    }
+  }
+`;
 
-export async function fetchPullRequestMergeContext(owner: string, repo: string, prNumber: number): Promise<MergeContextResult> {
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function buildMergeContextFromGraphql(repository: any, pr: any): PullRequestMergeContext {
+  const allowedMergeMethods: MergeMethod[] = [];
+  if (repository?.mergeCommitAllowed) allowedMergeMethods.push('merge');
+  if (repository?.squashMergeAllowed) allowedMergeMethods.push('squash');
+  if (repository?.rebaseMergeAllowed) allowedMergeMethods.push('rebase');
+
+  const latestOpinionatedReviews = pr?.latestOpinionatedReviews?.nodes ?? [];
+  const derived = deriveReviewDecision(latestOpinionatedReviews);
+  const requiredReviewDecision = normalizeReviewDecision(pr?.reviewDecision);
+
+  // GitHub only sets `reviewDecision` when reviews are required on the base branch.
+  // Fall back to the derived decision so approvals are reflected everywhere else.
+  const reviewDecision = requiredReviewDecision ?? derived.decision;
+
+  return {
+    allowedMergeMethods,
+    viewerCanMerge: permissionAllowsMerge(repository?.viewerPermission) || !!pr?.viewerCanMergeAsAdmin,
+    viewerCanMergeAsAdmin: !!pr?.viewerCanMergeAsAdmin,
+    mergeStateStatus: typeof pr?.mergeStateStatus === 'string' ? pr.mergeStateStatus.toUpperCase() : null,
+    reviewDecision,
+    requiredReviewDecision,
+    mergeable: typeof pr?.mergeable === 'string' ? pr.mergeable.toUpperCase() : null,
+    approvalCount: derived.approvalCount,
+    changesRequestedCount: derived.changesRequestedCount,
+    viewerDidAuthor: !!pr?.viewerDidAuthor,
+    viewerLatestReviewState: typeof pr?.viewerLatestReview?.state === 'string' ? pr.viewerLatestReview.state.toUpperCase() : null,
+    source: 'graphql',
+  };
+}
+
+/**
+ * GitHub computes mergeability lazily: the first request after a push (or after the
+ * background job expires) returns `UNKNOWN` and kicks off the calculation. Retrying
+ * shortly after gives the real status instead of leaving the UI stuck on
+ * "Mergeability still being calculated".
+ */
+function needsMergeabilityRetry(context: PullRequestMergeContext, pr: any): boolean {
+  if (pr?.merged) return false;
+  if (typeof pr?.state === 'string' && pr.state.toUpperCase() !== 'OPEN') return false;
+  return context.mergeStateStatus === 'UNKNOWN' || context.mergeable === 'UNKNOWN' || context.mergeStateStatus === null;
+}
+
+export interface MergeContextOptions {
+  /** How many times to re-query while GitHub is still computing mergeability. */
+  maxAttempts?: number;
+}
+
+export async function fetchPullRequestMergeContext(
+  owner: string,
+  repo: string,
+  prNumber: number,
+  options: MergeContextOptions = {}
+): Promise<MergeContextResult> {
   let graphqlError: string | null = null;
   let restError: string | null = null;
 
-  const query = `
-    query($owner: String!, $repo: String!, $number: Int!) {
-      repository(owner: $owner, name: $repo) {
-        mergeCommitAllowed
-        squashMergeAllowed
-        rebaseMergeAllowed
-        pullRequest(number: $number) {
-          mergeCommitAllowed
-          squashMergeAllowed
-          rebaseMergeAllowed
-          viewerCanMerge
-          viewerCanMergeAsAdmin
-          mergeStateStatus
-          reviewDecision
-        }
+  const maxAttempts = Math.max(1, options.maxAttempts ?? 3);
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const result = await githubGraphql<any>(MERGE_CONTEXT_QUERY, { owner, repo, number: prNumber }, { skipLoadingIndicator: true, cacheTtlMs: 0 });
+      const repository = result?.repository;
+      const pr = repository?.pullRequest;
+
+      if (!repository || !pr) {
+        graphqlError = 'GraphQL returned no pull request data';
+        break;
       }
-    }
-  `;
 
-  try {
-    const result = await githubGraphql<any>(query, { owner, repo, number: prNumber }, { skipLoadingIndicator: true, cacheTtlMs: 0 });
-    const repository = result?.repository;
-    const pr = repository?.pullRequest;
+      const mergeContext = buildMergeContextFromGraphql(repository, pr);
 
-    if (repository && pr) {
-      // Prefer per-PR allowed merge methods (these can be constrained by branch rules).
-      // Fall back to repository settings if PR-level fields are absent.
-      const allowedMergeMethods: MergeMethod[] = [];
-      const prAllows = {
-        merge: pr.mergeCommitAllowed ?? null,
-        squash: pr.squashMergeAllowed ?? null,
-        rebase: pr.rebaseMergeAllowed ?? null,
-      };
-      const repoAllows = {
-        merge: repository.mergeCommitAllowed ?? null,
-        squash: repository.squashMergeAllowed ?? null,
-        rebase: repository.rebaseMergeAllowed ?? null,
-      };
-
-      const mergeAllowed = prAllows.merge !== null ? !!prAllows.merge : !!repoAllows.merge;
-      const squashAllowed = prAllows.squash !== null ? !!prAllows.squash : !!repoAllows.squash;
-      const rebaseAllowed = prAllows.rebase !== null ? !!prAllows.rebase : !!repoAllows.rebase;
-
-      if (mergeAllowed) allowedMergeMethods.push('merge');
-      if (squashAllowed) allowedMergeMethods.push('squash');
-      if (rebaseAllowed) allowedMergeMethods.push('rebase');
-
-      // If GraphQL returns no allowed methods (unexpected but observed), fall back to REST repo settings.
-      if (allowedMergeMethods.length === 0) {
-        graphqlError = `graphqlMethodsEmpty: repo={mergeCommitAllowed:${String(repository.mergeCommitAllowed)},squashMergeAllowed:${String(repository.squashMergeAllowed)},rebaseMergeAllowed:${String(repository.rebaseMergeAllowed)}} pr={mergeCommitAllowed:${String(pr.mergeCommitAllowed)},squashMergeAllowed:${String(pr.squashMergeAllowed)},rebaseMergeAllowed:${String(pr.rebaseMergeAllowed)}}`;
+      // If GraphQL somehow reports no allowed methods, fall back to REST repo settings.
+      if (mergeContext.allowedMergeMethods.length === 0) {
         try {
           const repoData = await githubRequest<any>('GET /repos/{owner}/{repo}', { owner, repo }, { skipLoadingIndicator: true });
-          const restAllowed = inferAllowedMergeMethodsFromRepo(repoData);
-          if (restAllowed.length) {
-            allowedMergeMethods.push(...restAllowed);
-          }
+          mergeContext.allowedMergeMethods = inferAllowedMergeMethodsFromRepo(repoData);
         } catch {
-          // ignore; we'll return the empty list and let UI show method info unavailable
+          // Ignore: the UI falls back to letting GitHub enforce merge methods server-side.
         }
       }
 
-      return {
-        mergeContext: {
-          allowedMergeMethods,
-          viewerCanMerge: !!pr.viewerCanMerge,
-          viewerCanMergeAsAdmin: !!pr.viewerCanMergeAsAdmin,
-          mergeStateStatus: pr.mergeStateStatus ?? null,
-          reviewDecision: pr.reviewDecision ?? null,
-        },
-        error: graphqlError,
-      };
+      if (attempt < maxAttempts - 1 && needsMergeabilityRetry(mergeContext, pr)) {
+        await delay(700 * (attempt + 1));
+        continue;
+      }
+
+      return { mergeContext, error: null };
+    } catch (error) {
+      graphqlError = formatFetchError(error);
+      captureException(error, {
+        context: 'PR Review Service',
+        function: 'fetchPullRequestMergeContext (GraphQL)',
+        owner,
+        repo,
+        prNumber,
+      });
+      break;
     }
-  } catch (error) {
-    // We'll fall back to REST below.
-    graphqlError = formatFetchError(error);
-    captureException(error, {
-      context: 'PR Review Service',
-      function: 'fetchPullRequestMergeContext (GraphQL)',
-      owner,
-      repo,
-      prNumber,
-    });
   }
 
   // Fallback: derive merge context from REST endpoints.
   // This covers cases where GraphQL fields may not be accessible or query errors occur.
   try {
-    const [repoData, prData] = await Promise.all([
+    const [repoData, prData, reviews] = await Promise.all([
       githubRequest<any>('GET /repos/{owner}/{repo}', { owner, repo }, { skipLoadingIndicator: true }),
       githubRequest<any>('GET /repos/{owner}/{repo}/pulls/{pull_number}', { owner, repo, pull_number: prNumber }, { skipLoadingIndicator: true }),
+      fetchPullRequestReviews(owner, repo, prNumber),
     ]);
-
-    const allowedMergeMethods: MergeMethod[] = [];
-    if (repoData?.allow_merge_commit) allowedMergeMethods.push('merge');
-    if (repoData?.allow_squash_merge) allowedMergeMethods.push('squash');
-    if (repoData?.allow_rebase_merge) allowedMergeMethods.push('rebase');
 
     const permissions: RepoPermissions | undefined = repoData?.permissions;
     const viewerCanMerge = !!(permissions && (permissions.admin || permissions.maintain || permissions.push));
     const viewerCanMergeAsAdmin = !!permissions?.admin;
+    const derived = deriveReviewDecisionFromReviews(reviews);
 
     return {
       mergeContext: {
-        allowedMergeMethods,
+        allowedMergeMethods: inferAllowedMergeMethodsFromRepo(repoData),
         viewerCanMerge,
         viewerCanMergeAsAdmin,
         mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prData?.mergeable_state),
-        // REST doesn't expose the same reviewDecision signal; leave null.
-        reviewDecision: null,
+        // REST has no reviewDecision equivalent, so derive it from the reviews list.
+        reviewDecision: derived.decision,
+        requiredReviewDecision: null,
+        mergeable: prData?.mergeable === true ? 'MERGEABLE' : prData?.mergeable === false ? 'CONFLICTING' : 'UNKNOWN',
+        approvalCount: derived.approvalCount,
+        changesRequestedCount: derived.changesRequestedCount,
+        viewerDidAuthor: false,
+        viewerLatestReviewState: null,
+        source: 'rest',
       },
       error: graphqlError,
     };
@@ -569,46 +712,41 @@ export async function fetchAllPullRequestData(
     const inferredAllowedFromRepoInfo = inferAllowedMergeMethodsFromRepo(repoInfo);
 
     let finalMergeContext: PullRequestMergeContext | null = mergeContext;
+    const restDerivedDecision = deriveReviewDecisionFromReviews(reviews);
+    const perms = repoInfo?.permissions;
+    const permissionsAllowMerge = !!(perms && (perms.admin || perms.maintain || perms.push));
     if (finalMergeContext) {
-      if (!finalMergeContext.allowedMergeMethods?.length && inferredAllowed.length) {
-        finalMergeContext = {
-          ...finalMergeContext,
-          allowedMergeMethods: inferredAllowed,
-        };
-      }
+      const allowedMergeMethods = finalMergeContext.allowedMergeMethods?.length
+        ? finalMergeContext.allowedMergeMethods
+        : inferredAllowed.length
+          ? inferredAllowed
+          : inferredAllowedFromRepoInfo;
 
-      if (!finalMergeContext.allowedMergeMethods?.length && inferredAllowedFromRepoInfo.length) {
-        finalMergeContext = {
-          ...finalMergeContext,
-          allowedMergeMethods: inferredAllowedFromRepoInfo,
-        };
-      }
-
-      if (!finalMergeContext.mergeStateStatus) {
-        finalMergeContext = {
-          ...finalMergeContext,
-          mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
-        };
-      }
-    } else if (inferredAllowed.length) {
-      const perms = repoInfo?.permissions;
-      const viewerCanMerge = !!(perms && (perms.admin || perms.maintain || perms.push));
       finalMergeContext = {
-        allowedMergeMethods: inferredAllowed,
-        viewerCanMerge,
-        viewerCanMergeAsAdmin: !!repoInfo?.permissions?.admin,
-        mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
-        reviewDecision: null,
+        ...finalMergeContext,
+        allowedMergeMethods,
+        mergeStateStatus: finalMergeContext.mergeStateStatus ?? mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
+        // If GraphQL couldn't determine a decision, fall back to the REST reviews list.
+        reviewDecision: finalMergeContext.reviewDecision ?? restDerivedDecision.decision,
+        approvalCount: finalMergeContext.approvalCount || restDerivedDecision.approvalCount,
+        changesRequestedCount: finalMergeContext.changesRequestedCount || restDerivedDecision.changesRequestedCount,
+        viewerCanMerge: finalMergeContext.viewerCanMerge || permissionsAllowMerge,
+        viewerCanMergeAsAdmin: finalMergeContext.viewerCanMergeAsAdmin || !!perms?.admin,
       };
-    } else if (inferredAllowedFromRepoInfo.length) {
-      const perms = repoInfo?.permissions;
-      const viewerCanMerge = !!(perms && (perms.admin || perms.maintain || perms.push));
+    } else if (inferredAllowed.length || inferredAllowedFromRepoInfo.length) {
       finalMergeContext = {
-        allowedMergeMethods: inferredAllowedFromRepoInfo,
-        viewerCanMerge,
-        viewerCanMergeAsAdmin: !!repoInfo?.permissions?.admin,
+        allowedMergeMethods: inferredAllowed.length ? inferredAllowed : inferredAllowedFromRepoInfo,
+        viewerCanMerge: permissionsAllowMerge,
+        viewerCanMergeAsAdmin: !!perms?.admin,
         mergeStateStatus: mapRestMergeableStateToMergeStateStatus(prAny?.mergeable_state),
-        reviewDecision: null,
+        reviewDecision: restDerivedDecision.decision,
+        requiredReviewDecision: null,
+        mergeable: prAny?.mergeable === true ? 'MERGEABLE' : prAny?.mergeable === false ? 'CONFLICTING' : 'UNKNOWN',
+        approvalCount: restDerivedDecision.approvalCount,
+        changesRequestedCount: restDerivedDecision.changesRequestedCount,
+        viewerDidAuthor: false,
+        viewerLatestReviewState: null,
+        source: 'rest',
       };
     }
 

@@ -21,8 +21,18 @@
   const scrollManager = useScrollManager();
 
   const canSubmitReview = $derived.by(() => {
-    if (!prReview.state.pullRequest) return false;
-    return canReviewPullRequest(prReview.state.pullRequest, prReview.state.viewerLogin ?? $currentUser);
+    const pr = prReview.state.pullRequest;
+    if (!pr) return false;
+
+    const mergeContext = prReview.state.mergeContext;
+    // GraphQL `viewerDidAuthor` is the most reliable ownership signal; the login
+    // comparison below can't resolve the viewer in every auth configuration.
+    if (mergeContext?.source === 'graphql') {
+      if (mergeContext.viewerDidAuthor) return false;
+      return (pr.state ?? '').toLowerCase() === 'open' && !pr.draft;
+    }
+
+    return canReviewPullRequest(pr, prReview.state.viewerLogin ?? $currentUser);
   });
 
   // Provide store and shared state to all descendants via context
@@ -84,7 +94,14 @@
           <ErrorState error={prReview.state.error} onRetry={() => prReview.loadPullRequest(owner, repo, prNumber)} />
         </div>
       {:else if prReview.state.pullRequest}
-        <PRHeader pullRequest={prReview.state.pullRequest} commitCount={prReview.state.commits.length} fileStats={prReview.fileStats} reviewDecision={prReview.state.mergeContext?.reviewDecision} />
+        <PRHeader
+          pullRequest={prReview.state.pullRequest}
+          commitCount={prReview.state.commits.length}
+          fileStats={prReview.fileStats}
+          reviewDecision={prReview.state.mergeContext?.reviewDecision}
+          approvalCount={prReview.state.mergeContext?.approvalCount ?? 0}
+          changesRequestedCount={prReview.state.mergeContext?.changesRequestedCount ?? 0}
+        />
 
         {#if prReview.state.pullRequest.body}
           <div class="px-6 pt-4">

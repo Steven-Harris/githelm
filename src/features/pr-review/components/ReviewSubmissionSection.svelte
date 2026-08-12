@@ -9,10 +9,26 @@
     onSubmitReview?: (event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => void;
     canSubmit?: boolean;
     canReview?: boolean;
+    isSubmitting?: boolean;
+    submitError?: string | null;
+    viewerReviewState?: string | null;
+    onDismissError?: () => void;
     children?: Snippet;
   }
 
-  const { pendingComments = [], reviewDraft = { body: '', event: 'COMMENT' }, onUpdateReviewDraft, onSubmitReview, canSubmit = true, canReview = true, children }: Props = $props();
+  const {
+    pendingComments = [],
+    reviewDraft = { body: '', event: 'COMMENT' },
+    onUpdateReviewDraft,
+    onSubmitReview,
+    canSubmit = true,
+    canReview = true,
+    isSubmitting = false,
+    submitError = null,
+    viewerReviewState = null,
+    onDismissError,
+    children,
+  }: Props = $props();
 
   // Count pending comments that are part of review
   const reviewCommentsCount = $derived.by(() => pendingComments.filter((c) => c.isPartOfReview && c.body.trim()).length);
@@ -25,11 +41,27 @@
   // - Request changes: requires overall body (per product requirement)
   const canComment = $derived.by(() => body.length > 0 || reviewCommentsCount > 0);
   const canRequestChanges = $derived.by(() => body.length > 0);
+
+  const viewerReviewLabel = $derived.by(() => {
+    switch (viewerReviewState) {
+      case 'APPROVED':
+        return { text: 'You approved this pull request.', tone: 'text-[#3fb950]' };
+      case 'CHANGES_REQUESTED':
+        return { text: 'You requested changes on this pull request.', tone: 'text-[#f85149]' };
+      case 'COMMENTED':
+        return { text: 'You commented on this pull request.', tone: 'text-[#8b949e]' };
+      default:
+        return null;
+    }
+  });
 </script>
 
 <div class="border-t border-[#30363d] bg-[#0d1117] p-4 text-[#c9d1d9]">
   {#if canReview}
   <h4 class="text-sm font-medium text-[#f0f6fc] mb-1">Review</h4>
+  {#if viewerReviewLabel}
+    <div class="text-xs {viewerReviewLabel.tone} mb-1">{viewerReviewLabel.text}</div>
+  {/if}
   <div class="text-xs text-[#8b949e] mb-3">
     {#if reviewCommentsCount > 0}
       {reviewCommentsCount} pending inline comment{reviewCommentsCount !== 1 ? 's' : ''}
@@ -55,31 +87,40 @@
   <div class="flex gap-2">
     <button
       onclick={() => onSubmitReview && onSubmitReview('REQUEST_CHANGES')}
-      disabled={!canSubmit || !canRequestChanges}
+      disabled={!canSubmit || !canRequestChanges || isSubmitting}
       class="flex-[2] px-3 py-2 text-sm bg-[#da3633] text-white rounded font-medium hover:bg-[#f85149] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
       title={canRequestChanges ? 'Request changes' : 'Request changes requires an overall comment'}
     >
-      Request changes
+      {isSubmitting ? 'Submitting…' : 'Request changes'}
     </button>
 
     <button
       onclick={() => onSubmitReview && onSubmitReview('COMMENT')}
-      disabled={!canSubmit || !canComment}
+      disabled={!canSubmit || !canComment || isSubmitting}
       class="flex-1 px-3 py-2 text-sm bg-[#1f6feb] text-white rounded font-medium hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title={canComment ? 'Comment' : 'Add an overall comment or inline comments to submit'}
     >
-      Comment
+      {isSubmitting ? 'Submitting…' : 'Comment'}
     </button>
 
     <button
       onclick={() => onSubmitReview && onSubmitReview('APPROVE')}
-      disabled={!canSubmit}
+      disabled={!canSubmit || isSubmitting}
       class="flex-1 px-3 py-2 text-sm bg-[#2ea043] text-white rounded font-medium hover:bg-[#3fb950] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title="Approve"
     >
-      Approve
+      {isSubmitting ? 'Submitting…' : 'Approve'}
     </button>
   </div>
+
+  {#if submitError}
+    <div class="mt-2 flex items-start gap-2 rounded border border-[#f85149]/40 bg-[#f85149]/10 px-3 py-2">
+      <p class="flex-1 text-xs text-[#f85149]">{submitError}</p>
+      {#if onDismissError}
+        <button onclick={onDismissError} class="text-xs text-[#8b949e] hover:text-[#c9d1d9] transition-colors" aria-label="Dismiss review error">Dismiss</button>
+      {/if}
+    </div>
+  {/if}
 
   {#if !canRequestChanges}
     <p class="text-xs text-[#8b949e] mt-2">Request changes requires an overall comment.</p>
