@@ -1,0 +1,16 @@
+packages:
+  - .
+
+onlyBuiltDependencies:
+  - "@firebase/util"
+  - "@sentry/cli"
+  - "@tailwindcss/oxide"
+  - "esbuild"
+  - "msw"
+  - "protobufjs"
+  - "re2"
+  - "sharp"
+  - "svelte-preprocess"
+
+overrides:
+  cookie: "^0.7.2"
