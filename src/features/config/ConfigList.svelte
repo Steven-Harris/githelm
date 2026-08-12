@@ -31,8 +31,23 @@
 </script>
 
 <div class="mt-4">
+  {#if editingIndex === -1}
+    <button class="ghost-button add-repository mb-3" onclick={() => (editingIndex = -2)} aria-label="Add repository">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d="M7.25 1.25a.75.75 0 0 1 1.5 0V7.25h6a.75.75 0 0 1 0 1.5h-6v6a.75.75 0 0 1-1.5 0v-6h-6a.75.75 0 0 1 0-1.5h6V1.25Z" />
+      </svg>
+      <span>Add repository</span>
+    </button>
+  {/if}
+
+  {#if editingIndex === -2}
+    <div class="mb-3">
+      <RepositoryForm onSave={handleSave} onCancel={() => (editingIndex = -1)} existingRepos={configs} />
+    </div>
+  {/if}
+
   {#if configs.length > 0}
-    <ul class="config-list space-y-3 mb-4" use:useSortable={{ onReorder: handleReorder, disabled: editingIndex !== -1, onAnnounce: (message: string) => (announcement = message) }}>
+    <ul class="config-list space-y-3" use:useSortable={{ onReorder: handleReorder, disabled: editingIndex !== -1, onAnnounce: (message: string) => (announcement = message) }}>
       {#each configs as config, i (`${config.org}/${config.repo}`)}
         <li class="config-row">
           {#if editingIndex === i}
@@ -98,21 +113,8 @@
       {/each}
     </ul>
     <p class="sr-only" role="status" aria-live="polite">{announcement}</p>
-  {:else}
-    <p class="text-sm text-[var(--text-faint)] mb-4">No repositories yet. Add one below.</p>
-  {/if}
-
-  {#if editingIndex === -1}
-    <button class="ghost-button w-full justify-center mb-4" onclick={() => (editingIndex = -2)} aria-label="Add repository">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-        <path d="M7.25 1.25a.75.75 0 0 1 1.5 0V7.25h6a.75.75 0 0 1 0 1.5h-6v6a.75.75 0 0 1-1.5 0v-6h-6a.75.75 0 0 1 0-1.5h6V1.25Z" />
-      </svg>
-      <span>Add repository</span>
-    </button>
-  {/if}
-
-  {#if editingIndex === -2}
-    <RepositoryForm onSave={handleSave} onCancel={() => (editingIndex = -1)} existingRepos={configs} />
+  {:else if editingIndex !== -2}
+    <p class="text-sm text-[var(--text-faint)]">No repositories yet. Add one above.</p>
   {/if}
 </div>
 
@@ -145,6 +147,17 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text-faint);
+  }
+
+  .add-repository {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    min-height: 2.875rem;
+    border-style: dashed;
   }
 
   .config-list {
