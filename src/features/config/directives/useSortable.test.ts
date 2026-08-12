@@ -130,6 +130,29 @@ describe('useSortable', () => {
     expect(onReorder).not.toHaveBeenCalled();
   });
 
+  it('tracks the scroll container so the drop lands where the item is released', () => {
+    // Mirrors the app shell: an inner element scrolls, not the window.
+    const scroller = document.createElement('div');
+    scroller.style.overflowY = 'auto';
+    document.body.appendChild(scroller);
+    scroller.appendChild(container);
+    Object.defineProperty(scroller, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(scroller, 'clientHeight', { value: 200, configurable: true });
+    scroller.scrollTop = 300;
+    scroller.getBoundingClientRect = () => ({ top: 0, bottom: 200, left: 0, right: 200, width: 200, height: 200, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
+
+    handle(2).dispatchEvent(pointer('pointerdown', 125));
+    window.dispatchEvent(pointer('pointermove', 115));
+
+    // The list scrolls up by two slots under a stationary pointer.
+    scroller.scrollTop = 180;
+    scroller.dispatchEvent(new Event('scroll', { bubbles: false }));
+    window.dispatchEvent(pointer('pointerup', 115));
+
+    expect(onReorder).toHaveBeenCalledWith(2, 0);
+    scroller.remove();
+  });
+
   it('cancels the drag on Escape without reordering', () => {
     handle(0).dispatchEvent(pointer('pointerdown', 25));
     window.dispatchEvent(pointer('pointermove', 60));

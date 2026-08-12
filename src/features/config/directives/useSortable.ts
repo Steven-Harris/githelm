@@ -16,9 +16,11 @@ export interface SortableOptions {
 interface ItemMetrics {
   element: HTMLElement;
   index: number;
-  /** Top offset in page coordinates so auto-scrolling doesn't invalidate it. */
+  /** Top offset in viewport coordinates, refreshed whenever a scroll occurs. */
   top: number;
   height: number;
+  /** Vertical offset currently applied by the live reorder preview. */
+  offset: number;
 }
 
 const DRAG_THRESHOLD_PX = 4;
@@ -30,7 +32,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
 
   let pointerId: number | null = null;
   let pointerStart = { x: 0, y: 0 };
-  let pointerPage = { x: 0, y: 0 };
+  let pointerClient = { x: 0, y: 0 };
   let grabOffsetY = 0;
   let sourceElement: HTMLElement | null = null;
   let sourceIndex = -1;
@@ -41,6 +43,8 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
   let active = false;
   let scrollFrame: number | null = null;
   let suppressNextClick = false;
+  let scrollContainer: HTMLElement | null = null;
+  let lastScrollTop = 0;
 
   // Keyboard reordering state.
   let keyboardIndex = -1;
@@ -60,12 +64,38 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     return Number.isNaN(parsed) ? -1 : parsed;
   }
 
+  /**
+   * The nearest ancestor that actually scrolls vertically. The app shell scrolls an
+   * inner `<main>` rather than the window, so auto-scroll has to target that element.
+   */
+  function findScrollContainer(): HTMLElement | null {
+    let element: HTMLElement | null = node.parentElement;
+    while (element && element !== document.body && element !== document.documentElement) {
+      const overflowY = getComputedStyle(element).overflowY;
+      const scrollable = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+      if (scrollable && element.scrollHeight > element.clientHeight + 1) return element;
+      element = element.parentElement;
+    }
+    return null;
+  }
+
+  function scrollTopOf(): number {
+    return scrollContainer ? scrollContainer.scrollTop : window.scrollY;
+  }
+
+  function scrollBounds(): { top: number; bottom: number } {
+    if (scrollContainer) {
+      const rect = scrollContainer.getBoundingClientRect();
+      return { top: Math.max(0, rect.top), bottom: Math.min(window.innerHeight, rect.bottom) };
+    }
+    return { top: 0, bottom: window.innerHeight };
+  }
+
   function measure(): void {
-    const scrollY = window.scrollY;
     metrics = getItems()
       .map((element) => {
         const rect = element.getBoundingClientRect();
-        return { element, index: indexOf(element), top: rect.top + scrollY, height: rect.height };
+        return { element, index: indexOf(element), top: rect.top, height: rect.height, offset: 0 };
       })
       .filter((entry) => entry.index >= 0)
       .sort((a, b) => a.index - b.index);
@@ -73,6 +103,18 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     const source = metrics.find((entry) => entry.index === sourceIndex);
     const gap = readGap();
     slotSize = (source?.height ?? 0) + gap;
+  }
+
+  /**
+   * Keeps the cached viewport positions in sync with the scroll container. Tracking the
+   * scroll delta is exact and, unlike re-reading rects, is immune to in-flight transitions.
+   */
+  function syncScroll(): void {
+    const current = scrollTopOf();
+    const delta = current - lastScrollTop;
+    if (delta === 0) return;
+    lastScrollTop = current;
+    for (const entry of metrics) entry.top -= delta;
   }
 
   function readGap(): number {
@@ -107,8 +149,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
 
   function moveFloating(): void {
     if (!floating) return;
-    const top = pointerPage.y - window.scrollY - grabOffsetY;
-    floating.style.transform = `translateY(${top}px)`;
+    floating.style.transform = `translateY(${pointerClient.y - grabOffsetY}px)`;
   }
 
   /**
@@ -116,7 +157,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
    * sits above the dragged item's centre, which matches splice-remove-then-insert.
    */
   function computeTargetIndex(): number {
-    const center = pointerPage.y - grabOffsetY + slotSize / 2;
+    const center = pointerClient.y - grabOffsetY + slotSize / 2;
     let index = 0;
     for (const entry of metrics) {
       if (entry.index === sourceIndex) continue;
@@ -134,15 +175,23 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
       } else if (targetIndex < sourceIndex && entry.index >= targetIndex && entry.index < sourceIndex) {
         offset = slotSize;
       }
+      entry.offset = offset;
       entry.element.style.transform = offset === 0 ? '' : `translate3d(0, ${offset}px, 0)`;
     }
   }
 
   function clearShift(): void {
     for (const entry of metrics) {
+      entry.offset = 0;
       entry.element.style.transform = '';
       entry.element.classList.remove('sortable-shifting');
     }
+  }
+
+  function handleScrollDuringDrag(): void {
+    if (!active) return;
+    syncScroll();
+    updateTarget();
   }
 
   function startAutoScroll(): void {
@@ -152,23 +201,26 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
         scrollFrame = null;
         return;
       }
-      const viewportY = pointerPage.y - window.scrollY;
+      const bounds = scrollBounds();
+      const zone = Math.min(EDGE_SCROLL_ZONE_PX, Math.max(24, (bounds.bottom - bounds.top) / 4));
+      const y = pointerClient.y;
       let delta = 0;
-      if (viewportY < EDGE_SCROLL_ZONE_PX) {
-        delta = -EDGE_SCROLL_MAX_SPEED * (1 - Math.max(0, viewportY) / EDGE_SCROLL_ZONE_PX);
-      } else if (viewportY > window.innerHeight - EDGE_SCROLL_ZONE_PX) {
-        const depth = viewportY - (window.innerHeight - EDGE_SCROLL_ZONE_PX);
-        delta = EDGE_SCROLL_MAX_SPEED * Math.min(1, depth / EDGE_SCROLL_ZONE_PX);
+      if (y < bounds.top + zone) {
+        delta = -EDGE_SCROLL_MAX_SPEED * Math.min(1, (bounds.top + zone - y) / zone);
+      } else if (y > bounds.bottom - zone) {
+        delta = EDGE_SCROLL_MAX_SPEED * Math.min(1, (y - (bounds.bottom - zone)) / zone);
       }
 
       if (delta !== 0) {
-        const before = window.scrollY;
-        window.scrollBy(0, delta);
-        const moved = window.scrollY - before;
-        if (moved !== 0) {
-          // Keep the pointer's page coordinate anchored to the viewport position.
-          pointerPage.y += moved;
-          moveFloating();
+        const before = scrollTopOf();
+        if (scrollContainer) {
+          scrollContainer.scrollTop = before + delta;
+        } else {
+          window.scrollBy(0, delta);
+        }
+        if (scrollTopOf() !== before) {
+          // Items slid under a stationary pointer: re-anchor positions and retarget.
+          syncScroll();
           updateTarget();
         }
       }
@@ -195,6 +247,8 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     if (!sourceElement) return;
     active = true;
     targetIndex = sourceIndex;
+    scrollContainer = findScrollContainer();
+    lastScrollTop = scrollTopOf();
     measure();
     createFloating(sourceElement);
     moveFloating();
@@ -204,11 +258,13 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     for (const entry of metrics) {
       if (entry.index !== sourceIndex) entry.element.classList.add('sortable-shifting');
     }
+    window.addEventListener('scroll', handleScrollDuringDrag, true);
     startAutoScroll();
   }
 
   function finishDrag(commit: boolean): void {
     stopAutoScroll();
+    window.removeEventListener('scroll', handleScrollDuringDrag, true);
     clearShift();
     floating?.remove();
     floating = null;
@@ -226,6 +282,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     sourceIndex = -1;
     targetIndex = -1;
     metrics = [];
+    scrollContainer = null;
 
     if (wasActive) suppressNextClick = true;
     if (commit && wasActive && from >= 0 && to >= 0 && from !== to) {
@@ -254,7 +311,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     sourceElement = item;
     sourceIndex = index;
     pointerStart = { x: event.clientX, y: event.clientY };
-    pointerPage = { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY };
+    pointerClient = { x: event.clientX, y: event.clientY };
     grabOffsetY = event.clientY - item.getBoundingClientRect().top;
 
     window.addEventListener('pointermove', handlePointerMove, { passive: false });
@@ -266,7 +323,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
   function handlePointerMove(event: PointerEvent): void {
     if (pointerId === null || event.pointerId !== pointerId) return;
 
-    pointerPage = { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY };
+    pointerClient = { x: event.clientX, y: event.clientY };
 
     if (!active) {
       const travelled = Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y);
@@ -400,6 +457,7 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     destroy() {
       teardownPointerListeners();
       stopAutoScroll();
+      window.removeEventListener('scroll', handleScrollDuringDrag, true);
       floating?.remove();
       floating = null;
       document.body.classList.remove('sortable-dragging');
@@ -409,3 +467,5 @@ export const useSortable: Action<HTMLElement, SortableOptions> = (node, options)
     },
   };
 };
+
+
