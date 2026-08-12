@@ -8,7 +8,7 @@ import type {
 } from '$integrations/github';
 import { memoryCacheService } from '$shared/services/memory-cache.service';
 import { eventBus } from '$shared/stores/event-bus.store';
-import type { MergeMethod, PullRequestMergeContext } from '../services/pr-review.service';
+import type { MergeMethod, PullRequestMergeContext, ReviewDecision } from '../services/pr-review.service';
 
 export interface SelectedLine {
   filename: string;
@@ -30,6 +30,51 @@ export interface PendingComment {
 export interface ReviewDraft {
   body: string; 
   event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+}
+
+/**
+ * Finds the viewer's current review standing from the loaded review list.
+ * Used as a fallback when the merge context came from REST, where GitHub's
+ * `viewerLatestReviewState` is unavailable. Mirrors GitHub semantics: only
+ * APPROVED/CHANGES_REQUESTED establish standing, COMMENTED/PENDING leave it
+ * unchanged, and DISMISSED clears it.
+ */
+function resolveViewerReviewStateFromReviews(reviews: Review[], viewerLogin: string | null): string | null {
+  if (!viewerLogin) return null;
+
+  let standing: string | null = null;
+  for (const review of reviews) {
+    if (review.user?.login !== viewerLogin) continue;
+    const reviewState = (review.state ?? '').toUpperCase();
+    if (reviewState === 'APPROVED' || reviewState === 'CHANGES_REQUESTED') {
+      standing = reviewState;
+    } else if (reviewState === 'DISMISSED') {
+      standing = null;
+    }
+  }
+  return standing;
+}
+
+/**
+ * Predicts the review decision GitHub will report, using the same precedence as
+ * the service layer: a decision GitHub actively enforces wins, then an outstanding
+ * change request, then an approval.
+ */
+function deriveOptimisticReviewDecision({
+  requiredReviewDecision,
+  approvalCount,
+  changesRequestedCount,
+}: {
+  requiredReviewDecision: ReviewDecision | null;
+  approvalCount: number;
+  changesRequestedCount: number;
+}): ReviewDecision | null {
+  if (changesRequestedCount > 0) return 'CHANGES_REQUESTED';
+  // With a required-reviews rule in place we can't know whether the approval
+  // threshold is met, so defer to whatever GitHub last told us.
+  if (requiredReviewDecision === 'REVIEW_REQUIRED') return 'REVIEW_REQUIRED';
+  if (approvalCount > 0) return 'APPROVED';
+  return requiredReviewDecision;
 }
 
 // Types for our store state
@@ -977,33 +1022,53 @@ export function createPRReviewState() {
         }
       );
 
+      // Determine the viewer's previous standing *before* recording the new review, so
+      // optimistic counts don't double-count a reviewer who is updating their review.
+      // `viewerLatestReviewState` is only populated on GraphQL-sourced contexts, so fall
+      // back to scanning the loaded review list for REST-sourced contexts.
+      const priorViewerReviewState =
+        state.mergeContext?.source === 'graphql'
+          ? state.mergeContext.viewerLatestReviewState
+          : resolveViewerReviewStateFromReviews(state.reviews, state.viewerLogin);
+
       // Add the new review to our state
       state.reviews.push(newReview);
 
       // Optimistically update merge context to reflect the review decision
       // so the UI shows the correct state without waiting for GitHub to propagate.
-      if (state.mergeContext) {
-        if (event === 'APPROVE') {
-          state.mergeContext = {
-            ...state.mergeContext,
-            reviewDecision: 'APPROVED',
-            approvalCount: Math.max(1, state.mergeContext.approvalCount + (state.mergeContext.viewerLatestReviewState === 'APPROVED' ? 0 : 1)),
-            changesRequestedCount: state.mergeContext.viewerLatestReviewState === 'CHANGES_REQUESTED'
-              ? Math.max(0, state.mergeContext.changesRequestedCount - 1)
-              : state.mergeContext.changesRequestedCount,
-            viewerLatestReviewState: 'APPROVED',
-          };
-        } else if (event === 'REQUEST_CHANGES') {
-          state.mergeContext = {
-            ...state.mergeContext,
-            reviewDecision: 'CHANGES_REQUESTED',
-            changesRequestedCount: Math.max(1, state.mergeContext.changesRequestedCount + (state.mergeContext.viewerLatestReviewState === 'CHANGES_REQUESTED' ? 0 : 1)),
-            approvalCount: state.mergeContext.viewerLatestReviewState === 'APPROVED'
-              ? Math.max(0, state.mergeContext.approvalCount - 1)
-              : state.mergeContext.approvalCount,
-            viewerLatestReviewState: 'CHANGES_REQUESTED',
-          };
-        }
+      let expectedDecision: ReviewDecision | null = null;
+
+      if (state.mergeContext && (event === 'APPROVE' || event === 'REQUEST_CHANGES')) {
+        const context = state.mergeContext;
+        const viewerApproved = event === 'APPROVE';
+
+        const approvalCount = viewerApproved
+          ? context.approvalCount + (priorViewerReviewState === 'APPROVED' ? 0 : 1)
+          : priorViewerReviewState === 'APPROVED'
+            ? Math.max(0, context.approvalCount - 1)
+            : context.approvalCount;
+
+        const changesRequestedCount = viewerApproved
+          ? priorViewerReviewState === 'CHANGES_REQUESTED'
+            ? Math.max(0, context.changesRequestedCount - 1)
+            : context.changesRequestedCount
+          : context.changesRequestedCount + (priorViewerReviewState === 'CHANGES_REQUESTED' ? 0 : 1);
+
+        // Mirror the service's precedence: an outstanding change request outranks any
+        // approval, and a GitHub-enforced decision outranks anything we derive.
+        expectedDecision = deriveOptimisticReviewDecision({
+          requiredReviewDecision: context.requiredReviewDecision,
+          approvalCount,
+          changesRequestedCount,
+        });
+
+        state.mergeContext = {
+          ...context,
+          reviewDecision: expectedDecision,
+          approvalCount,
+          changesRequestedCount,
+          viewerLatestReviewState: viewerApproved ? 'APPROVED' : 'CHANGES_REQUESTED',
+        };
       }
 
       // Invalidate dashboard cache so navigating back shows fresh data.
@@ -1039,7 +1104,6 @@ export function createPRReviewState() {
       };
 
       const prNumber = state.pullRequest.number;
-      const expectedDecision = event === 'APPROVE' ? 'APPROVED' : event === 'REQUEST_CHANGES' ? 'CHANGES_REQUESTED' : null;
 
       await refreshReviewData();
 
@@ -1047,7 +1111,13 @@ export function createPRReviewState() {
       // finished recomputing mergeability, so the merge button unlocks on its own.
       void refreshMergeContextUntil(owner, repo, prNumber, (context) => {
         if (!context) return false;
-        if (expectedDecision && context.reviewDecision !== expectedDecision) return false;
+        // When GitHub enforces an approval threshold we can't predict the resulting
+        // decision, so we only wait for mergeability to resolve.
+        const decisionSettled =
+          expectedDecision === null ||
+          expectedDecision === 'REVIEW_REQUIRED' ||
+          context.reviewDecision === expectedDecision;
+        if (!decisionSettled) return false;
         return context.mergeStateStatus !== 'UNKNOWN' && context.mergeStateStatus !== null;
       });
 

@@ -68,6 +68,10 @@ export function hasMergeConflicts(mergeContext: PullRequestMergeContext | null, 
  *   approved we optimistically allow the attempt and let the API decide.
  * - `UNKNOWN`/missing status means mergeability has not been computed yet; blocking
  *   the button there would strand the user, so we let GitHub enforce server-side.
+ * - A `CHANGES_REQUESTED` decision only hard-blocks when GitHub is actually enforcing
+ *   it (`requiredReviewDecision`). On repos without a required-reviews rule the
+ *   decision is derived from the review list and is advisory only: GitHub permits the
+ *   merge, so we warn instead of locking the user out.
  */
 export function evaluateMergeStatus(input: MergeStatusInput): MergeStatus {
   const {
@@ -97,7 +101,7 @@ export function evaluateMergeStatus(input: MergeStatusInput): MergeStatus {
     return { canMergeNormally: false, canBypass: false, statusText: 'Merge conflicts must be resolved', tone: 'blocked' };
   }
 
-  if (reviewDecision === 'CHANGES_REQUESTED') {
+  if (requiredReviewDecision === 'CHANGES_REQUESTED') {
     return {
       canMergeNormally: false,
       canBypass: viewerCanMergeAsAdmin,
@@ -106,9 +110,34 @@ export function evaluateMergeStatus(input: MergeStatusInput): MergeStatus {
     };
   }
 
+  const advisoryChangesRequested = reviewDecision === 'CHANGES_REQUESTED';
   const status = mergeStateStatus ? mergeStateStatus.toUpperCase() : null;
   const isApproved = reviewDecision === 'APPROVED';
 
+  const result = evaluateByMergeState({ status, isApproved, requiredReviewDecision, viewerCanMergeAsAdmin });
+
+  if (advisoryChangesRequested && result.canMergeNormally) {
+    return {
+      ...result,
+      statusText: 'Changes requested · not required by branch rules',
+      tone: 'warning',
+    };
+  }
+
+  return result;
+}
+
+function evaluateByMergeState({
+  status,
+  isApproved,
+  requiredReviewDecision,
+  viewerCanMergeAsAdmin,
+}: {
+  status: string | null;
+  isApproved: boolean;
+  requiredReviewDecision: ReviewDecision | null;
+  viewerCanMergeAsAdmin: boolean;
+}): MergeStatus {
   switch (status) {
     case 'CLEAN':
     case 'HAS_HOOKS':

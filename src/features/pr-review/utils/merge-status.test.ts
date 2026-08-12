@@ -48,10 +48,25 @@ describe('evaluateMergeStatus', () => {
     expect(result.statusText).toBe('Approvals required');
   });
 
-  it('blocks merging when changes are requested, even with a clean merge state', () => {
-    const result = evaluateMergeStatus(baseInput({ reviewDecision: 'CHANGES_REQUESTED' }));
+  it('blocks merging when GitHub enforces a changes-requested decision', () => {
+    const result = evaluateMergeStatus(
+      baseInput({ reviewDecision: 'CHANGES_REQUESTED', requiredReviewDecision: 'CHANGES_REQUESTED' })
+    );
     expect(result.canMergeNormally).toBe(false);
     expect(result.statusText).toBe('Changes requested');
+    expect(result.tone).toBe('blocked');
+  });
+
+  it('warns but still allows merging when changes requested is only derived, not enforced', () => {
+    const result = evaluateMergeStatus(baseInput({ reviewDecision: 'CHANGES_REQUESTED', requiredReviewDecision: null }));
+    expect(result.canMergeNormally).toBe(true);
+    expect(result.tone).toBe('warning');
+    expect(result.statusText).toBe('Changes requested · not required by branch rules');
+  });
+
+  it('still blocks a derived changes-requested pull request when GitHub blocks the merge state', () => {
+    const result = evaluateMergeStatus(baseInput({ mergeStateStatus: 'BLOCKED', reviewDecision: 'CHANGES_REQUESTED' }));
+    expect(result.canMergeNormally).toBe(false);
   });
 
   it('blocks merging on conflicts and disallows admin bypass', () => {
