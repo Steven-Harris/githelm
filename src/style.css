@@ -4,6 +4,10 @@
 @import 'highlight.js/styles/github-dark.css';
 
 :root {
+  /* Declares the page as authored-dark so browsers with forced/auto dark mode
+     (Edge, Chrome) leave the palette alone instead of re-inverting it. */
+  color-scheme: dark;
+
   /* ---- Deep-water base: the bridge at night ---- */
   --abyss: #05070d;
   --abyss-rgb: 5, 7, 13;
