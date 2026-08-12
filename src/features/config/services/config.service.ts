@@ -252,7 +252,7 @@ export class ConfigService {
     if (event.pullRequests || event.actions) {
       const newConfig = this.createConfigFromSaveEvent(event);
       if (newConfig) {
-        return [...configs, newConfig];
+        return [newConfig, ...configs];
       }
     }
     return configs;
