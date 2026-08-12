@@ -184,6 +184,10 @@
         onSubmitReview={prReview.submitReview}
         canSubmit={true}
         canReview={canReview}
+        isSubmitting={prReview.state.reviewSubmitting}
+        submitError={prReview.state.reviewError}
+        viewerReviewState={prReview.state.mergeContext?.viewerLatestReviewState ?? null}
+        onDismissError={prReview.clearReviewError}
       >
         {#snippet children()}
           <MergeSection

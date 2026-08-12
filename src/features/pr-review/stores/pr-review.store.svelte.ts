@@ -46,6 +46,8 @@ export interface PullRequestReviewState {
   viewerCanResolveThreads: boolean;
   loading: boolean;
   error: string | null;
+  reviewSubmitting: boolean;
+  reviewError: string | null;
   mergeSubmitting: boolean;
   mergeError: string | null;
   activeTab: 'overview' | 'files' | 'commits' | 'checks';
@@ -78,6 +80,8 @@ export function createPRReviewState() {
     viewerCanResolveThreads: false,
     loading: false,
     error: null,
+    reviewSubmitting: false,
+    reviewError: null,
     mergeSubmitting: false,
     mergeError: null,
     activeTab: 'overview',
@@ -367,6 +371,41 @@ export function createPRReviewState() {
     }
   };
 
+  const refreshMergeContext = async (owner: string, repo: string, prNumber: number, maxAttempts = 1): Promise<void> => {
+    try {
+      const { fetchPullRequestMergeContext } = await import('../services/pr-review.service');
+      const result = await fetchPullRequestMergeContext(owner, repo, prNumber, { maxAttempts });
+      if (!state.pullRequest || state.pullRequest.number !== prNumber) return;
+      if (result.mergeContext) {
+        state.mergeContext = result.mergeContext;
+      }
+      state.mergeContextError = result.error ?? null;
+    } catch (error) {
+      console.warn('Failed to refresh merge context:', error);
+    }
+  };
+
+  /**
+   * GitHub recomputes `mergeStateStatus` / `reviewDecision` asynchronously after a
+   * review is submitted, so a single refetch often returns the pre-approval state.
+   * Poll a few times until the expected decision shows up.
+   */
+  const refreshMergeContextUntil = async (
+    owner: string,
+    repo: string,
+    prNumber: number,
+    isSettled: (context: PullRequestMergeContext | null) => boolean,
+    attempts = 4
+  ): Promise<void> => {
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      await refreshMergeContext(owner, repo, prNumber);
+      if (isSettled(state.mergeContext)) return;
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
+    }
+  };
+
   const refreshReviewDiscussion = async (owner: string, repo: string, prNumber: number): Promise<void> => {
     if (!state.pullRequest) return;
     if (state.pullRequest.number !== prNumber) return;
@@ -378,11 +417,14 @@ export function createPRReviewState() {
     commentsRefreshInFlight = true;
 
     try {
-      const { fetchReviewComments, fetchPullRequestReviews } = await import('../services/pr-review.service');
+      const { fetchReviewComments, fetchPullRequestReviews, fetchPullRequestMergeContext } = await import('../services/pr-review.service');
 
-      const [freshComments, freshReviews] = await Promise.all([
+      const [freshComments, freshReviews, mergeContextResult] = await Promise.all([
         fetchReviewComments(owner, repo, prNumber),
-        fetchPullRequestReviews(owner, repo, prNumber)
+        fetchPullRequestReviews(owner, repo, prNumber),
+        // Single attempt: this runs on a timer, so no need to retry while GitHub
+        // recalculates. The next tick picks up the settled status.
+        fetchPullRequestMergeContext(owner, repo, prNumber, { maxAttempts: 1 })
       ]);
 
       // Merge to avoid briefly dropping locally-added items during eventual consistency.
@@ -409,6 +451,13 @@ export function createPRReviewState() {
 
       state.reviewComments = mergedComments;
       state.reviews = mergedReviews;
+
+      // Keep merge/review status in sync so approvals made elsewhere (or GitHub's
+      // async recalculation) are reflected without a manual reload.
+      if (mergeContextResult.mergeContext) {
+        state.mergeContext = mergeContextResult.mergeContext;
+      }
+      state.mergeContextError = mergeContextResult.error ?? null;
     } catch (error) {
       // Non-fatal: background refresh should never disrupt local drafting.
       console.warn('Failed to refresh review discussion:', error);
@@ -542,6 +591,8 @@ export function createPRReviewState() {
       viewerLogin: null,
       loading: false,
       error: null,
+      reviewSubmitting: false,
+      reviewError: null,
       mergeSubmitting: false,
       mergeError: null,
       activeTab: 'overview' as const,
@@ -559,6 +610,10 @@ export function createPRReviewState() {
 
   const clearMergeError = () => {
     state.mergeError = null;
+  };
+
+  const clearReviewError = () => {
+    state.reviewError = null;
   };
 
   const expandAllFiles = () => {
@@ -834,10 +889,14 @@ export function createPRReviewState() {
   };
 
   const submitReview = async (eventOverride?: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT') => {
+    if (state.reviewSubmitting) return;
+
     if (!state.pullRequest) {
-      state.error = 'No pull request loaded';
+      state.reviewError = 'No pull request loaded';
       return;
     }
+
+    state.reviewError = null;
 
     // Ensure we know who the viewer is (GitHub login) so we can enforce
     // GitHub's rule: you cannot submit a review on your own PR.
@@ -851,8 +910,13 @@ export function createPRReviewState() {
       }
     }
 
-    if (state.viewerLogin && state.pullRequest.user?.login && state.viewerLogin === state.pullRequest.user.login) {
-      state.error = "You can't submit a review on your own pull request.";
+    const viewerIsAuthor =
+      state.mergeContext?.source === 'graphql'
+        ? state.mergeContext.viewerDidAuthor
+        : !!(state.viewerLogin && state.pullRequest.user?.login && state.viewerLogin === state.pullRequest.user.login);
+
+    if (viewerIsAuthor) {
+      state.reviewError = "You can't submit a review on your own pull request.";
       return;
     }
 
@@ -866,7 +930,7 @@ export function createPRReviewState() {
     // - COMMENT: requires either an overall body or at least one inline comment
     // - REQUEST_CHANGES: requires an overall body (cannot submit without)
     if (event === 'REQUEST_CHANGES' && body.length === 0) {
-      state.error = 'Requesting changes requires an overall comment.';
+      state.reviewError = 'Requesting changes requires an overall comment.';
       return;
     }
 
@@ -874,6 +938,8 @@ export function createPRReviewState() {
       // Nothing to submit
       return;
     }
+
+    state.reviewSubmitting = true;
 
     try {
       // Import the API service dynamically
@@ -918,9 +984,25 @@ export function createPRReviewState() {
       // so the UI shows the correct state without waiting for GitHub to propagate.
       if (state.mergeContext) {
         if (event === 'APPROVE') {
-          state.mergeContext = { ...state.mergeContext, reviewDecision: 'APPROVED' };
+          state.mergeContext = {
+            ...state.mergeContext,
+            reviewDecision: 'APPROVED',
+            approvalCount: Math.max(1, state.mergeContext.approvalCount + (state.mergeContext.viewerLatestReviewState === 'APPROVED' ? 0 : 1)),
+            changesRequestedCount: state.mergeContext.viewerLatestReviewState === 'CHANGES_REQUESTED'
+              ? Math.max(0, state.mergeContext.changesRequestedCount - 1)
+              : state.mergeContext.changesRequestedCount,
+            viewerLatestReviewState: 'APPROVED',
+          };
         } else if (event === 'REQUEST_CHANGES') {
-          state.mergeContext = { ...state.mergeContext, reviewDecision: 'CHANGES_REQUESTED' };
+          state.mergeContext = {
+            ...state.mergeContext,
+            reviewDecision: 'CHANGES_REQUESTED',
+            changesRequestedCount: Math.max(1, state.mergeContext.changesRequestedCount + (state.mergeContext.viewerLatestReviewState === 'CHANGES_REQUESTED' ? 0 : 1)),
+            approvalCount: state.mergeContext.viewerLatestReviewState === 'APPROVED'
+              ? Math.max(0, state.mergeContext.approvalCount - 1)
+              : state.mergeContext.approvalCount,
+            viewerLatestReviewState: 'CHANGES_REQUESTED',
+          };
         }
       }
 
@@ -929,14 +1011,12 @@ export function createPRReviewState() {
 
       // Refresh server truth: the review creation response does not reliably include
       // the newly-created inline comments, so we refetch them.
-      // Also refresh merge context since the review decision may have changed.
       const refreshReviewData = async () => {
         try {
-          const { fetchReviewComments, fetchPullRequestReviews, fetchPullRequestMergeContext } = await import('../services/pr-review.service');
-          const [freshComments, freshReviews, mergeContextResult] = await Promise.all([
+          const { fetchReviewComments, fetchPullRequestReviews } = await import('../services/pr-review.service');
+          const [freshComments, freshReviews] = await Promise.all([
             fetchReviewComments(owner, repo, state.pullRequest!.number),
-            fetchPullRequestReviews(owner, repo, state.pullRequest!.number),
-            fetchPullRequestMergeContext(owner, repo, state.pullRequest!.number)
+            fetchPullRequestReviews(owner, repo, state.pullRequest!.number)
           ]);
           state.reviewComments = freshComments;
 
@@ -952,21 +1032,25 @@ export function createPRReviewState() {
             }
           }
           state.reviews = mergedReviews;
-
-          if (mergeContextResult.mergeContext) {
-            state.mergeContext = mergeContextResult.mergeContext;
-          }
-          if (mergeContextResult.error) {
-            state.mergeContextError = mergeContextResult.error;
-          }
         } catch (refreshError) {
           // If refresh fails, we still keep the optimistic review push above.
           console.warn('Failed to refresh review data after submit:', refreshError);
         }
       };
 
-      // Refresh immediately, then again after a short delay to beat GitHub eventual consistency.
+      const prNumber = state.pullRequest.number;
+      const expectedDecision = event === 'APPROVE' ? 'APPROVED' : event === 'REQUEST_CHANGES' ? 'CHANGES_REQUESTED' : null;
+
       await refreshReviewData();
+
+      // Poll the merge context until GitHub reflects the new review decision and has
+      // finished recomputing mergeability, so the merge button unlocks on its own.
+      void refreshMergeContextUntil(owner, repo, prNumber, (context) => {
+        if (!context) return false;
+        if (expectedDecision && context.reviewDecision !== expectedDecision) return false;
+        return context.mergeStateStatus !== 'UNKNOWN' && context.mergeStateStatus !== null;
+      });
+
       setTimeout(() => void refreshReviewData(), 3000);
 
       // Clear pending state
@@ -980,7 +1064,9 @@ export function createPRReviewState() {
 
       // Success
     } catch (error) {
-      state.error = error instanceof Error ? error.message : 'Failed to submit review';
+      state.reviewError = error instanceof Error ? error.message : 'Failed to submit review';
+    } finally {
+      state.reviewSubmitting = false;
     }
   };
 
@@ -1014,9 +1100,10 @@ export function createPRReviewState() {
       return;
     }
 
-    // Guardrails: do not allow bypass attempts when merge conflicts exist.
+    // Guardrails: do not allow merge attempts when merge conflicts exist.
     const mergeStateStatus = state.mergeContext?.mergeStateStatus ?? null;
-    if (mergeStateStatus === 'DIRTY') {
+    const hasConflicts = mergeStateStatus === 'DIRTY' || state.mergeContext?.mergeable === 'CONFLICTING' || (pr as any)?.mergeable === false;
+    if (hasConflicts) {
       state.mergeError = 'Pull request has merge conflicts';
       return;
     }
@@ -1171,6 +1258,7 @@ export function createPRReviewState() {
     saveDiffViewMode,
     loadPullRequest,
     refreshReviewDiscussion,
+    refreshMergeContext,
     startReviewCommentsPolling,
     stopReviewCommentsPolling,
     setActiveTab,
@@ -1181,6 +1269,7 @@ export function createPRReviewState() {
     reset,
     clearError,
     clearMergeError,
+    clearReviewError,
     expandAllFiles,
     collapseAllFiles,
     toggleFileExpanded,

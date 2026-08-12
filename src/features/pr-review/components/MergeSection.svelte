@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { DetailedPullRequest } from '$integrations/github';
   import type { MergeMethod, PullRequestMergeContext } from '../services/pr-review.service';
+  import { evaluateMergeStatus, formatApprovalSummary, hasMergeConflicts, mapRestMergeableStateToStatus } from '../utils/merge-status';
 
   interface Props {
     pullRequest: DetailedPullRequest;
@@ -65,110 +66,42 @@
     return state === 'open' && !pullRequest.merged && !pullRequest.draft;
   });
 
-  function mapRestMergeableStateToStatus(mergeableState: unknown): string | null {
-    if (typeof mergeableState !== 'string') return null;
-    switch (mergeableState.toLowerCase()) {
-      case 'clean':
-        return 'CLEAN';
-      case 'blocked':
-        return 'BLOCKED';
-      case 'behind':
-        return 'BEHIND';
-      case 'dirty':
-        return 'DIRTY';
-      case 'unstable':
-        return 'UNSTABLE';
-      case 'draft':
-        return 'DRAFT';
-      case 'unknown':
-        return 'UNKNOWN';
-      default:
-        return 'UNKNOWN';
-    }
-  }
-
   const mergeStateStatus = $derived.by(() => {
     if (mergeContext?.mergeStateStatus) return mergeContext.mergeStateStatus;
-    const prAny = pullRequest as any;
-    return mapRestMergeableStateToStatus(prAny?.mergeable_state);
+    return mapRestMergeableStateToStatus((pullRequest as any)?.mergeable_state);
   });
-  const reviewDecision = $derived.by(() => mergeContext?.reviewDecision ?? null);
 
   const viewerCanMerge = $derived.by(() => !!mergeContext?.viewerCanMerge);
   const viewerCanMergeAsAdmin = $derived.by(() => !!mergeContext?.viewerCanMergeAsAdmin);
 
-  const canMergeNormally = $derived.by(() => {
-    const status = mergeStateStatus;
-    const decision = reviewDecision;
+  const mergeStatus = $derived.by(() =>
+    evaluateMergeStatus({
+      isOpen: (pullRequest.state ?? '').toLowerCase() === 'open',
+      isMerged: !!pullRequest.merged,
+      isDraft: !!pullRequest.draft,
+      mergeStateStatus,
+      reviewDecision: mergeContext?.reviewDecision ?? null,
+      requiredReviewDecision: mergeContext?.requiredReviewDecision ?? null,
+      hasConflicts: hasMergeConflicts(mergeContext, pullRequest),
+      viewerCanMergeAsAdmin,
+    })
+  );
 
-    // If GitHub provides a review decision, require APPROVED to satisfy required approvals/codeowner rules.
-    const isApproved = decision === 'APPROVED';
+  const canMergeNormally = $derived.by(() => mergeStatus.canMergeNormally);
+  const canBypass = $derived.by(() => mergeStatus.canBypass);
+  const statusText = $derived.by(() => mergeStatus.statusText);
+  const approvalText = $derived.by(() => formatApprovalSummary(mergeContext));
 
-    // GitHub can report UNKNOWN while mergeability is still being computed.
-    // Allow attempting a merge in that state; GitHub will enforce server-side rules.
-    // BLOCKED often means "waiting for required reviews"; if we just approved,
-    // treat it as mergeable — GitHub will re-evaluate server-side.
-    if (status && status !== 'CLEAN' && status !== 'UNKNOWN') {
-      if (status === 'BLOCKED' && isApproved) {
-        // Approval satisfies the block; allow merge attempt.
-        return true;
-      }
-      return false;
-    }
-
-    if (!decision) return true;
-    return isApproved;
-  });
-
-  const canBypass = $derived.by(() => {
-    const status = mergeStateStatus;
-    if (!viewerCanMergeAsAdmin) return false;
-    if (!status) return false;
-    // Admin bypass does not help if there are merge conflicts.
-    if (status === 'DIRTY') return false;
-    // Draft should not be mergeable.
-    if (status === 'DRAFT') return false;
-    return true;
-  });
-
-  const statusText = $derived.by(() => {
-    if (!prIsOpen) {
-      if (pullRequest.merged) return 'Already merged';
-      return 'Not mergeable (closed/draft)';
-    }
-
-    // If we couldn't detect merge methods, show a softer warning.
-    // (We still allow attempting merge; GitHub enforces server-side.)
-    if ((mergeContext?.allowedMergeMethods?.length ?? 0) === 0 && inferredAllowedMethods.length === 0) {
-      return 'Merge method availability unknown (API did not provide flags)';
-    }
-
-    const status = mergeStateStatus;
-    const decision = reviewDecision;
-
-    if (decision && decision !== 'APPROVED') {
-      if (decision === 'REVIEW_REQUIRED') return 'Approvals required';
-      if (decision === 'CHANGES_REQUESTED') return 'Changes requested';
-      return `Review decision: ${decision}`;
-    }
-
-    switch (status) {
-      case 'CLEAN':
-        return 'Ready to merge';
-      case 'UNKNOWN':
-        return 'Mergeability still being calculated';
-      case 'BLOCKED':
-        return 'Blocked by required checks/branch rules';
-      case 'UNSTABLE':
-        return 'Checks failing or pending';
-      case 'BEHIND':
-        return 'Branch is behind base';
-      case 'DIRTY':
-        return 'Merge conflicts';
-      case 'DRAFT':
-        return 'Draft pull request';
+  const statusDotClass = $derived.by(() => {
+    switch (mergeStatus.tone) {
+      case 'ready':
+        return 'bg-[#3fb950]';
+      case 'warning':
+        return 'bg-[#d29922]';
+      case 'blocked':
+        return 'bg-[#f85149]';
       default:
-        return status ? `Merge status: ${status}` : 'Merge status unavailable';
+        return 'bg-[#8b949e]';
     }
   });
 
@@ -222,10 +155,16 @@
       </div>
     </div>
   {:else}
-  <div class="flex items-center justify-between gap-3">
-    <div>
+  <div class="flex items-start justify-between gap-3">
+    <div class="min-w-0">
       <h4 class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">Merge</h4>
-      <div class="text-xs text-[#8b949e] mt-1">{statusText}</div>
+      <div class="flex items-center gap-1.5 mt-1">
+        <span class={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${statusDotClass}`} aria-hidden="true"></span>
+        <span class="text-xs text-[#c9d1d9]">{statusText}</span>
+      </div>
+      {#if approvalText}
+        <div class="text-xs text-[#8b949e] mt-1">{approvalText}</div>
+      {/if}
     </div>
   </div>
 
