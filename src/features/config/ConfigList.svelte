@@ -3,13 +3,13 @@
   import { configService } from '$features/config/services/config.service';
   import type { SaveEventData } from '$features/config/services/repository-form.service';
   import type { CombinedConfig } from '$features/config/stores/config.store';
-  import { useDraggable } from './directives/useDraggable';
+  import { useSortable } from './directives/useSortable';
   import RepositoryForm from './RepositoryForm.svelte';
 
   let { configs = [], onUpdate } = $props<{ configs: CombinedConfig[]; onUpdate: (configs: CombinedConfig[]) => void }>();
 
   let editingIndex = $state<number>(-1);
-  let configListElement = $state<HTMLElement | null>(null);
+  let announcement = $state<string>('');
 
   async function handleSave(event: SaveEventData, index?: number): Promise<void> {
     let updatedConfigs: CombinedConfig[];
@@ -25,78 +25,79 @@
     onUpdate(updatedConfigs);
   }
 
-  async function handleReorder(fromIndex: number, toIndex: number): Promise<void> {
-    const updatedConfigs = configService.reorderConfigs(configs, fromIndex, toIndex);
-
-    onUpdate(updatedConfigs);
-  }
-
-  function handleMouseDown(event: MouseEvent): void {
-    if (event.target instanceof HTMLElement && (event.target.closest('button') || event.target.classList.contains('no-drag') || event.target.closest('.no-drag'))) {
-      return;
-    }
+  function handleReorder(fromIndex: number, toIndex: number): void {
+    onUpdate(configService.reorderConfigs(configs, fromIndex, toIndex));
   }
 </script>
 
 <div class="mt-4">
   {#if configs.length > 0}
-    <div class="space-y-3 mb-4" bind:this={configListElement} use:useDraggable={{ onReorder: handleReorder }}>
-      {#each configs as config, i (i)}
-        {#if editingIndex === i}
-          <RepositoryForm
-            {config}
-            onSave={(data: any) => handleSave(data, i)}
-            onCancel={() => (editingIndex = -1)}
-            onDelete={() => {
-              const updatedConfigs = configService.removeConfigAtIndex(configs, i);
-              onUpdate(updatedConfigs);
-              editingIndex = -1;
-            }}
-          />
-        {:else}
-          <div class="config-item" draggable="true" role="button" tabindex="0" onmousedown={handleMouseDown} data-index={i}>
-            <span class="drag-handle" aria-hidden="true">
-              <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor">
-                <circle cx="4" cy="3" r="1.3" /><circle cx="8" cy="3" r="1.3" />
-                <circle cx="4" cy="7" r="1.3" /><circle cx="8" cy="7" r="1.3" />
-                <circle cx="4" cy="11" r="1.3" /><circle cx="8" cy="11" r="1.3" />
-              </svg>
-            </span>
+    <ul class="config-list space-y-3 mb-4" use:useSortable={{ onReorder: handleReorder, disabled: editingIndex !== -1, onAnnounce: (message: string) => (announcement = message) }}>
+      {#each configs as config, i (`${config.org}/${config.repo}`)}
+        <li class="config-row">
+          {#if editingIndex === i}
+            <RepositoryForm
+              {config}
+              onSave={(data: any) => handleSave(data, i)}
+              onCancel={() => (editingIndex = -1)}
+              onDelete={() => {
+                const updatedConfigs = configService.removeConfigAtIndex(configs, i);
+                onUpdate(updatedConfigs);
+                editingIndex = -1;
+              }}
+            />
+          {:else}
+            <div class="config-item" data-sortable-item data-index={i}>
+              <button
+                type="button"
+                class="drag-handle"
+                data-drag-handle
+                aria-label="Reorder {config.org}/{config.repo}, position {i + 1} of {configs.length}. Press space to grab, then arrow keys to move."
+                title="Drag to reorder"
+              >
+                <svg width="12" height="14" viewBox="0 0 12 14" fill="currentColor" aria-hidden="true">
+                  <circle cx="4" cy="3" r="1.3" /><circle cx="8" cy="3" r="1.3" />
+                  <circle cx="4" cy="7" r="1.3" /><circle cx="8" cy="7" r="1.3" />
+                  <circle cx="4" cy="11" r="1.3" /><circle cx="8" cy="11" r="1.3" />
+                </svg>
+              </button>
 
-            <div class="flex flex-col min-w-0 flex-1 gap-1.5">
-              <strong class="config-name truncate">
-                <span class="config-org">{config.org}/</span>{config.repo}
-              </strong>
-              <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                {#if config.pullRequests?.length > 0}
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="filter-label">PRs</span>
-                    {#each config.pullRequests as filter, i (i)}
-                      <span class="chip">{filter}</span>
-                    {/each}
-                  </div>
-                {:else if config.pullRequests}
-                  <span class="filter-label">PRs · all labels</span>
-                {/if}
+              <div class="flex flex-col min-w-0 flex-1 gap-1.5">
+                <strong class="config-name truncate">
+                  <span class="config-org">{config.org}/</span>{config.repo}
+                </strong>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  {#if config.pullRequests?.length > 0}
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="filter-label">PRs</span>
+                      {#each config.pullRequests as filter, f (f)}
+                        <span class="chip">{filter}</span>
+                      {/each}
+                    </div>
+                  {:else if config.pullRequests}
+                    <span class="filter-label">PRs · all labels</span>
+                  {/if}
 
-                {#if config.actions && config.actions.length > 0}
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <span class="filter-label filter-label-actions">Actions</span>
-                    {#each config.actions as filter, i (i)}
-                      <span class="chip chip-actions">{filter.replace(/\.(ya?ml)$/, '')}</span>
-                    {/each}
-                  </div>
-                {/if}
+                  {#if config.actions && config.actions.length > 0}
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="filter-label filter-label-actions">Actions</span>
+                      {#each config.actions as filter, a (a)}
+                        <span class="chip chip-actions">{filter.replace(/\.(ya?ml)$/, '')}</span>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
               </div>
-            </div>
 
-            <button class="config-edit no-drag" type="button" aria-label="Edit {config.org}/{config.repo}" title="Edit repository configuration" onclick={() => (editingIndex = i)}>
-              <img src={editSVG} alt="" width="15" height="15" />
-            </button>
-          </div>
-        {/if}
+              <button class="config-edit" type="button" aria-label="Edit {config.org}/{config.repo}" title="Edit repository configuration" onclick={() => (editingIndex = i)}>
+                <img src={editSVG} alt="" width="15" height="15" />
+              </button>
+            </div>
+          {/if}
+        </li>
       {/each}
-    </div>
+    </ul>
+    <p class="sr-only" role="status" aria-live="polite">{announcement}</p>
   {:else}
     <p class="text-sm text-[var(--text-faint)] mb-4">No repositories yet. Add one below.</p>
   {/if}
@@ -146,6 +147,16 @@
     color: var(--text-faint);
   }
 
+  .config-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .config-row {
+    list-style: none;
+  }
+
   .config-item {
     display: flex;
     align-items: center;
@@ -154,9 +165,7 @@
     background: rgba(148, 168, 205, 0.05);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    cursor: grab;
     transition:
-      transform 0.15s var(--ease),
       opacity 0.15s var(--ease),
       background-color 0.15s var(--ease),
       border-color 0.15s var(--ease),
@@ -166,6 +175,49 @@
   .config-item:hover {
     border-color: var(--line-strong);
     background: rgba(148, 168, 205, 0.08);
+  }
+
+  /* Neighbours slide out of the way while a drag is in flight. */
+  :global(.config-item.sortable-shifting) {
+    transition:
+      transform 0.18s var(--ease),
+      background-color 0.15s var(--ease),
+      border-color 0.15s var(--ease);
+    will-change: transform;
+  }
+
+  /* The original row stays in place as a low-opacity placeholder. */
+  :global(.config-item.sortable-source) {
+    opacity: 0.28;
+    border-style: dashed;
+    border-color: var(--beacon);
+    background: rgba(47, 212, 193, 0.05);
+    pointer-events: none;
+  }
+
+  :global(.config-item.sortable-keyboard) {
+    border-color: var(--beacon);
+    box-shadow: 0 0 0 1px var(--beacon);
+  }
+
+  :global(.sortable-floating) {
+    opacity: 0.95;
+    box-shadow: var(--shadow-pop, 0 12px 28px rgba(0, 0, 0, 0.45));
+    border-color: rgba(47, 212, 193, 0.45) !important;
+    background: var(--panel-raised, #0d1117) !important;
+    cursor: grabbing;
+    will-change: transform;
+  }
+
+  :global(body.sortable-dragging) {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(.config-item.sortable-shifting) {
+      transition: none;
+    }
   }
 
   .config-name {
@@ -203,59 +255,51 @@
     background: rgba(148, 168, 205, 0.14);
   }
 
-  :global(.config-item.dragging) {
-    opacity: 0.4;
-  }
-
-  :global(.config-item.drag-over) {
-    transform: translateY(6px);
-    border: 1px dashed var(--beacon);
-    background-color: rgba(47, 212, 193, 0.06);
-    position: relative;
-  }
-
-  :global(.config-item.drag-over::before) {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background-color: var(--beacon);
-    opacity: 0.7;
-  }
-
-  .config-item button {
-    pointer-events: all;
-  }
-
   .drag-handle {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
     color: var(--text-faint);
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: grab;
+    touch-action: none;
+    transition:
+      opacity 160ms var(--ease),
+      background-color 160ms var(--ease);
   }
 
-  .config-item .no-drag {
-    cursor: pointer !important;
+  .drag-handle:hover {
+    opacity: 1;
+    background: rgba(148, 168, 205, 0.14);
   }
 
-  .config-item:active {
+  .drag-handle:focus-visible {
+    outline: 2px solid var(--beacon);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+
+  .drag-handle:active {
     cursor: grabbing;
   }
 
-  :global(.ghost-element) {
-    transition: transform 0.05s ease-out;
-    box-shadow: var(--shadow-pop);
-    border-radius: var(--radius-sm);
-    border: 1px solid rgba(47, 212, 193, 0.35);
-    background-color: var(--panel-raised);
-    pointer-events: none;
-    will-change: transform;
-    opacity: 0.75 !important;
-    z-index: 9999 !important;
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 
   @media (max-width: 768px) {
@@ -266,38 +310,5 @@
       align-items: center;
       justify-content: center;
     }
-  }
-
-  /* Auto-scroll zone visual feedback */
-  :global(body.scroll-zone-top) {
-    position: relative;
-  }
-
-  :global(body.scroll-zone-top::before) {
-    content: '';
-    position: fixed;
-    top: 64px;
-    left: 0;
-    right: 0;
-    height: 120px;
-    background: linear-gradient(to bottom, rgba(47, 212, 193, 0.14) 0%, transparent 100%);
-    pointer-events: none;
-    z-index: 9998;
-  }
-
-  :global(body.scroll-zone-bottom) {
-    position: relative;
-  }
-
-  :global(body.scroll-zone-bottom::after) {
-    content: '';
-    position: fixed;
-    bottom: 60px;
-    left: 0;
-    right: 0;
-    height: 120px;
-    background: linear-gradient(to top, rgba(47, 212, 193, 0.14) 0%, transparent 100%);
-    pointer-events: none;
-    z-index: 9998;
   }
 </style>
