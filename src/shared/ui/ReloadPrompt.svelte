@@ -32,13 +32,55 @@
     },
   });
 
+  const ACTIVATION_TIMEOUT = 3000;
+
   const close = () => {
     offlineReady.set(false);
     needRefresh.set(false);
   };
 
-  const update = () => {
-    updateServiceWorker(true);
+  // Wait for the waiting worker to take over, so the reload serves the new assets.
+  // Falls back to a timeout because `controllerchange` never fires when the page
+  // is not currently controlled by a service worker.
+  function waitForActivation(waiting: ServiceWorker): Promise<void> {
+    return new Promise((resolve) => {
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        navigator.serviceWorker.removeEventListener('controllerchange', done);
+        waiting.removeEventListener('statechange', onStateChange);
+        resolve();
+      };
+      const onStateChange = () => {
+        if (waiting.state === 'activated' || waiting.state === 'redundant') done();
+      };
+      const timer = setTimeout(done, ACTIVATION_TIMEOUT);
+
+      navigator.serviceWorker.addEventListener('controllerchange', done);
+      waiting.addEventListener('statechange', onStateChange);
+    });
+  }
+
+  const update = async () => {
+    needRefresh.set(false);
+    offlineReady.set(false);
+
+    try {
+      const registration = await navigator.serviceWorker?.getRegistration();
+      const waiting = registration?.waiting;
+
+      if (waiting) {
+        const activated = waitForActivation(waiting);
+        await updateServiceWorker(false);
+        await activated;
+      }
+    } catch (error) {
+      console.error('Failed to activate the updated service worker', error);
+    }
+
+    window.location.reload();
   };
 
   let toast = $derived($offlineReady || $needRefresh);
@@ -47,18 +89,18 @@
 {#if toast}
   <div class="pwa-toast menu-surface" role="alert">
     <p class="message">
-      {#if $offlineReady}
-        GitHelm works offline now.
-      {:else}
+      {#if $needRefresh}
         A new version is ready.
+      {:else}
+        GitHelm works offline now.
       {/if}
     </p>
     <div class="buttons">
       {#if $needRefresh}
         <button onclick={update} class="beacon-button" aria-label="Update application"> Reload </button>
       {/if}
-      <button onclick={close} class="ghost-button" aria-label={$offlineReady ? 'Close' : 'Dismiss'}>
-        {$offlineReady ? 'Close' : 'Not now'}
+      <button onclick={close} class="ghost-button" aria-label={$needRefresh ? 'Dismiss' : 'Close'}>
+        {$needRefresh ? 'Not now' : 'Close'}
       </button>
     </div>
   </div>
