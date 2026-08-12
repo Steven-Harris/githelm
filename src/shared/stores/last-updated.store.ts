@@ -11,11 +11,11 @@ function lastUpdated(): number {
   return Math.floor((Date.now() - lastUpdated) / 1000);
 }
 
-function watchTimeElapsed(set: (value: number) => void): any {
-  return setInterval(() => set(lastUpdated()), 1000);
+function watchTimeElapsed(set: (value: number) => void): ReturnType<typeof setInterval> {
+  return setInterval(() => set(lastUpdated()), 5000);
 }
 
-function resetTimer(timer: any, set: (value: number) => void) {
+function resetTimer(timer: ReturnType<typeof setInterval> | null, set: (value: number) => void) {
   if (timer) {
     clearInterval(timer);
   }
