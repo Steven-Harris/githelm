@@ -194,32 +194,16 @@ export async function saveRepositoryConfig(config: RepoConfig): Promise<void> {
 }
 
 export async function refreshConfigurations(): Promise<void> {
-  await Promise.all([refreshPRConfigs(), refreshActionConfigs()]);
-}
-
-async function refreshPRConfigs(): Promise<void> {
   try {
     const configs = await configService.getConfigs();
     const prConfigs = configs.pullRequests || [];
-
-    pullRequestConfigs.set(prConfigs);
-  } catch (error) {
-    captureException(error, {
-      action: 'refreshPRConfigs',
-      context: 'Repository configuration management',
-    });
-  }
-}
-
-async function refreshActionConfigs(): Promise<void> {
-  try {
-    const configs = await configService.getConfigs();
     const actionConfigs = configs.actions || [];
 
+    pullRequestConfigs.set(prConfigs);
     actionsConfigs.set(actionConfigs);
   } catch (error) {
     captureException(error, {
-      action: 'refreshActionConfigs',
+      action: 'refreshConfigurations',
       context: 'Repository configuration management',
     });
   }

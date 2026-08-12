@@ -205,23 +205,17 @@ export async function updateRepositoryConfigs(combinedConfigs: CombinedConfig[])
 
 // Refresh configuration functions
 export async function refreshConfigurations(): Promise<void> {
-  await Promise.all([refreshPRConfigs(), refreshActionConfigs()]);
-}
-
-async function refreshPRConfigs(): Promise<void> {
   const configs = await configService.getConfigs();
-  if (configs.pullRequests?.length) {
-    pullRequestConfigs.set(configs.pullRequests);
-    return refreshPullRequestsData(configs.pullRequests);
-  }
-}
+  const prConfigs = configs.pullRequests || [];
+  const actionConfigs = configs.actions || [];
 
-async function refreshActionConfigs(): Promise<void> {
-  const configs = await configService.getConfigs();
-  if (configs.actions?.length) {
-    actionsConfigs.set(configs.actions);
-    return refreshActionsData(configs.actions);
-  }
+  pullRequestConfigs.set(prConfigs);
+  actionsConfigs.set(actionConfigs);
+
+  await Promise.all([
+    prConfigs.length ? refreshPullRequestsData(prConfigs) : Promise.resolve(),
+    actionConfigs.length ? refreshActionsData(actionConfigs) : Promise.resolve(),
+  ]);
 }
 
 export async function loadRepositoryConfigs(): Promise<void> {
