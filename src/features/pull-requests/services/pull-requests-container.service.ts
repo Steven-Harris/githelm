@@ -28,8 +28,12 @@ export class PullRequestsContainerService {
 
   getLoadingStates(): Readable<Record<string, LoadingState['loading']>> {
     return derived(
-      [repositoryFacade.getPullRequestConfigsStore(), repositoryFacade.getPullRequestsStore()],
-      ([$configs, $pullRequests]) => {
+      [
+        repositoryFacade.getPullRequestConfigsStore(),
+        repositoryFacade.getPullRequestsStore(),
+        repositoryFacade.getLoadedPullRequestReposStore(),
+      ],
+      ([$configs, $pullRequests, $loaded]) => {
         const states: Record<string, LoadingState['loading']> = {};
 
         $configs.forEach(repo => {
@@ -37,7 +41,7 @@ export class PullRequestsContainerService {
           const pullRequests = $pullRequests[repoKey] || [];
           const hasPRs = pullRequests.length > 0;
 
-          if (repoKey in $pullRequests) {
+          if ($loaded.has(repoKey)) {
             states[repoKey] = hasPRs ? 'loaded' : 'empty';
           } else {
             states[repoKey] = 'loading';
@@ -51,16 +55,20 @@ export class PullRequestsContainerService {
 
   getProcessedRepositories(): Readable<Array<{repo: RepoConfig, isLoaded: boolean, hasPRs: boolean}>> {
     return derived(
-      [repositoryFacade.getPullRequestConfigsStore(), repositoryFacade.getPullRequestsStore()],
-      ([$configs, $pullRequests]) => {
+      [
+        repositoryFacade.getPullRequestConfigsStore(),
+        repositoryFacade.getPullRequestsStore(),
+        repositoryFacade.getLoadedPullRequestReposStore(),
+      ],
+      ([$configs, $pullRequests, $loaded]) => {
         // Ensure configs is always an array
         const configs = Array.isArray($configs) ? $configs : [];
         return configs.map(repo => {
           const repoKey = repositoryFacade.getRepoKey(repo);
           const pullRequests = $pullRequests[repoKey] || [];
           const hasPRs = pullRequests.length > 0;
-          const isLoaded = repoKey in $pullRequests;
-          
+          const isLoaded = $loaded.has(repoKey);
+
           return { repo, isLoaded, hasPRs };
         });
       }

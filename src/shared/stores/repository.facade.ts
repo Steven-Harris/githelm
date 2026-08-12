@@ -24,6 +24,7 @@ import {
   getCombinedConfigs,
   initializePullRequestsPolling,
   loadRepositoryConfigs,
+  loadedPullRequestRepos,
   refreshConfigurations,
   refreshPullRequestsData,
   updateRepositoryConfigs
@@ -101,6 +102,10 @@ export class RepositoryFacade {
 
   getPullRequestsStore() {
     return allPullRequests;
+  }
+
+  getLoadedPullRequestReposStore() {
+    return loadedPullRequestRepos;
   }
 
   getWorkflowRunsStore() {
