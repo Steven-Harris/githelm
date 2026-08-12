@@ -15,68 +15,43 @@
 </script>
 
 <div class="hero-card">
-  <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
-    <div class="flex items-center gap-3">
-      <button onclick={toggleCollapse} class="text-[#8b949e] hover:text-[#c9d1d9] transition-colors p-1 rounded hover:bg-[#21262d]" title={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-label={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-pressed={!isCollapsed}>
-        {#if isCollapsed}
-          <!-- Expand icon (chevron right) -->
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 1 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06z" />
-          </svg>
-        {:else}
-          <!-- Collapse icon (chevron down) -->
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
-          </svg>
-        {/if}
-      </button>
-      <h3 class="font-semibold">
-        <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
-          <span class="text-[#58a6ff] pl-1">{repo}</span>
-        </a>
-      </h3>
-    </div>
-    <div class="flex items-center gap-3">
+  <div class="repo-head">
+    <button onclick={toggleCollapse} class="disclosure" title={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-label={isCollapsed ? 'Expand repository' : 'Collapse repository'} aria-pressed={!isCollapsed}>
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16" class="chevron" class:collapsed={isCollapsed} aria-hidden="true">
+        <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+      </svg>
+    </button>
+    <h3 class="repo-name">
+      <a href={`https://github.com/${org}/${repo}/pulls`} target="_blank" rel="noopener" class="link" title={`${org}/${repo}`}>
+        <span class="repo-org">{org}/</span>{repo}
+      </a>
+    </h3>
+    <div class="ml-auto flex items-center gap-3">
       {#if isLoaded}
         <CountBadge {repoKey} type="pullRequests" count={pullRequests.length} iconType="pullRequest" label="PR" />
       {:else}
-        <div class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
-          <svg class="fill-[#8b949e]" height="16" viewBox="0 0 16 16" version="1.1" width="16">
-            <path
-              d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"
-            ></path>
-          </svg>
-          <span class="text-[#8b949e]">Loading...</span>
-        </div>
+        <span class="pill"><span class="status-dot beacon-live" style="color: var(--beacon)"></span>Loading</span>
       {/if}
     </div>
   </div>
 
   {#if !isCollapsed}
     {#if !isLoaded}
-      <!-- Loading state -->
-      <div class="p-4 bg-[#0d1117] text-center">
-        <div class="flex items-center justify-center mb-2">
-          <svg class="animate-spin h-4 w-4 text-[#58a6ff] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span class="text-xs text-[#8b949e]">Checking for {filterHint || 'pull requests'}...</span>
-        </div>
+      <div class="px-4 py-5 text-center text-sm text-[var(--text-faint)]">
+        Checking for {filterHint || 'pull requests'}…
       </div>
     {:else if pullRequests.length > 0}
-      <!-- Pull requests list -->
-      <div class="divide-y divide-[#21262d]">
+      <ul class="row-list">
         {#each pullRequests as pr, index (index)}
-          <div class="p-4 bg-[#0d1117] hover:bg-[#161b22] transition-colors stagger-item" style="animation-delay: {0.05 + index * 0.05}s">
-            <div class="flex justify-between items-start">
+          <li class="pr-row">
+            <div class="flex justify-between items-start gap-3">
               <div class="flex-1 min-w-0">
-                <div class="flex items-center">
+                <div class="flex items-start gap-2.5">
                   {#if pr.user?.avatar_url}
-                    <img src={pr.user.avatar_url} class="avatar mt-1 mr-2" alt={`Avatar of ${pr.user.login || 'User'}`} />
+                    <img src={pr.user.avatar_url} class="avatar mt-0.5" alt="" />
                   {:else}
-                    <div class="avatar mt-1 mr-2 bg-[#30363d] flex items-center justify-center">
-                      <svg class="w-4 h-4 text-[#8b949e]" fill="currentColor" viewBox="0 0 16 16">
+                    <div class="avatar mt-0.5 flex items-center justify-center">
+                      <svg class="w-3.5 h-3.5 text-[var(--text-faint)]" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
                         <path
                           d="M8 8a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"
                         />
@@ -84,22 +59,24 @@
                     </div>
                   {/if}
                   <div class="flex flex-col min-w-0 flex-1">
-                    <a href={`/pr/${org}/${repo}/${pr.number}`} data-sveltekit-preload-data class="text-[#58a6ff] hover:text-[#79c0ff] text-lg font-medium hover:underline block truncate">
+                    <a href={`/pr/${org}/${repo}/${pr.number}`} data-sveltekit-preload-data class="pr-title">
                       {pr.title}
                     </a>
-                    <div class="text-sm text-[#8b949e] mt-1">
-                      #{pr.number} opened {pr.createdAt} by
-                      <a href={`https://github.com/${pr.user?.login || 'unknown'}`} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff]">
-                        {pr.user?.login || 'Unknown User'}
-                      </a>
-                      • <a href={pr.html_url} target="_blank" class="text-[#7d8590] hover:text-[#58a6ff] text-xs">View on GitHub ↗</a>
+                    <div class="pr-meta">
+                      <span>#{pr.number}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{pr.createdAt} by {pr.user?.login || 'unknown'}</span>
+                      {#if pr.isDraft}
+                        <span class="pill" style="padding: 0 0.4375rem">Draft</span>
+                      {/if}
+                      <a href={pr.html_url} target="_blank" rel="noopener" class="pr-meta-link">GitHub ↗</a>
                     </div>
                   </div>
                 </div>
                 {#if pr.labels?.length > 0}
-                  <div class="mt-2 flex flex-wrap gap-1">
+                  <div class="mt-2 ml-8 flex flex-wrap gap-1.5">
                     {#each pr.labels as label, index (index)}
-                      <span class="px-2 py-0.5 text-xs rounded-full" style="background-color: #{label.color}26; color: #{label.color}; border: 1px solid #{label.color}40;">
+                      <span class="label-chip" style="--label: #{label.color}">
                         {label.name}
                       </span>
                     {/each}
@@ -107,22 +84,69 @@
                 {/if}
               </div>
 
-              <div>
-                <Reviews reviews={pr.reviews || []} />
-              </div>
+              <Reviews reviews={pr.reviews || []} />
             </div>
-
-            {#if pr.isDraft}
-              <span class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#21262d] text-[#8b949e]"> Draft </span>
-            {/if}
-          </div>
+          </li>
         {/each}
-      </div>
+      </ul>
     {:else}
-      <!-- No pull requests state -->
-      <div class="p-4 bg-[#0d1117] text-center">
-        <div class="text-sm text-[#8b949e]">No open pull requests</div>
-      </div>
+      <div class="px-4 py-5 text-center text-sm text-[var(--text-faint)]">No open pull requests</div>
     {/if}
   {/if}
 </div>
+
+<style>
+  .pr-row {
+    padding: 0.875rem;
+    transition: background-color 160ms var(--ease);
+  }
+
+  .pr-row:hover {
+    background: rgba(148, 168, 205, 0.045);
+  }
+
+  .pr-title {
+    color: var(--text);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: color 150ms var(--ease);
+  }
+
+  .pr-title:hover {
+    color: var(--beacon-bright);
+  }
+
+  .pr-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+  }
+
+  .pr-meta-link {
+    color: var(--text-faint);
+    transition: color 150ms var(--ease);
+  }
+
+  .pr-meta-link:hover {
+    color: var(--link);
+  }
+
+  .label-chip {
+    padding: 0.0625rem 0.5rem;
+    font-size: 0.6875rem;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--label) 70%, white);
+    background: color-mix(in srgb, var(--label) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--label) 32%, transparent);
+  }
+</style>

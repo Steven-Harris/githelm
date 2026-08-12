@@ -2,7 +2,6 @@
   import { repositoryFormService, type FormState, type SaveEventData } from '$features/config/services/repository-form.service';
   import type { CombinedConfig } from '$features/config/stores/config.store';
   import { eventBus } from '$shared/stores/event-bus.store';
-  import { isMobile } from '$shared/stores/mobile.store';
   import { onMount } from 'svelte';
   import LabelFilter from './LabelFilter.svelte';
   import MonitoringToggle from './MonitoringToggle.svelte';
@@ -164,9 +163,9 @@
   }
 </script>
 
-<div class="{$isMobile ? 'p-3' : 'p-4'} rounded-md mb-4 glass-container backdrop-blur-sm border border-[#30363d] bg-[rgba(13,17,23,0.7)] relative">
-  <h3 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold {$isMobile ? 'mb-3' : 'mb-4'} text-[#c9d1d9]">
-    {config ? 'Edit' : 'Add'} Repository Configuration
+<div class="form-shell">
+  <h3 class="form-title">
+    {config ? 'Edit repository' : 'Add repository'}
   </h3>
 
   <OrganizationSelector selectedOrg={formState.selectedOrg} disabled={config !== null} onChange={handleOrgChange} />
@@ -176,23 +175,22 @@
   </div>
 
   {#if validationErrors.length > 0 && hasAttemptedSubmit}
-    <div class="mb-4 p-3 bg-[rgba(248,81,73,0.1)] border border-[#f85149] rounded-md">
-      <ul class="text-sm text-[#f85149] space-y-1">
+    <div class="form-errors" role="alert">
+      <ul class="text-sm space-y-1">
         {#each validationErrors as error}
-          <li>• {error}</li>
+          <li>{error}</li>
         {/each}
       </ul>
     </div>
   {/if}
 
   {#if formState.selectedOrg && formState.repoName}
-    <div class={$isMobile ? 'mb-3 space-y-3' : 'mb-4 grid grid-cols-1 md:grid-cols-2 gap-4'}>
-      <!-- Pull Requests Section -->
-      <div class="bg-[rgba(22,27,34,0.5)] {$isMobile ? 'p-3' : 'p-4'} rounded-md border border-[#30363d]">
-        <MonitoringToggle title="Monitor Pull Requests" enabled={formState.monitorPRs} color="blue" onChange={toggleMonitorPRs} />
+    <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="monitor-panel">
+        <MonitoringToggle title="Pull requests" enabled={formState.monitorPRs} color="blue" onChange={toggleMonitorPRs} />
 
         {#if formState.monitorPRs}
-          <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
+          <div class="monitor-body">
             <LabelFilter
               title="Label"
               filters={formState.prFilters}
@@ -206,12 +204,11 @@
         {/if}
       </div>
 
-      <!-- GitHub Actions Section -->
-      <div class="bg-[rgba(22,27,34,0.5)] {$isMobile ? 'p-3' : 'p-4'} rounded-md border border-[#30363d]">
-        <MonitoringToggle title="Monitor GitHub Actions" enabled={formState.monitorActions} color="green" onChange={toggleMonitorActions} />
+      <div class="monitor-panel">
+        <MonitoringToggle title="Actions" enabled={formState.monitorActions} color="green" onChange={toggleMonitorActions} />
 
         {#if formState.monitorActions}
-          <div class="{$isMobile ? 'mt-2' : 'mt-3'} border-t border-[#30363d] {$isMobile ? 'pt-2' : 'pt-3'}">
+          <div class="monitor-body">
             <LabelFilter
               title="Workflow"
               filters={formState.actionFilters}
@@ -229,43 +226,86 @@
     </div>
   {/if}
 
-  <div class="flex justify-end gap-2">
+  <div class="flex justify-end gap-2 flex-wrap">
     {#if config && onDelete}
-      <button
-        class="bg-[rgba(248,81,73,0.1)] text-[#f85149] {$isMobile
-          ? 'px-3 py-1.5 text-sm'
-          : 'px-4 py-2'} rounded-md hover:bg-[rgba(248,81,73,0.2)] border border-[#f85149] transition-colors duration-200"
-        type="button"
-        aria-label="Delete repository configuration"
-        title="Delete repository configuration"
-        onclick={onDelete}
-      >
-        Delete
-      </button>
+      <button class="danger-button" type="button" aria-label="Delete repository configuration" title="Delete repository configuration" onclick={onDelete}> Delete </button>
     {/if}
     {#if onCancel}
-      <button
-        class="bg-[rgba(110,118,129,0.4)] text-[#c9d1d9] {$isMobile
-          ? 'px-3 py-1.5 text-sm'
-          : 'px-4 py-2'} rounded-md hover:bg-[rgba(110,118,129,0.5)] border border-[#30363d] transition-colors duration-200"
-        type="button"
-        aria-label="Cancel"
-        title="Cancel changes"
-        onclick={onCancel}
-      >
-        Cancel
-      </button>
+      <button class="ghost-button" type="button" aria-label="Cancel" title="Discard changes" onclick={onCancel}> Cancel </button>
     {/if}
     <button
-      class="bg-[#238636] text-white {$isMobile ? 'px-3 py-1.5 text-sm' : 'px-4 py-2'} rounded-md border border-[#2ea043] transition-colors duration-200
-      {formState.selectedOrg && formState.repoName && (formState.monitorPRs || formState.monitorActions) ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
+      class="beacon-button"
+      style="padding: 0.5rem 1.125rem"
       disabled={!formState.selectedOrg || !formState.repoName || (!formState.monitorPRs && !formState.monitorActions)}
       type="button"
       aria-label={config ? 'Update repository configuration' : 'Add repository configuration'}
       title={getButtonTooltip()}
       onclick={handleSubmit}
     >
-      {config ? 'Update' : 'Add Repository'}
+      {config ? 'Update' : 'Add repository'}
     </button>
   </div>
 </div>
+
+<style>
+  .form-shell {
+    position: relative;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: rgba(23, 30, 46, 0.6);
+  }
+
+  .form-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  .form-errors {
+    margin-bottom: 1rem;
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 107, 98, 0.1);
+    border: 1px solid rgba(255, 107, 98, 0.35);
+    color: #ffb3ae;
+  }
+
+  .monitor-panel {
+    padding: 0.875rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(148, 168, 205, 0.045);
+  }
+
+  .monitor-body {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .danger-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 107, 98, 0.4);
+    background: rgba(255, 107, 98, 0.1);
+    color: #ffb3ae;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+      background-color 180ms var(--ease),
+      border-color 180ms var(--ease);
+  }
+
+  .danger-button:hover {
+    background: rgba(255, 107, 98, 0.2);
+    border-color: var(--danger);
+  }
+</style>

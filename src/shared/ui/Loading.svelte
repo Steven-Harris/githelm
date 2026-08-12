@@ -5,7 +5,7 @@
 </script>
 
 {#if loading}
-  <div id="loading" class="fixed mt-15 inset-0 flex items-center justify-center bg-gray-900/80 z-50">
-    <img class="spinner" alt="loading" src={helm} width="10" height="10" />
+  <div id="loading" class="fixed inset-0 flex items-center justify-center z-50" style="background: rgba(5,7,13,0.7); backdrop-filter: blur(4px);">
+    <img class="spinner w-16 h-16" alt="Loading" src={helm} />
   </div>
 {/if}

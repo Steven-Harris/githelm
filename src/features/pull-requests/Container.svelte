@@ -12,29 +12,42 @@
 
   const showEmptyState = $derived($emptyStateMessage !== '');
   const showFilter = $derived($hasConfiguredRepositories);
+  const openCount = $derived($filteredRepositories.reduce((total, { repo }) => total + ($allPullRequests[repositoryFacade.getRepoKey(repo)]?.length || 0), 0));
 </script>
 
-<section class="hero-section mb-6 glass-effect">
-  <div class="container mx-auto">
-    <div class="flex items-center justify-between mb-4">
+<section class="hero-section mb-5">
+  <div class="flex items-center justify-between gap-3 mb-5">
+    <div class="flex items-baseline gap-2.5 min-w-0">
       <h2 class="hero-title">Pull Requests</h2>
-      {#if showFilter}
-        <RepositoryFilter />
+      {#if openCount > 0}
+        <span class="section-count">{openCount}</span>
       {/if}
     </div>
-
-    {#if showEmptyState}
-      <div class="flex flex-col items-center justify-center p-8 text-center hero-card">
-        <div class="text-lg text-[#8b949e] mb-4">{$emptyStateMessage}</div>
-      </div>
-    {:else}
-      <div class="space-y-4">
-        {#each $filteredRepositories as { repo, isLoaded, hasPRs } (repo.org + '/' + repo.repo)}
-          <div class="stagger-item">
-            <RepositoryCard org={repo.org} repo={repo.repo} {isLoaded} {hasPRs} pullRequests={$allPullRequests[repositoryFacade.getRepoKey(repo)] || []} filterHint={$filterHint} />
-          </div>
-        {/each}
-      </div>
+    {#if showFilter}
+      <RepositoryFilter />
     {/if}
   </div>
+
+  {#if showEmptyState}
+    <div class="flex flex-col items-center justify-center px-6 py-12 text-center hero-card">
+      <p class="text-[var(--text-dim)] max-w-[42ch]">{$emptyStateMessage}</p>
+    </div>
+  {:else}
+    <div class="space-y-3">
+      {#each $filteredRepositories as { repo, isLoaded, hasPRs } (repo.org + '/' + repo.repo)}
+        <div class="stagger-item">
+          <RepositoryCard org={repo.org} repo={repo.repo} {isLoaded} {hasPRs} pullRequests={$allPullRequests[repositoryFacade.getRepoKey(repo)] || []} filterHint={$filterHint} />
+        </div>
+      {/each}
+    </div>
+  {/if}
 </section>
+
+<style>
+  .section-count {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--beacon);
+  }
+</style>

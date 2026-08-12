@@ -1,68 +1,94 @@
 <script lang="ts">
-  import githubSVG from '$assets/github-logo.svg';
-
   let { org, repo } = $props();
 </script>
 
 <div class="hero-card">
-  <div class="py-3 px-4 bg-[#161b22] text-[#c9d1d9] border-b border-[#30363d] flex justify-between items-center">
-    <h3 class="font-semibold">
-      <a href={`https://github.com/${org}/${repo}/actions`} target="_blank" class="link hover:underline flex items-center gap-1" title={`${org}/${repo}`}>
-        <img src={githubSVG} alt="GitHub" width="16" height="16" />
-        <span class="text-[#58a6ff] pl-1">{repo}</span>
-      </a>
-    </h3>
-    <div class="text-sm flex items-center gap-1 bg-[#21262d] py-1 px-2 rounded-full">
-      <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="fill-[#8b949e]">
-        <path
-          d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Zm4.879-2.773 4.264 2.559a.25.25 0 0 1 0 .428l-4.264 2.559A.25.25 0 0 1 6 10.559V5.442a.25.25 0 0 1 .379-.215Z"
-        ></path>
-      </svg>
-      <div class="loading-pulse w-8 h-4 bg-[#30363d] rounded"></div>
-    </div>
+  <div class="repo-head">
+    <span class="disclosure-space" aria-hidden="true"></span>
+    <h3 class="repo-name"><span class="repo-org">{org}/</span>{repo}</h3>
+    <span class="ml-auto skel skel-pill" aria-hidden="true"></span>
   </div>
 
-  <div class="divide-y divide-[#21262d]">
-    {#each Array(3) as _, index}
-      <div class="p-4 bg-[#0d1117]">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center space-x-2">
-            <div class="loading-pulse w-4 h-4 bg-[#30363d] rounded-full"></div>
-            <div class="loading-pulse w-32 h-4 bg-[#30363d] rounded"></div>
-          </div>
-          
-          <div class="loading-pulse w-16 h-6 bg-[#30363d] rounded-full"></div>
-        </div>
-        
-        <div class="flex items-center space-x-4 text-sm">
-          <div class="loading-pulse w-20 h-3 bg-[#30363d] rounded"></div>
-          <div class="loading-pulse w-24 h-3 bg-[#30363d] rounded"></div>
-          <div class="loading-pulse w-16 h-3 bg-[#30363d] rounded"></div>
-        </div>
-      </div>
+  <ul class="row-list">
+    {#each Array(2) as _, index (index)}
+      <li class="skel-row">
+        <span class="skel skel-avatar" aria-hidden="true"></span>
+        <span class="flex-1 min-w-0 flex flex-col gap-2">
+          <span class="skel skel-line" style="width: {index === 0 ? '78%' : '54%'}" aria-hidden="true"></span>
+          <span class="skel skel-line skel-line-sm" style="width: 42%" aria-hidden="true"></span>
+        </span>
+      </li>
     {/each}
-  </div>
+  </ul>
 
-  <div class="p-3 bg-[#0d1117] border-t border-[#21262d] flex items-center justify-center">
-    <svg class="animate-spin h-4 w-4 text-[#58a6ff] mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    <span class="text-xs text-[#8b949e]">Loading actions...</span>
-  </div>
+  <p class="skel-footer">Loading workflow runs…</p>
 </div>
 
 <style>
-  .loading-pulse {
-    animation: pulse 1.5s ease-in-out infinite;
+  .disclosure-space {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
   }
 
-  @keyframes pulse {
-    0%, 100% {
-      opacity: 0.4;
+  .skel-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .skel {
+    display: block;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(148, 168, 205, 0.07) 0%, rgba(148, 168, 205, 0.16) 50%, rgba(148, 168, 205, 0.07) 100%);
+    background-size: 200% 100%;
+    animation: sweep 1.6s var(--ease) infinite;
+  }
+
+  .skel-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .skel-line {
+    height: 0.75rem;
+  }
+
+  .skel-line-sm {
+    height: 0.5rem;
+  }
+
+  .skel-pill {
+    width: 56px;
+    height: 22px;
+    border-radius: 999px;
+  }
+
+  .skel-footer {
+    padding: 0.625rem 1rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    text-align: center;
+  }
+
+  @keyframes sweep {
+    from {
+      background-position: 200% 0;
     }
-    50% {
-      opacity: 0.8;
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skel {
+      animation: none;
+      background: rgba(148, 168, 205, 0.1);
     }
   }
 </style>

@@ -45,20 +45,20 @@
 </script>
 
 {#if toast}
-  <div class="pwa-toast" role="alert">
-    <div class="message">
+  <div class="pwa-toast menu-surface" role="alert">
+    <p class="message">
       {#if $offlineReady}
-        <span>✅ GitHelm is ready to work offline</span>
+        GitHelm works offline now.
       {:else}
-        <span>🔄 New version available!</span>
+        A new version is ready.
       {/if}
-    </div>
+    </p>
     <div class="buttons">
       {#if $needRefresh}
-        <button onclick={update} class="update-button" aria-label="Update application"> Update </button>
+        <button onclick={update} class="beacon-button" aria-label="Update application"> Reload </button>
       {/if}
-      <button onclick={close} class="close-button" aria-label={$offlineReady ? 'Close' : 'Dismiss'}>
-        {$offlineReady ? 'Close' : 'Dismiss'}
+      <button onclick={close} class="ghost-button" aria-label={$offlineReady ? 'Close' : 'Dismiss'}>
+        {$offlineReady ? 'Close' : 'Not now'}
       </button>
     </div>
   </div>
@@ -67,56 +67,50 @@
 <style>
   .pwa-toast {
     position: fixed;
-    right: 0;
-    bottom: 0;
-    margin: 16px;
-    padding: 16px;
-    border: 1px solid #8885;
-    border-radius: 8px;
+    right: 1rem;
+    bottom: 4rem;
+    padding: 1rem;
+    max-width: 20rem;
     z-index: 100;
     text-align: left;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    background-color: #1f2937;
-    color: white;
-    font-weight: 500;
+    animation: toast-in 320ms var(--ease) both;
   }
 
-  .pwa-toast .message {
-    margin-bottom: 12px;
-    font-size: 16px;
+  .message {
+    margin-bottom: 0.875rem;
+    font-size: 0.875rem;
+    color: var(--text);
   }
 
   .buttons {
     display: flex;
-    gap: 8px;
+    gap: 0.5rem;
+    justify-content: flex-end;
   }
 
-  .pwa-toast button {
-    border: none;
-    outline: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
+  .pwa-toast :global(.beacon-button) {
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.8125rem;
   }
 
-  .update-button {
-    background-color: #3b82f6;
-    color: white;
+  .pwa-toast :global(.ghost-button) {
+    font-size: 0.8125rem;
   }
 
-  .update-button:hover {
-    background-color: #2563eb;
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
-  .close-button {
-    background-color: transparent;
-    color: #d1d5db;
-    border: 1px solid #4b5563;
-  }
-
-  .close-button:hover {
-    background-color: #374151;
+  @media (prefers-reduced-motion: reduce) {
+    .pwa-toast {
+      animation: none;
+    }
   }
 </style>

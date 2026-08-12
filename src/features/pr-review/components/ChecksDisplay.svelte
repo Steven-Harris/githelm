@@ -9,21 +9,21 @@
   let { checks, maxVisible = 8 }: Props = $props();
 
   function getCheckColor(conclusion: string | null, status: string): string {
-    if (status !== 'completed') return 'bg-yellow-900/20 text-yellow-200 border-yellow-800/50';
+    if (status !== 'completed') return 'bg-[rgba(242,181,68,0.20)] text-[#f5d79b] border-[rgba(242,181,68,0.50)]';
 
     switch (conclusion) {
       case 'success':
-        return 'bg-green-900/20 text-green-200 border-green-800/50';
+        return 'bg-[rgba(63,211,130,0.20)] text-[#8fe8b8] border-[rgba(63,211,130,0.50)]';
       case 'failure':
-        return 'bg-red-900/20 text-red-200 border-red-800/50';
+        return 'bg-[rgba(255,107,98,0.20)] text-[#ffb3ae] border-[rgba(255,107,98,0.50)]';
       case 'neutral':
-        return 'bg-blue-900/20 text-blue-200 border-blue-800/50';
+        return 'bg-[rgba(121,184,255,0.20)] text-[#c2dcff] border-[rgba(121,184,255,0.50)]';
       case 'cancelled':
-        return 'bg-[#30363d]/40 text-[#c9d1d9] border-[#30363d]';
+        return 'bg-[#243044]/40 text-[#e9eefb] border-[#243044]';
       case 'skipped':
-        return 'bg-purple-900/20 text-purple-200 border-purple-800/50';
+        return 'bg-[rgba(169,139,255,0.20)] text-[#d5c6ff] border-[rgba(169,139,255,0.50)]';
       default:
-        return 'bg-[#30363d]/40 text-[#c9d1d9] border-[#30363d]';
+        return 'bg-[#243044]/40 text-[#e9eefb] border-[#243044]';
     }
   }
 
@@ -53,9 +53,9 @@
 </script>
 
 {#if checks.length > 0}
-  <div class="mt-3 pt-3 border-t border-[#30363d]">
+  <div class="mt-3 pt-3 border-t border-[#243044]">
     <div class="flex items-center space-x-2 flex-wrap gap-y-2">
-      <span class="text-sm font-medium text-[#8b949e] mr-2">Checks:</span>
+      <span class="text-sm font-medium text-[#9dabc4] mr-2">Checks:</span>
       {#each checks.slice(0, maxVisible) as check}
         {@const checkTargetUrl = getCheckTargetUrl(check)}
         {#if checkTargetUrl}
@@ -63,7 +63,7 @@
             href={checkTargetUrl}
             target="_blank"
             rel="noreferrer"
-            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border {getCheckColor(check.conclusion, check.status)} cursor-pointer hover:border-[#6e7681] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1f6feb]/60"
+            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border {getCheckColor(check.conclusion, check.status)} cursor-pointer hover:border-[#6e7d96] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fd4]/60"
             title="{check.name}: {check.conclusion || check.status}{check.output?.summary ? '\n' + check.output.summary : ''}"
             aria-label={`Open check '${check.name}' on GitHub`}
           >
@@ -85,7 +85,7 @@
         {/if}
       {/each}
       {#if checks.length > maxVisible}
-        <span class="text-xs text-[#8b949e]">
+        <span class="text-xs text-[#9dabc4]">
           +{checks.length - maxVisible} more
         </span>
       {/if}

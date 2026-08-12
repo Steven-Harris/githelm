@@ -29,19 +29,19 @@
 </script>
 
 {#if shouldShowBreadcrumbs}
-  <nav class="breadcrumb-nav bg-gray-800 border-b border-gray-700 px-4 py-2" aria-label="Breadcrumb">
+  <nav class="breadcrumb-nav px-4 sm:px-6 py-2" aria-label="Breadcrumb">
     <div class="flex items-center justify-between">
     <ol class="flex items-center space-x-2 text-sm">
       {#each breadcrumbs as item, index}
         <li class="flex items-center">
           {#if index > 0}
-            <svg class="w-4 h-4 text-gray-500 mx-2" fill="currentColor" viewBox="0 0 20 20">
+            <svg class="w-3.5 h-3.5 mx-1.5" style="color: var(--text-faint)" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
               <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
             </svg>
           {/if}
 
           {#if item.href}
-            <button onclick={() => handleBreadcrumbClick(item)} class="breadcrumb-link flex items-center hover:text-blue-400 transition-colors" aria-label={`Navigate to ${item.label}`}>
+            <button onclick={() => handleBreadcrumbClick(item)} class="breadcrumb-link flex items-center" aria-label={`Navigate to ${item.label}`}>
               {#if item.icon}
                 {#if item.iconType === 'svg'}
                   <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +54,7 @@
               <span>{item.label}</span>
             </button>
           {:else}
-            <span class="breadcrumb-current flex items-center text-gray-300 font-medium">
+            <span class="breadcrumb-current flex items-center font-medium">
               {#if item.icon}
                 {#if item.iconType === 'svg'}
                   <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,28 +105,29 @@
 
 <style>
   .breadcrumb-nav {
-    background: linear-gradient(to right, #1f2937, #374151);
+    background: rgba(8, 11, 19, 0.55);
+    border-bottom: 1px solid var(--line);
   }
 
   .breadcrumb-link {
-    color: #9ca3af;
+    color: var(--text-faint);
     padding: 0.25rem 0.5rem;
     border-radius: 0.375rem;
-    transition: all 0.2s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition:
+      background-color 160ms var(--ease),
+      color 160ms var(--ease);
   }
 
   .breadcrumb-link:hover {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: #60a5fa;
-  }
-
-  .breadcrumb-link:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    background-color: rgba(148, 168, 205, 0.1);
+    color: var(--text);
   }
 
   .breadcrumb-current {
-    color: #d1d5db;
+    color: var(--text);
   }
 
   .pr-nav-btn {
@@ -134,28 +135,27 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.625rem;
-    border-radius: 0.375rem;
-    border: 1px solid #4b5563;
-    color: #d1d5db;
+    border-radius: 0.5rem;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
     font-size: 0.8125rem;
     font-weight: 500;
-    transition: all 0.2s ease;
-    background-color: rgba(55, 65, 81, 0.5);
+    cursor: pointer;
+    transition:
+      background-color 160ms var(--ease),
+      border-color 160ms var(--ease),
+      color 160ms var(--ease);
+    background-color: rgba(148, 168, 205, 0.06);
   }
 
   .pr-nav-btn:hover:not(:disabled) {
-    background-color: rgba(59, 130, 246, 0.15);
-    border-color: #60a5fa;
-    color: #60a5fa;
+    background-color: rgba(47, 212, 193, 0.12);
+    border-color: rgba(47, 212, 193, 0.45);
+    color: var(--beacon-bright);
   }
 
   .pr-nav-btn:disabled {
     opacity: 0.3;
     cursor: not-allowed;
-  }
-
-  .pr-nav-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
   }
 </style>

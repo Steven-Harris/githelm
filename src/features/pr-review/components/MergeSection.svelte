@@ -95,13 +95,13 @@
   const statusDotClass = $derived.by(() => {
     switch (mergeStatus.tone) {
       case 'ready':
-        return 'bg-[#3fb950]';
+        return 'bg-[#3fd382]';
       case 'warning':
-        return 'bg-[#d29922]';
+        return 'bg-[#f2b544]';
       case 'blocked':
-        return 'bg-[#f85149]';
+        return 'bg-[#ff6b62]';
       default:
-        return 'bg-[#8b949e]';
+        return 'bg-[#9dabc4]';
     }
   });
 
@@ -141,53 +141,53 @@
   }
 </script>
 
-<div class="mt-4 pt-4 border-t border-[#21262d]">
+<div class="mt-4 pt-4 border-t border-[#171e2e]">
   {#if pullRequest.merged}
-    <div class="flex items-center gap-2.5 rounded-lg bg-purple-900/20 border border-purple-800/40 px-4 py-3">
-      <svg class="w-5 h-5 text-purple-400 flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
+    <div class="flex items-center gap-2.5 rounded-lg bg-[rgba(169,139,255,0.20)] border border-[rgba(169,139,255,0.40)] px-4 py-3">
+      <svg class="w-5 h-5 text-[#a98bff] flex-shrink-0" viewBox="0 0 16 16" fill="currentColor">
         <path d="M5.45 5.154A4.25 4.25 0 0 0 9.25 7.5h1.378a2.251 2.251 0 1 1 0 1.5H9.25A5.734 5.734 0 0 1 5 7.123v3.505a2.25 2.25 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.95-.218ZM4.25 13.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm8.5-4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM5 3.25a.75.75 0 1 0 0 .005V3.25Z"/>
       </svg>
       <div>
-        <span class="text-sm font-medium text-purple-300">Pull request merged</span>
+        <span class="text-sm font-medium text-[#c4b0ff]">Pull request merged</span>
         {#if pullRequest.merged_at}
-          <span class="text-xs text-purple-400/70 ml-1.5">· {new Date(pullRequest.merged_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          <span class="text-xs text-[#a98bff]/70 ml-1.5">· {new Date(pullRequest.merged_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
         {/if}
       </div>
     </div>
   {:else}
   <div class="flex items-start justify-between gap-3">
     <div class="min-w-0">
-      <h4 class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">Merge</h4>
+      <h4 class="text-xs font-medium text-[#9dabc4] uppercase tracking-wide">Merge</h4>
       <div class="flex items-center gap-1.5 mt-1">
         <span class={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${statusDotClass}`} aria-hidden="true"></span>
-        <span class="text-xs text-[#c9d1d9]">{statusText}</span>
+        <span class="text-xs text-[#e9eefb]">{statusText}</span>
       </div>
       {#if approvalText}
-        <div class="text-xs text-[#8b949e] mt-1">{approvalText}</div>
+        <div class="text-xs text-[#9dabc4] mt-1">{approvalText}</div>
       {/if}
     </div>
   </div>
 
   {#if mergeError}
-    <div class="mt-3 text-xs text-[#f85149] border border-red-800/40 bg-red-900/10 rounded px-3 py-2 max-w-sm">
+    <div class="mt-3 text-xs text-[#ff6b62] border border-[rgba(255,107,98,0.40)] bg-[rgba(255,107,98,0.10)] rounded px-3 py-2 max-w-sm">
       {mergeError}
     </div>
   {/if}
 
   {#if !pullRequest.merged}
   {#if allowedMethods.length === 0}
-    <div class="mt-3 text-xs text-[#8b949e] border border-[#30363d] bg-[#161b22] rounded px-3 py-2">
+    <div class="mt-3 text-xs text-[#9dabc4] border border-[#243044] bg-[#121826] rounded px-3 py-2">
       Merge methods unavailable.
     </div>
   {/if}
 
   {#if allowedMethods.length > 1}
-    <div class="mt-3 inline-flex w-full rounded-lg border border-[#30363d] overflow-hidden">
+    <div class="mt-3 inline-flex w-full rounded-lg border border-[#243044] overflow-hidden">
       {#each allowedMethods as method}
         <button
           type="button"
           onclick={() => (selectedMethod = method)}
-          class={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${selectedMethod === method ? 'bg-[#1f6feb] text-white' : 'bg-[#161b22] text-[#c9d1d9] hover:bg-[#21262d]'}`}
+          class={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${selectedMethod === method ? 'bg-[#2f6fd4] text-white' : 'bg-[#121826] text-[#e9eefb] hover:bg-[#171e2e]'}`}
           aria-pressed={selectedMethod === method}
           disabled={!isAuthenticated || isMerging}
         >
@@ -206,7 +206,7 @@
         disabled={isMerging}
         class="accent-[#a37100] w-4 h-4 rounded cursor-pointer"
       />
-      <span class="text-xs text-[#d29922]">Force merge (bypass requirements)</span>
+      <span class="text-xs text-[#f2b544]">Force merge (bypass requirements)</span>
     </label>
   {/if}
 
@@ -220,7 +220,7 @@
       class={`w-full text-white px-3 py-2 rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
         !canMergeNormally && forceChecked
           ? 'bg-[#a37100] hover:bg-[#bb8009]'
-          : 'bg-[#2ea043] hover:bg-[#3fb950]'
+          : 'bg-[#3fd382] hover:bg-[#3fd382]'
       }`}
     >
       {isMerging ? 'Merging…' : `${methodLabel(selectedMethod)} pull request`}
@@ -229,24 +229,24 @@
 
   <!-- Commit message (supported for merge/squash; ignored for rebase) -->
   {#if isAuthenticated && prIsOpen && (selectedMethod === 'merge' || selectedMethod === 'squash')}
-    <div class="mt-3 border border-[#30363d] rounded-lg p-3 bg-[#161b22]">
-      <div class="text-xs font-medium text-[#8b949e] mb-2">Commit message</div>
+    <div class="mt-3 border border-[#243044] rounded-lg p-3 bg-[#121826]">
+      <div class="text-xs font-medium text-[#9dabc4] mb-2">Commit message</div>
 
-      <label class="block text-xs text-[#8b949e] mb-1" for="commit-title">Title</label>
+      <label class="block text-xs text-[#9dabc4] mb-1" for="commit-title">Title</label>
       <input
         id="commit-title"
         value={commitTitle}
         oninput={(e) => (commitTitle = (e.target as HTMLInputElement).value)}
-        class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+        class="w-full bg-[#0a0e17] text-[#e9eefb] placeholder:text-[#9dabc4] border border-[#243044] rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#79b8ff] focus:border-transparent"
         placeholder="Commit title"
       />
 
-      <label class="block text-xs text-[#8b949e] mb-1 mt-2" for="commit-message">Description</label>
+      <label class="block text-xs text-[#9dabc4] mb-1 mt-2" for="commit-message">Description</label>
       <textarea
         id="commit-message"
         value={commitMessage}
         oninput={(e) => (commitMessage = (e.target as HTMLTextAreaElement).value)}
-        class="w-full bg-[#0d1117] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+        class="w-full bg-[#0a0e17] text-[#e9eefb] placeholder:text-[#9dabc4] border border-[#243044] rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#79b8ff] focus:border-transparent"
         placeholder="Optional commit message body"
         rows="3"
       ></textarea>

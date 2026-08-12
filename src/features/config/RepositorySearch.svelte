@@ -68,18 +68,18 @@
 </script>
 
 <div class="mb-4">
-  <div class="flex items-center mb-1">
-    <label for="repository-input" class="{disabled ? '' : 'block'} text-sm font-medium text-[#c9d1d9]">
+  <div class="flex items-center gap-2 mb-2">
+    <label for="repository-input" class="field-label">
       Repository
       {#if disabled}
-        <span id="repository-input" class="text-sm font-medium text-white">- {repoName}</span>
+        <span id="repository-input" class="field-value">{repoName}</span>
       {:else}
-        <span class="text-red-700">*</span>
+        <span class="required" aria-hidden="true">*</span>
       {/if}
     </label>
     {#if !orgName}
-      <span class="tooltip ml-2">
-        <span class="text-[#8b949e] text-xs">ⓘ</span>
+      <span class="tooltip">
+        <span class="tooltip-mark" aria-hidden="true">?</span>
         <span class="tooltip-text">Select an organization first</span>
       </span>
     {/if}
@@ -107,37 +107,27 @@
             handleInputChange();
           }
         }}
-        class="w-full p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded text-[#c9d1d9] focus:border-[#58a6ff] focus:outline-none transition-colors duration-200 {!orgName
-          ? 'opacity-50 cursor-not-allowed'
-          : ''}"
-        placeholder="Search repositories or leave empty to see recent..."
+        class="w-full"
+        placeholder={orgName ? 'Search repositories…' : 'Pick an organization first'}
         disabled={!orgName}
         aria-required="true"
       />
 
       {#if searchState.showResults && orgName && searchState.searchResults.length > 0}
-        <div use:useDropdown={{ isOpen: searchState.showResults }} class="absolute w-full mt-1 bg-[rgba(22,27,34,0.9)] border border-[#30363d] rounded-md shadow-lg backdrop-blur-sm">
+        <div use:useDropdown={{ isOpen: searchState.showResults }} class="menu-surface absolute w-full mt-1.5 p-1 z-30 max-h-72 overflow-auto">
           {#if searchState.isLoading}
-            <div class="p-3 text-[#8b949e]">Searching repositories...</div>
+            <div class="p-3 text-sm text-[var(--text-faint)]">Searching…</div>
           {:else}
             {#each searchState.searchResults as repo, i (i)}
-              <button
-                type="button"
-                class="repo-result w-full text-left p-2 hover:bg-[rgba(48,54,61,0.5)] focus:bg-[rgba(48,54,61,0.5)] focus:outline-none rounded-md text-[#c9d1d9] {repo.alreadyConfigured
-                  ? 'opacity-60 cursor-not-allowed'
-                  : ''}"
-                onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)}
-                tabindex={repo.alreadyConfigured ? -1 : 0}
-                disabled={repo.alreadyConfigured}
-              >
-                <div class="flex justify-between items-center">
-                  <div class="font-medium">{repo.name}</div>
+              <button type="button" class="repo-result" class:taken={repo.alreadyConfigured} onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)} tabindex={repo.alreadyConfigured ? -1 : 0} disabled={repo.alreadyConfigured}>
+                <div class="flex justify-between items-center gap-2">
+                  <span class="repo-result-name">{repo.name}</span>
                   {#if repo.alreadyConfigured}
-                    <span class="text-xs bg-[rgba(48,54,61,0.8)] px-2 py-0.5 rounded-full text-[#8b949e] border border-[#30363d]">Already configured</span>
+                    <span class="pill flex-shrink-0">Added</span>
                   {/if}
                 </div>
                 {#if repo.description}
-                  <div class="text-sm text-[#8b949e] truncate">{repo.description}</div>
+                  <div class="repo-result-desc">{repo.description}</div>
                 {/if}
               </button>
             {/each}
@@ -149,27 +139,100 @@
 </div>
 
 <style>
+  .field-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .required {
+    color: var(--danger);
+  }
+
+  .field-value {
+    margin-left: 0.375rem;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text);
+  }
+
+  .repo-result {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.625rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background-color 140ms var(--ease);
+  }
+
+  .repo-result:hover:not(.taken),
+  .repo-result:focus-visible:not(.taken) {
+    background: rgba(47, 212, 193, 0.1);
+  }
+
+  .repo-result.taken {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .repo-result-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  .repo-result-desc {
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .tooltip {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+  }
+
+  .tooltip-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--text-faint);
+    font-size: 0.625rem;
+    cursor: help;
   }
 
   .tooltip-text {
     position: absolute;
     visibility: hidden;
     width: 170px;
-    background-color: #161b22;
-    color: #c9d1d9;
+    background-color: var(--panel-raised);
+    color: var(--text);
     text-align: center;
-    padding: 5px;
-    border-radius: 6px;
-    border: 1px solid #30363d;
-    z-index: 1;
-    bottom: 125%;
+    padding: 6px 8px;
+    border-radius: 7px;
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-pop);
+    z-index: 40;
+    bottom: 150%;
     left: 50%;
     margin-left: -85px;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.2s var(--ease);
     font-size: 0.75rem;
   }
 
@@ -186,6 +249,6 @@
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #30363d transparent transparent transparent;
+    border-color: var(--line-strong) transparent transparent transparent;
   }
 </style>

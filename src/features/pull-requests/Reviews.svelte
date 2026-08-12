@@ -10,15 +10,19 @@
   }
 </script>
 
-<span class="reviews-container h-7 flex items-center overflow-hidden">
+<span class="reviews-container">
   {#if reviews.length !== 0}
     {#each reviews.slice(0, 3) as review, index (getUniqueKey(review, index))}
-      <div class="avatar-container mr-1">
-        <img src={review.user.avatar_url} class="avatar" alt={review.user.login} />
+      <div class="avatar-container">
+        <img src={review.user.avatar_url} class="avatar" alt={review.user.login} title={review.user.login} />
         {#if review.state === 'APPROVED'}
-          <img class="review-state-icon approved" alt="approved" src={checkSVG} width="15" height="15" />
+          <span class="review-state-icon approved" title="Approved">
+            <img alt="Approved" src={checkSVG} width="10" height="10" />
+          </span>
         {:else}
-          <img class="review-state-icon not-approved" alt="not approved" src={commentSVG} width="15" height="15" />
+          <span class="review-state-icon not-approved" title="Commented">
+            <img alt="Commented" src={commentSVG} width="10" height="10" />
+          </span>
         {/if}
       </div>
     {/each}

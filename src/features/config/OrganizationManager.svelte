@@ -1,7 +1,6 @@
 <script lang="ts">
   import deleteSVG from '$assets/delete.svg';
   import { organizationManagerService, type OrganizationManagerState } from '$features/config/services/organization-manager.service';
-  import { isMobile } from '$shared/stores/mobile.store';
   import { onMount } from 'svelte';
 
   let managerState = $state(organizationManagerService.createInitialState() as OrganizationManagerState);
@@ -44,75 +43,124 @@
 
 <div>
   {#if managerState.loading}
-    <div class="text-center py-3 flex flex-col items-center">
-      <div class="animate-spin w-6 h-6 mb-2">
-        <svg class="w-full h-full text-[#58a6ff] fill-current" viewBox="0 0 16 16">
-          <path d="M8 16a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
-          <path class="text-[#0d1117] fill-current" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"></path>
+    <div class="text-center py-6 flex flex-col items-center">
+      <div class="animate-spin w-6 h-6 mb-3" aria-hidden="true">
+        <svg class="w-full h-full" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6.5" stroke="rgba(148,168,205,0.18)" stroke-width="1.5" />
+          <path d="M14.5 8A6.5 6.5 0 0 0 8 1.5" stroke="var(--beacon)" stroke-width="1.5" stroke-linecap="round" />
         </svg>
       </div>
-      <span class="text-sm text-[#8b949e]">Loading organizations...</span>
+      <span class="text-sm text-[var(--text-dim)]">Loading organizations…</span>
     </div>
   {:else}
     <div class="space-y-2">
       {#if managerState.organizations.length > 0}
         {#each managerState.organizations as org, i (i)}
-          <div class="flex items-center justify-between p-2 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md hover:border-[#388bfd44] transition-colors">
-            <span class="text-[#c9d1d9] font-medium">{org.name}</span>
-            <button
-              class="text-[#8b949e] hover:text-[#f85149] transition-colors duration-200 cursor-pointer flex items-center justify-center w-6 h-6"
-              title="Remove organization"
-              aria-label={`Delete ${org.name}`}
-              onclick={() => deleteOrganization(i)}
-            >
-              <img src={deleteSVG} alt="Delete" width="14" height="14" />
+          <div class="org-row">
+            <span class="org-name">{org.name}</span>
+            <button class="org-delete" title="Remove organization" aria-label={`Remove ${org.name}`} onclick={() => deleteOrganization(i)}>
+              <img src={deleteSVG} alt="" width="14" height="14" />
             </button>
           </div>
         {/each}
       {:else}
-        <p class="text-[#8b949e] text-center py-3">No organizations added yet.</p>
+        <p class="text-sm text-[var(--text-faint)] text-center py-4">No organizations yet.</p>
       {/if}
     </div>
 
     {#if !isAdding}
-      <button class="flex items-center {$isMobile ? 'p-2 px-3' : 'p-3 px-4'} glass-container hover:border-[#388bfd44] w-full mt-4 transition-all duration-200" onclick={startAdding}>
-        <span class="text-xl mr-1 text-[#3fb950]">+</span>
-        <span>Add Organization</span>
+      <button class="ghost-button w-full justify-center mt-4" onclick={startAdding}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M7.25 1.25a.75.75 0 0 1 1.5 0V7.25h6a.75.75 0 0 1 0 1.5h-6v6a.75.75 0 0 1-1.5 0v-6h-6a.75.75 0 0 1 0-1.5h6V1.25Z" />
+        </svg>
+        <span>Add organization</span>
       </button>
     {:else}
-      <div class="mt-4 p-3 bg-[rgba(22,27,34,0.5)] border border-[#30363d] rounded-md">
-        <div class="flex flex-wrap gap-3">
-          <div class="flex-grow">
-            <input
-              type="text"
-              bind:value={newOrgName}
-              placeholder="Enter organization name..."
-              class="w-full px-3 py-2 bg-[rgba(13,17,23,0.6)] border border-[#30363d] text-[#c9d1d9] rounded-md focus:border-[#58a6ff] focus:outline-none focus:ring-1 focus:ring-[#58a6ff] backdrop-blur-sm transition-colors placeholder-[#484f58]"
-              onkeydown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  addOrganization();
-                } else if (e.key === 'Escape') {
-                  cancelAdding();
-                }
-              }}
-            />
-          </div>
-          <div class="flex gap-2">
-            <button
-              class="bg-[#238636] text-white px-4 py-2 rounded-md border border-[#2ea043] transition-colors duration-200
-              {newOrgName.trim() ? 'hover:bg-[#2ea043]' : 'opacity-50 cursor-not-allowed'}"
-              disabled={!newOrgName.trim()}
-              onclick={addOrganization}
-            >
-              Add
-            </button>
-            <button class="bg-[rgba(33,38,45,0.8)] text-[#c9d1d9] px-4 py-2 rounded-md border border-[#30363d] transition-colors duration-200 hover:bg-[rgba(48,54,61,0.8)]" onclick={cancelAdding}>
-              Cancel
-            </button>
-          </div>
+      <div class="add-form">
+        <input
+          type="text"
+          bind:value={newOrgName}
+          placeholder="Organization name"
+          aria-label="Organization name"
+          class="w-full"
+          onkeydown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addOrganization();
+            } else if (e.key === 'Escape') {
+              cancelAdding();
+            }
+          }}
+        />
+        <div class="flex gap-2">
+          <button class="beacon-button flex-1" style="padding: 0.5rem 1rem" disabled={!newOrgName.trim()} onclick={addOrganization}> Add </button>
+          <button class="ghost-button" onclick={cancelAdding}>Cancel</button>
         </div>
       </div>
     {/if}
   {/if}
 </div>
+
+<style>
+  .org-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(148, 168, 205, 0.05);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    transition:
+      border-color 180ms var(--ease),
+      background-color 180ms var(--ease);
+  }
+
+  .org-row:hover {
+    border-color: var(--line-strong);
+    background: rgba(148, 168, 205, 0.08);
+  }
+
+  .org-name {
+    color: var(--text);
+    font-weight: 500;
+    font-size: 0.875rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .org-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.55;
+    transition:
+      opacity 160ms var(--ease),
+      background-color 160ms var(--ease);
+  }
+
+  .org-delete:hover {
+    opacity: 1;
+    background: rgba(255, 107, 98, 0.16);
+  }
+
+  .add-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(148, 168, 205, 0.04);
+  }
+</style>

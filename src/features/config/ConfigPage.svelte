@@ -70,85 +70,68 @@
   }
 </script>
 
-<div class={$isMobile ? 'px-2 py-3' : 'py-6'}>
-  <section class="hero-section glass-effect">
-    <div class="container mx-auto">
-      <h1 class={$isMobile ? 'text-xl mb-2' : 'hero-title'}>Configuration</h1>
+<div class={$isMobile ? 'px-1 py-3' : 'py-6'}>
+  <div class="mx-auto w-full max-w-6xl">
+    <h1 class="page-title">Configuration</h1>
+    <p class="page-sub">Choose which organizations and repositories GitHelm keeps on the bridge.</p>
 
-      {#if isLoading}
-        <div class="text-center py-8">
-          <div class="animate-spin mx-auto w-8 h-8">
-            <svg class="w-full h-full text-[#58a6ff] fill-current" viewBox="0 0 16 16">
-              <path d="M8 16a8 8 0 1 1 0-16 8 8 0 0 1 0 16ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path>
-              <path class="text-[#0d1117] fill-current" d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Z"></path>
-            </svg>
-          </div>
-          <p class="mt-2 text-[#8b949e] text-sm">Loading configurations...</p>
+    {#if isLoading}
+      <div class="hero-section mt-6 py-12 text-center">
+        <div class="animate-spin mx-auto w-7 h-7 mb-4" aria-hidden="true">
+          <svg class="w-full h-full" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6.5" stroke="rgba(148,168,205,0.18)" stroke-width="1.5" />
+            <path d="M14.5 8A6.5 6.5 0 0 0 8 1.5" stroke="var(--beacon)" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
         </div>
-      {:else}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
-          <div class="lg:col-span-1 min-w-0">
-            <div class="hero-card">
-              <div class="card-header">
-                <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Organizations</h2>
-              </div>
-              <div class="card-body">
-                <OrganizationManager />
-              </div>
-            </div>
+        <p class="text-sm text-[var(--text-dim)]">Loading your configuration…</p>
+      </div>
+    {:else}
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 w-full mt-6 items-start">
+        <section class="hero-section flush lg:col-span-1 min-w-0">
+          <div class="card-header">
+            <h2 class="hero-title">Organizations</h2>
           </div>
+          <div class="card-body">
+            <OrganizationManager />
+          </div>
+        </section>
 
-          <div class="lg:col-span-2 min-w-0">
-            <div class="hero-card h-full">
-              <div class="card-header">
-                <h2 class="{$isMobile ? 'text-base' : 'text-lg'} font-semibold">Repositories</h2>
-              </div>
-              <div class="card-body flex-1">
-                <ConfigList configs={configurations} onUpdate={handleConfigUpdate} />
-              </div>
-            </div>
+        <section class="hero-section flush lg:col-span-2 min-w-0">
+          <div class="card-header">
+            <h2 class="hero-title">Repositories</h2>
           </div>
-        </div>
-      {/if}
-    </div>
-  </section>
+          <div class="card-body">
+            <ConfigList configs={configurations} onUpdate={handleConfigUpdate} />
+          </div>
+        </section>
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>
-  /* Ensure content appears above the glare effect */
-  .container {
-    position: relative;
-    z-index: 3;
-    width: 100%;
-    max-width: none;
+  .page-title {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: #fff;
   }
 
-  .hero-card {
-    background: rgba(13, 17, 23, 0.8);
-    border: 1px solid rgba(48, 54, 61, 0.5);
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+  .page-sub {
+    margin-top: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--text-dim);
+    max-width: 46ch;
   }
 
   .card-header {
-    background: rgba(22, 27, 34, 0.8);
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
-    flex-shrink: 0;
+    padding: 0.875rem 1.25rem;
+    background: rgba(148, 168, 205, 0.045);
+    border-bottom: 1px solid var(--line);
   }
 
   .card-body {
-    padding: 1.5rem;
-    flex: 1;
-    overflow: auto;
-  }
-
-  .hero-title {
-    color: #f0f6fc;
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
+    padding: 1.25rem;
   }
 </style>

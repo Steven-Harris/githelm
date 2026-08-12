@@ -19,66 +19,58 @@
 
   const reviewStatus = $derived.by(() => {
     if (pullRequest.merged) {
-      return { label: 'Merged', color: 'bg-purple-900/30 text-purple-300 border-purple-800/50' };
+      return { label: 'Merged', color: 'bg-[rgba(169,139,255,0.30)] text-[#c4b0ff] border-[rgba(169,139,255,0.50)]' };
     }
     if (pullRequest.state?.toLowerCase() === 'closed') {
-      return { label: 'Closed', color: 'bg-red-900/30 text-red-300 border-red-800/50' };
+      return { label: 'Closed', color: 'bg-[rgba(255,107,98,0.30)] text-[#ffb3ae] border-[rgba(255,107,98,0.50)]' };
     }
     if (reviewDecision === 'CHANGES_REQUESTED') {
       const suffix = changesRequestedCount > 1 ? ` (${changesRequestedCount})` : '';
-      return { label: `Changes requested${suffix}`, color: 'bg-orange-900/30 text-orange-300 border-orange-800/50' };
+      return { label: `Changes requested${suffix}`, color: 'bg-[rgba(255,107,98,0.22)] text-[#ffb3ae] border-[rgba(255,107,98,0.45)]' };
     }
     if (reviewDecision === 'APPROVED') {
       const suffix = approvalCount > 1 ? ` (${approvalCount})` : '';
-      return { label: `Approved${suffix}`, color: 'bg-green-900/30 text-green-300 border-green-800/50' };
+      return { label: `Approved${suffix}`, color: 'bg-[rgba(63,211,130,0.30)] text-[#8fe8b8] border-[rgba(63,211,130,0.50)]' };
     }
     if (reviewDecision === 'REVIEW_REQUIRED') {
-      return { label: 'Review required', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };
+      return { label: 'Review required', color: 'bg-[rgba(242,181,68,0.30)] text-[#f5d79b] border-[rgba(242,181,68,0.50)]' };
     }
     // Default for open PRs with no explicit review decision
-    return { label: 'Needs review', color: 'bg-yellow-900/30 text-yellow-300 border-yellow-800/50' };
+    return { label: 'Needs review', color: 'bg-[rgba(242,181,68,0.30)] text-[#f5d79b] border-[rgba(242,181,68,0.50)]' };
   });
 </script>
 
-<div class="bg-[#161b22] shadow-sm border-b border-[#30363d] px-6 py-4 flex-shrink-0">
-  <div class="flex items-start justify-between">
+<div class="pr-header">
+  <div class="flex items-start justify-between gap-6">
     <!-- Left side: Title and meta -->
     <div class="flex-1 min-w-0">
-      <h1 class="text-xl font-bold text-[#f0f6fc] truncate">
+      <h1 class="pr-heading truncate">
         {pullRequest.title}
-        <a
-          href={pullRequest.html_url}
-          target="_blank"
-          rel="noreferrer"
-          class="text-[#8b949e] hover:text-[#c9d1d9] underline underline-offset-2"
-          aria-label={`Open pull request #${pullRequest.number} on GitHub`}
-        >
+        <a href={pullRequest.html_url} target="_blank" rel="noreferrer" class="pr-number" aria-label={`Open pull request #${pullRequest.number} on GitHub`}>
           #{pullRequest.number}
         </a>
       </h1>
 
-      <div class="flex items-center space-x-4 mt-2 text-sm text-[#8b949e]">
+      <div class="flex items-center flex-wrap gap-x-3 gap-y-1.5 mt-2.5 text-sm text-[var(--text-faint)]">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {reviewStatus.color}">
           {reviewStatus.label}
         </span>
-        <span class="text-[#30363d]">•</span>
-        <div class="flex items-center">
-          <img src={pullRequest.user.avatar_url} alt={pullRequest.user.login} class="w-5 h-5 rounded-full mr-2" />
-          <span class="text-[#c9d1d9]">{pullRequest.user.login}</span>
+        <div class="flex items-center gap-1.5">
+          <img src={pullRequest.user.avatar_url} alt="" class="w-5 h-5 rounded-full" />
+          <span class="text-[var(--text-dim)]">{pullRequest.user.login}</span>
         </div>
-        <span class="text-[#30363d]">•</span>
-        <span>created {formatDateFull(pullRequest.created_at)}</span>
-        <span class="text-[#30363d]">•</span>
+        <span aria-hidden="true">·</span>
+        <span>opened {formatDateFull(pullRequest.created_at)}</span>
+        <span aria-hidden="true">·</span>
         <span>updated {formatDateFull(pullRequest.updated_at)}</span>
       </div>
     </div>
 
     <!-- Right side: Stats and status -->
-    <div class="ml-6 flex items-center space-x-6">
-      <!-- Compact stats -->
-      <div class="flex items-center space-x-4 text-sm">
-        <div class="flex items-center text-[#8b949e]">
-          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex items-center gap-5 flex-shrink-0">
+      <div class="flex items-center gap-3.5 text-sm tabular-nums">
+        <div class="flex items-center text-[var(--text-faint)]">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -88,14 +80,10 @@
           </svg>
           <span>{fileStats.totalFiles}</span>
         </div>
-        <div class="flex items-center text-green-400">
-          <span>+{fileStats.totalAdditions}</span>
-        </div>
-        <div class="flex items-center text-red-400">
-          <span>-{fileStats.totalDeletions}</span>
-        </div>
-        <div class="flex items-center text-blue-400">
-          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <span class="text-[#3fd382]">+{fileStats.totalAdditions}</span>
+        <span class="text-[#ff6b62]">-{fileStats.totalDeletions}</span>
+        <div class="flex items-center text-[var(--text-faint)]">
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -108,24 +96,53 @@
       </div>
 
       <!-- Status badges -->
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center gap-2">
         {#if pullRequest.merged}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-900/30 text-purple-300 border border-purple-800/50">
-            Merged
-          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(169,139,255,0.30)] text-[#c4b0ff] border border-[rgba(169,139,255,0.50)]"> Merged </span>
         {:else if pullRequest.state?.toLowerCase() === 'closed'}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-300 border border-red-800/50">
-            Closed
-          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(255,107,98,0.30)] text-[#ffb3ae] border border-[rgba(255,107,98,0.50)]"> Closed </span>
         {:else}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900/30 text-green-300 border border-green-800/50">
-            Open
-          </span>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(63,211,130,0.30)] text-[#8fe8b8] border border-[rgba(63,211,130,0.50)]"> Open </span>
         {/if}
         {#if pullRequest.draft}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#30363d]/60 text-[#c9d1d9] border border-[#30363d]"> Draft </span>
+          <span class="pill">Draft</span>
         {/if}
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .pr-header {
+    flex-shrink: 0;
+    padding: 1rem 1.5rem;
+    background: rgba(18, 24, 38, 0.85);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .pr-heading {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+
+  .pr-number {
+    color: var(--text-faint);
+    font-weight: 400;
+    transition: color 150ms var(--ease);
+  }
+
+  .pr-number:hover {
+    color: var(--beacon-bright);
+  }
+
+  @media (max-width: 900px) {
+    .pr-header {
+      padding: 0.875rem 1rem;
+    }
+  }
+</style>

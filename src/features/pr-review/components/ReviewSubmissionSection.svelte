@@ -45,24 +45,24 @@
   const viewerReviewLabel = $derived.by(() => {
     switch (viewerReviewState) {
       case 'APPROVED':
-        return { text: 'You approved this pull request.', tone: 'text-[#3fb950]' };
+        return { text: 'You approved this pull request.', tone: 'text-[#3fd382]' };
       case 'CHANGES_REQUESTED':
-        return { text: 'You requested changes on this pull request.', tone: 'text-[#f85149]' };
+        return { text: 'You requested changes on this pull request.', tone: 'text-[#ff6b62]' };
       case 'COMMENTED':
-        return { text: 'You commented on this pull request.', tone: 'text-[#8b949e]' };
+        return { text: 'You commented on this pull request.', tone: 'text-[#9dabc4]' };
       default:
         return null;
     }
   });
 </script>
 
-<div class="border-t border-[#30363d] bg-[#0d1117] p-4 text-[#c9d1d9]">
+<div class="border-t border-[#243044] bg-[#0a0e17] p-4 text-[#e9eefb]">
   {#if canReview}
-  <h4 class="text-sm font-medium text-[#f0f6fc] mb-1">Review</h4>
+  <h4 class="text-sm font-medium text-[#e9eefb] mb-1">Review</h4>
   {#if viewerReviewLabel}
     <div class="text-xs {viewerReviewLabel.tone} mb-1">{viewerReviewLabel.text}</div>
   {/if}
-  <div class="text-xs text-[#8b949e] mb-3">
+  <div class="text-xs text-[#9dabc4] mb-3">
     {#if reviewCommentsCount > 0}
       {reviewCommentsCount} pending inline comment{reviewCommentsCount !== 1 ? 's' : ''}
     {:else}
@@ -72,13 +72,13 @@
 
   <!-- Overall review comment -->
   <div class="mb-3">
-    <label for="review-comment" class="block text-sm font-medium text-[#8b949e] mb-2"> Overall comment </label>
+    <label for="review-comment" class="block text-sm font-medium text-[#9dabc4] mb-2"> Overall comment </label>
     <textarea
       id="review-comment"
       value={reviewDraft.body}
       oninput={(e) => onUpdateReviewDraft && onUpdateReviewDraft((e.target as HTMLTextAreaElement).value)}
       placeholder="Leave a comment..."
-      class="w-full bg-[#161b22] text-[#c9d1d9] placeholder:text-[#8b949e] border border-[#30363d] rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#58a6ff] focus:border-transparent"
+      class="w-full bg-[#121826] text-[#e9eefb] placeholder:text-[#9dabc4] border border-[#243044] rounded px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#79b8ff] focus:border-transparent"
       rows="3"
     ></textarea>
   </div>
@@ -88,7 +88,7 @@
     <button
       onclick={() => onSubmitReview && onSubmitReview('REQUEST_CHANGES')}
       disabled={!canSubmit || !canRequestChanges || isSubmitting}
-      class="flex-[2] px-3 py-2 text-sm bg-[#da3633] text-white rounded font-medium hover:bg-[#f85149] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+      class="flex-[2] px-3 py-2 text-sm bg-[#e05a52] text-white rounded font-medium hover:bg-[#ff6b62] disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
       title={canRequestChanges ? 'Request changes' : 'Request changes requires an overall comment'}
     >
       {isSubmitting ? 'Submitting…' : 'Request changes'}
@@ -97,7 +97,7 @@
     <button
       onclick={() => onSubmitReview && onSubmitReview('COMMENT')}
       disabled={!canSubmit || !canComment || isSubmitting}
-      class="flex-1 px-3 py-2 text-sm bg-[#1f6feb] text-white rounded font-medium hover:bg-[#388bfd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="flex-1 px-3 py-2 text-sm bg-[#2f6fd4] text-white rounded font-medium hover:bg-[#4f8fe0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title={canComment ? 'Comment' : 'Add an overall comment or inline comments to submit'}
     >
       {isSubmitting ? 'Submitting…' : 'Comment'}
@@ -106,7 +106,7 @@
     <button
       onclick={() => onSubmitReview && onSubmitReview('APPROVE')}
       disabled={!canSubmit || isSubmitting}
-      class="flex-1 px-3 py-2 text-sm bg-[#2ea043] text-white rounded font-medium hover:bg-[#3fb950] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      class="flex-1 px-3 py-2 text-sm bg-[#3fd382] text-white rounded font-medium hover:bg-[#3fd382] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       title="Approve"
     >
       {isSubmitting ? 'Submitting…' : 'Approve'}
@@ -114,16 +114,16 @@
   </div>
 
   {#if submitError}
-    <div class="mt-2 flex items-start gap-2 rounded border border-[#f85149]/40 bg-[#f85149]/10 px-3 py-2">
-      <p class="flex-1 text-xs text-[#f85149]">{submitError}</p>
+    <div class="mt-2 flex items-start gap-2 rounded border border-[#ff6b62]/40 bg-[#ff6b62]/10 px-3 py-2">
+      <p class="flex-1 text-xs text-[#ff6b62]">{submitError}</p>
       {#if onDismissError}
-        <button onclick={onDismissError} class="text-xs text-[#8b949e] hover:text-[#c9d1d9] transition-colors" aria-label="Dismiss review error">Dismiss</button>
+        <button onclick={onDismissError} class="text-xs text-[#9dabc4] hover:text-[#e9eefb] transition-colors" aria-label="Dismiss review error">Dismiss</button>
       {/if}
     </div>
   {/if}
 
   {#if !canRequestChanges}
-    <p class="text-xs text-[#8b949e] mt-2">Request changes requires an overall comment.</p>
+    <p class="text-xs text-[#9dabc4] mt-2">Request changes requires an overall comment.</p>
   {/if}
   {/if}
 

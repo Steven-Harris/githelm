@@ -7,7 +7,7 @@
 </script>
 
 <RateLimitModal />
-<div id="content" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 sm:grid-cols-1">
+<div id="content" class="pt-5 grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
   {#if $isMobile}
     {#if $activeTab === 'pull-requests'}
       <PullRequestsContainer />

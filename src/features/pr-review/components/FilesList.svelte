@@ -43,12 +43,12 @@
   });
 </script>
 
-<div bind:this={mainContentElement} class="flex-1 min-w-0 bg-[#0d1117]">
-  <div class="sticky top-0 z-20 bg-[#161b22] border-b border-[#30363d] px-4 py-3">
+<div bind:this={mainContentElement} class="flex-1 min-w-0 bg-[#0a0e17]">
+  <div class="sticky top-0 z-20 bg-[#121826] border-b border-[#243044] px-4 py-3">
     <div class="flex items-center justify-between gap-3">
       <div class="flex flex-col min-w-0">
-        <div class="text-xs font-medium text-[#8b949e] uppercase tracking-wide">View</div>
-        <div class="text-sm text-[#c9d1d9] truncate">
+        <div class="text-xs font-medium text-[#9dabc4] uppercase tracking-wide">View</div>
+        <div class="text-sm text-[#e9eefb] truncate">
           {#if prReview.state.focusSelectedFileOnly && prReview.state.selectedFile}
             Focused: {prReview.state.selectedFile.split('/').pop()}
           {:else}
@@ -62,7 +62,7 @@
 
         <button
           onclick={() => prReview.toggleFocusSelectedFileOnly()}
-          class="px-3 py-1.5 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+          class="px-3 py-1.5 text-sm bg-[#243044]/30 hover:bg-[#243044]/50 text-[#e9eefb] border border-[#243044] rounded-md transition-colors"
           aria-label={prReview.state.focusSelectedFileOnly ? 'Show all files' : 'Focus on selected file'}
           title={prReview.state.focusSelectedFileOnly ? 'Show all files' : 'Focus on selected file'}
         >
@@ -71,7 +71,7 @@
 
         <button
           onclick={() => prReview.expandAllFiles()}
-          class="px-3 py-1.5 text-sm bg-[#1f6feb]/20 hover:bg-[#1f6feb]/30 text-[#58a6ff] border border-[#1f6feb]/30 rounded-md transition-colors"
+          class="px-3 py-1.5 text-sm bg-[#2f6fd4]/20 hover:bg-[#2f6fd4]/30 text-[#79b8ff] border border-[#2f6fd4]/30 rounded-md transition-colors"
           aria-label="Expand all files"
           title="Expand all files"
         >
@@ -79,7 +79,7 @@
         </button>
         <button
           onclick={() => prReview.collapseAllFiles()}
-          class="px-3 py-1.5 text-sm bg-[#30363d]/30 hover:bg-[#30363d]/50 text-[#c9d1d9] border border-[#30363d] rounded-md transition-colors"
+          class="px-3 py-1.5 text-sm bg-[#243044]/30 hover:bg-[#243044]/50 text-[#e9eefb] border border-[#243044] rounded-md transition-colors"
           aria-label="Collapse all files"
           title="Collapse all files"
         >
@@ -92,7 +92,7 @@
   {#if visibleFiles.length > 0}
     <div class="space-y-1 overflow-x-hidden">
       {#each visibleFiles as file (file.filename)}
-        <div data-filename={file.filename} class="bg-[#161b22] border-b border-[#30363d] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
+        <div data-filename={file.filename} class="bg-[#121826] border-b border-[#243044] last:border-b-0 min-h-16" id="file-{file.filename.replace(/[^a-zA-Z0-9]/g, '-')}">
           <FileDiff
             {file}
             repoHtmlUrl={prReview.state.pullRequest?.head.repo?.html_url ?? prReview.state.pullRequest?.base.repo.html_url}
@@ -123,7 +123,7 @@
       {/each}
     </div>
   {:else}
-    <div class="flex items-center justify-center h-full text-[#8b949e]">
+    <div class="flex items-center justify-center h-full text-[#9dabc4]">
       <div class="text-center">
         <svg class="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

@@ -20,9 +20,9 @@
 {:else}
   <div class="flex items-center justify-center min-h-screen">
     <div class="text-center">
-      <div class="text-gray-400 text-6xl mb-4">⚠️</div>
-      <h2 class="text-xl font-semibold text-gray-900 mb-2">Invalid Parameters</h2>
-      <p class="text-gray-600">Invalid owner, repository, or pull request number.</p>
+      <div class="text-[#9dabc4] text-6xl mb-4">⚠️</div>
+      <h2 class="text-xl font-semibold text-[#e9eefb] mb-2">Invalid Parameters</h2>
+      <p class="text-[#6e7d96]">Invalid owner, repository, or pull request number.</p>
     </div>
   </div>
 {/if}
