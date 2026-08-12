@@ -20,7 +20,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout repo
-       uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for proper version info
       
@@ -32,12 +32,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install pnpm
-       uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v4
         with:
           run_install: false
       
       - name: Set up Node.js
-       uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
@@ -73,7 +73,7 @@ jobs:
           GITHUB_EVENT_NAME: 'workflow_dispatch'
 
       - name: Deploy to Firebase Hosting Preview Channel
-       uses: FirebaseExtended/action-hosting-deploy@v1
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_GITHELM }}
