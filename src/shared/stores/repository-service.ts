@@ -1,6 +1,7 @@
-import { type RepoConfig, configService } from '$integrations/firebase';
+import { type RepoConfig, configService, firebase } from '$integrations/firebase';
 import { fetchActions, fetchMultipleWorkflowJobs, checkForNewWorkflowRuns, type PullRequest, type WorkflowRun, type Job } from '$integrations/github';
 import { memoryCacheService, CacheKeys } from '$shared/services/memory-cache.service';
+import { dashboardCacheService } from '$shared/services/dashboard-cache.service';
 import createPollingStore from './polling.store';
 import { eventBus } from './event-bus.store';
 import { writable, get, derived } from 'svelte/store';
@@ -47,6 +48,69 @@ export const loadedPullRequestRepos = writable<Set<string>>(new Set());
 
 export const pullRequestConfigs = writable<RepoConfig[]>([]);
 export const actionsConfigs = writable<RepoConfig[]>([]);
+
+// Rehydrate the dashboard from the last persisted snapshot so a refresh (or
+// returning to the app later) renders immediately while fresh data loads in the
+// background.
+function hydrateFromCache(): void {
+  if (typeof window === 'undefined') return;
+
+  const snapshot = dashboardCacheService.load();
+  if (!snapshot) return;
+
+  if (snapshot.pullRequestConfigs.length) pullRequestConfigs.set(snapshot.pullRequestConfigs);
+  if (snapshot.actionsConfigs.length) actionsConfigs.set(snapshot.actionsConfigs);
+
+  const prKeys = Object.keys(snapshot.pullRequests);
+  if (prKeys.length) {
+    allPullRequests.set(snapshot.pullRequests);
+    loadedPullRequestRepos.set(new Set(prKeys));
+  }
+
+  if (Object.keys(snapshot.workflowRuns).length) {
+    allWorkflowRuns.set(snapshot.workflowRuns);
+  }
+
+  if (Object.keys(snapshot.workflowJobs).length) {
+    allWorkflowJobs.set(snapshot.workflowJobs);
+  }
+}
+
+function persistSnapshot(): void {
+  dashboardCacheService.save({
+    pullRequestConfigs: get(pullRequestConfigs),
+    actionsConfigs: get(actionsConfigs),
+    pullRequests: get(allPullRequests),
+    workflowRuns: get(allWorkflowRuns),
+    workflowJobs: get(allWorkflowJobs),
+  });
+}
+
+function startPersistence(): void {
+  if (typeof window === 'undefined') return;
+
+  [allPullRequests, allWorkflowRuns, allWorkflowJobs, pullRequestConfigs, actionsConfigs].forEach((store) => store.subscribe(() => persistSnapshot()));
+
+  // The snapshot belongs to a single user; drop it when someone else signs in.
+  firebase.user.subscribe((user) => {
+    if (!user) return;
+    if (dashboardCacheService.setUser(user.uid)) {
+      resetDashboardStores();
+    }
+  });
+}
+
+function resetDashboardStores(): void {
+  allPullRequests.set({});
+  allWorkflowRuns.set({});
+  allWorkflowJobs.set({});
+  loadedPullRequestRepos.set(new Set());
+  pullRequestConfigs.set([]);
+  actionsConfigs.set([]);
+}
+
+hydrateFromCache();
+startPersistence();
 
 const pollingUnsubscribers = new Map<string, () => void>();
 
@@ -277,14 +341,20 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     return;
   }
 
-  // Initialize empty entries for all repos immediately to trigger placeholder display
-  const initialPRs: Record<string, PullRequest[]> = {};
-  repoConfigs.forEach(config => {
-    const key = getRepoKey(config);
-    initialPRs[key] = [];
+  const allowedKeys = new Set(repoConfigs.map(getRepoKey));
+
+  // Keep any cached data we already have for the configured repos so the UI
+  // shows the last known state while fresh data is fetched. Repos without
+  // cached data get an empty entry, which renders the loading placeholder.
+  allPullRequests.update((curr) => {
+    const next: Record<string, PullRequest[]> = {};
+    repoConfigs.forEach((config) => {
+      const key = getRepoKey(config);
+      next[key] = curr[key] ?? [];
+    });
+    return next;
   });
-  allPullRequests.set(initialPRs);
-  loadedPullRequestRepos.set(new Set());
+  loadedPullRequestRepos.update((curr) => new Set(Array.from(curr).filter((key) => allowedKeys.has(key))));
 
   unsubscribe('pull-requests-polling');
 
@@ -299,8 +369,6 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
   const storeKey = 'all-pull-requests';
   unsubscribe(storeKey);
 
-  const allowedKeys = new Set(repoConfigs.map(getRepoKey));
-
   const store = createPollingStore<Record<string, PullRequest[]>>(storeKey, () => {
     const generation = ++pullRequestFetchGeneration;
     return pullRequestRepo.fetchPullRequestsForMultiple(queries, {
@@ -308,7 +376,7 @@ export function initializePullRequestsPolling({ repoConfigs }: { repoConfigs: Re
     });
   });
   pollingUnsubscribers.set(storeKey, store.subscribe((data) => {
-    if (!data) return;
+    if (!data || !Object.keys(data).length) return;
     const processedData = repoConfigs.reduce(
       (acc, config) => {
         const key = getRepoKey(config);
@@ -368,13 +436,15 @@ export function initializeActionsPolling(repoConfigs: RepoConfig[]): void {
     return;
   }
 
-  // Initialize empty entries for all repos immediately to trigger placeholder display
-  const initialRuns: Record<string, WorkflowRun[]> = {};
-  repoConfigs.forEach(config => {
-    const key = getRepoKey(config);
-    initialRuns[key] = [];
+  // Keep cached runs for the configured repos while fresh data is fetched.
+  allWorkflowRuns.update((curr) => {
+    const next: Record<string, WorkflowRun[]> = {};
+    repoConfigs.forEach((config) => {
+      const key = getRepoKey(config);
+      next[key] = curr[key] ?? [];
+    });
+    return next;
   });
-  allWorkflowRuns.set(initialRuns);
 
   for (const config of repoConfigs) {
     const key = getRepoKey(config);
@@ -385,6 +455,9 @@ export function initializeActionsPolling(repoConfigs: RepoConfig[]): void {
       storeKey,
       store.subscribe((workflows) => {
         if (!workflows) return;
+        // The polling store starts with an empty object placeholder; ignore it so
+        // cached runs stay on screen until real data arrives.
+        if (!Array.isArray(workflows) && !Object.keys(workflows).length) return;
         // Make sure workflows is an array and handle if it's not
         const workflowsArray = Array.isArray(workflows) ? workflows : [workflows].filter(Boolean);
         const runs = workflowsArray.flatMap((workflow) => workflow.workflow_runs || []);
@@ -446,12 +519,8 @@ function fetchJobsForWorkflowRuns(org: string, repo: string, runs: WorkflowRun[]
 // Clear all stores when user is unauthenticated
 export function clearAllStores(): void {
   try {
-    allPullRequests.set({});
-    allWorkflowRuns.set({});
-    allWorkflowJobs.set({});
-    loadedPullRequestRepos.set(new Set());
-    pullRequestConfigs.set([]);
-    actionsConfigs.set([]);
+    resetDashboardStores();
+    dashboardCacheService.clear();
     
     // Unsubscribe from all polling
     Array.from(pollingUnsubscribers.keys()).forEach(unsubscribe);

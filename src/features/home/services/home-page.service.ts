@@ -31,8 +31,10 @@ export class HomePageService {
         const signedIn = $user !== null;
         const isAuth = $authState;
         const isAuthLoading = $authState === 'initializing' || $authState === 'authenticating';
-        const isConfigLoading = $isConfigLoading;
-        const shouldShowContent = signedIn && $authState === 'authenticated' && $hasAnyConfigs && !isConfigLoading;
+        // When cached configs are already available we render the dashboard
+        // right away and let the refresh happen in the background.
+        const isConfigLoading = $isConfigLoading && !$hasAnyConfigs;
+        const shouldShowContent = signedIn && ($authState === 'authenticated' || $authState === 'authenticating') && $hasAnyConfigs;
         const shouldShowConfigurePrompt = signedIn && $authState === 'authenticated' && !$hasAnyConfigs && !isConfigLoading;
 
         return {
