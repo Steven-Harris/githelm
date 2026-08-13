@@ -24,10 +24,10 @@ describe('RepositorySearchService', () => {
       // Arrange
       const orgName = 'test-org';
       const repoName = '';
-      const existingRepos = [];
+      const existingRepos: ExistingRepo[] = [];
       const mockResults = [
-        { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1' },
-        { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2' },
+        { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1', archived: false },
+        { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2', archived: false },
       ];
 
       mockSearchRepositories.mockResolvedValue(mockResults);
@@ -46,8 +46,8 @@ describe('RepositorySearchService', () => {
         { isLoading: true, showResults: true },
         {
           searchResults: [
-            { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1', alreadyConfigured: false },
-            { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2', alreadyConfigured: false },
+            { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1', archived: false, alreadyConfigured: false },
+            { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2', archived: false, alreadyConfigured: false },
           ],
           isLoading: false
         },
@@ -58,9 +58,9 @@ describe('RepositorySearchService', () => {
       // Arrange
       const orgName = 'test-org';
       const repoName = 'my-repo';
-      const existingRepos = [];
+      const existingRepos: ExistingRepo[] = [];
       const mockResults = [
-        { name: 'my-repo-1', full_name: 'test-org/my-repo-1', description: 'My repo 1' },
+        { name: 'my-repo-1', full_name: 'test-org/my-repo-1', description: 'My repo 1', archived: false },
       ];
 
       mockSearchRepositories.mockResolvedValue(mockResults);
@@ -76,7 +76,7 @@ describe('RepositorySearchService', () => {
       // Assert
       expect(mockSearchRepositories).toHaveBeenCalledWith('test-org', 'my-repo');
       expect(stateUpdates[1].searchResults).toEqual([
-        { name: 'my-repo-1', full_name: 'test-org/my-repo-1', description: 'My repo 1', alreadyConfigured: false },
+        { name: 'my-repo-1', full_name: 'test-org/my-repo-1', description: 'My repo 1', archived: false, alreadyConfigured: false },
       ]);
     });
 
@@ -84,8 +84,8 @@ describe('RepositorySearchService', () => {
       // Arrange
       const orgName = 'test-org';
       const repoName = '  my-repo  ';
-      const existingRepos = [];
-      const mockResults = [];
+      const existingRepos: ExistingRepo[] = [];
+      const mockResults: Awaited<ReturnType<typeof searchRepositories>> = [];
 
       mockSearchRepositories.mockResolvedValue(mockResults);
 
@@ -106,8 +106,8 @@ describe('RepositorySearchService', () => {
         { org: 'test-org', repo: 'repo1' },
       ];
       const mockResults = [
-        { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1' },
-        { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2' },
+        { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1', archived: false },
+        { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2', archived: false },
       ];
 
       mockSearchRepositories.mockResolvedValue(mockResults);
@@ -124,8 +124,8 @@ describe('RepositorySearchService', () => {
 
       // Assert
       expect(finalStateUpdate.searchResults).toEqual([
-        { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1', alreadyConfigured: true },
-        { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2', alreadyConfigured: false },
+        { name: 'repo1', full_name: 'test-org/repo1', description: 'Test repo 1', archived: false, alreadyConfigured: true },
+        { name: 'repo2', full_name: 'test-org/repo2', description: 'Test repo 2', archived: false, alreadyConfigured: false },
       ]);
     });
 
@@ -133,7 +133,7 @@ describe('RepositorySearchService', () => {
       // Arrange
       const orgName = '';
       const repoName = 'repo';
-      const existingRepos = [];
+      const existingRepos: ExistingRepo[] = [];
 
       const stateUpdates: any[] = [];
       const onStateUpdate = (updates: any) => {
@@ -154,7 +154,7 @@ describe('RepositorySearchService', () => {
       // Arrange
       const orgName = 'test-org';
       const repoName = 'repo';
-      const existingRepos = [];
+      const existingRepos: ExistingRepo[] = [];
 
       mockSearchRepositories.mockRejectedValue(new Error('API Error'));
 

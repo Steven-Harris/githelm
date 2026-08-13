@@ -5,6 +5,7 @@ export interface SearchRepositoryResult {
   name: string;
   full_name: string;
   description: string | null;
+  archived: boolean;
 }
 
 export async function searchRepositories(org: string, searchTerm: string): Promise<SearchRepositoryResult[]> {
@@ -27,7 +28,8 @@ export async function searchRepositories(org: string, searchTerm: string): Promi
       name: repo?.name || '',
       full_name: repo?.full_name || '',
       description: repo?.description || null,
-    }));
+      archived: Boolean(repo?.archived),
+    })).filter((repo) => !repo.archived);
 
     return results;
   } catch (error) {

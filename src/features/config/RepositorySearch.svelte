@@ -21,6 +21,29 @@
   let containerRef = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
+    if (!searchState.showResults || !containerRef) {
+      return;
+    }
+
+    function handleDocumentPointerDown(event: PointerEvent): void {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!containerRef?.contains(target)) {
+        searchState.showResults = false;
+      }
+    }
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handleDocumentPointerDown);
+    };
+  });
+
+  $effect(() => {
     if (!orgName) {
       repositorySearchService.resetSearchState((updates) => {
         Object.assign(searchState, updates);
@@ -113,10 +136,12 @@
         aria-required="true"
       />
 
-      {#if searchState.showResults && orgName && searchState.searchResults.length > 0}
+      {#if searchState.showResults && orgName}
         <div use:useDropdown={{ isOpen: searchState.showResults }} class="menu-surface absolute w-full mt-1.5 p-1 z-30 max-h-72 overflow-auto">
           {#if searchState.isLoading}
             <div class="p-3 text-sm text-[var(--text-faint)]">Searching…</div>
+          {:else if searchState.searchResults.length === 0}
+            <div class="p-3 text-sm text-[var(--text-faint)]">No active repositories found.</div>
           {:else}
             {#each searchState.searchResults as repo, i (i)}
               <button type="button" class="repo-result" class:taken={repo.alreadyConfigured} onclick={() => !repo.alreadyConfigured && selectRepository(repo.name)} tabindex={repo.alreadyConfigured ? -1 : 0} disabled={repo.alreadyConfigured}>

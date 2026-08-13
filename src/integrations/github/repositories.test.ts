@@ -162,11 +162,50 @@ describe('searchRepositories', () => {
           name: 'test-repo-1',
           full_name: 'test-org/test-repo-1',
           description: 'A test repository',
+          archived: false,
         },
         {
           name: 'test-repo-2',
           full_name: 'test-org/test-repo-2',
           description: null,
+          archived: false,
+        },
+      ]);
+    });
+
+    it('should filter out archived repositories', async () => {
+      // Arrange
+      const org = 'test-org';
+      const searchTerm = 'test';
+      const mockResponse = {
+        items: [
+          {
+            name: 'active-repo',
+            full_name: 'test-org/active-repo',
+            description: 'Active repository',
+            archived: false,
+          },
+          {
+            name: 'archived-repo',
+            full_name: 'test-org/archived-repo',
+            description: 'Archived repository',
+            archived: true,
+          },
+        ],
+      };
+
+      mockGithubRequest.mockResolvedValue(mockResponse);
+
+      // Act
+      const result = await searchRepositories(org, searchTerm);
+
+      // Assert
+      expect(result).toEqual([
+        {
+          name: 'active-repo',
+          full_name: 'test-org/active-repo',
+          description: 'Active repository',
+          archived: false,
         },
       ]);
     });
