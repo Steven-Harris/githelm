@@ -1,7 +1,5 @@
 import { captureException } from '$integrations/sentry';
-import { killSwitch } from '$shared/stores/kill-switch.store';
 import { repositoryFacade } from '$shared/stores/repository.facade';
-import { get } from 'svelte/store';
 import { goto } from '$app/navigation';
 import type { CombinedConfig } from '$features/config/stores/config.store';
 
@@ -275,22 +273,7 @@ export class ConfigService {
     return updatedConfigs;
   }
 
-  enableKillSwitch(): void {
-    killSwitch.set(true);
-  }
-
-  disableKillSwitch(): void {
-    killSwitch.set(false);
-  }
-
-  isKillSwitchActive(): boolean {
-    return get(killSwitch);
-  }
-
-
-
   navigateToDashboard(): void {
-    this.disableKillSwitch();
     goto('/');
   }
 }

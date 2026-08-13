@@ -3,7 +3,6 @@
   import { page } from '$app/state';
   import helmSVG from '$assets/helm.svg';
   import refreshSVG from '$assets/refresh.svg';
-  import { configService } from '$features/config/services/config.service';
   import { firebase } from '$integrations/firebase';
   import { authService } from '$shared/services/auth.service';
   import { killSwitch } from '$shared/stores/kill-switch.store';
@@ -30,7 +29,6 @@
   }
 
   function navigateToConfig() {
-    configService.enableKillSwitch();
     goto('/config');
   }
 
