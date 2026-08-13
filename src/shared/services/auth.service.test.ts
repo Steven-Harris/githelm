@@ -19,6 +19,7 @@ vi.mock('$integrations/firebase', () => ({
 vi.mock('$shared/stores/repository.facade', () => ({
   repositoryFacade: {
     clearAllStores: vi.fn(),
+    clearAllData: vi.fn(),
   },
 }));
 
@@ -129,13 +130,13 @@ describe('AuthService', () => {
   describe('signOut', () => {
     it('should clear all data and sign out successfully', async () => {
       vi.mocked(firebase.signOut).mockResolvedValue(undefined);
-      vi.mocked(repositoryFacade.clearAllStores).mockReturnValue(undefined);
+      vi.mocked(repositoryFacade.clearAllData).mockReturnValue(undefined);
       vi.mocked(clearSiteData).mockReturnValue(undefined);
       vi.mocked(clearUserInfo).mockReturnValue(undefined);
 
       await authService.signOut();
 
-      expect(repositoryFacade.clearAllStores).toHaveBeenCalled();
+      expect(repositoryFacade.clearAllData).toHaveBeenCalled();
       expect(clearSiteData).toHaveBeenCalled();
       expect(clearUserInfo).toHaveBeenCalled();
       expect(firebase.signOut).toHaveBeenCalled();

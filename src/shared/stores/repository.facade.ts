@@ -19,6 +19,7 @@ import {
   allPullRequests,
   allWorkflowJobs,
   allWorkflowRuns,
+  clearAllStores as clearRepositoryStores,
   actionsConfigs as configActionsConfigs,
   pullRequestConfigs as configPullRequestConfigs,
   getCombinedConfigs,
@@ -140,6 +141,16 @@ export class RepositoryFacade {
     clearPullRequestStores();
     clearActionsStores();
     clearConfigStores();
+  }
+
+  /**
+   * Clears everything, including the persisted dashboard snapshot. Used on an
+   * explicit sign-out; automatic sign-outs keep the snapshot so the dashboard
+   * can render from cache after re-authenticating.
+   */
+  clearAllData(): void {
+    this.clearAllStores();
+    clearRepositoryStores();
   }
 
   getAllStores() {

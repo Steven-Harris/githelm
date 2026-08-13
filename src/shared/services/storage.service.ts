@@ -1,5 +1,8 @@
+import { DASHBOARD_SNAPSHOT_KEY } from './dashboard-cache.service';
+
 const GITHUB_TOKEN_KEY = 'GITHUB_TOKEN';
 const LAST_UPDATED_KEY = 'LAST_UPDATED';
+
 
 export interface StorageObject<T> {
   lastUpdated: number;
@@ -19,8 +22,19 @@ export function clearSiteData(): void {
   if (typeof localStorage === 'undefined') {
     return;
   }
+  // The dashboard snapshot is intentionally preserved so an automatic sign-out
+  // (e.g. an expired GitHub token in a new tab) doesn't lose the cached view.
+  // Explicit sign-out clears it separately.
+  const dashboardSnapshot = localStorage.getItem(DASHBOARD_SNAPSHOT_KEY);
   localStorage.clear();
-  
+  if (dashboardSnapshot !== null) {
+    try {
+      localStorage.setItem(DASHBOARD_SNAPSHOT_KEY, dashboardSnapshot);
+    } catch {
+      // Ignore storage failures; the cache is optional.
+    }
+  }
+
   // Also clear session storage (for GitHub token)
   if (typeof sessionStorage !== 'undefined') {
     sessionStorage.clear();

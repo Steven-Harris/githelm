@@ -48,7 +48,7 @@ export class AuthService {
 
   async signOut(): Promise<void> {
     try {
-      repositoryFacade.clearAllStores();
+      repositoryFacade.clearAllData();
       clearSiteData();
       clearUserInfo();
       
